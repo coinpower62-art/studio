@@ -24,6 +24,8 @@ import {
   Search,
   LogOut,
   User,
+  Landmark,
+  Info,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -97,10 +99,30 @@ export default function DashboardLayout({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip={{ children: "Bank" }}>
+                <Link href="#">
+                  <Landmark />
+                  <span>Bank</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
           <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={isLinkActive("/dashboard/about")}
+                tooltip={{ children: "About" }}
+              >
+                <Link href="/dashboard/about">
+                  <Info />
+                  <span>About</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={{ children: "Settings" }}>
                 <Link href="#">
