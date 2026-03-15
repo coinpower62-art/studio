@@ -1,17 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Upload } from 'lucide-react';
+import { Upload, FileUp } from 'lucide-react';
 import Image from 'next/image';
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -50,6 +52,9 @@ export default function UploadPage() {
       // Reset state
       setFile(null);
       setPreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -65,9 +70,25 @@ export default function UploadPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col gap-2">
-            <FormLabel>Image File</FormLabel>
-            <Input id="picture" type="file" accept="image/*" onChange={handleFileChange} className="w-full sm:w-auto" />
+          <div className="space-y-2">
+            <Label htmlFor="picture">Image File</Label>
+            <div className="flex items-center gap-4">
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                    <FileUp className="mr-2 h-4 w-4" />
+                    Upload from PC
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                    {file ? file.name : 'No file selected.'}
+                </span>
+            </div>
+            <Input 
+                id="picture" 
+                type="file" 
+                accept="image/*" 
+                onChange={handleFileChange} 
+                ref={fileInputRef}
+                className="hidden" 
+            />
           </div>
           {preview && (
             <div className="mt-4">
