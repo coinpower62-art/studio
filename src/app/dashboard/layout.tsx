@@ -27,6 +27,7 @@ import {
   Landmark,
   Info,
   Image,
+  Upload,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -117,6 +118,18 @@ export default function DashboardLayout({
                 <Link href="/dashboard/gallery">
                   <Image />
                   <span>Gallery</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={isLinkActive("/dashboard/upload")}
+                tooltip={{ children: "Upload Room" }}
+              >
+                <Link href="/dashboard/upload">
+                  <Upload />
+                  <span>Upload Room</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
