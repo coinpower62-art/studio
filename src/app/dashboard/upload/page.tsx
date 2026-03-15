@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, FileUp } from 'lucide-react';
+import { Upload, FileUp, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 
 export default function UploadPage() {
@@ -23,7 +23,15 @@ export default function UploadPage() {
     }
   };
 
-  const handleUpload = () => {
+  const resetState = () => {
+    setFile(null);
+    setPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }
+
+  const handleUploadToAbout = () => {
     if (!file) {
       toast({
         variant: 'destructive',
@@ -49,15 +57,43 @@ export default function UploadPage() {
         description: `${file.name} has been sent to the About page.`,
       });
 
-      // Reset state
-      setFile(null);
-      setPreview(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      resetState();
     };
     reader.readAsDataURL(file);
   };
+  
+  const handleUploadToGallery = () => {
+    if (!file) {
+      toast({
+        variant: 'destructive',
+        title: 'No file selected',
+        description: 'Please select an image file to upload.',
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      const storedImages = JSON.parse(localStorage.getItem('uploadedGalleryImages') || '[]');
+      storedImages.push({
+        id: `uploaded-gallery-${Date.now()}`,
+        url: dataUrl,
+        description: file.name,
+        imageHint: 'custom upload'
+      });
+      localStorage.setItem('uploadedGalleryImages', JSON.stringify(storedImages));
+
+      toast({
+        title: 'Image Uploaded',
+        description: `${file.name} has been sent to the Gallery page.`,
+      });
+      
+      resetState();
+    };
+    reader.readAsDataURL(file);
+  };
+
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,7 +102,7 @@ export default function UploadPage() {
         <CardHeader>
           <CardTitle>Upload an Image</CardTitle>
           <CardDescription>
-            Select an image from your device to send to the About page.
+            Select an image from your device and send it to the About page or the Gallery.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -98,10 +134,16 @@ export default function UploadPage() {
               </div>
             </div>
           )}
-          <Button onClick={handleUpload} disabled={!file} className="w-full sm:w-auto">
-            <Upload className="mr-2 h-4 w-4" />
-            Send to About Page
-          </Button>
+          <div className="flex flex-wrap gap-2 pt-4">
+            <Button onClick={handleUploadToAbout} disabled={!file} className="w-full sm:w-auto">
+              <Upload className="mr-2 h-4 w-4" />
+              Send to About Page
+            </Button>
+            <Button onClick={handleUploadToGallery} disabled={!file} className="w-full sm:w-auto">
+              <ImageIcon className="mr-2 h-4 w-4" />
+              Send to Gallery
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
