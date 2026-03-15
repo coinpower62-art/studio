@@ -176,7 +176,7 @@ export default function SignUpPage() {
         <CardFooter className="justify-center">
           <p className="text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link href="#" className="font-medium text-accent hover:underline">
+            <Link href="/signin" className="font-medium text-accent hover:underline">
               Sign In
             </Link>
           </p>
