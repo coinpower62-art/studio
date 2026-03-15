@@ -3,16 +3,9 @@
 import { useEffect, useState } from 'react';
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
-import { PlaceHolderImages, type ImagePlaceholder } from "@/lib/placeholder-images";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { useImageStore } from '@/hooks/use-image-store';
 
-interface UploadedGalleryImage {
-  id: string;
-  url: string;
-  description: string;
-  imageHint: string;
-}
-
-// Unified type for all gallery images
 type GalleryImage = {
   id: string;
   imageUrl: string;
@@ -21,37 +14,22 @@ type GalleryImage = {
 }
 
 export default function GalleryPage() {
+  const { galleryImages } = useImageStore();
   const [allImages, setAllImages] = useState<GalleryImage[]>([]);
 
   useEffect(() => {
-    // Initial images from placeholders
     const placeholderGalleryImages: GalleryImage[] = PlaceHolderImages
       .filter(img => img.id.startsWith("gallery-"));
 
-    const loadImages = () => {
-      // Images from localStorage
-      const storedImagesData = localStorage.getItem('uploadedGalleryImages');
-      const storedImages: UploadedGalleryImage[] = storedImagesData ? JSON.parse(storedImagesData) : [];
-      const uploadedImages: GalleryImage[] = storedImages.map(img => ({
-          id: img.id,
-          imageUrl: img.url, // map url to imageUrl
-          description: img.description,
-          imageHint: img.imageHint,
-      }));
+    const uploadedGalleryImages: GalleryImage[] = galleryImages.map(img => ({
+        id: img.id,
+        imageUrl: img.url,
+        description: img.description,
+        imageHint: img.imageHint,
+    }));
 
-      // Combine and set, reversing uploaded to show newest first
-      setAllImages([...placeholderGalleryImages, ...uploadedImages.reverse()]);
-    }
-    
-    loadImages();
-
-    // Listen for changes from other tabs
-    window.addEventListener('storage', loadImages);
-
-    return () => {
-        window.removeEventListener('storage', loadImages);
-    }
-  }, []);
+    setAllImages([...placeholderGalleryImages, ...uploadedGalleryImages]);
+  }, [galleryImages]);
 
   return (
     <div className="flex flex-col gap-6">

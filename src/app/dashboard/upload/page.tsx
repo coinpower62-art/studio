@@ -8,12 +8,14 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, FileUp, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
+import { useImageStore } from '@/hooks/use-image-store';
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { addAboutImage, addGalleryImage } = useImageStore();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -44,13 +46,11 @@ export default function UploadPage() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
-      const storedImages = JSON.parse(localStorage.getItem('uploadedImages') || '[]');
-      storedImages.push({
+      addAboutImage({
         id: `uploaded-${Date.now()}`,
         url: dataUrl,
         description: file.name,
       });
-      localStorage.setItem('uploadedImages', JSON.stringify(storedImages));
 
       toast({
         title: 'Image Uploaded',
@@ -75,14 +75,12 @@ export default function UploadPage() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
-      const storedImages = JSON.parse(localStorage.getItem('uploadedGalleryImages') || '[]');
-      storedImages.push({
+      addGalleryImage({
         id: `uploaded-gallery-${Date.now()}`,
         url: dataUrl,
         description: file.name,
         imageHint: 'custom upload'
       });
-      localStorage.setItem('uploadedGalleryImages', JSON.stringify(storedImages));
 
       toast({
         title: 'Image Uploaded',

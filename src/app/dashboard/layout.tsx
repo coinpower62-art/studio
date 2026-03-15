@@ -42,6 +42,7 @@ import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { ImageStoreProvider } from "@/hooks/use-image-store";
 
 const userAvatar = PlaceHolderImages.find((img) => img.id === "user-avatar");
 
@@ -204,7 +205,9 @@ export default function DashboardLayout({
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-4 sm:p-6">
+          <ImageStoreProvider>{children}</ImageStoreProvider>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );
