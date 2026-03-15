@@ -41,10 +41,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { ImageStoreProvider } from "@/hooks/use-image-store";
-
-const userAvatar = PlaceHolderImages.find((img) => img.id === "user-avatar");
 
 export default function DashboardLayout({
   children,
@@ -181,7 +178,6 @@ export default function DashboardLayout({
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar className="h-8 w-8">
-                  {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User avatar" />}
                   <AvatarFallback>JD</AvatarFallback>
                 </Avatar>
               </Button>

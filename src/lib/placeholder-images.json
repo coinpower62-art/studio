@@ -1,22 +1,3 @@
 {
-  "placeholderImages": [
-    {
-      "id": "gallery-1",
-      "description": "A placeholder image showing a modern office setting, suggesting a professional environment for financial services.",
-      "imageUrl": "https://picsum.photos/seed/10/600/400",
-      "imageHint": "business office"
-    },
-    {
-      "id": "gallery-2",
-      "description": "A placeholder image of a stock market chart on a screen, representing financial data and investment tracking.",
-      "imageUrl": "https://picsum.photos/seed/11/600/400",
-      "imageHint": "investment chart"
-    },
-    {
-      "id": "gallery-3",
-      "description": "A placeholder image illustrating a person working on a laptop with charts and graphs, symbolizing productivity and financial analysis.",
-      "imageUrl": "https://picsum.photos/seed/12/600/400",
-      "imageHint": "financial analysis"
-    }
-  ]
+  "placeholderImages": []
 }
