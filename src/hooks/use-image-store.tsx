@@ -2,13 +2,13 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
 
-interface UploadedImage {
+export interface UploadedImage {
   id: string;
   url: string;
   description: string;
 }
 
-interface UploadedGalleryImage extends UploadedImage {
+export interface UploadedGalleryImage extends UploadedImage {
   imageHint: string;
 }
 

@@ -28,6 +28,7 @@ import {
   Info,
   Image,
   Upload,
+  Folders,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -128,6 +129,18 @@ export default function DashboardLayout({
                 <Link href="/dashboard/upload">
                   <Upload />
                   <span>Upload Room</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={isLinkActive("/dashboard/my-uploads")}
+                tooltip={{ children: "My Uploads" }}
+              >
+                <Link href="/dashboard/my-uploads">
+                  <Folders />
+                  <span>My Uploads</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
