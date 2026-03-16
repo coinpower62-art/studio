@@ -8,6 +8,7 @@ import * as z from "zod";
 import { useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, serverTimestamp } from "firebase/firestore";
+import type { FirebaseError } from 'firebase/app';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -77,9 +78,31 @@ export default function SignUpPage() {
     }
   }, [user, isUserLoading, router]);
 
+  function getAuthErrorMessage(error: FirebaseError): string {
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        return 'This email address is already in use by another account.';
+      case 'auth/weak-password':
+        return 'The password is too weak. Please choose a stronger password.';
+      case 'auth/invalid-email':
+        return 'The email address is not valid.';
+      default:
+        return 'An unexpected error occurred during sign up. Please try again.';
+    }
+  }
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    initiateEmailSignUp(auth, values.email, values.password);
+    form.clearErrors();
+    initiateEmailSignUp(auth, values.email, values.password, (error: FirebaseError) => {
+        const message = getAuthErrorMessage(error);
+        toast({
+            variant: 'destructive',
+            title: 'Sign Up Failed',
+            description: message,
+        });
+        form.reset(values, { keepIsSubmitting: false });
+    });
     
     const unsubscribe = onAuthStateChanged(auth, (newUser) => {
       if (newUser) {
@@ -89,11 +112,12 @@ export default function SignUpPage() {
         const userRef = doc(firestore, "users", newUser.uid);
         
         const userData = {
+          id: newUser.uid,
           email: values.email,
           firstName: firstName || '',
           lastName: lastName || '',
-          language: values.language,
-          country: values.country,
+          preferredLanguageCode: values.language,
+          countryId: values.country,
           balance: 1.00, // $1 bonus
           referralCode: genReferralCode(firstName || 'USER'),
           referralCount: 0,
@@ -232,3 +256,5 @@ export default function SignUpPage() {
     </div>
   );
 }
+
+    

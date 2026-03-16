@@ -30,6 +30,7 @@ import { useAuth } from "@/firebase";
 import { initiateEmailSignIn } from "@/firebase/non-blocking-login";
 import { useEffect } from "react";
 import { useUser } from "@/firebase";
+import type { FirebaseError } from "firebase/app";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -60,8 +61,30 @@ export default function SignInPage() {
     }
   }, [user, isUserLoading, router, toast]);
 
+  function getAuthErrorMessage(error: FirebaseError): string {
+    switch (error.code) {
+      case 'auth/invalid-credential':
+        return 'Invalid email or password. Please try again.';
+      case 'auth/user-not-found':
+        return 'No account found with this email address.';
+      case 'auth/wrong-password':
+        return 'Incorrect password. Please try again.';
+      default:
+        return 'An unexpected error occurred. Please try again.';
+    }
+  }
+
   function onSubmit(values: z.infer<typeof formSchema>) {
-    initiateEmailSignIn(auth, values.email, values.password);
+    form.clearErrors();
+    initiateEmailSignIn(auth, values.email, values.password, (error: FirebaseError) => {
+      const message = getAuthErrorMessage(error);
+      toast({
+        variant: 'destructive',
+        title: 'Sign In Failed',
+        description: message,
+      });
+      form.reset(values, { keepIsSubmitting: false });
+    });
   }
 
   return (
@@ -121,3 +144,5 @@ export default function SignInPage() {
     </div>
   );
 }
+
+    
