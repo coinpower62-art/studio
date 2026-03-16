@@ -92,12 +92,22 @@ export default {
         'scroll-up': {
           '0%': { transform: 'translateY(0)' },
           '100%': { transform: 'translateY(-100%)' },
-        }
+        },
+        'marquee-slow': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+        'marquee-fast': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'scroll-up': 'scroll-up 40s linear infinite',
+        'marquee-slow': 'marquee-slow 120s linear infinite',
+        'marquee-fast': 'marquee-fast 40s linear infinite',
       },
     },
   },

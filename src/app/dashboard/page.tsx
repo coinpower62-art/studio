@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useUser, useFirestore } from "@/firebase";
 import { useUserStore } from "@/hooks/use-user-store";
 import { doc, updateDoc } from 'firebase/firestore';
+import TickerTape from "@/components/TickerTape";
 
 const recentActivities = [
   { type: "deposit", amount: "+$500.00", time: "2h ago" },
@@ -93,14 +94,16 @@ export default function Dashboard() {
 
   const initials = fullName?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "CP";
 
-  const announcements = [
+  const allAnnouncements = [
     "🎉 NEW MEMBERS receive a FREE $1 bonus — start earning today with no deposit required!",
     "💸 Earn 15% FREE referral commission every time a friend joins CoinPower — no limits!",
     "⚡ Rent PG1–PG4 Generators and claim daily income every 24 hours on the Power page",
     "🏆 Win exciting rewards and travel to Italy — participate in our Staged Win Program!",
     "📈 Over $10 Million paid to 26,000+ investors across 21 countries worldwide",
     "🔒 Secure & transparent — your balance is fully protected with bank-level security",
-  ].join("   ✦   ");
+  ];
+  const announcements = allAnnouncements.join("   ✦   ");
+  const firstAnnouncement = allAnnouncements[0];
 
   const stats = [
     { label: "Total Balance", value: `$${balance.toFixed(2)}`, icon: Wallet, change: "+2.5%", up: true, color: "from-amber-400 to-amber-600" },
@@ -111,24 +114,27 @@ export default function Dashboard() {
 
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
-      <div className="w-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 border-b border-amber-400 overflow-hidden" style={{ height: "36px" }}>
-        <div className="flex items-center h-full">
-          <div className="flex-shrink-0 bg-amber-700 text-white text-xs font-black px-3 h-full flex items-center gap-1.5 z-10 shadow-md">
+      <div className="w-full bg-amber-50 border-b border-amber-200 overflow-hidden">
+        <div className="flex items-center h-9">
+          <div className="flex-shrink-0 bg-amber-100 text-amber-700 text-xs font-bold px-3 h-full flex items-center gap-1.5 z-10">
             <span>📢</span>
-            <span className="hidden sm:inline tracking-wide">ANNOUNCEMENT</span>
+            <span className="hidden sm:inline tracking-wide">NEWS</span>
           </div>
-          <div className="overflow-hidden flex-1 relative h-full flex items-center">
-             <style>{`
-                @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-                .marquee-track { display: flex; animation: marquee 120s linear infinite; }
-             `}</style>
-            <div className="marquee-track whitespace-nowrap text-amber-900 text-xs font-semibold" aria-live="polite">
+          {/* Mobile, static announcement */}
+          <div className="flex-1 px-3 text-amber-800 text-xs font-medium truncate sm:hidden">
+            {firstAnnouncement}
+          </div>
+          {/* Desktop, scrolling announcement */}
+          <div className="overflow-hidden flex-1 relative h-full items-center hidden sm:flex">
+            <div className="animate-marquee-slow flex whitespace-nowrap text-amber-800 text-xs font-semibold" aria-live="polite">
               <span className="px-4">{announcements}</span>
               <span className="px-4">{announcements}</span>
             </div>
           </div>
         </div>
       </div>
+
+      <TickerTape />
 
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
 
@@ -172,6 +178,88 @@ export default function Dashboard() {
               <p className="text-gray-500 text-xs mt-0.5">{label}</p>
             </div>
           ))}
+        </div>
+
+        {/* Video Tutorial Frame */}
+        <div
+          data-testid="button-tutorial-banner"
+          className="w-full rounded-2xl overflow-hidden shadow-md border border-amber-100/60 group text-left mb-4 sm:mb-6"
+        >
+          {/* Thumbnail */}
+          <div className="relative h-44 sm:h-52 bg-gradient-to-br from-gray-950 via-amber-950 to-gray-900 flex items-center justify-center overflow-hidden">
+
+            {/* Scanline texture */}
+            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,0.08) 2px,rgba(255,255,255,0.08) 4px)" }} />
+
+            {/* Floating scene previews */}
+            <div className="absolute top-3 left-3 flex gap-2">
+              {[
+                { bg: "bg-amber-500", e: "⚡", label: "Welcome" },
+                { bg: "bg-blue-500", e: "👤", label: "Sign Up" },
+                { bg: "bg-yellow-500", e: "🏦", label: "Deposit" },
+              ].map(({ bg, e, label }) => (
+                <div key={label} className={`${bg} rounded-lg w-14 h-10 flex flex-col items-center justify-center gap-0.5 opacity-70`}>
+                  <span className="text-base leading-none">{e}</span>
+                  <span className="text-white text-[8px] font-semibold">{label}</span>
+                </div>
+              ))}
+              <div className="bg-white/10 rounded-lg w-14 h-10 flex items-center justify-center opacity-60">
+                <span className="text-white text-[10px] font-bold">+11 more</span>
+              </div>
+            </div>
+
+            {/* Floating emoji coins (background) */}
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+              {[
+                { e: "💰", top: "55%", left: "12%", delay: "0s" },
+                { e: "🪙", top: "65%", left: "72%", delay: "0.4s" },
+                { e: "📈", top: "50%", left: "82%", delay: "0.8s" },
+              ].map(({ e, top, left, delay }) => (
+                <div
+                  key={e}
+                  className="absolute text-2xl opacity-20 animate-bounce"
+                  style={{ top, left, animationDelay: delay, animationDuration: "2.5s" }}
+                >
+                  {e}
+                </div>
+              ))}
+            </div>
+
+            {/* Centre play button */}
+            <div className="relative z-10 flex flex-col items-center gap-2">
+              <div className="w-16 h-16 rounded-full bg-white shadow-2xl shadow-black/60 flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+                <Play className="w-7 h-7 text-amber-500 ml-1" fill="currentColor" />
+              </div>
+              <span className="text-white/80 text-xs font-semibold bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm">Tap to play</span>
+            </div>
+
+            {/* Top-right badge */}
+            <div className="absolute top-3 right-3 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md tracking-wide flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block" />
+              TUTORIAL
+            </div>
+
+            {/* Bottom gradient + duration */}
+            <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/70 to-transparent" />
+            <div className="absolute bottom-2 right-3 bg-black/70 text-white text-[10px] font-semibold px-2 py-0.5 rounded">15 scenes</div>
+
+            {/* Progress bar (at 0) */}
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
+              <div className="h-full w-0 bg-amber-400" />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="bg-white px-4 py-3 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+              <Play className="w-4 h-4 text-amber-600 ml-0.5" fill="currentColor" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-gray-900 text-sm leading-tight">How to Deposit &amp; Start Earning</p>
+              <p className="text-gray-400 text-xs mt-0.5">Animated cartoon tutorial • 15 scenes</p>
+            </div>
+            <ArrowUpRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -347,6 +435,50 @@ export default function Dashboard() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* ── AVIATOR GAME ── */}
+        <div
+          data-testid="banner-play-and-win"
+          className="mt-4 sm:mt-6 rounded-2xl overflow-hidden relative"
+          style={{ background: "linear-gradient(135deg,#06101e 0%,#0a1a40 55%,#0d0a22 100%)" }}
+        >
+          {/* Glow effects */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-6 -right-6 w-36 h-36 rounded-full opacity-25"
+              style={{ background: "radial-gradient(circle,#1a56db,transparent 70%)", animation: "pulse 3s ease-in-out infinite" }} />
+            <div className="absolute -bottom-4 -left-4 w-28 h-28 rounded-full opacity-20"
+              style={{ background: "radial-gradient(circle,#00e676,transparent 70%)", animation: "pulse 3s ease-in-out 1.5s infinite" }} />
+          </div>
+
+          <div className="relative z-10 p-5 flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl">✈️</span>
+                <span className="text-xs font-bold rounded-full px-2 py-0.5 uppercase tracking-wide"
+                  style={{ color: "#00e676", background: "rgba(0,230,118,0.15)", border: "1px solid rgba(0,230,118,0.35)" }}>
+                  Play Now
+                </span>
+              </div>
+              <h3 className="text-white font-black text-xl leading-tight">Aviator</h3>
+              <p className="text-slate-400 text-xs mt-0.5">Bet → fly → cash out before the plane crashes!</p>
+            </div>
+            <div className="flex flex-col items-center gap-2 ml-4">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-lg"
+                style={{ background: "linear-gradient(135deg,#1a56db,#0a2a7a)" }}>
+                ✈️
+              </div>
+              <span className="font-black text-[10px] tracking-widest uppercase" style={{ color: "#00e676" }}>Play Now</span>
+            </div>
+          </div>
+
+          {/* Multiplier preview strip */}
+          <div className="px-5 pb-3 flex items-center gap-3">
+            {["1.5x","2x","5x","10x","25x","100x"].map((v, i) => (
+              <span key={v} className="text-[10px] font-black"
+                style={{ color: i < 2 ? "#94a3b8" : i < 4 ? "#60a5fa" : "#a78bfa" }}>{v}</span>
+            ))}
+          </div>
         </div>
 
       </div>
