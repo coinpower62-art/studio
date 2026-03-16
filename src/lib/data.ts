@@ -1,29 +1,3 @@
-export const COUNTRIES = [
-    "Ghana",
-    "Nigeria",
-    "Kenya",
-    "United States",
-    "United Kingdom",
-    "Canada",
-    "Australia",
-    "Germany",
-    "France",
-    "Spain",
-    "Italy",
-    "Netherlands",
-    "Switzerland",
-    "Sweden",
-    "Norway",
-    "Portugal",
-    "Brazil",
-    "Argentina",
-    "Mexico",
-    "India",
-    "China",
-    "Japan",
-    "South Korea",
-];
-
 export const languages = [
   { value: "en", label: "English" },
   { value: "es", label: "Español" },
@@ -34,6 +8,32 @@ export const languages = [
   { value: "ja", label: "日本語" },
   { value: "zh", label: "中文" },
   { value: "ko", label: "한국어" },
+];
+
+export const countries = [
+    { label: "Ghana", value: "Ghana" },
+    { label: "Nigeria", value: "Nigeria" },
+    { label: "Kenya", value: "Kenya" },
+    { label: "United States", value: "United States" },
+    { label: "United Kingdom", value: "United Kingdom" },
+    { label: "Canada", value: "Canada" },
+    { label: "Australia", value: "Australia" },
+    { label: "Germany", value: "Germany" },
+    { label: "France", value: "France" },
+    { label: "Spain", value: "Spain" },
+    { label: "Italy", value: "Italy" },
+    { label: "Netherlands", value: "Netherlands" },
+    { label: "Switzerland", value: "Switzerland" },
+    { label: "Sweden", value: "Sweden" },
+    { label: "Norway", value: "Norway" },
+    { label: "Portugal", value: "Portugal" },
+    { label: "Brazil", value: "Brazil" },
+    { label: "Argentina", value: "Argentina" },
+    { label: "Mexico", value: "Mexico" },
+    { label: "India", value: "India" },
+    { label: "China", value: "China" },
+    { label: "Japan", value: "Japan" },
+    { label: "South Korea", value: "South Korea" },
 ];
 
 export interface Generator {
@@ -124,8 +124,6 @@ export const generators: Generator[] = [
     isFree: false,
   }
 ];
-
-export const countries = COUNTRIES;
 
 export const winners = [
   { name: 'Kwame A.', earnings: 5.20 },
