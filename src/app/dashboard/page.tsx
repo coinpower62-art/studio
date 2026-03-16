@@ -9,10 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
+import { useUser, useFirestore } from "@/firebase";
 import { useUserStore } from "@/hooks/use-user-store";
-import { doc, updateDoc, collection, addDoc } from 'firebase/firestore';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc, updateDoc } from 'firebase/firestore';
 
 const recentActivities = [
   { type: "deposit", amount: "+$500.00", time: "2h ago" },
@@ -70,7 +69,7 @@ export default function Dashboard() {
 
         try {
             const userRef = doc(firestore, 'users', user.uid);
-            updateDocumentNonBlocking(userRef, {
+            await updateDoc(userRef, {
                 balance: balance + amount
             });
 
@@ -109,8 +108,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="pb-20 min-h-screen bg-[#f7f9f4]">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6">
+    <div className="max-w-7xl mx-auto">
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4 sm:py-6">
           <div>
@@ -155,7 +153,7 @@ export default function Dashboard() {
         </div>
 
         {/* Video Tutorial Frame */}
-        <button
+        <div
           data-testid="button-tutorial-banner"
           onClick={() => router.push('/dashboard/support')}
           className="w-full rounded-2xl overflow-hidden shadow-md border border-amber-100/60 group text-left mb-4 sm:mb-6"
@@ -235,7 +233,7 @@ export default function Dashboard() {
             </div>
             <ArrowUpRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
           </div>
-        </button>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-amber-100/60 p-4 sm:p-6">
@@ -302,13 +300,12 @@ export default function Dashboard() {
               <h3 className="text-white font-bold text-base sm:text-lg">Boost Your Returns</h3>
               <p className="text-amber-100 text-xs sm:text-sm mt-0.5">Activate a power plan and earn up to 40% returns</p>
             </div>
-            <button
-              className="bg-white text-amber-600 font-bold px-5 py-2.5 rounded-xl shadow-md hover:bg-amber-50 transition-colors text-sm self-start sm:self-auto whitespace-nowrap"
-              onClick={() => router.push("/dashboard/power")}
+            <div
+              className="bg-white text-amber-600 font-bold px-5 py-2.5 rounded-xl shadow-md text-sm self-start sm:self-auto whitespace-nowrap"
               data-testid="button-activate-power"
             >
               Activate Now
-            </button>
+            </div>
           </div>
         </div>
 
@@ -454,8 +451,6 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-
-      </div>
     </div>
   );
 }

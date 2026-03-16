@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { UserStoreProvider } from "@/hooks/use-user-store";
 import { useAuth, useUser } from "@/firebase";
 import { signOut } from "firebase/auth";
@@ -41,6 +42,7 @@ const navItems = [
     { href: "/dashboard/power", label: "Power", icon: Zap },
     { href: "/dashboard/activity", label: "Activity", icon: History },
     { href: "/dashboard/about", label: "About", icon: Info },
+    { href: "/dashboard/support", label: "Support", icon: LifeBuoy },
 ];
 
 function BottomNav() {
@@ -209,7 +211,7 @@ export default function DashboardLayout({
                   </DropdownMenu>
                 </header>
 
-                <main className="flex-1 overflow-auto p-4 sm:p-6 pb-20 md:pb-6">
+                <main className="flex-1 overflow-auto bg-[#f7f9f4] p-4 sm:p-6 pb-20 md:pb-6">
                     {children}
                 </main>
 
