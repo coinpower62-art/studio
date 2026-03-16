@@ -314,6 +314,53 @@
         "key",
         "value"
       ]
+    },
+    "RentedGenerator": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RentedGenerator",
+      "type": "object",
+      "description": "Represents a generator rented by a user.",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who owns this rented generator."
+        },
+        "generatorId": {
+          "type": "string",
+          "description": "The ID of the generator template."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the generator."
+        },
+        "rentalTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the generator was rented."
+        },
+        "rentalEndTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the current earning cycle ends."
+        },
+        "durationDays": {
+          "type": "number",
+          "description": "The total duration of the rental in days."
+        },
+        "dailyIncome": {
+          "type": "number",
+          "description": "The income generated per day by this generator."
+        }
+      },
+      "required": [
+        "userId",
+        "generatorId",
+        "name",
+        "rentalTime",
+        "rentalEndTime",
+        "durationDays",
+        "dailyIncome"
+      ]
     }
   },
   "auth": {
@@ -455,9 +502,30 @@
             }
           ]
         }
+      },
+      {
+        "path": "/users/{userId}/rentedGenerators/{rentedGeneratorId}",
+        "definition": {
+          "entityName": "RentedGenerator",
+          "schema": {
+            "$ref": "#/backend/entities/RentedGenerator"
+          },
+          "description": "Stores generators rented by a specific user. Access is restricted to the owner ('userId' in path matches request.auth.uid).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns this rented generator."
+            },
+            {
+              "name": "rentedGeneratorId",
+              "description": "The unique identifier for a specific rented generator instance."
+            }
+          ]
+        }
       }
     ],
     "reasoning": "The Firestore data structure for CoinPower prioritizes security, scalability, and debuggability by adhering to the core design principles of Authorization Independence, Structural Segregation, and consistent Access Modeling. The structure leverages path-based ownership for all user-specific data, placing entities like InvestmentPortfolios, Transactions, and UserPreferences directly under a user's unique ID (`/users/{userId}/...`). This makes authorization rules explicit and simple: a user can only access data within their own `/users/{userId}` path, effectively mapping `request.auth.uid` to `{userId}`. This fulfills the requirement for QAPs (Queryable Access Patterns) by enabling secure `list` operations without relying on security rules as filters; users can only query their owned subcollections.\n\n**Authorization Independence (CRITICAL):** A key aspect of this design is the strict avoidance of hierarchical authorization dependencies, which would require costly and brittle `get()` calls in security rules. For example, while an `Investment` logically belongs to an `InvestmentPortfolio`, and an `InvestmentPortfolio` to a `User`, an `Investment` document, residing in the subcollection `/users/{userId}/investmentPortfolios/{portfolioId}/investments/{investmentId}`, will explicitly denormalize the `userId` (its grandparent's owner) into its own document. This ensures that any access check for an `Investment` can be performed solely based on `request.auth.uid` matching the `userId` field within the `Investment` document itself, eliminating the need to read the parent `InvestmentPortfolio` document. This also enables atomic operations for creating entire user-portfolio-investment hierarchies.\n\n**Structural Segregation & QAPs:**\n*   **User-Specific Data:** All user-owned data (`User` profile, `InvestmentPortfolio`, `Investment`, `Transaction`, `UserPreference`) is rooted under `/users/{userId}`. This structural segregation guarantees that all documents within a given user's path share the same security posture – owned by `request.auth.uid`. This naturally supports QAPs, as any query (`list` operation) within these paths is inherently secured by `request.auth.uid == userId`.\n*   **Global Public Data:** Static, read-only data like `Country` entities are placed in a top-level collection (`/countries/{countryId}`). Similarly, AI-generated `MarketSnapshot` data, which is public to all users but created by the system, resides in `/marketSnapshots/{snapshotId}`. These collections have a homogeneous security posture (public read-only) and directly support QAPs without complex filtering, as all documents are meant for general access. Write access to these public collections would typically be restricted to administrators or automated services via `admin` rules or Firebase Functions."
   }
 }
+
     

@@ -193,5 +193,22 @@ service cloud.firestore {
       allow delete: if isExistingOwner(userId);
     }
 
+    /**
+     * @description Secures a user's rented generator instances.
+     * @path /users/{userId}/rentedGenerators/{rentedGeneratorId}
+     * @allow (create) An authenticated user can rent a generator for themselves. auth.uid: "user123", path: "/users/user123/..."
+     * @allow (list) An authenticated user can list their own rented generators. auth.uid: "user123", path: "/users/user123/..."
+     * @deny (get) A user cannot access another user's rented generator. auth.uid: "user456", path: "/users/user123/..."
+     * @principle Restricts access to a user's own data tree using path-based ownership and denormalized userId.
+     */
+    match /users/{userId}/rentedGenerators/{rentedGeneratorId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
   }
 }
+    

@@ -8,6 +8,7 @@ import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlo
 
 export interface RentedGenerator {
   id: string; // This is the doc id in firestore
+  userId: string;
   generatorId: string;
   name: string;
   rentalTime: any; // Firestore timestamp
@@ -53,7 +54,7 @@ export function UserStoreProvider({ children }: { children: ReactNode }) {
 
   const rentGenerator = useCallback((generatorId: string): 'success' | 'insufficient_funds' => {
     const generator = generators.find(g => g.id === generatorId);
-    if (!generator || !userRef || !rentedGeneratorsRef) return 'insufficient_funds';
+    if (!generator || !userRef || !rentedGeneratorsRef || !user) return 'insufficient_funds';
     
     if (balance < generator.price) {
       return 'insufficient_funds';
@@ -63,6 +64,7 @@ export function UserStoreProvider({ children }: { children: ReactNode }) {
     
     const now = Date.now();
     const newRentedGenerator = {
+      userId: user.uid,
       generatorId: generator.id,
       name: generator.name,
       rentalTime: serverTimestamp(),
@@ -73,7 +75,7 @@ export function UserStoreProvider({ children }: { children: ReactNode }) {
 
     addDocumentNonBlocking(rentedGeneratorsRef, newRentedGenerator);
     return 'success';
-  }, [balance, userRef, rentedGeneratorsRef]);
+  }, [balance, userRef, rentedGeneratorsRef, user]);
 
 
   const collectEarnings = useCallback((rentedGeneratorId: string) => {
@@ -117,11 +119,12 @@ export function UserStoreProvider({ children }: { children: ReactNode }) {
    useEffect(() => {
     if (rentedGeneratorsData && rentedGeneratorsData.length === 0) {
         const freeGenerator = generators.find(g => g.isFree);
-        if (freeGenerator && rentedGeneratorsRef) {
+        if (freeGenerator && rentedGeneratorsRef && user) {
             const isFreeGeneratorRented = rentedGeneratorsData.some(rg => rg.generatorId === freeGenerator.id);
             if (!isFreeGeneratorRented) {
                 const now = Date.now();
                 const newRentedGenerator = {
+                    userId: user.uid,
                     generatorId: freeGenerator.id,
                     name: freeGenerator.name,
                     rentalTime: serverTimestamp(),
@@ -133,7 +136,7 @@ export function UserStoreProvider({ children }: { children: ReactNode }) {
             }
         }
     }
-   }, [rentedGeneratorsData, rentedGeneratorsRef]);
+   }, [rentedGeneratorsData, rentedGeneratorsRef, user]);
 
   const value = { balance, referralCount, rentedGenerators, rentGenerator, collectEarnings };
 
@@ -151,3 +154,5 @@ export function useUserStore() {
   }
   return context;
 }
+
+    
