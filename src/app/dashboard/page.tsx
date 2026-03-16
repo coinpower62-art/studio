@@ -3,12 +3,12 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
-  CardDescription,
 } from "@/components/ui/card";
-import { DollarSign, ArrowUp, ArrowDown } from "lucide-react";
+import { DollarSign, ArrowUp } from "lucide-react";
 import { MarketSnapshot } from "./components/market-snapshot";
 import { PerformanceChart } from "./components/performance-chart";
-import { RecentActivity } from "./components/recent-activity";
+import { WinnersScroll } from "./components/winners-scroll";
+import { ReferralProgress } from "./components/referral-progress";
 
 export default function DashboardPage() {
   return (
@@ -63,8 +63,9 @@ export default function DashboardPage() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 gap-6">
-        <RecentActivity />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <WinnersScroll />
+        <ReferralProgress />
       </div>
     </div>
   );

@@ -29,6 +29,7 @@ import {
   Image,
   Upload,
   Folders,
+  Zap,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -43,6 +44,7 @@ import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { ImageStoreProvider } from "@/hooks/use-image-store";
+import { UserStoreProvider } from "@/hooks/use-user-store";
 
 export default function DashboardLayout({
   children,
@@ -89,6 +91,18 @@ export default function DashboardLayout({
                 <Link href="#">
                   <Briefcase />
                   <span>Portfolio</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={isLinkActive("/dashboard/power")}
+                tooltip={{ children: "Power" }}
+              >
+                <Link href="/dashboard/power">
+                  <Zap />
+                  <span>Power</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -215,7 +229,9 @@ export default function DashboardLayout({
           </DropdownMenu>
         </header>
         <main className="flex-1 overflow-auto p-4 sm:p-6">
-          <ImageStoreProvider>{children}</ImageStoreProvider>
+          <UserStoreProvider>
+            <ImageStoreProvider>{children}</ImageStoreProvider>
+          </UserStoreProvider>
         </main>
       </SidebarInset>
     </SidebarProvider>
