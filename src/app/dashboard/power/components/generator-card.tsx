@@ -4,14 +4,16 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useUserStore } from '@/hooks/use-user-store';
+import { useUserStore, type RentedGenerator } from '@/hooks/use-user-store';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useRouter } from 'next/navigation';
 import type { Generator } from '@/lib/data';
 import { Users, TrendingUp, Clock, Tag } from 'lucide-react';
+import { Timestamp } from 'firebase/firestore';
 
 interface GeneratorCardProps {
     generator: Generator;
+    rentedInstance?: RentedGenerator;
 }
 
 function formatTime(ms: number) {
@@ -23,22 +25,21 @@ function formatTime(ms: number) {
   return `${hours}:${minutes}:${seconds}`;
 }
 
-export function GeneratorCard({ generator }: GeneratorCardProps) {
-    const { rentGenerator, rentedGenerators, collectEarnings } = useUserStore();
+export function GeneratorCard({ generator, rentedInstance }: GeneratorCardProps) {
+    const { rentGenerator, collectEarnings } = useUserStore();
     const { toast } = useToast();
     const router = useRouter();
     const [showInsufficientFunds, setShowInsufficientFunds] = useState(false);
 
-    const rentedInstance = rentedGenerators.find(rg => rg.generatorId === generator.id);
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
     useEffect(() => {
-        if (!rentedInstance || !rentedInstance.rentalEndTime) {
+        if (!rentedInstance || !(rentedInstance.rentalEndTime instanceof Timestamp)) {
           setTimeLeft(null);
           return;
         }
 
-        const rentalEndTimeMs = rentedInstance.rentalEndTime.toDate().getTime();
+        const rentalEndTimeMs = rentedInstance.rentalEndTime.toMillis();
 
         const updateTimer = () => {
             const now = Date.now();
@@ -61,12 +62,13 @@ export function GeneratorCard({ generator }: GeneratorCardProps) {
                 title: 'Success!',
                 description: `${generator.name} has been rented.`,
             });
+            router.push('/dashboard/power');
         }
     };
 
     const handleCollect = () => {
         if (rentedInstance) {
-            const result = collectEarnings(rentedInstance.id);
+            const result = collectEarnings(rentedInstance);
             if (result === 'collected') {
                 toast({
                     title: 'Earnings Collected!',
@@ -105,7 +107,7 @@ export function GeneratorCard({ generator }: GeneratorCardProps) {
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary" /> <span><strong className="font-semibold text-foreground">ROI:</strong> {generator.roi}</span></div>
                         <div className="flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> <span><strong className="font-semibold text-foreground">Investors:</strong> {generator.investors}</span></div>
-                        <div className="flex items-center gap-2"><Tag className="w-4 h-4 text-primary" /> <span><strong className="font-semibold text-foreground">Price:</strong> <span className={generator.isFree ? "text-accent font-bold" : "font-bold text-foreground"}>{generator.isFree ? 'Free' : `$${generator.price.toFixed(2)}`}</span></span></div>
+                        <div className="flex items-center gap-2"><Tag className="w-4 h-4 text-primary" /> <span><strong className="font-semibold text-foreground">Price:</strong> <span className={generator.isFree ? "text-accent font-bold" : "font-bold text-foreground"}>{generator.price === 0 ? 'Free' : `$${generator.price.toFixed(2)}`}</span></span></div>
                         <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /> <span><strong className="font-semibold text-foreground">Duration:</strong> {generator.duration} days</span></div>
                     </div>
                     <div className="p-3 bg-muted rounded-lg text-center space-y-1 border">
@@ -122,7 +124,7 @@ export function GeneratorCard({ generator }: GeneratorCardProps) {
                 </CardContent>
                 <CardFooter className="p-4 mt-auto">
                     {rentedInstance ? (
-                        <Button onClick={handleCollect} disabled={!isTimerFinished} className="w-full bg-accent hover:bg-accent/90">
+                        <Button onClick={handleCollect} disabled={!isTimerFinished} className="w-full bg-growth hover:bg-growth/90 text-white">
                             {isTimerFinished ? 'Collect Earnings' : 'Earning...'}
                         </Button>
                     ) : (
@@ -143,7 +145,7 @@ export function GeneratorCard({ generator }: GeneratorCardProps) {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => router.push('#')}>Go to Bank</AlertDialogAction>
+                        <AlertDialogAction onClick={() => router.push('/dashboard/bank')}>Go to Bank</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

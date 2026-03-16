@@ -1,28 +1,41 @@
-
 'use client';
 import {
   Card,
   CardHeader,
   CardTitle,
   CardContent,
+  CardDescription,
+  CardFooter
 } from "@/components/ui/card";
-import { DollarSign, ArrowUp } from "lucide-react";
-import { MarketSnapshot } from "./components/market-snapshot";
-import { PerformanceChart } from "./components/performance-chart";
-import { WinnersScroll } from "./components/winners-scroll";
-import { ReferralProgress } from "./components/referral-progress";
+import { Button } from "@/components/ui/button";
+import { DollarSign, ArrowUp, Copy } from "lucide-react";
 import { useUserStore } from "@/hooks/use-user-store";
 import { useUser } from "@/firebase";
+import { useToast } from "@/hooks/use-toast";
+
 
 export default function DashboardPage() {
-  const { balance } = useUserStore();
+  const { balance, referralCode } = useUserStore();
   const { user } = useUser();
+  const { toast } = useToast();
 
   const getGreetingName = () => {
     if (user?.displayName) {
-      return user.displayName;
+      return user.displayName.split(' ')[0];
     }
     return "Back";
+  }
+
+  const referralLink = typeof window !== 'undefined' 
+    ? `${window.location.origin}/signup?ref=${referralCode}` 
+    : '';
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(referralLink);
+    toast({
+      title: "Copied!",
+      description: "Referral link copied to clipboard.",
+    });
   }
 
   return (
@@ -34,7 +47,7 @@ export default function DashboardPage() {
         </p>
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="shadow-md">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -46,7 +59,7 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-        <Card className="shadow-md">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Gain/Loss</CardTitle>
             <ArrowUp className="h-4 w-4 text-growth" />
@@ -56,7 +69,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">+1.8% today</p>
           </CardContent>
         </Card>
-        <Card className="shadow-md">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Highest Performer</CardTitle>
             <ArrowUp className="h-4 w-4 text-growth" />
@@ -68,21 +81,25 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <PerformanceChart />
-        </div>
-        <div className="lg:col-span-2">
-          <MarketSnapshot />
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <WinnersScroll />
-        <ReferralProgress />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Refer & Earn</CardTitle>
+          <CardDescription>Invite friends and earn rewards when they sign up and invest.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="flex items-center space-x-2">
+                <input
+                    type="text"
+                    readOnly
+                    value={referralLink}
+                    className="flex-grow p-2 border rounded-md bg-muted text-muted-foreground text-sm"
+                />
+                <Button onClick={handleCopy} size="icon">
+                    <Copy className="w-4 h-4" />
+                </Button>
+            </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-
-    

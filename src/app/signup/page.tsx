@@ -80,8 +80,8 @@ export default function SignUpPage() {
       fullName: '',
       email: '',
       password: '',
-      referralCode: '',
       phone: '',
+      referralCode: '',
     },
   });
 
@@ -112,6 +112,8 @@ export default function SignUpPage() {
   }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!auth || !firestore) return;
+    
     form.clearErrors();
     initiateEmailSignUp(
       auth,
@@ -146,7 +148,7 @@ export default function SignUpPage() {
           username: values.username,
           fullName: values.fullName,
           preferredLanguageCode: values.language,
-          countryId: values.country,
+          country: values.country,
           balance: 1.0, // $1 bonus
           referralCode: genReferralCode(values.username),
           referralCount: 0,
@@ -175,7 +177,7 @@ export default function SignUpPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-2xl">
+      <Card className="w-full max-w-md">
         <CardHeader className="items-center text-center">
           <Logo />
           <CardTitle className="text-2xl font-bold">
@@ -244,14 +246,14 @@ export default function SignUpPage() {
                   </FormItem>
                 )}
               />
-              <FormField
+               <FormField
                 control={form.control}
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Phone (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your phone number" {...field} />
+                      <Input placeholder="+1234567890" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -328,7 +330,7 @@ export default function SignUpPage() {
               </div>
               <Button
                 type="submit"
-                className="w-full bg-accent hover:bg-accent/90"
+                className="w-full"
                 disabled={form.formState.isSubmitting}
               >
                 {form.formState.isSubmitting
@@ -343,7 +345,7 @@ export default function SignUpPage() {
             Already have an account?{' '}
             <Link
               href="/signin"
-              className="font-medium text-accent hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               Sign In
             </Link>

@@ -70,7 +70,7 @@ export default function ActivityPage() {
       <p className="text-muted-foreground">
         A log of all your recent activities on the platform.
       </p>
-      <Card className="shadow-md">
+      <Card>
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
           <CardDescription>A log of your recent transactions and activities.</CardDescription>
@@ -97,7 +97,7 @@ export default function ActivityPage() {
                     <div className={`text-xs ${activity.amount.startsWith('+') ? 'text-growth' : 'text-destructive'}`}>{activity.value}</div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Badge variant={statusVariant[activity.status] || 'outline'} className="bg-primary/20 text-primary-foreground hover:bg-primary/30">
+                    <Badge variant={statusVariant[activity.status] || 'outline'}>
                       {activity.status}
                     </Badge>
                   </TableCell>

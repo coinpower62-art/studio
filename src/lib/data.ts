@@ -11,29 +11,29 @@ export const languages = [
 ];
 
 export const countries = [
-    { label: "Italy", value: "Italy" },
-    { label: "Ghana", value: "Ghana" },
-    { label: "Nigeria", value: "Nigeria" },
-    { label: "Kenya", value: "Kenya" },
-    { label: "United States", value: "United States" },
-    { label: "United Kingdom", value: "United Kingdom" },
-    { label: "Canada", value: "Canada" },
-    { label: "Australia", value: "Australia" },
-    { label: "Germany", value: "Germany" },
-    { label: "France", value: "France" },
-    { label: "Spain", value: "Spain" },
-    { label: "Netherlands", value: "Netherlands" },
-    { label: "Switzerland", value: "Switzerland" },
-    { label: "Sweden", value: "Sweden" },
-    { label: "Norway", value: "Norway" },
-    { label: "Portugal", value: "Portugal" },
-    { label: "Brazil", value: "Brazil" },
-    { label: "Argentina", value: "Argentina" },
-    { label: "Mexico", value: "Mexico" },
-    { label: "India", value: "India" },
-    { label: "China", value: "China" },
-    { label: "Japan", value: "Japan" },
-    { label: "South Korea", value: "South Korea" },
+    { value: 'Italy', label: 'Italy 🇮🇹 (HQ)' },
+    { value: 'Ghana', label: 'Ghana 🇬🇭' },
+    { value: 'Nigeria', label: 'Nigeria 🇳🇬' },
+    { value: 'Kenya', label: 'Kenya 🇰🇪' },
+    { value: 'United States', label: 'United States 🇺🇸' },
+    { value: 'United Kingdom', label: 'United Kingdom 🇬🇧' },
+    { value: 'Canada', label: 'Canada 🇨🇦' },
+    { value: 'Australia', label: 'Australia 🇦🇺' },
+    { value: 'Germany', label: 'Germany 🇩🇪' },
+    { value: 'France', label: 'France 🇫🇷' },
+    { value: 'Spain', label: 'Spain 🇪🇸' },
+    { value: 'Netherlands', label: 'Netherlands 🇳🇱' },
+    { value: 'Switzerland', label: 'Switzerland 🇨🇭' },
+    { value: 'Sweden', label: 'Sweden 🇸🇪' },
+    { value: 'Norway', label: 'Norway 🇳🇴' },
+    { value: 'Portugal', label: 'Portugal 🇵🇹' },
+    { value: 'Brazil', label: 'Brazil 🇧🇷' },
+    { value: 'Argentina', label: 'Argentina 🇦🇷' },
+    { value: 'Mexico', label: 'Mexico 🇲🇽' },
+    { value: 'India', label: 'India 🇮🇳' },
+    { value: 'China', label: 'China 🇨🇳' },
+    { value: 'Japan', label: 'Japan 🇯🇵' },
+    { value: 'South Korea', label: 'South Korea 🇰🇷' },
 ];
 
 export interface Generator {
@@ -51,7 +51,7 @@ export interface Generator {
   minInvest: string;
   maxInvest: string;
   investors: string;
-  isFree: boolean;
+  isFree?: boolean;
 }
 
 export const generators: Generator[] = [
@@ -87,7 +87,6 @@ export const generators: Generator[] = [
     minInvest: '$10',
     maxInvest: '$14',
     investors: '8,320',
-    isFree: false,
   },
   {
     id: 'pg3',
@@ -104,7 +103,6 @@ export const generators: Generator[] = [
     minInvest: '$15',
     maxInvest: '$19',
     investors: '4,100',
-    isFree: false,
   },
   {
     id: 'pg4',
@@ -121,7 +119,6 @@ export const generators: Generator[] = [
     minInvest: '$20',
     maxInvest: 'Unlimited',
     investors: '1,290',
-    isFree: false,
   }
 ];
 

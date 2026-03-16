@@ -13,7 +13,7 @@ export default function MarketPage() {
         </p>
       </div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-        {generators.filter(g => g.published).map((generator) => (
+        {generators.map((generator) => (
             <GeneratorCard 
               key={generator.id}
               generator={generator}
