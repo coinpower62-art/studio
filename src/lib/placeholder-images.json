@@ -1,3 +1,22 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "activity-hero",
+      "description": "A modern office space with a team collaborating.",
+      "imageUrl": "https://picsum.photos/seed/activityhero/1200/400",
+      "imageHint": "office team"
+    },
+    {
+      "id": "activity-teamwork",
+      "description": "A diverse group of professionals in a meeting.",
+      "imageUrl": "https://picsum.photos/seed/activityteam/600/400",
+      "imageHint": "team meeting"
+    },
+    {
+      "id": "ceo-portrait",
+      "description": "Portrait of a company CEO.",
+      "imageUrl": "https://picsum.photos/seed/ceoportrait/200/200",
+      "imageHint": "ceo portrait"
+    }
+  ]
 }
