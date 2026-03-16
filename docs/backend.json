@@ -98,17 +98,17 @@
           "type": "string",
           "description": "The name of the generator."
         },
-        "rentalTime": {
+        "rentedAt": {
           "type": "string",
           "format": "date-time",
           "description": "Timestamp when the generator was rented."
         },
-        "rentalEndTime": {
+        "expiresAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Timestamp when the current earning cycle ends."
+          "description": "Timestamp when the rental period ends."
         },
-        "durationDays": {
+        "expireDays": {
           "type": "number",
           "description": "The total duration of the rental in days."
         },
@@ -127,15 +127,24 @@
         "price": {
           "type": "number",
           "description": "The rental price of the generator."
+        },
+        "lastClaimed": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the last earnings collection."
+        },
+        "suspended": {
+            "type": "boolean",
+            "description": "Indicates if the generator is suspended."
         }
       },
       "required": [
         "userId",
         "generatorId",
         "name",
-        "rentalTime",
-        "rentalEndTime",
-        "durationDays",
+        "rentedAt",
+        "expiresAt",
+        "expireDays",
         "dailyIncome",
         "icon",
         "color",

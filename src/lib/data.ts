@@ -1,3 +1,5 @@
+import { PlaceHolderImages } from './placeholder-images';
+
 export const languages = [
   { value: "en", label: "English" },
   { value: "es", label: "Español" },
@@ -52,6 +54,7 @@ export interface Generator {
   maxInvest: string;
   investors: string;
   isFree?: boolean;
+  imageUrl?: string;
 }
 
 export const generators: Generator[] = [
@@ -71,6 +74,7 @@ export const generators: Generator[] = [
     maxInvest: '$9',
     investors: '12,450',
     isFree: true,
+    imageUrl: PlaceHolderImages.find(i => i.id === 'gen-pg1')?.imageUrl,
   },
   {
     id: 'pg2',
@@ -87,6 +91,7 @@ export const generators: Generator[] = [
     minInvest: '$10',
     maxInvest: '$14',
     investors: '8,320',
+    imageUrl: PlaceHolderImages.find(i => i.id === 'gen-pg2')?.imageUrl,
   },
   {
     id: 'pg3',
@@ -103,6 +108,7 @@ export const generators: Generator[] = [
     minInvest: '$15',
     maxInvest: '$19',
     investors: '4,100',
+    imageUrl: PlaceHolderImages.find(i => i.id === 'gen-pg3')?.imageUrl,
   },
   {
     id: 'pg4',
@@ -119,6 +125,7 @@ export const generators: Generator[] = [
     minInvest: '$20',
     maxInvest: 'Unlimited',
     investors: '1,290',
+    imageUrl: PlaceHolderImages.find(i => i.id === 'gen-pg4')?.imageUrl,
   }
 ];
 
