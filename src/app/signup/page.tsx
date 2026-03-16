@@ -48,6 +48,7 @@ const formSchema = z.object({
   password: z.string().min(8, { message: "Password must be at least 8 characters." }),
   language: z.string({ required_error: "Please select a language." }),
   country: z.string({ required_error: "Please select a country." }),
+  referralCode: z.string().optional(),
 });
 
 function genReferralCode(name: string): string {
@@ -69,6 +70,7 @@ export default function SignUpPage() {
       fullName: "",
       email: "",
       password: "",
+      referralCode: "",
     },
   });
 
@@ -111,7 +113,7 @@ export default function SignUpPage() {
         const lastName = lastNameParts.join(' ');
         const userRef = doc(firestore, "users", newUser.uid);
         
-        const userData = {
+        const userData: any = {
           id: newUser.uid,
           email: values.email,
           firstName: firstName || '',
@@ -124,6 +126,10 @@ export default function SignUpPage() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         };
+
+        if (values.referralCode) {
+            userData.referredBy = values.referralCode;
+        }
 
         setDocumentNonBlocking(userRef, userData, { merge: false });
         
@@ -183,6 +189,19 @@ export default function SignUpPage() {
                     <FormLabel>Password</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="referralCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Referral Code (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter referral code" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -256,5 +275,3 @@ export default function SignUpPage() {
     </div>
   );
 }
-
-    
