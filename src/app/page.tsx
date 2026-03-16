@@ -16,13 +16,13 @@ export default function Home() {
   }, [router]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-splash-gradient text-white">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white">
       <SplashIcon />
       <h1 className="text-5xl font-bold mt-8">
-        <span className="text-white">Coin</span>
+        <span className="text-gray-900">Coin</span>
         <span className="text-primary">Power</span>
       </h1>
-      <p className="mt-1 text-lg font-light text-gray-200/90">
+      <p className="mt-1 text-lg font-light text-gray-500">
         Digital Energy Mining Platform
       </p>
       <div className="flex space-x-2 mt-20">
