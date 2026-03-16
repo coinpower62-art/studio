@@ -64,6 +64,10 @@
         "avatar": {
           "type": "string",
           "description": "URL of the user's avatar image."
+        },
+        "hasWithdrawalPin": {
+          "type": "boolean",
+          "description": "Indicates if the user has set up a withdrawal PIN."
         }
       },
       "required": [

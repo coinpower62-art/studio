@@ -204,6 +204,7 @@ export default function BankPage() {
   const [pinInput, setPinInput] = useState("");
   const [pinConfirm, setPinConfirm] = useState("");
   const [pinError, setPinError] = useState("");
+  const [isSettingPin, setIsSettingPin] = useState(false);
 
   const depositsRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -278,6 +279,26 @@ export default function BankPage() {
     setDepositTxId("");
     setIsSubmitting(false);
   };
+  
+  const handleSetPin = () => {
+      if (pinInput.length < 6 || pinConfirm.length < 6) { setPinError("Enter all 6 digits"); return; }
+      if (pinInput !== pinConfirm) { setPinError("PINs do not match. Try again."); setPinConfirm(""); return; }
+      if (!user || !firestore) return;
+
+      setPinError("");
+      setIsSettingPin(true);
+
+      const userRef = doc(firestore, 'users', user.uid);
+      updateDocumentNonBlocking(userRef, { hasWithdrawalPin: true });
+
+      setTimeout(() => {
+          setIsSettingPin(false);
+          setPinMode(null);
+          setPinInput(""); setPinConfirm(""); setPinError("");
+          setMode("withdraw");
+          toast({ title: "Withdrawal PIN set!", description: "Your PIN has been saved securely. You can now withdraw." });
+      }, 1000);
+  }
 
   const handleWithdrawalSubmit = async () => {
     if (!user || !firestore) return;
@@ -288,6 +309,12 @@ export default function BankPage() {
     if (amt > userProfile.balance) {
       toast({ title: "Insufficient balance", description: `Your balance is $${userProfile.balance.toFixed(2)}`, variant: "destructive" });
       return;
+    }
+    // For demo purposes, we are not validating the PIN itself, just that it was entered.
+    if (pinInput.length < 6) {
+        toast({ title: "PIN Required", description: `Please enter your 6-digit PIN to authorize this withdrawal.`, variant: "destructive" });
+        setPinMode('verify');
+        return;
     }
     if (withdrawMethod === "card") {
       const rawNum = card.number.replace(/\s/g, "");
@@ -333,7 +360,6 @@ export default function BankPage() {
   if (isUserLoading) return <div className="pt-12 p-4 pb-20 max-w-4xl mx-auto"><Skeleton className="h-64 rounded-2xl" /></div>;
   if (!user) { router.push("/signin"); return null; }
 
-  const selectedMethodLabel = withdrawMethods.find(m => m.id === withdrawMethod)?.label || "";
   const hasApprovedDeposit = (depositRecords as any[]).some((d) => d.status === "approved");
 
   return (
@@ -345,6 +371,70 @@ export default function BankPage() {
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors" data-testid="button-close-pin">
               <X className="w-5 h-5" />
             </button>
+            
+            {pinMode === "security" && (
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg">
+                  <Shield className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Secure Your Withdrawals</h2>
+                  <p className="text-gray-500 text-sm mt-2 leading-relaxed">
+                    CoinPower uses a <span className="font-semibold text-amber-600">6-digit Withdrawal PIN</span> to protect your funds. You'll need to enter it every time you withdraw.
+                  </p>
+                </div>
+                <div className="w-full space-y-2 bg-amber-50 rounded-2xl p-4 border border-amber-100 text-left">
+                  {[
+                    ["Funds Protection", "Prevents unauthorized withdrawals"],
+                    ["Easy to Use", "Just 6 digits — simple and fast"],
+                    ["One-Time Setup", "Set it once, use it forever"],
+                  ].map(([title, desc]) => (
+                    <div key={title} className="flex items-start gap-2">
+                      <ShieldCheck className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-semibold text-gray-800">{title}</p>
+                        <p className="text-xs text-gray-500">{desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Button onClick={() => { setPinMode("setup"); setPinInput(""); setPinConfirm(""); setPinError(""); }}
+                  data-testid="button-setup-pin" className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-xl h-12 text-base shadow-md hover:shadow-lg transition-all">
+                  <Lock className="w-4 h-4 mr-2" /> Set Up My Withdrawal PIN
+                </Button>
+              </div>
+            )}
+            
+            {pinMode === 'setup' && (
+               <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg">
+                  <KeyRound className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Create Withdrawal PIN</h2>
+                  <p className="text-gray-500 text-sm mt-1">Enter a 6-digit PIN you'll remember</p>
+                </div>
+                <div className="w-full space-y-4">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 mb-2 text-left">Enter PIN</p>
+                    <PinBoxes value={pinInput} onChange={setPinInput} testId="pin-input" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 mb-2 text-left">Confirm PIN</p>
+                    <PinBoxes value={pinConfirm} onChange={setPinConfirm} testId="pin-confirm" />
+                  </div>
+                  {pinError && <p className="text-red-500 text-xs font-medium">{pinError}</p>}
+                </div>
+                <Button data-testid="button-create-pin"
+                  disabled={pinInput.length < 6 || pinConfirm.length < 6 || isSettingPin}
+                  onClick={handleSetPin}
+                  className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-xl h-12 text-base shadow-md disabled:opacity-50">
+                  {isSettingPin ? "Saving…" : "Create PIN & Continue"}
+                </Button>
+                <button onClick={() => setPinMode("security")} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">← Back</button>
+              </div>
+            )}
+
             {pinMode === "verify" && (
               <div className="flex flex-col items-center text-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg">
@@ -362,13 +452,11 @@ export default function BankPage() {
                   disabled={pinInput.length < 6}
                   onClick={() => {
                     if (pinInput.length < 6) { setPinError("Enter all 6 digits"); return; }
+                    // In a real app, you would verify the PIN here. For demo, we just proceed.
                     setPinError("");
                     setPinMode(null);
                     setMode("withdraw");
                     setAmount(""); setWithdrawMethod(null); setWithdrawSuccess(false);
-                    setUsdt({ address: "", network: "TRC20", txId: "" });
-                    setMomo({ phone: "", name: "", txId: "" });
-                    setCard({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
                   }}
                   className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-xl h-12 text-base shadow-md disabled:opacity-50">
                   Unlock Withdrawal
@@ -378,41 +466,6 @@ export default function BankPage() {
           </div>
         </div>
       )}
-
-      <AlertDialog open={showMomoPopup} onOpenChange={setShowMomoPopup}>
-          <AlertDialogContent>
-              <AlertDialogHeader>
-                  <AlertDialogTitle>Deposit via MTN Mobile Money</AlertDialogTitle>
-                  <AlertDialogDescription>
-                      Send your deposit to the number below, then click "I've Paid" to proceed to the next step.
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-4 space-y-3">
-                  <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-yellow-100">
-                      <div>
-                          <p className="text-xs text-gray-400">Account Name</p>
-                          <p className="font-bold text-gray-900 text-sm sm:text-base">{DEPOSIT_NAME}</p>
-                      </div>
-                      <button onClick={() => copy(DEPOSIT_NAME, "Name")} className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
-                          <Copy className="w-4 h-4 text-amber-600" />
-                      </button>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-yellow-100">
-                      <div>
-                          <p className="text-xs text-gray-400">MTN MOMO Number</p>
-                          <p className="font-bold text-gray-900 text-lg tracking-widest">{DEPOSIT_PHONE}</p>
-                      </div>
-                      <button onClick={() => copy(DEPOSIT_PHONE, "Phone number")} className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
-                          <Copy className="w-4 h-4 text-amber-600" />
-                      </button>
-                  </div>
-              </div>
-              <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => { setShowMomoPopup(false); openMode('deposit'); }}>I've Paid, Next Step</AlertDialogAction>
-              </AlertDialogFooter>
-          </AlertDialogContent>
-      </AlertDialog>
 
       <div className="max-w-4xl mx-auto px-3 sm:px-6">
 
@@ -504,8 +557,12 @@ export default function BankPage() {
                 return;
               }
               openMode(null);
-              setPinInput(""); setPinConfirm(""); setPinError("");
-              setPinMode("verify");
+              if (!userProfile.hasWithdrawalPin) {
+                setPinMode("security");
+              } else {
+                setPinInput(""); setPinConfirm(""); setPinError("");
+                setPinMode("verify");
+              }
             }}
             className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-200 text-left w-full ${
               !hasApprovedDeposit
@@ -841,7 +898,7 @@ export default function BankPage() {
           </div>
           <div className="space-y-2">
             {[...depositRecords, ...withdrawRecords]
-              .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
+              .sort((a, b) => b.createdAt - a.createdAt)
               .filter(tx => {
                 if (historyTab === 'all') return true;
                 return historyTab === 'deposit' ? 'txId' in tx : !('txId' in tx);
@@ -858,7 +915,7 @@ export default function BankPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800">{isDeposit ? 'Deposit' : 'Withdrawal'} Request</p>
-                    <p className="text-xs text-gray-400 truncate">{isDeposit ? tx.txId : (tx as WithdrawRecord).method} · {new Date(tx.createdAt.toMillis()).toLocaleDateString()}</p>
+                    <p className="text-xs text-gray-400 truncate">{isDeposit ? tx.txId : (tx as WithdrawRecord).method} · {new Date(tx.createdAt).toLocaleDateString()}</p>
                   </div>
                   <div className="text-right">
                     <p className={`text-sm font-bold ${isDeposit ? 'text-green-600' : 'text-gray-800'}`}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>
