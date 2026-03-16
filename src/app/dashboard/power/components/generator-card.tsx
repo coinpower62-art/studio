@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,22 +7,11 @@ import { useToast } from '@/hooks/use-toast';
 import { useUserStore } from '@/hooks/use-user-store';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useRouter } from 'next/navigation';
-import type { RentedGenerator } from '@/hooks/use-user-store';
-
-interface Generator {
-    id: string;
-    name: string;
-    price: number;
-    dailyIncome: number;
-    duration: number;
-    isFree: boolean;
-    description: string;
-}
+import type { Generator } from '@/lib/data';
+import { Users, TrendingUp, Clock, Tag } from 'lucide-react';
 
 interface GeneratorCardProps {
     generator: Generator;
-    imageUrl: string;
-    imageHint: string;
 }
 
 function formatTime(ms: number) {
@@ -35,7 +23,7 @@ function formatTime(ms: number) {
   return `${hours}:${minutes}:${seconds}`;
 }
 
-export function GeneratorCard({ generator, imageUrl, imageHint }: GeneratorCardProps) {
+export function GeneratorCard({ generator }: GeneratorCardProps) {
     const { rentGenerator, rentedGenerators, collectEarnings } = useUserStore();
     const { toast } = useToast();
     const router = useRouter();
@@ -95,42 +83,50 @@ export function GeneratorCard({ generator, imageUrl, imageHint }: GeneratorCardP
 
     const isTimerFinished = timeLeft !== null && timeLeft <= 0;
 
+    const colorMap: { [key: string]: { gradient: string, button: string } } = {
+        amber: { gradient: 'bg-gradient-to-br from-amber-400 to-orange-500', button: 'bg-gradient-to-r from-amber-400 to-orange-500' },
+        green: { gradient: 'bg-gradient-to-br from-green-400 to-emerald-600', button: 'bg-gradient-to-r from-green-400 to-emerald-600' },
+        blue: { gradient: 'bg-gradient-to-br from-blue-400 to-indigo-600', button: 'bg-gradient-to-r from-blue-400 to-indigo-600' },
+        purple: { gradient: 'bg-gradient-to-br from-purple-500 to-pink-600', button: 'bg-gradient-to-r from-purple-500 to-pink-600' },
+    };
+    const cardColors = colorMap[generator.color] || { gradient: 'bg-gradient-to-br from-gray-400 to-gray-600', button: 'bg-gradient-to-r from-gray-400 to-gray-600' };
+
     return (
         <>
-            <Card className="shadow-md flex flex-col border-primary/20 hover:border-primary/60 transition-all">
-                <CardHeader>
-                    <CardTitle className="text-primary">{generator.name}</CardTitle>
-                    <CardDescription>{generator.description}</CardDescription>
+            <Card className="shadow-lg flex flex-col border-border/20 hover:border-primary/60 transition-all bg-card overflow-hidden rounded-xl">
+                <CardHeader className={`p-4 ${cardColors.gradient} text-white`}>
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="text-xl font-bold">{generator.name}</CardTitle>
+                        <span className="text-4xl">{generator.icon}</span>
+                    </div>
+                    <CardDescription className="text-white/80">{generator.subtitle}</CardDescription>
                 </CardHeader>
-                <CardContent className="flex-grow space-y-4">
-                    <div className="relative aspect-video w-full rounded-md overflow-hidden border">
-                        {imageUrl ? (
-                           <Image src={imageUrl} alt={generator.name} fill className="object-cover" data-ai-hint={imageHint} />
-                        ) : (
-                            <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
-                                No Image
-                            </div>
-                        )}
+                <CardContent className="flex-grow p-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary" /> <span><strong className="font-semibold text-foreground">ROI:</strong> {generator.roi}</span></div>
+                        <div className="flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> <span><strong className="font-semibold text-foreground">Investors:</strong> {generator.investors}</span></div>
+                        <div className="flex items-center gap-2"><Tag className="w-4 h-4 text-primary" /> <span><strong className="font-semibold text-foreground">Price:</strong> <span className={generator.isFree ? "text-accent font-bold" : "font-bold text-foreground"}>{generator.isFree ? 'Free' : `$${generator.price.toFixed(2)}`}</span></span></div>
+                        <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /> <span><strong className="font-semibold text-foreground">Duration:</strong> {generator.duration} days</span></div>
                     </div>
-                    <div className="text-sm space-y-1">
-                        <p><strong>Price:</strong> <span className={generator.isFree ? "text-accent font-bold" : ""}>{generator.isFree ? 'Free' : `$${generator.price.toFixed(2)}`}</span></p>
-                        <p><strong>Daily Income:</strong> <span className="font-bold text-growth">${generator.dailyIncome.toFixed(2)}</span></p>
-                        <p><strong>Duration:</strong> {generator.duration} days</p>
+                    <div className="p-3 bg-muted rounded-lg text-center space-y-1 border">
+                        <p className="font-bold text-lg text-growth">${generator.dailyIncome.toFixed(2)}</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Daily Income</p>
                     </div>
+
                     {rentedInstance && timeLeft !== null && (
-                        <div className="p-2 bg-muted rounded-md text-center">
+                        <div className="p-2 bg-muted rounded-md text-center border">
                             <p className="text-xs text-muted-foreground">Time until next earning:</p>
                             <p className="text-lg font-mono font-bold text-primary">{formatTime(timeLeft)}</p>
                         </div>
                     )}
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="p-4 mt-auto">
                     {rentedInstance ? (
                         <Button onClick={handleCollect} disabled={!isTimerFinished} className="w-full bg-accent hover:bg-accent/90">
                             {isTimerFinished ? 'Collect Earnings' : 'Earning...'}
                         </Button>
                     ) : (
-                        <Button onClick={handleRent} className="w-full bg-primary hover:bg-primary/90">
+                        <Button onClick={handleRent} className={`w-full ${cardColors.button} text-white hover:opacity-90 shadow-md`}>
                             Rent Now
                         </Button>
                     )}

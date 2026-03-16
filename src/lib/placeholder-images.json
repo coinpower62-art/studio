@@ -1,28 +1,3 @@
 {
-  "placeholderImages": [
-    {
-      "id": "generator-1",
-      "description": "PG1 Starter Generator",
-      "imageUrl": "https://picsum.photos/seed/gen1/600/400",
-      "imageHint": "generator starter"
-    },
-    {
-      "id": "generator-2",
-      "description": "PG2 Pro Generator",
-      "imageUrl": "https://picsum.photos/seed/gen2/600/400",
-      "imageHint": "generator pro"
-    },
-    {
-      "id": "generator-3",
-      "description": "PG3 Max Generator",
-      "imageUrl": "https://picsum.photos/seed/gen3/600/400",
-      "imageHint": "generator max"
-    },
-    {
-      "id": "generator-4",
-      "description": "PG4 Ultra Generator",
-      "imageUrl": "https://picsum.photos/seed/gen4/600/400",
-      "imageHint": "generator ultra"
-    }
-  ]
+  "placeholderImages": []
 }

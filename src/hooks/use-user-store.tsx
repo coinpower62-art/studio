@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import { generators } from '@/lib/data';
+import { generators, type Generator } from '@/lib/data';
 import { useDoc, useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { doc, collection, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -15,6 +15,9 @@ export interface RentedGenerator {
   rentalEndTime: any; // Firestore timestamp
   durationDays: number;
   dailyIncome: number;
+  icon: string;
+  color: string;
+  price: number;
 }
 
 interface UserProfile {
@@ -71,6 +74,9 @@ export function UserStoreProvider({ children }: { children: ReactNode }) {
       rentalEndTime: new Date(now + 24 * 60 * 60 * 1000),
       durationDays: generator.duration,
       dailyIncome: generator.dailyIncome,
+      icon: generator.icon,
+      color: generator.color,
+      price: generator.price,
     };
 
     addDocumentNonBlocking(rentedGeneratorsRef, newRentedGenerator);
@@ -117,9 +123,9 @@ export function UserStoreProvider({ children }: { children: ReactNode }) {
 
    // Auto-rent free generator on first load if it doesn't exist
    useEffect(() => {
-    if (rentedGeneratorsData && rentedGeneratorsData.length === 0) {
+    if (rentedGeneratorsData && rentedGeneratorsData.length === 0 && user && rentedGeneratorsRef) {
         const freeGenerator = generators.find(g => g.isFree);
-        if (freeGenerator && rentedGeneratorsRef && user) {
+        if (freeGenerator) {
             const isFreeGeneratorRented = rentedGeneratorsData.some(rg => rg.generatorId === freeGenerator.id);
             if (!isFreeGeneratorRented) {
                 const now = Date.now();
@@ -131,6 +137,9 @@ export function UserStoreProvider({ children }: { children: ReactNode }) {
                     rentalEndTime: new Date(now + 24 * 60 * 60 * 1000),
                     durationDays: freeGenerator.duration,
                     dailyIncome: freeGenerator.dailyIncome,
+                    icon: freeGenerator.icon,
+                    color: freeGenerator.color,
+                    price: freeGenerator.price,
                 };
                 addDocumentNonBlocking(rentedGeneratorsRef, newRentedGenerator);
             }
@@ -154,5 +163,3 @@ export function useUserStore() {
   }
   return context;
 }
-
-    

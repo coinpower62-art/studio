@@ -1,27 +1,27 @@
-export const countries = [
-  { value: "Ghana", label: "Ghana" },
-  { value: "Nigeria", label: "Nigeria" },
-  { value: "Kenya", label: "Kenya" },
-  { value: "United States", label: "United States" },
-  { value: "United Kingdom", label: "United Kingdom" },
-  { value: "Canada", label: "Canada" },
-  { value: "Australia", label: "Australia" },
-  { value: "Germany", label: "Germany" },
-  { value: "France", label: "France" },
-  { value: "Spain", label: "Spain" },
-  { value: "Italy", label: "Italy" },
-  { value: "Netherlands", label: "Netherlands" },
-  { value: "Switzerland", label: "Switzerland" },
-  { value: "Sweden", label: "Sweden" },
-  { value: "Norway", label: "Norway" },
-  { value: "Portugal", label: "Portugal" },
-  { value: "Brazil", label: "Brazil" },
-  { value: "Argentina", label: "Argentina" },
-  { value: "Mexico", label: "Mexico" },
-  { value: "India", label: "India" },
-  { value: "China", label: "China" },
-  { value: "Japan", label: "Japan" },
-  { value: "South Korea", label: "South Korea" },
+export const COUNTRIES = [
+    "Ghana",
+    "Nigeria",
+    "Kenya",
+    "United States",
+    "United Kingdom",
+    "Canada",
+    "Australia",
+    "Germany",
+    "France",
+    "Spain",
+    "Italy",
+    "Netherlands",
+    "Switzerland",
+    "Sweden",
+    "Norway",
+    "Portugal",
+    "Brazil",
+    "Argentina",
+    "Mexico",
+    "India",
+    "China",
+    "Japan",
+    "South Korea",
 ];
 
 export const languages = [
@@ -36,44 +36,96 @@ export const languages = [
   { value: "ko", label: "한국어" },
 ];
 
-export const generators = [
+export interface Generator {
+  id: string;
+  name: string;
+  subtitle: string;
+  icon: string;
+  color: string;
+  price: number;
+  duration: number; // In days
+  dailyIncome: number;
+  published: boolean;
+  roi: string;
+  period: string;
+  minInvest: string;
+  maxInvest: string;
+  investors: string;
+  isFree: boolean;
+}
+
+export const generators: Generator[] = [
   {
-    id: "pg1",
-    name: "PG1 (Starter)",
+    id: 'pg1',
+    name: 'PG1 Generator',
+    subtitle: 'Starter Power Plan',
+    icon: '⚡',
+    color: 'amber',
     price: 0,
-    dailyIncome: 0.20,
     duration: 3,
+    dailyIncome: 0.20,
+    published: true,
+    roi: '$0.20/day',
+    period: 'Daily',
+    minInvest: '$0',
+    maxInvest: '$9',
+    investors: '12,450',
     isFree: true,
-    description: "Free for 3 days. Your starting point."
   },
   {
-    id: "pg2",
-    name: "PG2 (Pro)",
+    id: 'pg2',
+    name: 'PG2 Generator',
+    subtitle: 'Growth Power Plan',
+    icon: '🚀',
+    color: 'green',
     price: 10,
-    dailyIncome: 1,
-    duration: 15,
+    duration: 10,
+    dailyIncome: 1.00,
+    published: true,
+    roi: '$1.00/day',
+    period: 'Daily',
+    minInvest: '$10',
+    maxInvest: '$14',
+    investors: '8,320',
     isFree: false,
-    description: "Boost your daily earnings."
   },
   {
-    id: "pg3",
-    name: "PG3 (Max)",
+    id: 'pg3',
+    name: 'PG3 Generator',
+    subtitle: 'Pro Power Plan',
+    icon: '💎',
+    color: 'blue',
     price: 15,
+    duration: 15,
     dailyIncome: 1.20,
-    duration: 20,
+    published: true,
+    roi: '$1.20/day',
+    period: 'Daily',
+    minInvest: '$15',
+    maxInvest: '$19',
+    investors: '4,100',
     isFree: false,
-    description: "Maximize your income potential."
   },
   {
-    id: "pg4",
-    name: "PG4 (Ultra)",
+    id: 'pg4',
+    name: 'PG4 Generator',
+    subtitle: 'Elite Power Plan',
+    icon: '👑',
+    color: 'purple',
     price: 20,
-    dailyIncome: 1.40,
-    duration: 25,
+    duration: 20,
+    dailyIncome: 1.50,
+    published: true,
+    roi: '$1.50/day',
+    period: 'Daily',
+    minInvest: '$20',
+    maxInvest: 'Unlimited',
+    investors: '1,290',
     isFree: false,
-    description: "The ultimate power generator."
   }
 ];
+
+export const countries = COUNTRIES;
 
 export const winners = [
   { name: 'Kwame A.', earnings: 5.20 },

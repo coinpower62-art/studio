@@ -60,6 +60,14 @@
         "referredBy": {
           "type": "string",
           "description": "The referral code of the user who referred this user, if any."
+        },
+        "avatar": {
+          "type": "string",
+          "description": "URL of the user's avatar image."
+        },
+        "withdrawalPin": {
+          "type": "string",
+          "description": "The user's PIN for withdrawals."
         }
       },
       "required": [
@@ -354,6 +362,18 @@
         "dailyIncome": {
           "type": "number",
           "description": "The income generated per day by this generator."
+        },
+        "icon": {
+          "type": "string",
+          "description": "The icon representing the generator."
+        },
+        "color": {
+          "type": "string",
+          "description": "The color theme of the generator."
+        },
+        "price": {
+          "type": "number",
+          "description": "The rental price of the generator."
         }
       },
       "required": [
@@ -363,7 +383,10 @@
         "rentalTime",
         "rentalEndTime",
         "durationDays",
-        "dailyIncome"
+        "dailyIncome",
+        "icon",
+        "color",
+        "price"
       ]
     }
   },
