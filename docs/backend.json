@@ -1,0 +1,446 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user account within the CoinPower application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's unique email address, used for login and notifications.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the user."
+        },
+        "preferredLanguageCode": {
+          "type": "string",
+          "description": "The ISO 639-1 language code (e.g., 'en', 'it') representing the user's preferred language for the application UI."
+        },
+        "countryId": {
+          "type": "string",
+          "description": "Reference to the Country entity where the user resides. (Relationship: Country 1:N User)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user account was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the user account was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "firstName",
+        "lastName",
+        "preferredLanguageCode",
+        "countryId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Country": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Country",
+      "type": "object",
+      "description": "Represents a country that users can select, including country codes and phone prefixes.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Country entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The full name of the country (e.g., 'Italy', 'United States')."
+        },
+        "isoCode": {
+          "type": "string",
+          "description": "The two-letter ISO 3166-1 alpha-2 code for the country (e.g., 'IT', 'US')."
+        },
+        "phonePrefix": {
+          "type": "string",
+          "description": "The international dialing code prefix for the country (e.g., '+39', '+1')."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "isoCode",
+        "phonePrefix"
+      ]
+    },
+    "InvestmentPortfolio": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "InvestmentPortfolio",
+      "type": "object",
+      "description": "Represents a collection of investments owned by a single user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the InvestmentPortfolio entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who owns this portfolio. (Relationship: User 1:N InvestmentPortfolio)"
+        },
+        "name": {
+          "type": "string",
+          "description": "A user-defined name for the portfolio (e.g., 'My Main Portfolio', 'Retirement Fund')."
+        },
+        "description": {
+          "type": "string",
+          "description": "An optional description provided by the user for the portfolio."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the investment portfolio was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the investment portfolio was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Investment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Investment",
+      "type": "object",
+      "description": "Represents a single investment holding within a user's portfolio.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Investment entity."
+        },
+        "portfolioId": {
+          "type": "string",
+          "description": "Reference to the InvestmentPortfolio this investment belongs to. (Relationship: InvestmentPortfolio 1:N Investment)"
+        },
+        "assetType": {
+          "type": "string",
+          "description": "The type of asset invested (e.g., 'Stock', 'Cryptocurrency', 'Bond', 'ETF')."
+        },
+        "symbol": {
+          "type": "string",
+          "description": "The unique ticker symbol or identifier for the asset (e.g., 'AAPL', 'BTC', 'ETH')."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "The number of units or shares of the asset held."
+        },
+        "purchasePrice": {
+          "type": "number",
+          "description": "The price per unit at which the asset was purchased."
+        },
+        "currency": {
+          "type": "string",
+          "description": "The currency in which the purchase price and asset value are denominated (e.g., 'USD', 'EUR')."
+        },
+        "purchaseDate": {
+          "type": "string",
+          "description": "The date and time when the investment was purchased.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "portfolioId",
+        "assetType",
+        "symbol",
+        "quantity",
+        "purchasePrice",
+        "currency",
+        "purchaseDate"
+      ]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Records all financial movements and activities related to a user's account or portfolio.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Transaction entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who performed or is associated with this transaction. (Relationship: User 1:N Transaction)"
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of transaction (e.g., 'BUY', 'SELL', 'DEPOSIT', 'WITHDRAWAL', 'DIVIDEND')."
+        },
+        "assetSymbol": {
+          "type": "string",
+          "description": "The ticker symbol of the asset involved in the transaction, if applicable (e.g., 'AAPL', 'BTC')."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The monetary value of the transaction."
+        },
+        "currency": {
+          "type": "string",
+          "description": "The currency of the transaction amount (e.g., 'USD', 'EUR')."
+        },
+        "transactionDate": {
+          "type": "string",
+          "description": "The date and time when the transaction occurred.",
+          "format": "date-time"
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description or note about the transaction."
+        },
+        "relatedInvestmentId": {
+          "type": "string",
+          "description": "Optional reference to an Investment entity if this transaction directly affects a specific holding (e.g., a 'BUY' transaction creating a new investment). (Relationship: Investment 0..1:N Transaction)"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "type",
+        "amount",
+        "currency",
+        "transactionDate"
+      ]
+    },
+    "MarketSnapshot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MarketSnapshot",
+      "type": "object",
+      "description": "Stores AI-generated market summaries, trends, or investment opportunities.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MarketSnapshot entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title or headline of the market snapshot."
+        },
+        "summary": {
+          "type": "string",
+          "description": "The AI-generated brief summary of market trends or opportunities."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the market snapshot (e.g., 'Crypto Trends', 'Stock Opportunities', 'Global Markets')."
+        },
+        "generatedAt": {
+          "type": "string",
+          "description": "The date and time when the market snapshot was generated.",
+          "format": "date-time"
+        },
+        "validUntil": {
+          "type": "string",
+          "description": "Optional timestamp indicating when the market snapshot's information is no longer considered current or valid.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "summary",
+        "category",
+        "generatedAt"
+      ]
+    },
+    "UserPreference": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserPreference",
+      "type": "object",
+      "description": "Stores various personalized preferences for a user, such as AI personalization settings or notification choices.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserPreference entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User to whom this preference belongs. (Relationship: User 1:N UserPreference)"
+        },
+        "key": {
+          "type": "string",
+          "description": "A unique key identifying the type of preference (e.g., 'riskTolerance', 'preferredAssetType', 'emailNotifications')."
+        },
+        "value": {
+          "type": "string",
+          "description": "The value associated with the preference key, stored as a string for flexibility (e.g., 'high', 'cryptocurrency', 'true')."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "key",
+        "value"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores individual user profiles. Access is restricted to the user whose 'userId' matches the document ID (request.auth.uid).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, matching request.auth.uid."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/countries/{countryId}",
+        "definition": {
+          "entityName": "Country",
+          "schema": {
+            "$ref": "#/backend/entities/Country"
+          },
+          "description": "Contains static, publicly readable information about countries. Used for user profile setup and internationalization.",
+          "params": [
+            {
+              "name": "countryId",
+              "description": "The unique identifier for a country."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/investmentPortfolios/{portfolioId}",
+        "definition": {
+          "entityName": "InvestmentPortfolio",
+          "schema": {
+            "$ref": "#/backend/entities/InvestmentPortfolio"
+          },
+          "description": "Stores investment portfolios owned by a specific user. Access is restricted to the owner ('userId' in path and document matches request.auth.uid).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns this portfolio."
+            },
+            {
+              "name": "portfolioId",
+              "description": "The unique identifier for a specific investment portfolio."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/investmentPortfolios/{portfolioId}/investments/{investmentId}",
+        "definition": {
+          "entityName": "Investment",
+          "schema": {
+            "$ref": "#/backend/entities/Investment"
+          },
+          "description": "Holds individual investment holdings within a user's portfolio. Includes denormalized 'userId' (from the grandparent user) for robust authorization independence, allowing direct access checks without needing to read parent documents.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns this investment's portfolio. Denormalized for authorization independence."
+            },
+            {
+              "name": "portfolioId",
+              "description": "The unique identifier for the parent investment portfolio."
+            },
+            {
+              "name": "investmentId",
+              "description": "The unique identifier for a specific investment holding."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Records all financial transactions associated with a specific user. Access is restricted to the owner ('userId' in path and document matches request.auth.uid).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user associated with this transaction."
+            },
+            {
+              "name": "transactionId",
+              "description": "The unique identifier for a specific transaction."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/marketSnapshots/{snapshotId}",
+        "definition": {
+          "entityName": "MarketSnapshot",
+          "schema": {
+            "$ref": "#/backend/entities/MarketSnapshot"
+          },
+          "description": "Stores AI-generated market summaries and trends, publicly readable by all users. Write access is restricted to administrators or system processes.",
+          "params": [
+            {
+              "name": "snapshotId",
+              "description": "The unique identifier for a specific market snapshot."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/preferences/{preferenceId}",
+        "definition": {
+          "entityName": "UserPreference",
+          "schema": {
+            "$ref": "#/backend/entities/UserPreference"
+          },
+          "description": "Stores personalized preferences for a specific user. Access is restricted to the owner ('userId' in path and document matches request.auth.uid).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user to whom this preference belongs."
+            },
+            {
+              "name": "preferenceId",
+              "description": "The unique identifier for a specific user preference."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure for CoinPower prioritizes security, scalability, and debuggability by adhering to the core design principles of Authorization Independence, Structural Segregation, and consistent Access Modeling. The structure leverages path-based ownership for all user-specific data, placing entities like InvestmentPortfolios, Transactions, and UserPreferences directly under a user's unique ID (`/users/{userId}/...`). This makes authorization rules explicit and simple: a user can only access data within their own `/users/{userId}` path, effectively mapping `request.auth.uid` to `{userId}`. This fulfills the requirement for QAPs (Queryable Access Patterns) by enabling secure `list` operations without relying on security rules as filters; users can only query their owned subcollections.\n\n**Authorization Independence (CRITICAL):** A key aspect of this design is the strict avoidance of hierarchical authorization dependencies, which would require costly and brittle `get()` calls in security rules. For example, while an `Investment` logically belongs to an `InvestmentPortfolio`, and an `InvestmentPortfolio` to a `User`, an `Investment` document, residing in the subcollection `/users/{userId}/investmentPortfolios/{portfolioId}/investments/{investmentId}`, will explicitly denormalize the `userId` (its grandparent's owner) into its own document. This ensures that any access check for an `Investment` can be performed solely based on `request.auth.uid` matching the `userId` field within the `Investment` document itself, eliminating the need to read the parent `InvestmentPortfolio` document. This also enables atomic operations for creating entire user-portfolio-investment hierarchies.\n\n**Structural Segregation & QAPs:**\n*   **User-Specific Data:** All user-owned data (`User` profile, `InvestmentPortfolio`, `Investment`, `Transaction`, `UserPreference`) is rooted under `/users/{userId}`. This structural segregation guarantees that all documents within a given user's path share the same security posture – owned by `request.auth.uid`. This naturally supports QAPs, as any query (`list` operation) within these paths is inherently secured by `request.auth.uid == userId`.\n*   **Global Public Data:** Static, read-only data like `Country` entities are placed in a top-level collection (`/countries/{countryId}`). Similarly, AI-generated `MarketSnapshot` data, which is public to all users but created by the system, resides in `/marketSnapshots/{snapshotId}`. These collections have a homogeneous security posture (public read-only) and directly support QAPs without complex filtering, as all documents are meant for general access. Write access to these public collections would typically be restricted to administrators or automated services via `admin` rules or Firebase Functions."
+  }
+}

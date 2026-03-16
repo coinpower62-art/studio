@@ -1,0 +1,197 @@
+/**
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership security model. All data created
+ * by a user is considered private and is only accessible by that user. It achieves
+ * this by structurally segregating all user-specific data under a path that
+ * includes their unique user ID.
+ *
+ * Data Structure:
+ * The data is organized into a top-level `/users/{userId}` collection, under which
+ * all private subcollections like `investmentPortfolios`, `transactions`, and `preferences`
+ * are nested. There are also separate top-level collections for globally accessible,
+ * public data such as `/countries` and `/marketSnapshots`.
+ *
+ * Key Security Decisions:
+ * - User Isolation: A user's access is strictly confined to documents within their
+ *   own data tree (i.e., `/users/{their-own-userId}/...`).
+ * - No User Discovery: Listing the top-level `/users` collection is explicitly
+ *   disallowed to prevent users from discovering each other.
+ * - Public Data is Read-Only: Collections like `/countries` and `/marketSnapshots`
+ *   are publicly readable by anyone but cannot be modified by client applications.
+ *   Writes to these collections must be performed by a trusted server environment.
+ * - Default Deny: Any access not explicitly granted is denied.
+ *
+ * Denormalization for Authorization:
+ * To ensure fast and secure authorization, user-specific documents (e.g., InvestmentPortfolio,
+ * Transaction) contain a `userId` field. On creation, this field is validated to match
+ * the authenticated user's ID from the path. On update, this field is made immutable.
+ * This prevents documents from being moved between users and simplifies security rules
+ * by avoiding costly cross-document `get()` calls.
+ *
+ * Structural Segregation:
+ * Private, user-owned data is structurally separated from public, global data.
+ * - Private: `/users/{userId}/{subcollection}/{docId}`
+ * - Public: `/countries/{countryId}`, `/marketSnapshots/{snapshotId}`
+ * This clear separation allows for simple, broad security rules at the collection level,
+ * enhancing performance and maintainability.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --------------------------------
+    // Helper Functions
+    // --------------------------------
+
+    /**
+     * Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently signed-in user is the owner of the document,
+     * based on the userId provided from the path.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Verifies that a document already exists in Firestore.
+     * Crucial for update and delete operations to prevent acting on non-existent data.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * A composite check for update/delete operations to ensure the user is the
+     * owner AND the document actually exists.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && isExistingDoc();
+    }
+
+    // --------------------------------
+    // Top-Level Collections
+    // --------------------------------
+
+    /**
+     * @description Controls access to user profile documents.
+     * @path /users/{userId}
+     * @allow (get) A user can read their own profile. auth.uid: "user123", path: "/users/user123"
+     * @allow (create) A new user can create their own profile document. auth.uid: "user123", path: "/users/user123"
+     * @deny (list) Users cannot list or query the top-level user collection to prevent user discovery.
+     * @deny (get) A user cannot read another user's profile. auth.uid: "user123", path: "/users/user456"
+     * @principle Enforces self-creation and ownership of a user's root document and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to static country data.
+     * @path /countries/{countryId}
+     * @allow (get, list) Any user, signed in or not, can read country information.
+     * @deny (create, update, delete) No client is allowed to modify the country list.
+     * @principle Secures global, static data as publicly readable but centrally managed.
+     */
+    match /countries/{countryId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Controls access to AI-generated market snapshots.
+     * @path /marketSnapshots/{snapshotId}
+     * @allow (get, list) Any user, signed in or not, can read market snapshots.
+     * @deny (create, update, delete) No client is allowed to write snapshots; this is handled by a backend service.
+     * @principle Secures system-generated data as publicly readable but centrally managed.
+     */
+    match /marketSnapshots/{snapshotId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // --------------------------------
+    // User-Owned Subcollections
+    // --------------------------------
+
+    /**
+     * @description Secures a user's collection of investment portfolios.
+     * @path /users/{userId}/investmentPortfolios/{portfolioId}
+     * @allow (create) An authenticated user can create a portfolio for themselves. auth.uid: "user123", path: "/users/user123/..."
+     * @allow (list) An authenticated user can list their own portfolios. auth.uid: "user123", path: "/users/user123/..."
+     * @deny (get) A user cannot access another user's portfolio. auth.uid: "user456", path: "/users/user123/..."
+     * @principle Restricts access to a user's own data tree using path-based ownership.
+     */
+    match /users/{userId}/investmentPortfolios/{portfolioId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures the individual investments within a user's portfolio.
+     * @path /users/{userId}/investmentPortfolios/{portfolioId}/investments/{investmentId}
+     * @allow (create) An authenticated user can add an investment to their own portfolio. auth.uid: "user123", path: "/users/user123/investmentPortfolios/abc/..."
+     * @allow (get) An authenticated user can read an investment in their own portfolio. auth.uid: "user123", path: "/users/user123/investmentPortfolios/abc/..."
+     * @deny (update) A user cannot modify an investment in another user's portfolio. auth.uid: "user456", path: "/users/user123/investmentPortfolios/abc/..."
+     * @principle Enforces inherited ownership from the path and validates relational integrity to the parent document.
+     */
+    match /users/{userId}/investmentPortfolios/{portfolioId}/investments/{investmentId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.portfolioId == portfolioId;
+      allow update: if isExistingOwner(userId) && request.resource.data.portfolioId == resource.data.portfolioId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures a user's financial transaction records.
+     * @path /users/{userId}/transactions/{transactionId}
+     * @allow (create) An authenticated user can create a transaction for their own account. auth.uid: "user123", path: "/users/user123/..."
+     * @allow (list) An authenticated user can list their own transactions. auth.uid: "user123", path: "/users/user123/..."
+     * @deny (delete) A user cannot delete another user's transaction. auth.uid: "user456", path: "/users/user123/..."
+     * @principle Restricts access to a user's own data tree using path-based ownership.
+     */
+    match /users/{userId}/transactions/{transactionId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures a user's personalized application preferences.
+     * @path /users/{userId}/preferences/{preferenceId}
+     * @allow (create) An authenticated user can create a preference for themselves. auth.uid: "user123", path: "/users/user123/..."
+     * @allow (get) An authenticated user can read their own preferences. auth.uid: "user123", path: "/users/user123/..."
+     * @deny (update) A user cannot change another user's preferences. auth.uid: "user456", path: "/users/user123/..."
+     * @principle Restricts access to a user's own data tree using path-based ownership.
+     */
+    match /users/{userId}/preferences/{preferenceId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+  }
+}
