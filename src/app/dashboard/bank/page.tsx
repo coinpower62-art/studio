@@ -8,7 +8,6 @@ import {
   PartyPopper, PhoneCall, Hash, Network, User, MapPin, CalendarDays,
   Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X
 } from "lucide-react";
-import { SiTelegram } from "react-icons/si";
 import {
   collection,
   serverTimestamp,
@@ -30,11 +29,6 @@ import { useUserStore } from '@/hooks/use-user-store';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { countries as COUNTRIES_DATA } from "@/lib/data";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-
-const COUNTRIES = COUNTRIES_DATA.map(c => c.value);
-
-const TELEGRAM_GROUP = "https://t.me/coinpow_group";
 
 // Card validation helpers
 function luhnCheck(num: string): boolean {
@@ -362,7 +356,7 @@ export default function BankPage() {
     }
   }, [isUserLoading, user, router]);
 
-  if (isUserLoading) return <div className="pt-12 p-4 pb-20 max-w-4xl mx-auto"><Skeleton className="h-64 rounded-2xl" /></div>;
+  if (isUserLoading) return <div className="p-4 pt-8 max-w-4xl mx-auto"><Skeleton className="h-64 rounded-2xl" /></div>;
   if (!user) return null;
 
   const hasApprovedDeposit = (depositRecords || []).some((d) => d.status === "approved");
@@ -370,7 +364,7 @@ export default function BankPage() {
     .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
 
   return (
-    <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
+    <div className="bg-[#f7f9f4]">
       {pinMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 relative">
@@ -503,32 +497,25 @@ export default function BankPage() {
 
         {(() => {
           const today = new Date().getDay();
-          const isSunday = today === 0;
           const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
           return (
-            <div className={`rounded-2xl border-2 p-4 mb-4 ${isSunday ? "bg-red-50 border-red-300" : "bg-blue-50 border-blue-200"}`}>
+            <div className="rounded-2xl border bg-blue-50 border-blue-200 p-4 mb-4">
               <div className="flex items-start gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${isSunday ? "bg-red-500" : "bg-blue-500"}`}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm bg-blue-500">
                   <span className="text-white text-lg">📢</span>
                 </div>
                 <div className="flex-1">
-                  <p className={`font-bold text-sm mb-1 ${isSunday ? "text-red-800" : "text-blue-800"}`}>
-                    {isSunday ? "⚠️ Sunday — Withdrawals Closed Today" : "Withdrawal Processing Schedule"}
+                  <p className="font-bold text-sm mb-1 text-blue-800">
+                    Withdrawal Processing Schedule
                   </p>
-                  {isSunday ? (
-                    <p className="text-red-700 text-xs leading-relaxed">
-                      Today is <strong>Sunday</strong>. Withdrawal accounts are <strong>closed</strong> for processing. The platform remains active — you can still deposit, rent generators, and earn income as usual. Any withdrawal request submitted today will be <strong>reviewed and processed on Monday</strong> when accounts reopen.
-                    </p>
-                  ) : (
-                    <p className="text-blue-700 text-xs leading-relaxed">
-                      Withdrawals are processed <strong>Monday to Saturday</strong> within 1–24 hours. On <strong>Sundays</strong>, the platform is active but withdrawal accounts are closed — any request submitted on Sunday will be processed the following <strong>Monday</strong>.
-                    </p>
-                  )}
+                  <p className="text-blue-700 text-xs leading-relaxed">
+                    Withdrawals are processed <strong>Monday to Saturday</strong> within 1–24 hours. On <strong>Sundays</strong>, the platform is active but withdrawal accounts are closed — any request submitted on Sunday will be processed the following <strong>Monday</strong>.
+                  </p>
                   <div className="flex gap-1.5 mt-3 flex-wrap">
                     {days.map((d, i) => (
                       <span key={d} className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                         i === 0
-                          ? "bg-red-200 text-red-700"
+                          ? "bg-red-500 text-white"
                           : i === today
                           ? "bg-green-500 text-white ring-2 ring-green-400 ring-offset-1"
                           : "bg-white border border-blue-200 text-blue-600"
@@ -543,57 +530,54 @@ export default function BankPage() {
           );
         })()}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
-          <button data-testid="button-deposit" onClick={() => openMode('deposit')}
-            className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-200 text-left w-full ${mode === "deposit" ? "border-green-500 bg-green-50 shadow-md" : "border-gray-200 bg-white hover:border-green-300 hover:bg-green-50/50"}`}>
-            <div className="w-11 h-11 rounded-xl overflow-hidden shadow-md flex-shrink-0">
-              <img src={imageMap.momo} alt="MTN MoMo" className="w-full h-full object-cover" />
+        <div className="space-y-3">
+            <div 
+              data-testid="button-deposit" 
+              onClick={() => openMode('deposit')}
+              className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-amber-300 hover:bg-amber-50/50 transition-all"
+            >
+              <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                <img src={imageMap.momo} alt="Deposit" className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-gray-800">Deposit Funds</p>
+                <p className="text-xs text-gray-500">MTN MoMo · USDT · Card</p>
+                <p className="text-xs font-semibold text-amber-600 mt-1">Tap to see payment details</p>
+              </div>
+              <ArrowDownToLine className="w-5 h-5 text-green-500" />
             </div>
-            <div className="flex-1">
-              <p className="font-bold text-gray-900 text-sm sm:text-base">Deposit Funds</p>
-              <p className="text-xs text-gray-500 mt-0.5">MTN MoMo · USDT · Card</p>
-              <p className="text-xs text-amber-600 font-medium mt-1">Tap to see payment details</p>
-            </div>
-            <ArrowDownToLine className="w-5 h-5 text-green-500 flex-shrink-0" />
-          </button>
 
-          <button data-testid="button-withdraw"
-            onClick={() => {
-              if (!hasApprovedDeposit) {
-                toast({ title: "Deposit required", description: "You must have at least one approved deposit before you can withdraw.", variant: "destructive" });
-                return;
-              }
-              openMode(null);
-              if (!userProfile.hasWithdrawalPin) {
-                setPinMode("security");
-              } else {
-                setPinInput(""); setPinConfirm(""); setPinError("");
-                setPinMode("verify");
-              }
-            }}
-            className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-200 text-left w-full ${
-              !hasApprovedDeposit
-                ? "border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed"
-                : mode === "withdraw"
-                ? "border-amber-500 bg-amber-50 shadow-md"
-                : "border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/50"
-            }`}>
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-md flex-shrink-0 ${hasApprovedDeposit ? "bg-gradient-to-br from-amber-400 to-amber-600" : "bg-gray-300"}`}>
-              <ArrowUpFromLine className="w-5 h-5 text-white" />
+            <div 
+              data-testid="button-withdraw"
+              onClick={() => {
+                if (!hasApprovedDeposit) {
+                  toast({ title: "Deposit required", description: "You must have at least one approved deposit before you can withdraw.", variant: "destructive" });
+                  return;
+                }
+                openMode(null);
+                if (!userProfile.hasWithdrawalPin) {
+                  setPinMode("security");
+                } else {
+                  setPinInput(""); setPinConfirm(""); setPinError("");
+                  setPinMode("verify");
+                }
+              }}
+              className={`bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 transition-all ${
+                !hasApprovedDeposit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-amber-300 hover:bg-amber-50/50'
+              }`}
+            >
+              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <ArrowUpFromLine className="w-5 h-5 text-gray-500" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-gray-800">Withdraw Funds</p>
+                <p className="text-xs text-gray-500">Transfer to your account</p>
+              </div>
             </div>
-            <div>
-              <p className="font-bold text-gray-900 text-sm sm:text-base">Withdraw Funds</p>
-              <p className="text-xs text-gray-500 mt-0.5">Transfer to your account</p>
-              {hasApprovedDeposit
-                ? <p className="text-xs text-amber-600 font-medium mt-1">1 – 24 hours processing</p>
-                : <p className="text-xs text-red-500 font-medium mt-1">Requires an approved deposit first</p>
-              }
-            </div>
-          </button>
         </div>
 
         {mode === "deposit" && !depositSuccess && !depositMethod && (
-          <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-4 sm:p-6 mb-4 space-y-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-4 sm:p-6 my-4 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-gray-900 text-sm sm:text-base">Select Payment Method</h3>
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-200">
@@ -621,7 +605,7 @@ export default function BankPage() {
         )}
 
         {mode === "deposit" && !depositSuccess && !!depositMethod && (
-          <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-4 sm:p-6 mb-4 space-y-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-4 sm:p-6 my-4 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <button onClick={() => setDepositMethod(null)} data-testid="button-back-deposit-method"
@@ -657,8 +641,8 @@ export default function BankPage() {
                   <SelectValue placeholder="Select your country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {COUNTRIES.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  {COUNTRIES_DATA.map((c) => (
+                    <SelectItem key={c.value} value={c.label}>{c.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -767,7 +751,7 @@ export default function BankPage() {
               </div>
             )}
 
-            {depositMethod === "card" ? (
+            {depositMethod === "card" && (
               <div className="space-y-4">
                 <div
                   className="relative rounded-2xl p-5 overflow-hidden shadow-2xl"
@@ -878,7 +862,7 @@ export default function BankPage() {
                   </div>
                 </div>
               </div>
-            ) : null}
+            )}
 
             <div className="space-y-3">
               <div>
@@ -922,7 +906,7 @@ export default function BankPage() {
         )}
 
         {mode === "deposit" && depositSuccess && (
-          <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-6 mb-4 text-center space-y-3">
+          <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-6 my-4 text-center space-y-3">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
               <PartyPopper className="w-8 h-8 text-green-600" />
             </div>
@@ -933,7 +917,7 @@ export default function BankPage() {
         )}
 
         {mode === "withdraw" && !withdrawSuccess && (
-          <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-4 sm:p-6 mb-4 space-y-5">
+          <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-4 sm:p-6 my-4 space-y-5">
               <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-3 py-3">
               <Hourglass className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
               <div>
@@ -982,7 +966,7 @@ export default function BankPage() {
         )}
 
          {mode === "withdraw" && withdrawSuccess && (
-          <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-6 mb-4 text-center space-y-3">
+          <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-6 my-4 text-center space-y-3">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
               <PartyPopper className="w-8 h-8 text-green-600" />
             </div>
@@ -994,7 +978,7 @@ export default function BankPage() {
         )}
 
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 my-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-gray-900 text-sm sm:text-base">Transaction History</h3>
             <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">

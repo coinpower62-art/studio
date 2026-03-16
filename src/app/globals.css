@@ -81,6 +81,9 @@
     .bg-splash-gradient {
         background: radial-gradient(ellipse at bottom, hsl(var(--primary)), #0a3d1b);
     }
+    .shadow-top {
+        box-shadow: 0 -4px 6px -1px rgb(0 0 0 / 0.1), 0 -2px 4px -2px rgb(0 0 0 / 0.1);
+    }
 }
 
 @layer base {
