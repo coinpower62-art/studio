@@ -1,12 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useImageStore } from '@/hooks/use-image-store';
 
 export default function AboutPage() {
-  const { aboutImages } = useImageStore();
-
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold tracking-tight">About CoinPower</h1>
@@ -27,33 +23,6 @@ export default function AboutPage() {
         </CardContent>
       </Card>
       
-      {aboutImages.length > 0 && (
-        <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle>Uploaded Pictures</CardTitle>
-            <CardDescription>Images you've uploaded from the Upload Room.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {aboutImages.map((image) => (
-                <Card key={image.id} className="overflow-hidden shadow-md">
-                  <CardContent className="p-0">
-                    <div className="relative aspect-video">
-                      <Image
-                        src={image.url}
-                        alt={image.description}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <Card className="border-none shadow-none">
         <CardHeader>
           <CardTitle>Contact Us</CardTitle>

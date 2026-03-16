@@ -17,8 +17,6 @@ import {
 } from "@/components/ui/sidebar";
 import {
   Home,
-  Briefcase,
-  Repeat,
   Settings,
   Bell,
   Search,
@@ -26,11 +24,10 @@ import {
   User,
   Landmark,
   Info,
-  Image,
-  Upload,
-  Folders,
   Zap,
   Loader,
+  Store,
+  History,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -44,7 +41,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { ImageStoreProvider } from "@/hooks/use-image-store";
 import { UserStoreProvider } from "@/hooks/use-user-store";
 import { useAuth, useUser } from "@/firebase";
 import { signOut } from "firebase/auth";
@@ -122,12 +118,24 @@ export default function DashboardLayout({
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
-                isActive={isLinkActive("/dashboard/portfolio")}
-                tooltip={{ children: "Portfolio" }}
+                isActive={isLinkActive("/dashboard/bank")}
+                tooltip={{ children: "Bank" }}
               >
-                <Link href="#">
-                  <Briefcase />
-                  <span>Portfolio</span>
+                <Link href="/dashboard/bank">
+                  <Landmark />
+                  <span>Bank</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={isLinkActive("/dashboard/market")}
+                tooltip={{ children: "Market" }}
+              >
+                <Link href="/dashboard/market">
+                  <Store />
+                  <span>Market</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -144,54 +152,14 @@ export default function DashboardLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={{ children: "Trade" }}>
-                <Link href="#">
-                  <Repeat />
-                  <span>Trade</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={{ children: "Bank" }}>
-                <Link href="#">
-                  <Landmark />
-                  <span>Bank</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
-                isActive={isLinkActive("/dashboard/gallery")}
-                tooltip={{ children: "Gallery" }}
+                isActive={isLinkActive("/dashboard/activity")}
+                tooltip={{ children: "Activity Room" }}
               >
-                <Link href="/dashboard/gallery">
-                  <Image />
-                  <span>Gallery</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={isLinkActive("/dashboard/upload")}
-                tooltip={{ children: "Upload Room" }}
-              >
-                <Link href="/dashboard/upload">
-                  <Upload />
-                  <span>Upload Room</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={isLinkActive("/dashboard/my-uploads")}
-                tooltip={{ children: "My Uploads" }}
-              >
-                <Link href="/dashboard/my-uploads">
-                  <Folders />
-                  <span>My Uploads</span>
+                <Link href="/dashboard/activity">
+                  <History />
+                  <span>Activity Room</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -268,7 +236,7 @@ export default function DashboardLayout({
         </header>
         <main className="flex-1 overflow-auto p-4 sm:p-6">
           <UserStoreProvider>
-            <ImageStoreProvider>{children}</ImageStoreProvider>
+            {children}
           </UserStoreProvider>
         </main>
       </SidebarInset>

@@ -11,6 +11,7 @@ export const languages = [
 ];
 
 export const countries = [
+    { label: "Italy", value: "Italy" },
     { label: "Ghana", value: "Ghana" },
     { label: "Nigeria", value: "Nigeria" },
     { label: "Kenya", value: "Kenya" },
@@ -21,7 +22,6 @@ export const countries = [
     { label: "Germany", value: "Germany" },
     { label: "France", value: "France" },
     { label: "Spain", value: "Spain" },
-    { label: "Italy", value: "Italy" },
     { label: "Netherlands", value: "Netherlands" },
     { label: "Switzerland", value: "Switzerland" },
     { label: "Sweden", value: "Sweden" },
