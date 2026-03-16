@@ -1,3 +1,5 @@
+
+'use client';
 import {
   Card,
   CardHeader,
@@ -9,12 +11,24 @@ import { MarketSnapshot } from "./components/market-snapshot";
 import { PerformanceChart } from "./components/performance-chart";
 import { WinnersScroll } from "./components/winners-scroll";
 import { ReferralProgress } from "./components/referral-progress";
+import { useUserStore } from "@/hooks/use-user-store";
+import { useUser } from "@/firebase";
 
 export default function DashboardPage() {
+  const { balance } = useUserStore();
+  const { user } = useUser();
+
+  const getFirstName = () => {
+    if (user?.displayName) {
+      return user.displayName.split(' ')[0];
+    }
+    return "Back";
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome Back, Jane!</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Welcome {getFirstName()}!</h1>
         <p className="text-muted-foreground">
           Here's a snapshot of your investment portfolio.
         </p>
@@ -26,7 +40,7 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$45,231.89</div>
+            <div className="text-2xl font-bold">${balance.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               +20.1% from last month
             </p>

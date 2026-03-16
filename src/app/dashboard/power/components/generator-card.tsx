@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUserStore } from '@/hooks/use-user-store';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useRouter } from 'next/navigation';
+import type { RentedGenerator } from '@/hooks/use-user-store';
 
 interface Generator {
     id: string;
@@ -44,14 +45,16 @@ export function GeneratorCard({ generator, imageUrl, imageHint }: GeneratorCardP
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
     useEffect(() => {
-        if (!rentedInstance) {
+        if (!rentedInstance || !rentedInstance.rentalEndTime) {
           setTimeLeft(null);
           return;
         }
 
+        const rentalEndTimeMs = rentedInstance.rentalEndTime.toDate().getTime();
+
         const updateTimer = () => {
             const now = Date.now();
-            const distance = rentedInstance.rentalEndTime - now;
+            const distance = rentalEndTimeMs - now;
             setTimeLeft(distance);
         };
 
@@ -79,12 +82,12 @@ export function GeneratorCard({ generator, imageUrl, imageHint }: GeneratorCardP
             if (result === 'collected') {
                 toast({
                     title: 'Earnings Collected!',
-                    description: `You've collected $${rentedInstance.dailyIncome.toFixed(2)}.`,
+                    description: `You've collected $${generator.dailyIncome.toFixed(2)}.`,
                 });
             } else if (result === 'expired') {
                 toast({
                     title: 'Generator Expired',
-                    description: `${rentedInstance.name} has completed its rental duration.`,
+                    description: `${generator.name} has completed its rental duration.`,
                 });
             }
         }

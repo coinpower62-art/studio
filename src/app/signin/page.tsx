@@ -26,6 +26,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
+import { useAuth } from "@/firebase";
+import { initiateEmailSignIn } from "@/firebase/non-blocking-login";
+import { useEffect } from "react";
+import { useUser } from "@/firebase";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -35,6 +39,8 @@ const formSchema = z.object({
 export default function SignInPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -44,13 +50,18 @@ export default function SignInPage() {
     },
   });
 
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      toast({
+        title: "Signed in!",
+        description: "Redirecting to your dashboard...",
+      });
+      router.push("/dashboard");
+    }
+  }, [user, isUserLoading, router, toast]);
+
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    toast({
-      title: "Signed in!",
-      description: "Redirecting to your dashboard...",
-    });
-    router.push("/dashboard");
+    initiateEmailSignIn(auth, values.email, values.password);
   }
 
   return (
@@ -92,8 +103,8 @@ export default function SignInPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full bg-accent hover:bg-accent/90">
-                Sign In
+              <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Signing In..." : "Sign In"}
               </Button>
             </form>
           </Form>

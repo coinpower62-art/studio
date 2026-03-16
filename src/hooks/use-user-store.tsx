@@ -2,15 +2,24 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { generators } from '@/lib/data';
+import { useDoc, useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export interface RentedGenerator {
-  id: string;
+  id: string; // This is the doc id in firestore
   generatorId: string;
   name: string;
-  rentalTime: number;
-  rentalEndTime: number;
+  rentalTime: any; // Firestore timestamp
+  rentalEndTime: any; // Firestore timestamp
   durationDays: number;
   dailyIncome: number;
+}
+
+interface UserProfile {
+    balance: number;
+    referralCount: number;
+    // other user fields
 }
 
 interface UserStoreContextType {
@@ -24,81 +33,107 @@ interface UserStoreContextType {
 const UserStoreContext = createContext<UserStoreContextType | undefined>(undefined);
 
 export function UserStoreProvider({ children }: { children: ReactNode }) {
-  const [balance, setBalance] = useState(100); // Start with some balance for testing
-  const [referralCount, setReferralCount] = useState(2); // placeholder
-  const [rentedGenerators, setRentedGenerators] = useState<RentedGenerator[]>([]);
+  const { firestore, user } = useFirebase();
 
-  // Auto-rent free generator on first load
-  useEffect(() => {
-    const freeGenerator = generators.find(g => g.isFree);
-    if (freeGenerator && !rentedGenerators.some(rg => rg.generatorId === freeGenerator.id)) {
-        const now = Date.now();
-        const newRentedGenerator: RentedGenerator = {
-            id: `rented-${freeGenerator.id}-${now}`,
-            generatorId: freeGenerator.id,
-            name: freeGenerator.name,
-            rentalTime: now,
-            rentalEndTime: now + 24 * 60 * 60 * 1000,
-            durationDays: freeGenerator.duration,
-            dailyIncome: freeGenerator.dailyIncome,
-        };
-        setRentedGenerators(prev => [...prev, newRentedGenerator]);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const userRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userData } = useDoc<UserProfile>(userRef);
 
+  const rentedGeneratorsRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'users', user.uid, 'rentedGenerators');
+  }, [firestore, user]);
+  const { data: rentedGeneratorsData } = useCollection<Omit<RentedGenerator, 'id'>>(rentedGeneratorsRef);
+
+  const balance = userData?.balance ?? 0;
+  const referralCount = userData?.referralCount ?? 0;
+  const rentedGenerators = rentedGeneratorsData || [];
 
   const rentGenerator = useCallback((generatorId: string): 'success' | 'insufficient_funds' => {
     const generator = generators.find(g => g.id === generatorId);
-    if (!generator) return 'insufficient_funds';
+    if (!generator || !userRef || !rentedGeneratorsRef) return 'insufficient_funds';
+    
     if (balance < generator.price) {
       return 'insufficient_funds';
     }
 
-    setBalance(prev => prev - generator.price);
+    updateDocumentNonBlocking(userRef, { balance: balance - generator.price });
+    
     const now = Date.now();
-    const newRentedGenerator: RentedGenerator = {
-      id: `rented-${generatorId}-${now}`,
-      generatorId,
+    const newRentedGenerator = {
+      generatorId: generator.id,
       name: generator.name,
-      rentalTime: now,
-      rentalEndTime: now + 24 * 60 * 60 * 1000,
+      rentalTime: serverTimestamp(),
+      rentalEndTime: new Date(now + 24 * 60 * 60 * 1000),
       durationDays: generator.duration,
       dailyIncome: generator.dailyIncome,
     };
-    setRentedGenerators(prev => [...prev, newRentedGenerator]);
+
+    addDocumentNonBlocking(rentedGeneratorsRef, newRentedGenerator);
     return 'success';
-  }, [balance]);
+  }, [balance, userRef, rentedGeneratorsRef]);
+
 
   const collectEarnings = useCallback((rentedGeneratorId: string) => {
+    if (!firestore || !user || !userRef) return 'not_ready';
+    
     let result: 'collected' | 'not_ready' | 'expired' = 'not_ready';
-    setRentedGenerators(prev => {
-        const generatorToUpdate = prev.find(g => g.id === rentedGeneratorId);
-        if (!generatorToUpdate) return prev;
+    
+    const generatorToUpdate = rentedGenerators.find(g => g.id === rentedGeneratorId);
+    if (!generatorToUpdate) return 'not_ready';
 
-        const now = Date.now();
-        if (now < generatorToUpdate.rentalEndTime) {
-            result = 'not_ready';
-            return prev;
-        }
-        
-        setBalance(bal => bal + generatorToUpdate.dailyIncome);
-        
-        const daysSinceRent = (now - generatorToUpdate.rentalTime) / (1000 * 60 * 60 * 24);
-        if (daysSinceRent >= generatorToUpdate.durationDays) {
-            result = 'expired';
-            return prev.filter(g => g.id !== rentedGeneratorId);
-        } else {
-            result = 'collected';
-            return prev.map(g => 
-                g.id === rentedGeneratorId 
-                ? { ...g, rentalEndTime: g.rentalEndTime + (24 * 60 * 60 * 1000) } 
-                : g
-            );
-        }
-    });
+    const now = Date.now();
+    const rentalEndTimeMs = generatorToUpdate.rentalEndTime.toDate().getTime();
+
+    if (now < rentalEndTimeMs) {
+        result = 'not_ready';
+        return result;
+    }
+    
+    updateDocumentNonBlocking(userRef, { balance: balance + generatorToUpdate.dailyIncome });
+    
+    const rentalTimeMs = generatorToUpdate.rentalTime.toDate().getTime();
+    const daysSinceRent = (now - rentalTimeMs) / (1000 * 60 * 60 * 24);
+
+    const generatorDocRef = doc(firestore, 'users', user.uid, 'rentedGenerators', rentedGeneratorId);
+
+    if (daysSinceRent >= generatorToUpdate.durationDays) {
+        result = 'expired';
+        deleteDocumentNonBlocking(generatorDocRef);
+    } else {
+        result = 'collected';
+        updateDocumentNonBlocking(generatorDocRef, {
+            rentalEndTime: new Date(rentalEndTimeMs + (24 * 60 * 60 * 1000))
+        });
+    }
+    
     return result;
-  }, []);
+  }, [firestore, user, userRef, rentedGenerators, balance]);
+
+
+   // Auto-rent free generator on first load if it doesn't exist
+   useEffect(() => {
+    if (rentedGeneratorsData && rentedGeneratorsData.length === 0) {
+        const freeGenerator = generators.find(g => g.isFree);
+        if (freeGenerator && rentedGeneratorsRef) {
+            const isFreeGeneratorRented = rentedGeneratorsData.some(rg => rg.generatorId === freeGenerator.id);
+            if (!isFreeGeneratorRented) {
+                const now = Date.now();
+                const newRentedGenerator = {
+                    generatorId: freeGenerator.id,
+                    name: freeGenerator.name,
+                    rentalTime: serverTimestamp(),
+                    rentalEndTime: new Date(now + 24 * 60 * 60 * 1000),
+                    durationDays: freeGenerator.duration,
+                    dailyIncome: freeGenerator.dailyIncome,
+                };
+                addDocumentNonBlocking(rentedGeneratorsRef, newRentedGenerator);
+            }
+        }
+    }
+   }, [rentedGeneratorsData, rentedGeneratorsRef]);
 
   const value = { balance, referralCount, rentedGenerators, rentGenerator, collectEarnings };
 

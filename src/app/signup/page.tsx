@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useEffect } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, serverTimestamp } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +37,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
 import { countries, languages } from "@/lib/data";
+import { useAuth, useFirestore, useUser } from "@/firebase";
+import { initiateEmailSignUp } from "@/firebase/non-blocking-login";
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const formSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
@@ -43,9 +49,18 @@ const formSchema = z.object({
   country: z.string({ required_error: "Please select a country." }),
 });
 
+function genReferralCode(name: string): string {
+  const prefix = name.slice(0, 3).toUpperCase();
+  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `CP-${prefix}${suffix}`;
+}
+
 export default function SignUpPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -56,13 +71,45 @@ export default function SignUpPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    toast({
-      title: "Account created!",
-      description: "Redirecting to your dashboard...",
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push("/dashboard");
+    }
+  }, [user, isUserLoading, router]);
+
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    initiateEmailSignUp(auth, values.email, values.password);
+    
+    const unsubscribe = onAuthStateChanged(auth, (newUser) => {
+      if (newUser) {
+        unsubscribe();
+        const [firstName, ...lastNameParts] = values.fullName.split(' ');
+        const lastName = lastNameParts.join(' ');
+        const userRef = doc(firestore, "users", newUser.uid);
+        
+        const userData = {
+          email: values.email,
+          firstName: firstName || '',
+          lastName: lastName || '',
+          language: values.language,
+          country: values.country,
+          balance: 1.00, // $1 bonus
+          referralCode: genReferralCode(firstName || 'USER'),
+          referralCount: 0,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+
+        setDocumentNonBlocking(userRef, userData, { merge: false });
+        
+        toast({
+          title: "Account created!",
+          description: "Redirecting to your dashboard...",
+        });
+        router.push("/dashboard");
+      }
     });
-    router.push("/dashboard");
   }
 
   return (
@@ -167,8 +214,8 @@ export default function SignUpPage() {
                   )}
                 />
               </div>
-              <Button type="submit" className="w-full bg-accent hover:bg-accent/90">
-                Sign Up
+              <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={form.formState.isSubmitting}>
+                 {form.formState.isSubmitting ? "Creating Account..." : "Sign Up"}
               </Button>
             </form>
           </Form>

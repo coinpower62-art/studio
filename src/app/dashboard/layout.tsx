@@ -30,6 +30,7 @@ import {
   Upload,
   Folders,
   Zap,
+  Loader,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -45,6 +46,8 @@ import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { ImageStoreProvider } from "@/hooks/use-image-store";
 import { UserStoreProvider } from "@/hooks/use-user-store";
+import { useAuth, useUser } from "@/firebase";
+import { signOut } from "firebase/auth";
 
 export default function DashboardLayout({
   children,
@@ -53,7 +56,41 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
   const isLinkActive = (href: string) => pathname === href;
+
+  React.useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push("/signin");
+    }
+  }, [isUserLoading, user, router]);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push("/signin");
+  };
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  const getInitials = () => {
+    if (user?.displayName) {
+      const names = user.displayName.split(' ');
+      const initials = names.map(n => n[0]).join('');
+      return initials.toUpperCase();
+    }
+    if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+    return "U";
+  }
+
 
   return (
     <SidebarProvider>
@@ -205,7 +242,8 @@ export default function DashboardLayout({
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback>JD</AvatarFallback>
+                  <AvatarImage src={user?.photoURL || undefined} />
+                  <AvatarFallback>{getInitials()}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -221,7 +259,7 @@ export default function DashboardLayout({
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push('/signin')}>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
