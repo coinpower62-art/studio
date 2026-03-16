@@ -9,7 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUser, useFirestore, useUserStore } from "@/firebase";
+import { useUser, useFirestore } from "@/firebase";
+import { useUserStore } from "@/hooks/use-user-store";
 import { doc, updateDoc } from 'firebase/firestore';
 
 const recentActivities = [
