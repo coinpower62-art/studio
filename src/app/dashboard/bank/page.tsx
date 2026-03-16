@@ -29,7 +29,7 @@ import { useFirebase, useUser, useCollection, useMemoFirebase } from '@/firebase
 import { useUserStore } from '@/hooks/use-user-store';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { countries as COUNTRIES_DATA } from "@/lib/data";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const COUNTRIES = COUNTRIES_DATA.map(c => c.value);
@@ -861,7 +861,7 @@ export default function BankPage() {
                     className="pl-7 h-11 border-gray-200 focus:border-amber-400 text-lg font-semibold" />
                 </div>
               </div>
-              <Button onClick={handleWithdrawSubmit} data-testid="button-confirm-withdraw"
+              <Button onClick={handleWithdrawalSubmit} data-testid="button-confirm-withdraw"
                 disabled={isSubmitting}
                 className="w-full h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md">
                 {isSubmitting ? "Submitting request..." : `Withdraw $${amount || '0.00'}`}
@@ -897,8 +897,8 @@ export default function BankPage() {
             </div>
           </div>
           <div className="space-y-2">
-            {[...depositRecords, ...withdrawRecords]
-              .sort((a, b) => b.createdAt - a.createdAt)
+            {[...(depositRecords || []), ...(withdrawRecords || [])]
+              .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
               .filter(tx => {
                 if (historyTab === 'all') return true;
                 return historyTab === 'deposit' ? 'txId' in tx : !('txId' in tx);
@@ -907,7 +907,6 @@ export default function BankPage() {
               const isDeposit = 'txId' in tx;
               const statusColor = tx.status === 'approved' ? 'bg-green-100 text-green-700' : tx.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700';
               const Icon = isDeposit ? ArrowDownToLine : ArrowUpFromLine;
-              const iconColor = isDeposit ? 'text-green-500' : 'text-amber-500';
               return (
                 <div key={tx.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${statusColor.replace('text-', 'bg-').replace('700', '100')}`}>
@@ -915,7 +914,7 @@ export default function BankPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800">{isDeposit ? 'Deposit' : 'Withdrawal'} Request</p>
-                    <p className="text-xs text-gray-400 truncate">{isDeposit ? tx.txId : (tx as WithdrawRecord).method} · {new Date(tx.createdAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-gray-400 truncate">{isDeposit ? tx.txId : (tx as WithdrawRecord).method} · {tx.createdAt.toDate().toLocaleDateString()}</p>
                   </div>
                   <div className="text-right">
                     <p className={`text-sm font-bold ${isDeposit ? 'text-green-600' : 'text-gray-800'}`}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>
@@ -924,7 +923,7 @@ export default function BankPage() {
                 </div>
               );
             })}
-             {depositRecords.length === 0 && withdrawRecords.length === 0 && (
+             {(!depositRecords || depositRecords.length === 0) && (!withdrawRecords || withdrawRecords.length === 0) && (
                 <div className="text-center py-8">
                     <p className="text-gray-500 text-sm">No transactions yet.</p>
                 </div>
