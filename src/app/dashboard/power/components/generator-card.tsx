@@ -108,7 +108,7 @@ export function GeneratorCard({ generator, rentedInstance }: GeneratorCardProps)
                         <div className="flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary" /> <span><strong className="font-semibold text-foreground">ROI:</strong> {generator.roi}</span></div>
                         <div className="flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> <span><strong className="font-semibold text-foreground">Investors:</strong> {generator.investors}</span></div>
                         <div className="flex items-center gap-2"><Tag className="w-4 h-4 text-primary" /> <span><strong className="font-semibold text-foreground">Price:</strong> <span className={generator.isFree ? "text-accent font-bold" : "font-bold text-foreground"}>{generator.price === 0 ? 'Free' : `$${generator.price.toFixed(2)}`}</span></span></div>
-                        <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /> <span><strong className="font-semibold text-foreground">Duration:</strong> {generator.duration} days</span></div>
+                        <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /> <span><strong className="font-semibold text-foreground">Duration:</strong> {generator.expireDays} days</span></div>
                     </div>
                     <div className="p-3 bg-muted rounded-lg text-center space-y-1 border">
                         <p className="font-bold text-lg text-growth">${generator.dailyIncome.toFixed(2)}</p>

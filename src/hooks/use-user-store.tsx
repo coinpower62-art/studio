@@ -20,7 +20,7 @@ export interface RentedGenerator {
   name: string;
   rentalTime: Timestamp;
   rentalEndTime: Timestamp;
-  durationDays: number;
+  expireDays: number;
   dailyIncome: number;
   icon: string;
   color: string;
@@ -114,7 +114,7 @@ export function UserStoreProvider({ children }: { children: ReactNode }) {
       name: generator.name,
       rentalTime: rentalTime,
       rentalEndTime: rentalEndTime,
-      durationDays: generator.duration,
+      expireDays: generator.expireDays,
       dailyIncome: generator.dailyIncome,
       icon: generator.icon,
       color: generator.color,
@@ -167,7 +167,7 @@ export function UserStoreProvider({ children }: { children: ReactNode }) {
     updateDocumentNonBlocking(userRef, { balance: balance + rentedInstance.dailyIncome });
     
     const rentalTimeMs = rentedInstance.rentalTime.toDate().getTime();
-    const totalDurationMs = rentedInstance.durationDays * 24 * 60 * 60 * 1000;
+    const totalDurationMs = rentedInstance.expireDays * 24 * 60 * 60 * 1000;
 
     const generatorDocRef = doc(firestore, 'users', user.uid, 'rentedGenerators', rentedInstance.id);
 

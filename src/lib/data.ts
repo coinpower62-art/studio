@@ -43,7 +43,7 @@ export interface Generator {
   icon: string;
   color: string;
   price: number;
-  duration: number; // In days
+  expireDays: number;
   dailyIncome: number;
   published: boolean;
   roi: string;
@@ -62,7 +62,7 @@ export const generators: Generator[] = [
     icon: '⚡',
     color: 'amber',
     price: 0,
-    duration: 3,
+    expireDays: 3,
     dailyIncome: 0.20,
     published: true,
     roi: '$0.20/day',
@@ -79,7 +79,7 @@ export const generators: Generator[] = [
     icon: '🚀',
     color: 'green',
     price: 10,
-    duration: 10,
+    expireDays: 10,
     dailyIncome: 1.00,
     published: true,
     roi: '$1.00/day',
@@ -95,7 +95,7 @@ export const generators: Generator[] = [
     icon: '💎',
     color: 'blue',
     price: 15,
-    duration: 15,
+    expireDays: 15,
     dailyIncome: 1.20,
     published: true,
     roi: '$1.20/day',
@@ -111,7 +111,7 @@ export const generators: Generator[] = [
     icon: '👑',
     color: 'purple',
     price: 20,
-    duration: 20,
+    expireDays: 20,
     dailyIncome: 1.50,
     published: true,
     roi: '$1.50/day',
