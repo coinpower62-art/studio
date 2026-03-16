@@ -22,7 +22,6 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Skeleton } from "@/components/ui/skeleton";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
 
@@ -245,6 +244,8 @@ export default function AdminDashboardPage() {
       id: `usr_${Date.now()}`,
       balance: parseFloat(createUserForm.balance),
       referralCount: 0,
+      referralCode: `CP-NEW${Date.now()}`.slice(0,10),
+      referredBy: null,
       ...createUserForm
     }
     setUsers(prev => [newUser, ...prev]);
