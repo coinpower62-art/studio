@@ -57,10 +57,11 @@ export default function DashboardLayout({
   const isLinkActive = (href: string) => pathname === href;
 
   React.useEffect(() => {
+    if (pathname.startsWith('/admin')) return;
     if (!isUserLoading && !user) {
       router.push("/signin");
     }
-  }, [isUserLoading, user, router]);
+  }, [isUserLoading, user, router, pathname]);
 
   const handleLogout = async () => {
     if (auth) {
@@ -68,6 +69,14 @@ export default function DashboardLayout({
     }
     router.push("/signin");
   };
+
+  if (pathname.startsWith('/admin')) {
+    return (
+      <div className="flex bg-slate-900">
+        {children}
+      </div>
+    )
+  }
 
   if (isUserLoading || !user) {
     return (

@@ -90,8 +90,8 @@ export default {
           },
         },
         'scroll-up': {
-          from: { transform: 'translateY(0)' },
-          to: { transform: 'translateY(-50%)' },
+          '0%': { transform: 'translateY(0)' },
+          '100%': { transform: 'translateY(-100%)' },
         }
       },
       animation: {
