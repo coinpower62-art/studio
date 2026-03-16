@@ -38,6 +38,7 @@ type UserRecord = {
   id: string; fullName: string; username: string; email: string;
   password?: string; country: string; balance: number;
   referralCode: string | null; referredBy: string | null;
+  referralCount?: number;
   activeGenerators?: ActiveGen[];
   activeGeneratorCount?: number;
   totalGenerators?: number;
@@ -75,9 +76,9 @@ type WithdrawalRecord = {
 
 // MOCK DATA
 const MOCK_USERS: UserRecord[] = [
-  { id: 'usr_1', fullName: 'John Doe', username: 'johndoe', email: 'john.d@example.com', country: 'United States', balance: 1250, referralCode: 'CP-JOHN', referredBy: null, activeGeneratorCount: 2, password: 'password123' },
-  { id: 'usr_2', fullName: 'Ama Serwaa', username: 'amaser', email: 'ama.s@example.com', country: 'Ghana', balance: 850.50, referralCode: 'CP-AMAS', referredBy: 'CP-JOHN', activeGeneratorCount: 1, password: 'password123' },
-  { id: 'usr_3', fullName: 'Chioma Okoro', username: 'chiooko', email: 'chioma.o@example.com', country: 'Nigeria', balance: 3200, referralCode: 'CP-CHIO', referredBy: 'CP-AMAS', activeGeneratorCount: 3, password: 'password123' },
+  { id: 'usr_1', fullName: 'John Doe', username: 'johndoe', email: 'john.d@example.com', country: 'United States', balance: 1250, referralCode: 'CP-JOHN', referredBy: null, referralCount: 1, activeGeneratorCount: 2, password: 'password123' },
+  { id: 'usr_2', fullName: 'Ama Serwaa', username: 'amaser', email: 'ama.s@example.com', country: 'Ghana', balance: 850.50, referralCode: 'CP-AMAS', referredBy: 'CP-JOHN', referralCount: 1, activeGeneratorCount: 1, password: 'password123' },
+  { id: 'usr_3', fullName: 'Chioma Okoro', username: 'chiooko', email: 'chioma.o@example.com', country: 'Nigeria', balance: 3200, referralCode: 'CP-CHIO', referredBy: 'CP-AMAS', referralCount: 0, activeGeneratorCount: 3, password: 'password123' },
 ];
 
 const MOCK_DEPOSITS: DepositRequest[] = [
@@ -238,6 +239,7 @@ export default function AdminDashboardPage() {
     const newUser: UserRecord = {
       id: `usr_${Date.now()}`,
       balance: parseFloat(createUserForm.balance),
+      referralCount: 0,
       ...createUserForm
     }
     setUsers(prev => [newUser, ...prev]);
@@ -319,6 +321,8 @@ export default function AdminDashboardPage() {
   const pendingDepositsCount = deposits.filter(d => d.status === "pending").length;
   const copyText = (text: string, label: string) => navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!` }));
   
+  const totalReferrals = users.reduce((s, u) => s + (u.referralCount || 0), 0);
+
   const tabs: { id: Tab; label: string; icon: any; badge?: number; color: string }[] = [
     { id: "overview",     label: "Overview",    icon: BarChart3,       color: "from-blue-500 to-blue-600" },
     { id: "users",        label: "Users",       icon: Users,           color: "from-violet-500 to-purple-600", badge: users.length },
@@ -875,6 +879,59 @@ export default function AdminDashboardPage() {
                   );
                 })}
               </div>
+              )}
+            </div>
+          )}
+
+          {tab === "referrals" && (
+            <div className="space-y-4">
+              <div><h1 className="text-xl font-black text-white">Referral Management</h1><p className="text-slate-400 text-sm">Track referral codes and referred users</p></div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[
+                  { label: "Total Referrals", value: totalReferrals.toString(), icon: Link2, color: "text-amber-400" },
+                  { label: "Active Codes", value: users.filter((r: any) => r.referralCode).length.toString(), icon: CheckCircle, color: "text-green-400" },
+                  { label: "Total Users", value: users.length.toString(), icon: Users, color: "text-blue-400" },
+                ].map(({ label, value, icon: Icon, color }) => (
+                  <div key={label} className="bg-slate-800 rounded-2xl border border-slate-700 p-4 text-center">
+                    <Icon className={`w-6 h-6 ${color} mx-auto mb-2`} />
+                    <p className="text-white text-xl font-black">{value}</p>
+                    <p className="text-slate-400 text-xs mt-0.5">{label}</p>
+                  </div>
+                ))}
+              </div>
+              {users.length === 0 ? (
+                <div className="bg-slate-800 rounded-2xl border border-slate-700 p-10 text-center">
+                  <Link2 className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                  <p className="text-slate-400">No referral data yet.</p>
+                </div>
+              ) : (
+                <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead><tr className="border-b border-slate-700 bg-slate-700/50">
+                        <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">User</th>
+                        <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referral Code</th>
+                        <th className="text-center px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referred</th>
+                        <th className="text-right px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Balance</th>
+                      </tr></thead>
+                      <tbody className="divide-y divide-slate-700">
+                        {users.map((r: any) => (
+                          <tr key={r.id} className="hover:bg-slate-700/40 transition-colors">
+                            <td className="px-4 py-3"><p className="text-white font-medium text-sm">{r.fullName}</p><p className="text-slate-400 text-xs">@{r.username}</p></td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-amber-400 font-bold font-mono text-xs bg-amber-900/30 border border-amber-700 px-2 py-0.5 rounded-lg">{r.referralCode || "—"}</span>
+                                {r.referralCode && <button onClick={() => copyText(r.referralCode, "Referral code")} className="text-slate-500 hover:text-amber-400"><Copy className="w-3 h-3" /></button>}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center"><Badge className={`text-xs border ${(r.referralCount || 0) > 0 ? "bg-green-900/40 text-green-400 border-green-700" : "bg-slate-700 text-slate-400 border-slate-600"}`}>{r.referralCount || 0} users</Badge></td>
+                            <td className="px-4 py-3 text-right"><span className="text-green-400 font-bold text-sm">${(r.balance || 0).toFixed(2)}</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               )}
             </div>
           )}
