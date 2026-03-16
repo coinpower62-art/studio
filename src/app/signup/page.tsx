@@ -44,6 +44,7 @@ import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const formSchema = z.object({
   username: z.string().min(2, { message: "Username must be at least 2 characters." }),
+  fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
   password: z.string().min(8, { message: "Password must be at least 8 characters." }),
   language: z.string({ required_error: "Please select a language." }),
@@ -68,6 +69,7 @@ export default function SignUpPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       username: "",
+      fullName: "",
       email: "",
       password: "",
       referralCode: "",
@@ -110,7 +112,7 @@ export default function SignUpPage() {
       if (newUser) {
         unsubscribe();
 
-        updateProfile(newUser, { displayName: values.username }).catch((profileError) => {
+        updateProfile(newUser, { displayName: values.fullName }).catch((profileError) => {
             console.error("Error updating profile: ", profileError);
         });
 
@@ -120,7 +122,7 @@ export default function SignUpPage() {
           id: newUser.uid,
           email: values.email,
           username: values.username,
-          fullName: values.username,
+          fullName: values.fullName,
           preferredLanguageCode: values.language,
           countryId: values.country,
           balance: 1.00, // $1 bonus
@@ -166,6 +168,19 @@ export default function SignUpPage() {
                     <FormLabel>Username</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. johndoe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. John Doe" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -278,5 +293,3 @@ export default function SignUpPage() {
     </div>
   );
 }
-
-    
