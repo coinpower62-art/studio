@@ -9,7 +9,7 @@ import {
   CheckCircle2, XCircle, X, BarChart3,
   ArrowUpFromLine, Settings, ChevronRight, RefreshCw,
   Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
-  Pencil, ImagePlus, Activity, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Landmark
+  Pencil, ImagePlus, Activity, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Landmark, Info
 } from "lucide-react";
 
 import { useToast } from "@/hooks/use-toast";
@@ -50,7 +50,7 @@ type Generator = {
   roi: string; period: string; minInvest: string; maxInvest: string; investors: string;
 };
 
-type NewGenerator = Omit<Generator, "id">;
+type NewGenerator = Omit<Generator, "id" | 'isFree'>;
 
 const BLANK_GEN: NewGenerator = {
   name: "", subtitle: "", icon: "⚡", color: "from-amber-400 to-orange-500",
@@ -208,8 +208,8 @@ export default function AdminDashboardPage() {
 
   const [showCreateGen, setShowCreateGen] = useState(false);
   const [editingGen, setEditingGen] = useState<Generator | null>(null);
-  const [newGen, setNewGen] = useState<NewGenerator>({ ...BLANK_GEN });
-  
+  const [genForm, setGenForm] = useState<NewGenerator | Generator>({ ...BLANK_GEN });
+
   const [activityForm, setActivityForm] = useState({ username: "", country: "", action: "", amount: "", color: "from-amber-400 to-orange-500" });
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void }>({
     open: false, title: "", description: "", onConfirm: () => {},
@@ -277,6 +277,38 @@ export default function AdminDashboardPage() {
     setWithdrawals(prev => prev.filter(w => w.id !== id));
     toast({ title: "Record deleted." });
   }
+
+  const handleSaveGenerator = () => {
+    if ('id' in genForm && editingGen) { // Update
+        setGenerators(prev => prev.map(g => g.id === editingGen.id ? {...g, ...genForm} : g));
+        toast({ title: "Generator updated!" });
+    } else { // Create
+        const createdGen: Generator = {
+            id: `gen_${Date.now()}`,
+            ...(genForm as NewGenerator),
+        };
+        setGenerators(prev => [createdGen, ...prev]);
+        toast({ title: "Generator created!" });
+    }
+    setShowCreateGen(false);
+    setEditingGen(null);
+  };
+
+  const openGeneratorModal = (generator: Generator | null) => {
+      if (generator) {
+          setEditingGen(generator);
+          setGenForm(generator);
+      } else {
+          setEditingGen(null);
+          setGenForm({ ...BLANK_GEN });
+      }
+      setShowCreateGen(true);
+  }
+
+  const handleDeleteGenerator = (id: string) => {
+    setGenerators(prev => prev.filter(g => g.id !== id));
+    toast({ title: 'Generator deleted' });
+  };
   
   if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
   if (!admin) return null; // Should be redirected by useEffect
@@ -327,6 +359,103 @@ export default function AdminDashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {showCreateGen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+            <div className="bg-slate-800 border border-slate-600 rounded-2xl w-full max-w-lg shadow-2xl">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
+                    <div>
+                        <h2 className="text-white font-black text-lg">{editingGen ? 'Edit' : 'Create'} Generator</h2>
+                        <p className="text-slate-400 text-xs mt-0.5">{editingGen ? `Editing ${editingGen.name}` : 'Create a new investment generator'}</p>
+                    </div>
+                    <button onClick={() => setShowCreateGen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700"><X className="w-4 h-4" /></button>
+                </div>
+                <div className="p-5 space-y-3 max-h-[80vh] overflow-y-auto">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Name *</label>
+                            <Input value={genForm.name} onChange={e => setGenForm(f => ({ ...f, name: e.target.value }))}
+                                placeholder="e.g. PG5 Generator" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                        </div>
+                        <div>
+                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Subtitle *</label>
+                            <Input value={genForm.subtitle} onChange={e => setGenForm(f => ({ ...f, subtitle: e.target.value }))}
+                                placeholder="e.g. Ultra Power Plan" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                          <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Icon (Emoji) *</label>
+                          <Input value={genForm.icon} onChange={e => setGenForm(f => ({ ...f, icon: e.target.value }))}
+                              placeholder="e.g. 🏆" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                      </div>
+                       <div>
+                          <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Color Theme *</label>
+                          <select value={genForm.color} onChange={e => setGenForm(f => ({...f, color: e.target.value}))}
+                              className="w-full h-9 rounded-md bg-slate-700 border border-slate-600 text-white text-sm px-3">
+                              {COLORS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                          </select>
+                      </div>
+                    </div>
+                     <div className="grid grid-cols-3 gap-3">
+                        <div>
+                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Price *</label>
+                            <Input type="number" min="0" value={genForm.price} onChange={e => setGenForm(f => ({ ...f, price: Number(e.target.value) }))}
+                                className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                        </div>
+                        <div>
+                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Duration (Days) *</label>
+                            <Input type="number" min="1" value={genForm.duration} onChange={e => setGenForm(f => ({ ...f, duration: Number(e.target.value) }))}
+                                className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
+                        </div>
+                         <div>
+                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Daily Income *</label>
+                            <Input type="number" min="0" step="0.01" value={genForm.dailyIncome} onChange={e => setGenForm(f => ({ ...f, dailyIncome: Number(e.target.value) }))}
+                                className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">ROI Display</label>
+                            <Input value={genForm.roi} onChange={e => setGenForm(f => ({ ...f, roi: e.target.value }))}
+                                placeholder="e.g. $5.00/day" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                        </div>
+                        <div>
+                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Period Display</label>
+                            <Input value={genForm.period} onChange={e => setGenForm(f => ({ ...f, period: e.target.value }))}
+                                placeholder="e.g. Daily" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Min/Max Invest</label>
+                            <div className="flex gap-2">
+                              <Input value={genForm.minInvest} onChange={e => setGenForm(f => ({ ...f, minInvest: e.target.value }))} placeholder="e.g. $50" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                              <Input value={genForm.maxInvest} onChange={e => setGenForm(f => ({ ...f, maxInvest: e.target.value }))} placeholder="e.g. $100" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Investors Display</label>
+                            <Input value={genForm.investors} onChange={e => setGenForm(f => ({ ...f, investors: e.target.value }))} placeholder="e.g. 500+" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                        </div>
+                    </div>
+                     <div className="flex items-center justify-between bg-slate-700/50 rounded-lg p-3">
+                        <label htmlFor="published" className="text-sm font-semibold text-white">Publish Generator</label>
+                        <input id="published" type="checkbox" checked={genForm.published} onChange={e => setGenForm(f => ({...f, published: e.target.checked}))}
+                            className="w-5 h-5 rounded-sm" />
+                    </div>
+                    <div className="flex gap-3 pt-2">
+                        <Button onClick={() => setShowCreateGen(false)} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
+                        <Button
+                            onClick={handleSaveGenerator}
+                            className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold">
+                             ✓ Save Generator
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
 
       {sidebarOpen && (
         <div
@@ -749,6 +878,67 @@ export default function AdminDashboardPage() {
               )}
             </div>
           )}
+
+          {tab === "generators" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h1 className="text-xl font-black text-white">Generators Factory</h1>
+                  <p className="text-slate-400 text-sm">Create, edit, publish generators · {generators.length} total · {generators.filter(g => g.published).length} published</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => {}} variant="outline" size="sm" className="h-9 border-slate-600 text-slate-300 hover:bg-slate-700"><RefreshCw className="w-3.5 h-3.5" /></Button>
+                  <Button onClick={() => openGeneratorModal(null)}
+                    data-testid="button-create-generator"
+                    className="h-9 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-sm flex items-center gap-1.5 rounded-xl shadow-md">
+                    <Plus className="w-4 h-4" /> New Generator
+                  </Button>
+                </div>
+              </div>
+              {gensLoading ? <p className="text-slate-400 text-sm">Loading...</p> : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {generators.map(g => (
+                    <div key={g.id} className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+                      <div className={`bg-gradient-to-r ${g.color} p-4 flex items-center justify-between`}>
+                        <div className="flex items-center gap-3">
+                           <span className="text-2xl">{g.icon}</span>
+                           <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-black text-white text-sm">{g.name}</p>
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${g.published ? "bg-green-500 text-white" : "bg-black/30 text-white/70"}`}>
+                                  {g.published ? "LIVE" : "DRAFT"}
+                                </span>
+                              </div>
+                              <p className="text-white/70 text-xs">{g.subtitle}</p>
+                           </div>
+                        </div>
+                        <div className="text-right">
+                           <p className="text-white text-xl font-black">{g.roi}</p>
+                           <p className="text-white/70 text-xs">{g.period}</p>
+                        </div>
+                      </div>
+                      <div className="p-4 space-y-3">
+                         <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div><span className="text-slate-400">Price:</span> <span className="text-white font-semibold">${g.price.toLocaleString()}</span></div>
+                          <div><span className="text-slate-400">Daily Income:</span> <span className="text-green-400 font-semibold">${g.dailyIncome.toFixed(2)}</span></div>
+                          <div><span className="text-slate-400">Duration:</span> <span className="text-white font-semibold">{g.duration} days</span></div>
+                          <div><span className="text-slate-400">Investors:</span> <span className="text-white font-semibold">{g.investors}</span></div>
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                          <Button onClick={() => openGeneratorModal(g)} variant="outline" size="sm" className="h-8 flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 gap-1.5"><Pencil className="w-3 h-3" /> Edit</Button>
+                          <Button onClick={() => openConfirm('Delete Generator', `Are you sure you want to delete ${g.name}? This action cannot be undone.`, () => handleDeleteGenerator(g.id))}
+                            variant="destructive" size="sm" className="h-8 flex-1 bg-red-900/40 text-red-400 border border-red-700/50 hover:bg-red-900/60 gap-1.5">
+                            <Trash2 className="w-3 h-3" /> Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
         </main>
       </div>
 
