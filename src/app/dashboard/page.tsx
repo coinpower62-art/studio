@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser, useFirestore } from "@/firebase";
-import { useUserStore } from "@/hooks/use-user-store";
+import { useUserStore } from '@/hooks/use-user-store';
 import { doc, updateDoc } from 'firebase/firestore';
 import TickerTape from "@/components/TickerTape";
 
@@ -115,7 +115,7 @@ export default function Dashboard() {
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
       <div className="w-full bg-amber-50 border-b border-amber-200 overflow-hidden">
-        <div className="flex items-center h-9">
+        <div className="flex items-center h-7">
           <div className="flex-shrink-0 bg-amber-100 text-amber-700 text-xs font-bold px-3 h-full flex items-center gap-1.5 z-10">
             <span>📢</span>
             <span className="hidden sm:inline tracking-wide">NEWS</span>

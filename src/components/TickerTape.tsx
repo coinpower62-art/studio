@@ -30,7 +30,7 @@ export default function TickerTape() {
     const items = [...cryptoData, ...cryptoData, ...cryptoData, ...cryptoData]; // Duplicate for seamless scroll
     return (
         <div className="w-full bg-white border-b border-t border-gray-200 overflow-hidden">
-            <div className="flex items-center h-10">
+            <div className="flex items-center h-8">
                 <div className="overflow-hidden flex-1 relative h-full flex items-center">
                     <div className="animate-marquee-fast flex whitespace-nowrap">
                         {items.map((item, index) => (
