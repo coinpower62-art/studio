@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, updateProfile } from "firebase/auth";
 import { doc, serverTimestamp } from "firebase/firestore";
 import type { FirebaseError } from 'firebase/app';
 
@@ -43,7 +43,7 @@ import { initiateEmailSignUp } from "@/firebase/non-blocking-login";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const formSchema = z.object({
-  fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
+  username: z.string().min(2, { message: "Username must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
   password: z.string().min(8, { message: "Password must be at least 8 characters." }),
   language: z.string({ required_error: "Please select a language." }),
@@ -67,7 +67,7 @@ export default function SignUpPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: "",
+      username: "",
       email: "",
       password: "",
       referralCode: "",
@@ -109,19 +109,22 @@ export default function SignUpPage() {
     const unsubscribe = onAuthStateChanged(auth, (newUser) => {
       if (newUser) {
         unsubscribe();
-        const [firstName, ...lastNameParts] = values.fullName.split(' ');
-        const lastName = lastNameParts.join(' ');
+
+        updateProfile(newUser, { displayName: values.username }).catch((profileError) => {
+            console.error("Error updating profile: ", profileError);
+        });
+
         const userRef = doc(firestore, "users", newUser.uid);
         
         const userData: any = {
           id: newUser.uid,
           email: values.email,
-          firstName: firstName || '',
-          lastName: lastName || '',
+          username: values.username,
+          fullName: values.username,
           preferredLanguageCode: values.language,
           countryId: values.country,
           balance: 1.00, // $1 bonus
-          referralCode: genReferralCode(firstName || 'USER'),
+          referralCode: genReferralCode(values.username),
           referralCount: 0,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
@@ -157,12 +160,12 @@ export default function SignUpPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="fullName"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>Username</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
+                      <Input placeholder="e.g. johndoe" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -275,3 +278,5 @@ export default function SignUpPage() {
     </div>
   );
 }
+
+    

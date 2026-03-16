@@ -18,9 +18,9 @@ export default function DashboardPage() {
   const { balance } = useUserStore();
   const { user } = useUser();
 
-  const getFirstName = () => {
+  const getGreetingName = () => {
     if (user?.displayName) {
-      return user.displayName.split(' ')[0];
+      return user.displayName;
     }
     return "Back";
   }
@@ -28,7 +28,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome {getFirstName()}!</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Welcome {getGreetingName()}!</h1>
         <p className="text-muted-foreground">
           Here's a snapshot of your investment portfolio.
         </p>
@@ -84,3 +84,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
