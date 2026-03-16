@@ -3,10 +3,15 @@
 import { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { generators as allGenerators, type Generator } from '@/lib/data';
 import { useDoc, useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { doc, collection, serverTimestamp, getDocs, query, where, writeBatch } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, getDocs, query, where, writeBatch, Timestamp, addDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { Timestamp } from 'firebase/firestore';
 
+export interface RedeemedCode {
+  id: string;
+  code: string;
+  amount: number;
+  createdAt: Timestamp;
+}
 
 export interface RentedGenerator {
   id: string; // This is the doc id in firestore
@@ -40,6 +45,8 @@ interface UserStoreContextType {
   referralCode: string;
   referralCount: number;
   rentedGenerators: RentedGenerator[];
+  redeemedCodes: RedeemedCode[];
+  addRedeemedCode: (code: Omit<RedeemedCode, 'id' | 'createdAt'> & { createdAt: Date }) => void;
   rentGenerator: (generatorId: string) => 'success' | 'insufficient_funds';
   collectEarnings: (rentedInstance: RentedGenerator) => 'collected' | 'not_ready' | 'expired';
 }
@@ -60,6 +67,12 @@ export function UserStoreProvider({ children }: { children: ReactNode }) {
     return collection(firestore, 'users', user.uid, 'rentedGenerators');
   }, [firestore, user]);
   const { data: rentedGeneratorsData } = useCollection<RentedGenerator>(rentedGeneratorsRef);
+  
+  const redeemedCodesRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'users', user.uid, 'redeemedCodes');
+  }, [firestore, user]);
+  const { data: redeemedCodesData } = useCollection<RedeemedCode>(redeemedCodesRef);
 
   const balance = userData?.balance ?? 0;
   const username = userData?.username ?? '';
@@ -68,6 +81,16 @@ export function UserStoreProvider({ children }: { children: ReactNode }) {
   const referralCode = userData?.referralCode ?? '';
   const referralCount = userData?.referralCount ?? 0;
   const rentedGenerators = rentedGeneratorsData || [];
+  const redeemedCodes = redeemedCodesData || [];
+
+  const addRedeemedCode = useCallback((code: Omit<RedeemedCode, 'id' | 'createdAt'> & { createdAt: Date }) => {
+    if (!redeemedCodesRef) return;
+    const newCode = {
+        ...code,
+        createdAt: Timestamp.fromDate(code.createdAt),
+    };
+    addDocumentNonBlocking(redeemedCodesRef, newCode);
+  }, [redeemedCodesRef]);
 
   const rentGenerator = useCallback((generatorId: string): 'success' | 'insufficient_funds' => {
     if (!firestore || !user || !userRef || !rentedGeneratorsRef ) return 'insufficient_funds';
@@ -160,7 +183,7 @@ export function UserStoreProvider({ children }: { children: ReactNode }) {
     }
   }, [firestore, user, userRef, balance]);
 
-  const value = { balance, username, fullName, country, referralCode, referralCount, rentedGenerators, rentGenerator, collectEarnings };
+  const value = { balance, username, fullName, country, referralCode, referralCount, rentedGenerators, redeemedCodes, addRedeemedCode, rentGenerator, collectEarnings };
 
   return (
     <UserStoreContext.Provider value={value}>

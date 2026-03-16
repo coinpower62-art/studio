@@ -180,6 +180,20 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "username", "fullName", "country", "method", "amount", "netAmount", "fee", "details", "status", "createdAt"]
+    },
+    "RedeemedCode": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "RedeemedCode",
+        "type": "object",
+        "description": "Represents a gift code that a user has redeemed.",
+        "properties": {
+            "id": { "type": "string" },
+            "userId": { "type": "string" },
+            "code": { "type": "string" },
+            "amount": { "type": "number" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["userId", "code", "amount", "createdAt"]
     }
   },
   "auth": {
@@ -228,6 +242,16 @@
                 "$ref": "#/backend/entities/WithdrawalRequest"
             },
             "description": "Stores a specific user's withdrawal requests. Admins can review all requests across users."
+        }
+      },
+      {
+        "path": "/users/{userId}/redeemedCodes/{redeemedCodeId}",
+        "definition": {
+          "entityName": "RedeemedCode",
+          "schema": {
+            "$ref": "#/backend/entities/RedeemedCode"
+          },
+          "description": "Stores a record of gift codes redeemed by a user."
         }
       }
     ]

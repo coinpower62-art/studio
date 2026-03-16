@@ -78,5 +78,11 @@ service cloud.firestore {
       allow create: if isOwner(userId) && request.resource.data.userId == userId;
       allow update, delete: if false; // Only admins can manage status
     }
+
+    match /users/{userId}/redeemedCodes/{redeemedCodeId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId);
+        allow update, delete: if false;
+    }
   }
 }

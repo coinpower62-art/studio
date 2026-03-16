@@ -9,9 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUser, useFirestore } from "@/firebase";
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
 import { useUserStore } from "@/hooks/use-user-store";
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, addDoc } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const recentActivities = [
   { type: "deposit", amount: "+$500.00", time: "2h ago" },
@@ -32,14 +33,13 @@ export default function Dashboard() {
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
-  const { balance, fullName, country, referralCode, rentedGenerators } = useUserStore();
+  const { balance, fullName, country, referralCode, rentedGenerators, redeemedCodes, addRedeemedCode } = useUserStore();
   const firestore = useFirestore();
 
   const [copied, setCopied] = useState(false);
   const [giftCode, setGiftCode] = useState("");
   const [redeemSuccess, setRedeemSuccess] = useState<{ amount: number } | null>(null);
   const [isRedeeming, setIsRedeeming] = useState(false);
-  const [redeemedCodes, setRedeemedCodes] = useState<any[]>([]);
   
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -62,15 +62,23 @@ export default function Dashboard() {
     const amount = validCodes[giftCode.trim().toUpperCase()];
 
     if (amount) {
+        if (redeemedCodes.find(c => c.code === giftCode.trim().toUpperCase())) {
+            toast({ title: "Code Already Redeemed", description: "You have already used this gift code.", variant: "destructive" });
+            setIsRedeeming(false);
+            return;
+        }
+
         try {
             const userRef = doc(firestore, 'users', user.uid);
-            await updateDoc(userRef, {
+            updateDocumentNonBlocking(userRef, {
                 balance: balance + amount
             });
+
+            const newRedeemedCode = { code: giftCode.trim().toUpperCase(), amount, createdAt: new Date() };
+            addRedeemedCode(newRedeemedCode);
+            
             setGiftCode("");
             setRedeemSuccess({ amount });
-            const newRedeemedCode = { id: Date.now().toString(), code: giftCode.trim().toUpperCase(), amount };
-            setRedeemedCodes(prev => [newRedeemedCode, ...prev]);
         } catch (error) {
             toast({ title: "Error Redeeming Code", description: "Could not update balance.", variant: "destructive" });
         }
@@ -82,7 +90,7 @@ export default function Dashboard() {
 
   if (isUserLoading || !user) {
     return (
-      <div className="pt-12 p-4 pb-20 sm:p-6 max-w-7xl mx-auto">
+      <div className="p-4 pt-8 pb-20 sm:p-6 max-w-7xl mx-auto">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
         </div>
@@ -101,7 +109,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
+    <div className="pb-20 min-h-screen bg-[#f7f9f4]">
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4 sm:py-6">
@@ -147,8 +155,9 @@ export default function Dashboard() {
         </div>
 
         {/* Video Tutorial Frame */}
-        <div
+        <button
           data-testid="button-tutorial-banner"
+          onClick={() => router.push('/dashboard/support')}
           className="w-full rounded-2xl overflow-hidden shadow-md border border-amber-100/60 group text-left mb-4 sm:mb-6"
         >
           {/* Thumbnail */}
@@ -226,7 +235,7 @@ export default function Dashboard() {
             </div>
             <ArrowUpRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
           </div>
-        </div>
+        </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-amber-100/60 p-4 sm:p-6">
@@ -393,7 +402,6 @@ export default function Dashboard() {
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
                       <span className="text-xs font-mono text-gray-600">{c.code}</span>
-                      {c.note && <span className="text-[10px] text-gray-400 italic">{c.note}</span>}
                     </div>
                     <span className="text-xs font-bold text-green-600">+${c.amount}</span>
                   </div>
