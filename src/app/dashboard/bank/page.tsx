@@ -210,13 +210,13 @@ export default function BankPage() {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'users', user.uid, 'depositRequests'), orderBy('createdAt', 'desc'), limit(50));
   }, [firestore, user]);
-  const { data: depositRecords = [] } = useCollection<DepositRecord>(depositsRef);
+  const { data: depositRecords } = useCollection<DepositRecord>(depositsRef);
 
   const withdrawalsRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'users', user.uid, 'withdrawalRequests'), orderBy('createdAt', 'desc'), limit(50));
   }, [firestore, user]);
-  const { data: withdrawRecords = [] } = useCollection<WithdrawRecord>(withdrawalsRef);
+  const { data: withdrawRecords } = useCollection<WithdrawRecord>(withdrawalsRef);
 
   const { display: countdown, expired } = useCountdown(mode === "deposit");
 
@@ -360,7 +360,7 @@ export default function BankPage() {
   if (isUserLoading) return <div className="pt-12 p-4 pb-20 max-w-4xl mx-auto"><Skeleton className="h-64 rounded-2xl" /></div>;
   if (!user) { router.push("/signin"); return null; }
 
-  const hasApprovedDeposit = (depositRecords as any[]).some((d) => d.status === "approved");
+  const hasApprovedDeposit = (depositRecords || []).some((d) => d.status === "approved");
 
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
@@ -861,7 +861,7 @@ export default function BankPage() {
                     className="pl-7 h-11 border-gray-200 focus:border-amber-400 text-lg font-semibold" />
                 </div>
               </div>
-              <Button onClick={handleWithdrawalSubmit} data-testid="button-confirm-withdraw"
+              <Button onClick={handleWithdrawSubmit} data-testid="button-confirm-withdraw"
                 disabled={isSubmitting}
                 className="w-full h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md">
                 {isSubmitting ? "Submitting request..." : `Withdraw $${amount || '0.00'}`}
