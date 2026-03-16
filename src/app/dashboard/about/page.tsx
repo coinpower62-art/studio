@@ -10,7 +10,7 @@ export default function AboutPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold tracking-tight">About CoinPower</h1>
-      <Card className="shadow-md">
+      <Card className="border-none shadow-none">
         <CardHeader>
           <CardTitle>Our Mission</CardTitle>
           <CardDescription>
@@ -54,7 +54,7 @@ export default function AboutPage() {
         </Card>
       )}
 
-      <Card className="shadow-md">
+      <Card className="border-none shadow-none">
         <CardHeader>
           <CardTitle>Contact Us</CardTitle>
         </CardHeader>
