@@ -181,7 +181,6 @@ export default function BankPage() {
   const userProfile = useUserStore();
   
   const [mode, setMode] = useState<Mode>(null);
-  const [showMomoPopup, setShowMomoPopup] = useState(false);
   const [amount, setAmount] = useState("");
   const [depositTxId, setDepositTxId] = useState("");
   const [depositMethod, setDepositMethod] = useState<string | null>(null);
@@ -537,7 +536,7 @@ export default function BankPage() {
         })()}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
-          <button data-testid="button-deposit" onClick={() => setShowMomoPopup(true)}
+          <button data-testid="button-deposit" onClick={() => openMode('deposit')}
             className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-200 text-left w-full ${mode === "deposit" ? "border-green-500 bg-green-50 shadow-md" : "border-gray-200 bg-white hover:border-green-300 hover:bg-green-50/50"}`}>
             <div className="w-11 h-11 rounded-xl overflow-hidden shadow-md flex-shrink-0">
               <img src={imageMap.momo} alt="MTN MoMo" className="w-full h-full object-cover" />
@@ -914,7 +913,7 @@ export default function BankPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800">{isDeposit ? 'Deposit' : 'Withdrawal'} Request</p>
-                    <p className="text-xs text-gray-400 truncate">{isDeposit ? tx.txId : (tx as WithdrawRecord).method} · {tx.createdAt.toDate().toLocaleDateString()}</p>
+                    <p className="text-xs text-gray-400 truncate">{isDeposit ? tx.txId : (tx as WithdrawRecord).method} · {new Date((tx as any).createdAt).toLocaleDateString()}</p>
                   </div>
                   <div className="text-right">
                     <p className={`text-sm font-bold ${isDeposit ? 'text-green-600' : 'text-gray-800'}`}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>
