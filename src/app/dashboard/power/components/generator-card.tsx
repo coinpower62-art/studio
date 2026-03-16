@@ -26,7 +26,7 @@ function formatTime(ms: number) {
 }
 
 export function GeneratorCard({ generator, rentedInstance }: GeneratorCardProps) {
-    const { rentGenerator, collectEarnings } = useUserStore();
+    const { rentGenerator, collectEarnings, balance } = useUserStore();
     const { toast } = useToast();
     const router = useRouter();
     const [showInsufficientFunds, setShowInsufficientFunds] = useState(false);
@@ -140,7 +140,7 @@ export function GeneratorCard({ generator, rentedInstance }: GeneratorCardProps)
                     <AlertDialogHeader>
                         <AlertDialogTitle>Insufficient Funds</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Your balance is too low to rent this generator. Please go to the Bank to Deposit.
+                            Your balance is too low to rent this generator. Please go to the Bank to make a deposit.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

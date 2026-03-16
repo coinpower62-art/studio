@@ -4,6 +4,7 @@ import { useUserStore } from '@/hooks/use-user-store';
 import { GeneratorCard } from './components/generator-card';
 import { generators as allGenerators } from '@/lib/data';
 import { motion } from 'framer-motion';
+import type { RentedGenerator } from '@/hooks/use-user-store';
 
 const containerVariants = {
   hidden: { opacity: 1 },
@@ -29,7 +30,7 @@ const itemVariants = {
 export default function PowerPage() {
     const { rentedGenerators } = useUserStore();
 
-    const getGeneratorDetails = (rentedInstance: any) => {
+    const getGeneratorDetails = (rentedInstance: RentedGenerator) => {
         return allGenerators.find(g => g.id === rentedInstance.generatorId);
     };
 
