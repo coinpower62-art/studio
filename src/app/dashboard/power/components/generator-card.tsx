@@ -94,8 +94,8 @@ export function GeneratorCard({ generator, rentedInstance }: GeneratorCardProps)
     const cardColors = colorMap[generator.color] || { gradient: 'bg-gradient-to-br from-gray-400 to-gray-600', button: 'bg-gradient-to-r from-gray-400 to-gray-600' };
 
     return (
-        <>
-            <Card className="shadow-lg flex flex-col border-border/20 hover:border-primary/60 transition-all bg-card overflow-hidden rounded-xl">
+        <div>
+            <Card className="shadow-lg flex flex-col h-full border-border/20 hover:border-primary/60 transition-all bg-card overflow-hidden rounded-xl">
                 <CardHeader className={`p-4 ${cardColors.gradient} text-white`}>
                     <div className="flex items-center justify-between">
                         <CardTitle className="text-xl font-bold">{generator.name}</CardTitle>
@@ -149,6 +149,6 @@ export function GeneratorCard({ generator, rentedInstance }: GeneratorCardProps)
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </>
+        </div>
     );
 }
