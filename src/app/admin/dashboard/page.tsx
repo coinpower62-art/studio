@@ -74,6 +74,10 @@ type WithdrawalRecord = {
   details: string; status: "pending" | "approved" | "rejected"; createdAt: number;
 };
 
+type ActivityPost = {
+  id: string; username: string; country: string; action: string; amount: string; color: string; createdAt: number;
+}
+
 // MOCK DATA
 const MOCK_USERS: UserRecord[] = [
   { id: 'usr_1', fullName: 'John Doe', username: 'johndoe', email: 'john.d@example.com', country: 'United States', balance: 1250, referralCode: 'CP-JOHN', referredBy: null, referralCount: 1, activeGeneratorCount: 2, password: 'password123' },
@@ -173,6 +177,7 @@ export default function AdminDashboardPage() {
   const [gensLoading, setGensLoading] = useState(true);
   const [deposits, setDeposits] = useState<DepositRequest[]>([]);
   const [withdrawals, setWithdrawals] = useState<WithdrawalRecord[]>([]);
+  const [activityPosts, setActivityPosts] = useState<ActivityPost[]>([]);
 
   useEffect(() => {
     // Simulate auth check
@@ -279,6 +284,22 @@ export default function AdminDashboardPage() {
     setWithdrawals(prev => prev.filter(w => w.id !== id));
     toast({ title: "Record deleted." });
   }
+  
+  const handleCreateActivityPost = () => {
+    const newPost: ActivityPost = {
+      id: `act_${Date.now()}`,
+      createdAt: Date.now(),
+      ...activityForm,
+    }
+    setActivityPosts(prev => [newPost, ...prev]);
+    toast({ title: "Activity post created!" });
+    setActivityForm({ username: "", country: "", action: "", amount: "", color: "from-amber-400 to-orange-500" });
+  }
+  
+  const handleDeleteActivityPost = (id: string) => {
+    setActivityPosts(prev => prev.filter(p => p.id !== id));
+    toast({ title: "Activity post deleted." });
+  }
 
   const handleSaveGenerator = () => {
     if ('id' in genForm && editingGen) { // Update
@@ -358,7 +379,7 @@ export default function AdminDashboardPage() {
             <AlertDialogAction
               onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(s => ({ ...s, open: false })); }}
               className="flex-1 bg-red-700 hover:bg-red-600 text-white border-0">
-              Yes, Delete
+              Yes, Confirm
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -996,6 +1017,125 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
+          {tab === "activity" && (
+            <div className="space-y-4">
+              <div><h1 className="text-xl font-black text-white">Activity Feed Factory</h1><p className="text-slate-400 text-sm">Manually create posts for the global activity feed</p></div>
+              <div className="bg-slate-800 rounded-2xl border border-slate-700 p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Username</label>
+                    <Input value={activityForm.username} onChange={e => setActivityForm(f => ({ ...f, username: e.target.value }))} placeholder="e.g. Marco R." className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Country</label>
+                    <Input value={activityForm.country} onChange={e => setActivityForm(f => ({ ...f, country: e.target.value }))} placeholder="e.g. Italy" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Action Description</label>
+                  <Input value={activityForm.action} onChange={e => setActivityForm(f => ({ ...f, action: e.target.value }))} placeholder="e.g. Activated PG3 Generator" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Amount</label>
+                    <Input value={activityForm.amount} onChange={e => setActivityForm(f => ({ ...f, amount: e.target.value }))} placeholder="e.g. +$2,400" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Color Theme</label>
+                    <select value={activityForm.color} onChange={e => setActivityForm(f => ({ ...f, color: e.target.value }))} className="w-full h-9 rounded-md bg-slate-700 border border-slate-600 text-white text-sm px-3">
+                      {COLORS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <Button onClick={handleCreateActivityPost} className="w-full bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold">✓ Add Post to Feed</Button>
+              </div>
+              <div className="space-y-2">
+                {activityPosts.map(p => (
+                  <div key={p.id} className="bg-slate-800/70 p-3 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${p.color} flex items-center justify-center`}>
+                        <Activity className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-white">{p.username} · {p.country}</p>
+                        <p className="text-xs text-slate-400">{p.action}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm font-bold text-green-400">{p.amount}</p>
+                      <button onClick={() => openConfirm("Delete Post", "Are you sure you want to delete this activity post?", () => handleDeleteActivityPost(p.id))} className="w-8 h-8 rounded-lg bg-red-900/30 text-red-400 border border-red-700/50 hover:bg-red-900/50 flex items-center justify-center">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {tab === "media" && (
+             <div className="space-y-4">
+              <div><h1 className="text-xl font-black text-white">Media Management</h1><p className="text-slate-400 text-sm">Update images for generators and activity page</p></div>
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Generator Images</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {['pg1', 'pg2', 'pg3', 'pg4'].map(id => (
+                      <div key={id} className="text-center">
+                         <img src={PlaceHolderImages.find(i => i.id === `gen-${id}`)?.imageUrl} alt={id} className="w-full h-auto rounded-lg aspect-square object-cover" />
+                         <label htmlFor={`gen-upload-${id}`} className="mt-2 text-xs text-amber-400 cursor-pointer hover:underline">
+                            Upload for {id.toUpperCase()}
+                         </label>
+                         <input type="file" id={`gen-upload-${id}`} className="hidden" accept="image/*" disabled />
+                      </div>
+                    ))}
+                  </div>
+              </div>
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Activity Page Images</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {['hero', 'teamwork'].map(id => (
+                      <div key={id} className="text-center">
+                         <img src={PlaceHolderImages.find(i => i.id === `activity-${id}`)?.imageUrl} alt={id} className="w-full h-auto rounded-lg aspect-[16/9] object-cover" />
+                         <label htmlFor={`act-upload-${id}`} className="mt-2 text-xs text-amber-400 cursor-pointer hover:underline">
+                            Upload {id} image
+                         </label>
+                         <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled />
+                      </div>
+                    ))}
+                  </div>
+              </div>
+            </div>
+          )}
+
+          {tab === "codes" && (
+             <div className="space-y-4">
+              <div><h1 className="text-xl font-black text-white">Gift Code Generator</h1><p className="text-slate-400 text-sm">Create bonus codes that add funds to a user's account</p></div>
+               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Create New Code</h3>
+                   <p className="text-xs text-slate-400">This feature is not yet implemented.</p>
+               </div>
+            </div>
+          )}
+
+          {tab === "settings" && (
+            <div className="space-y-4">
+              <div><h1 className="text-xl font-black text-white">Site Settings</h1><p className="text-slate-400 text-sm">Manage global configurations</p></div>
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700">
+                <p className="text-slate-400 text-sm">Settings page is not yet implemented.</p>
+              </div>
+            </div>
+          )}
+
+          {tab === "about" && (
+            <div className="space-y-4">
+               <div><h1 className="text-xl font-black text-white">About CoinPower</h1><p className="text-slate-400 text-sm">Version and system information</p></div>
+               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-2">
+                 <p className="text-white">CoinPower Admin Panel v1.0.0</p>
+                 <p className="text-slate-400 text-xs">Built with Next.js, Firebase, and shadcn/ui.</p>
+               </div>
+            </div>
+          )}
+          
         </main>
       </div>
 
