@@ -52,7 +52,7 @@ function BottomNav() {
             {navItems.map(item => {
                 const isActive = pathname === item.href;
                 return (
-                    <Link href={item.href} key={item.href} className={`flex flex-col items-center justify-center text-center p-1 rounded-md w-16 h-14 transition-colors ${isActive ? 'text-green-600' : 'text-gray-500 hover:bg-gray-100'}`}>
+                    <Link href={item.href} key={item.href} className={`flex flex-col items-center justify-center text-center p-1 rounded-md w-16 h-14 transition-colors ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-500 hover:bg-gray-100'}`}>
                         <item.icon className="w-5 h-5 mb-0.5" />
                         <span className="text-[10px] font-medium">{item.label}</span>
                     </Link>
@@ -87,12 +87,12 @@ function DashboardHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-gradient-to-r from-green-800 via-green-700 to-green-600 px-4 text-white shadow-md md:hidden">
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-gradient-to-r from-amber-500 to-amber-600 px-4 text-white shadow-md md:hidden">
       <Logo className="[&>span]:text-white [&>svg]:text-white" />
       <div className="flex items-center gap-2">
-         <Avatar className="h-8 w-8 border-2 border-green-400">
+         <Avatar className="h-8 w-8 border-2 border-white/50">
             <AvatarImage src={user?.photoURL || undefined} />
-            <AvatarFallback className="bg-green-600 text-white font-bold">{getInitials()}</AvatarFallback>
+            <AvatarFallback className="bg-amber-600 text-white font-bold">{getInitials()}</AvatarFallback>
         </Avatar>
         <button onClick={handleLogout} className="p-2 rounded-full hover:bg-white/10">
           <LogOut className="h-5 w-5" />
@@ -146,7 +146,6 @@ export default function DashboardLayout({
   return (
     <UserStoreProvider>
         <div className="flex min-h-screen">
-            {/* --- Desktop Sidebar (unchanged) --- */}
             <aside className="hidden md:flex md:flex-col md:w-64 md:border-r">
                  <div className="flex items-center justify-center h-16 border-b">
                     <Logo />
@@ -164,11 +163,9 @@ export default function DashboardLayout({
                  </nav>
             </aside>
             
-            <div className="flex flex-col flex-1">
-                {/* --- Mobile Header --- */}
+            <div className="flex flex-col flex-1 overflow-hidden">
                 <DashboardHeader />
                 
-                {/* --- Desktop Header (from original layout) --- */}
                 <header className="sticky top-0 z-30 hidden h-16 items-center gap-4 border-b bg-background/80 px-6 backdrop-blur-sm md:flex">
                   <div className="relative flex-1">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -215,7 +212,6 @@ export default function DashboardLayout({
                     {children}
                 </main>
 
-                {/* --- Mobile Bottom Nav --- */}
                 <BottomNav />
             </div>
         </div>
