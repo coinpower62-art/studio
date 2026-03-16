@@ -7,8 +7,8 @@
  *
  * Data Structure:
  * The data is organized into a top-level `/users/{userId}` collection, under which
- * all private subcollections like `rentedGenerators` are nested. There are also
- * separate top-level collections for transaction requests that admins will manage.
+ * all private subcollections for that user are nested. This includes rented generators,
+ * deposit requests, and withdrawal requests.
  *
  * Key Security Decisions:
  * - User Isolation: A user's access is strictly confined to documents within their
@@ -64,18 +64,19 @@ service cloud.firestore {
       allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
       allow delete: if isExistingOwner(userId);
     }
-    
-    // --------------------------------
-    // Transaction Requests (Admin Managed)
-    // --------------------------------
-    match /depositRequests/{requestId} {
-      allow create: if isOwner(request.resource.data.userId);
-      allow read, update, delete, list: if false; // Only admins can manage
+
+    match /users/{userId}/depositRequests/{requestId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update, delete: if false; // Only admins can manage status
     }
 
-    match /withdrawalRequests/{requestId} {
-      allow create: if isOwner(request.resource.data.userId);
-      allow read, update, delete, list: if false; // Only admins can manage
+    match /users/{userId}/withdrawalRequests/{requestId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update, delete: if false; // Only admins can manage status
     }
   }
 }

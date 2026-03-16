@@ -207,23 +207,23 @@
         }
       },
       {
-        "path": "/depositRequests/{depositRequestId}",
+        "path": "/users/{userId}/depositRequests/{depositRequestId}",
         "definition": {
             "entityName": "DepositRequest",
             "schema": {
                 "$ref": "#/backend/entities/DepositRequest"
             },
-            "description": "Stores all user deposit requests for admin review."
+            "description": "Stores a specific user's deposit requests. Admins can review all requests across users."
         }
       },
       {
-        "path": "/withdrawalRequests/{withdrawalRequestId}",
+        "path": "/users/{userId}/withdrawalRequests/{withdrawalRequestId}",
         "definition": {
             "entityName": "WithdrawalRequest",
             "schema": {
                 "$ref": "#/backend/entities/WithdrawalRequest"
             },
-            "description": "Stores all user withdrawal requests for admin review."
+            "description": "Stores a specific user's withdrawal requests. Admins can review all requests across users."
         }
       }
     ]

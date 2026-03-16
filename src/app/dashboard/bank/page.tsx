@@ -31,8 +31,7 @@ const withdrawalSchema = z.object({
 const WITHDRAWAL_FEE_PERCENTAGE = 0.15;
 
 export default function BankPage() {
-  const { firestore } = useFirebase();
-  const { user } = useUser();
+  const { firestore, user } = useFirebase();
   const { balance, username, fullName, country } = useUserStore();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('deposit');
@@ -54,7 +53,7 @@ export default function BankPage() {
   function handleDepositSubmit(values: z.infer<typeof depositSchema>) {
     if (!firestore || !user) return;
 
-    const depositRequestsRef = collection(firestore, 'depositRequests');
+    const depositRequestsRef = collection(firestore, 'users', user.uid, 'depositRequests');
     const newDeposit = {
       userId: user.uid,
       username,
@@ -87,7 +86,7 @@ export default function BankPage() {
       return;
     }
 
-    const withdrawalRequestsRef = collection(firestore, 'withdrawalRequests');
+    const withdrawalRequestsRef = collection(firestore, 'users', user.uid, 'withdrawalRequests');
     const newWithdrawal = {
       userId: user.uid,
       username,
@@ -232,11 +231,11 @@ export default function BankPage() {
                     <CardContent className="p-4 space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span>Withdrawal Fee:</span>
-                        <span className="font-medium">${withdrawalFee.toFixed(2)}</span>
+                        <span className="font-medium">GHS {withdrawalFee.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between font-bold text-base">
                         <span>You Will Receive:</span>
-                        <span className="text-growth">${netWithdrawal.toFixed(2)}</span>
+                        <span className="text-growth">GHS {netWithdrawal.toFixed(2)}</span>
                       </div>
                     </CardContent>
                   </Card>
