@@ -79,6 +79,12 @@ body {
   }
 }
 
+@layer utilities {
+    .bg-splash-gradient {
+        background: radial-gradient(ellipse at bottom, hsl(45 75% 45%), hsl(142 76% 15%));
+    }
+}
+
 @layer base {
   * {
     @apply border-border;
