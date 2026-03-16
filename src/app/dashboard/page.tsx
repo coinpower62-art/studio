@@ -10,9 +10,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser, useFirestore } from "@/firebase";
-import { useUserStore } from '@/hooks/use-user-store';
+import { useUserStore } from "@/hooks/use-user-store";
 import { doc, updateDoc } from 'firebase/firestore';
-import TickerTape from "@/components/TickerTape";
 
 const recentActivities = [
   { type: "deposit", amount: "+$500.00", time: "2h ago" },
@@ -94,17 +93,6 @@ export default function Dashboard() {
 
   const initials = fullName?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "CP";
 
-  const allAnnouncements = [
-    "🎉 NEW MEMBERS receive a FREE $1 bonus — start earning today with no deposit required!",
-    "💸 Earn 15% FREE referral commission every time a friend joins CoinPower — no limits!",
-    "⚡ Rent PG1–PG4 Generators and claim daily income every 24 hours on the Power page",
-    "🏆 Win exciting rewards and travel to Italy — participate in our Staged Win Program!",
-    "📈 Over $10 Million paid to 26,000+ investors across 21 countries worldwide",
-    "🔒 Secure & transparent — your balance is fully protected with bank-level security",
-  ];
-  const announcements = allAnnouncements.join("   ✦   ");
-  const firstAnnouncement = allAnnouncements[0];
-
   const stats = [
     { label: "Total Balance", value: `$${balance.toFixed(2)}`, icon: Wallet, change: "+2.5%", up: true, color: "from-amber-400 to-amber-600" },
     { label: "Monthly Profit", value: "$0.00", icon: TrendingUp, change: "+0%", up: true, color: "from-green-400 to-green-600" },
@@ -114,28 +102,6 @@ export default function Dashboard() {
 
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
-      <div className="w-full bg-amber-50 border-b border-amber-200 overflow-hidden">
-        <div className="flex items-center h-7">
-          <div className="flex-shrink-0 bg-amber-100 text-amber-700 text-xs font-bold px-3 h-full flex items-center gap-1.5 z-10">
-            <span>📢</span>
-            <span className="hidden sm:inline tracking-wide">NEWS</span>
-          </div>
-          {/* Mobile, static announcement */}
-          <div className="flex-1 px-3 text-amber-800 text-xs font-medium truncate sm:hidden">
-            {firstAnnouncement}
-          </div>
-          {/* Desktop, scrolling announcement */}
-          <div className="overflow-hidden flex-1 relative h-full items-center hidden sm:flex">
-            <div className="animate-marquee-slow flex whitespace-nowrap text-amber-800 text-xs font-semibold" aria-live="polite">
-              <span className="px-4">{announcements}</span>
-              <span className="px-4">{announcements}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <TickerTape />
-
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4 sm:py-6">
