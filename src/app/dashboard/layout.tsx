@@ -28,6 +28,7 @@ import {
   Loader,
   Store,
   History,
+  LifeBuoy,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -183,6 +184,18 @@ export default function DashboardLayout({
                 <Link href="/dashboard/about">
                   <Info />
                   <span>About</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={isLinkActive("/dashboard/support")}
+                tooltip={{ children: "Support" }}
+              >
+                <Link href="/dashboard/support">
+                  <LifeBuoy />
+                  <span>Support</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
