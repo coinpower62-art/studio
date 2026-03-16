@@ -59,7 +59,7 @@ function isCardExpired(expiry: string): boolean {
 }
 
 const DEPOSIT_PHONE = "+233592682060";
-const DEPOSIT_NAME = "M.F";
+const DEPOSIT_NAME = "M.K";
 const COUNTDOWN_SECONDS = 5 * 60;
 
 type WithdrawRecord = {
@@ -215,7 +215,7 @@ export default function BankPage() {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'users', user.uid, 'withdrawalRequests'), orderBy('createdAt', 'desc'), limit(50));
   }, [firestore, user]);
-  const { data: withdrawRecords } = useCollection<WithdrawRecord>(withdrawalsRef);
+  const { data: withdrawRecords } = useCollection<WithdrawalRecord>(withdrawalsRef);
 
   const { display: countdown, expired } = useCountdown(mode === "deposit");
 
@@ -356,10 +356,18 @@ export default function BankPage() {
     }
   };
 
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push("/signin");
+    }
+  }, [isUserLoading, user, router]);
+
   if (isUserLoading) return <div className="pt-12 p-4 pb-20 max-w-4xl mx-auto"><Skeleton className="h-64 rounded-2xl" /></div>;
-  if (!user) { router.push("/signin"); return null; }
+  if (!user) return null;
 
   const hasApprovedDeposit = (depositRecords || []).some((d) => d.status === "approved");
+  const allTransactions = [...(depositRecords || []), ...(withdrawRecords || [])]
+    .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
 
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
@@ -656,6 +664,109 @@ export default function BankPage() {
               </Select>
             </div>
 
+            {depositMethod === "momo" && (
+              <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-10 h-7 rounded-lg overflow-hidden shadow-sm flex-shrink-0">
+                    <img src={imageMap.momo} alt="MTN MoMo" className="w-full h-full object-cover" />
+                  </div>
+                  <p className="text-xs text-yellow-800 font-bold uppercase tracking-wide">Send MTN MOMO payment to</p>
+                </div>
+                <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-yellow-100">
+                  <div>
+                    <p className="text-xs text-gray-400">Account Name</p>
+                    <p className="font-bold text-gray-900 text-sm sm:text-base">{DEPOSIT_NAME}</p>
+                  </div>
+                  <button data-testid="copy-name" onClick={() => copy(DEPOSIT_NAME, "Name")}
+                    className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
+                    <Copy className="w-4 h-4 text-amber-600" />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-yellow-100">
+                  <div>
+                    <p className="text-xs text-gray-400">MTN MOMO Number</p>
+                    <p className="font-bold text-gray-900 text-lg tracking-widest">{DEPOSIT_PHONE}</p>
+                  </div>
+                  <button data-testid="copy-phone" onClick={() => copy(DEPOSIT_PHONE, "Phone number")}
+                    className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
+                    <Copy className="w-4 h-4 text-amber-600" />
+                  </button>
+                </div>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                  <p className="text-amber-800 text-xs leading-relaxed font-medium">
+                    ✅ Send your exact deposit amount to the MTN MOMO number above, then fill in the amount and the Transaction ID from your confirmation SMS below.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {depositMethod === "telecel" && (
+              <div className="bg-red-50 rounded-xl border border-red-200 p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-14 h-9 rounded-lg overflow-hidden shadow-sm flex-shrink-0 bg-white flex items-center justify-center p-1">
+                    <img src={imageMap.telecel} alt="Telecel Cash" className="w-full h-full object-contain" />
+                  </div>
+                  <p className="text-xs text-red-800 font-bold uppercase tracking-wide">Send Telecel Cash payment to</p>
+                </div>
+                <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-red-100">
+                  <div>
+                    <p className="text-xs text-gray-400">Account Name</p>
+                    <p className="font-bold text-gray-900 text-sm sm:text-base">{DEPOSIT_NAME}</p>
+                  </div>
+                  <button data-testid="copy-telecel-name" onClick={() => copy(DEPOSIT_NAME, "Name")}
+                    className="p-2 rounded-lg bg-red-50 hover:bg-red-100 transition-colors border border-red-200">
+                    <Copy className="w-4 h-4 text-red-600" />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-red-100">
+                  <div>
+                    <p className="text-xs text-gray-400">Telecel Cash Number</p>
+                    <p className="font-bold text-gray-900 text-lg tracking-widest">{DEPOSIT_PHONE}</p>
+                  </div>
+                  <button data-testid="copy-telecel-phone" onClick={() => copy(DEPOSIT_PHONE, "Phone number")}
+                    className="p-2 rounded-lg bg-red-50 hover:bg-red-100 transition-colors border border-red-200">
+                    <Copy className="w-4 h-4 text-red-600" />
+                  </button>
+                </div>
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
+                  <p className="text-red-800 text-xs leading-relaxed font-medium">
+                    ✅ Send your exact deposit amount via Telecel Cash to the number above, then fill in the amount and Transaction ID from your confirmation SMS below.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {depositMethod === "usdt" && (
+              <div className="bg-teal-50 rounded-xl border border-teal-200 p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-9 h-9 rounded-full overflow-hidden shadow-sm flex-shrink-0">
+                    <img src={imageMap.usdt} alt="USDT" className="w-full h-full object-cover" />
+                  </div>
+                  <p className="text-xs text-teal-800 font-bold uppercase tracking-wide">Send USDT to this wallet</p>
+                </div>
+                <div className="bg-white rounded-lg px-3 py-2.5 border border-teal-100">
+                  <p className="text-xs text-gray-400 mb-1">Wallet Address (TRC20 / ERC20 / BEP20)</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-mono text-xs text-gray-900 font-bold break-all">TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE</p>
+                    <button data-testid="copy-usdt-address" onClick={() => copy("TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE", "Wallet address")}
+                      className="p-2 rounded-lg bg-teal-50 hover:bg-teal-100 transition-colors border border-teal-200 flex-shrink-0">
+                      <Copy className="w-4 h-4 text-teal-600" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {["TRC20", "ERC20", "BEP20"].map((net) => (
+                    <span key={net} className="px-2.5 py-1 text-xs font-bold rounded-lg bg-teal-100 text-teal-700 border border-teal-200">{net}</span>
+                  ))}
+                </div>
+                <div className="bg-teal-50 border border-teal-200 rounded-lg px-3 py-2.5">
+                  <p className="text-teal-800 text-xs leading-relaxed font-medium">
+                    ✅ Send USDT to the wallet address above, then enter the amount sent and your transaction hash (TxID) below.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {depositMethod === "card" ? (
               <div className="space-y-4">
                 <div
@@ -896,37 +1007,38 @@ export default function BankPage() {
             </div>
           </div>
           <div className="space-y-2">
-            {[...(depositRecords || []), ...(withdrawRecords || [])]
-              .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
-              .filter(tx => {
-                if (historyTab === 'all') return true;
-                return historyTab === 'deposit' ? 'txId' in tx : !('txId' in tx);
-              })
-              .map(tx => {
-              const isDeposit = 'txId' in tx;
-              const statusColor = tx.status === 'approved' ? 'bg-green-100 text-green-700' : tx.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700';
-              const Icon = isDeposit ? ArrowDownToLine : ArrowUpFromLine;
-              return (
-                <div key={tx.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${statusColor.replace('text-', 'bg-').replace('700', '100')}`}>
-                    <Icon className={`w-4 h-4 ${statusColor.replace('bg-','text-').replace('100','600')}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800">{isDeposit ? 'Deposit' : 'Withdrawal'} Request</p>
-                    <p className="text-xs text-gray-400 truncate">{isDeposit ? tx.txId : (tx as WithdrawRecord).method} · {new Date((tx as any).createdAt).toLocaleDateString()}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-bold ${isDeposit ? 'text-green-600' : 'text-gray-800'}`}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>
-                    <Badge className={`text-xs mt-0.5 ${statusColor} border-0`}>{tx.status}</Badge>
-                  </div>
-                </div>
-              );
-            })}
-             {(!depositRecords || depositRecords.length === 0) && (!withdrawRecords || withdrawRecords.length === 0) && (
+            {allTransactions.length > 0 ? (
+              allTransactions
+                .filter(tx => {
+                  if (historyTab === 'all') return true;
+                  const isDeposit = 'txId' in tx;
+                  return historyTab === 'deposit' ? isDeposit : !isDeposit;
+                })
+                .map(tx => {
+                  const isDeposit = 'txId' in tx;
+                  const statusColor = tx.status === 'approved' ? 'bg-green-100 text-green-700' : tx.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700';
+                  const Icon = isDeposit ? ArrowDownToLine : ArrowUpFromLine;
+                  return (
+                    <div key={tx.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${statusColor.replace('text-', 'bg-').replace('700', '100')}`}>
+                        <Icon className={`w-4 h-4 ${statusColor.replace('bg-','text-').replace('100','600')}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-800">{isDeposit ? 'Deposit' : 'Withdrawal'} Request</p>
+                        <p className="text-xs text-gray-400 truncate">{isDeposit ? tx.txId : (tx as WithdrawRecord).method} · {tx.createdAt ? new Date(tx.createdAt.seconds * 1000).toLocaleDateString() : 'Processing...'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-sm font-bold ${isDeposit ? 'text-green-600' : 'text-gray-800'}`}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>
+                        <Badge className={`text-xs mt-0.5 ${statusColor} border-0`}>{tx.status}</Badge>
+                      </div>
+                    </div>
+                  );
+                })
+            ) : (
                 <div className="text-center py-8">
                     <p className="text-gray-500 text-sm">No transactions yet.</p>
                 </div>
-             )}
+            )}
           </div>
         </div>
       </div>
