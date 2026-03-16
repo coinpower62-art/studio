@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useEffect } from "react";
-import { onAuthStateChanged, updateProfile } from "firebase/auth";
-import { doc, serverTimestamp } from "firebase/firestore";
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useEffect } from 'react';
+import { onAuthStateChanged, updateProfile } from 'firebase/auth';
+import { doc, serverTimestamp } from 'firebase/firestore';
 import type { FirebaseError } from 'firebase/app';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -18,7 +18,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -26,29 +26,36 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { Logo } from "@/components/logo";
-import { countries, languages } from "@/lib/data";
-import { useAuth, useFirestore, useUser } from "@/firebase";
-import { initiateEmailSignUp } from "@/firebase/non-blocking-login";
-import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { Logo } from '@/components/logo';
+import { countries, languages } from '@/lib/data';
+import { useAuth, useFirestore, useUser } from '@/firebase';
+import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const formSchema = z.object({
-  username: z.string().min(2, { message: "Username must be at least 2 characters." }),
-  fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
-  language: z.string({ required_error: "Please select a language." }),
-  country: z.string({ required_error: "Please select a country." }),
+  username: z
+    .string()
+    .min(2, { message: 'Username must be at least 2 characters.' }),
+  fullName: z
+    .string()
+    .min(2, { message: 'Full name must be at least 2 characters.' }),
+  email: z.string().email({ message: 'Please enter a valid email address.' }),
+  password: z
+    .string()
+    .min(8, { message: 'Password must be at least 8 characters.' }),
+  phone: z.string().optional(),
+  language: z.string({ required_error: 'Please select a language.' }),
+  country: z.string({ required_error: 'Please select a country.' }),
   referralCode: z.string().optional(),
 });
 
@@ -68,17 +75,18 @@ export default function SignUpPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
-      fullName: "",
-      email: "",
-      password: "",
-      referralCode: "",
+      username: '',
+      fullName: '',
+      email: '',
+      password: '',
+      referralCode: '',
+      phone: '',
     },
   });
 
   useEffect(() => {
     if (!isUserLoading && user) {
-      router.push("/dashboard");
+      router.push('/dashboard');
     }
   }, [user, isUserLoading, router]);
 
@@ -95,29 +103,35 @@ export default function SignUpPage() {
     }
   }
 
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     form.clearErrors();
-    initiateEmailSignUp(auth, values.email, values.password, (error: FirebaseError) => {
+    initiateEmailSignUp(
+      auth,
+      values.email,
+      values.password,
+      (error: FirebaseError) => {
         const message = getAuthErrorMessage(error);
         toast({
-            variant: 'destructive',
-            title: 'Sign Up Failed',
-            description: message,
+          variant: 'destructive',
+          title: 'Sign Up Failed',
+          description: message,
         });
         form.reset(values, { keepIsSubmitting: false });
-    });
-    
+      }
+    );
+
     const unsubscribe = onAuthStateChanged(auth, (newUser) => {
       if (newUser) {
         unsubscribe();
 
-        updateProfile(newUser, { displayName: values.fullName }).catch((profileError) => {
-            console.error("Error updating profile: ", profileError);
-        });
+        updateProfile(newUser, { displayName: values.fullName }).catch(
+          (profileError) => {
+            console.error('Error updating profile: ', profileError);
+          }
+        );
 
-        const userRef = doc(firestore, "users", newUser.uid);
-        
+        const userRef = doc(firestore, 'users', newUser.uid);
+
         const userData: any = {
           id: newUser.uid,
           email: values.email,
@@ -125,7 +139,7 @@ export default function SignUpPage() {
           fullName: values.fullName,
           preferredLanguageCode: values.language,
           countryId: values.country,
-          balance: 1.00, // $1 bonus
+          balance: 1.0, // $1 bonus
           referralCode: genReferralCode(values.username),
           referralCount: 0,
           createdAt: serverTimestamp(),
@@ -133,16 +147,20 @@ export default function SignUpPage() {
         };
 
         if (values.referralCode) {
-            userData.referredBy = values.referralCode;
+          userData.referredBy = values.referralCode;
+        }
+
+        if (values.phone) {
+          userData.phone = values.phone;
         }
 
         setDocumentNonBlocking(userRef, userData, { merge: false });
-        
+
         toast({
-          title: "Account created!",
-          description: "Redirecting to your dashboard...",
+          title: 'Account created!',
+          description: 'Redirecting to your dashboard...',
         });
-        router.push("/dashboard");
+        router.push('/dashboard');
       }
     });
   }
@@ -152,7 +170,9 @@ export default function SignUpPage() {
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="items-center text-center">
           <Logo />
-          <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            Create your account
+          </CardTitle>
           <CardDescription>
             Join CoinPower and start your investment journey today.
           </CardDescription>
@@ -193,7 +213,11 @@ export default function SignUpPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="email@example.com" {...field} />
+                      <Input
+                        type="email"
+                        placeholder="email@example.com"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -212,7 +236,20 @@ export default function SignUpPage() {
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your phone number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
                 control={form.control}
                 name="referralCode"
                 render={({ field }) => (
@@ -232,7 +269,10 @@ export default function SignUpPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Language</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select language" />
@@ -256,14 +296,17 @@ export default function SignUpPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Country</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select country" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                           {countries.map((country) => (
+                          {countries.map((country) => (
                             <SelectItem key={country.value} value={country.value}>
                               {country.label}
                             </SelectItem>
@@ -275,16 +318,25 @@ export default function SignUpPage() {
                   )}
                 />
               </div>
-              <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={form.formState.isSubmitting}>
-                 {form.formState.isSubmitting ? "Creating Account..." : "Sign Up"}
+              <Button
+                type="submit"
+                className="w-full bg-accent hover:bg-accent/90"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting
+                  ? 'Creating Account...'
+                  : 'Sign Up'}
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="justify-center">
           <p className="text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link href="/signin" className="font-medium text-accent hover:underline">
+            Already have an account?{' '}
+            <Link
+              href="/signin"
+              className="font-medium text-accent hover:underline"
+            >
               Sign In
             </Link>
           </p>
