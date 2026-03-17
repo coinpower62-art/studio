@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { onAuthStateChanged, updateProfile } from 'firebase/auth';
+import { updateProfile, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import type { FirebaseError } from 'firebase/app';
 
@@ -21,7 +21,7 @@ import {
   TrendingUp, Users, Banknote, BadgeCheck, Globe
 } from "lucide-react";
 
-import { useAuth, useFirestore, useUser, initiateEmailSignUp, setDocumentNonBlocking } from '@/firebase';
+import { useAuth, useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
 import { countries, LANGUAGES, PHONE_CODES } from '@/lib/data';
 import { TRANSLATIONS } from '@/lib/translations';
 
@@ -279,26 +279,11 @@ export default function SignUp() {
     form.clearErrors();
     form.setValue("language", LANGUAGES.find(l => l.code === selectedLang)?.name ?? "English (US)");
 
-    initiateEmailSignUp(
-      auth,
-      values.email,
-      values.password,
-      (error: FirebaseError) => {
-        const message = getAuthErrorMessage(error);
-        form.setError("root", { message });
-        setIsSubmitting(false);
-      }
-    );
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+        const newUser = userCredential.user;
 
-    const unsubscribe = onAuthStateChanged(auth, (newUser) => {
-      if (newUser) {
-        unsubscribe();
-
-        updateProfile(newUser, { displayName: values.fullName }).catch(
-          (profileError) => {
-            console.error('Error updating profile: ', profileError);
-          }
-        );
+        await updateProfile(newUser, { displayName: values.fullName });
 
         const userRef = doc(firestore, 'users', newUser.uid);
         const dialCode = selectedPhoneCode.replace(/[^+\d]/g, "");
@@ -315,6 +300,7 @@ export default function SignUp() {
           balance: 1.0, // $1 bonus
           referralCode: genReferralCode(values.username),
           referralCount: 0,
+          hasWithdrawalPin: false,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         };
@@ -325,13 +311,20 @@ export default function SignUp() {
 
         setDocumentNonBlocking(userRef, userData, { merge: false });
 
+        await signOut(auth);
+        
         toast({
           title: 'Account created!',
-          description: 'Redirecting to your dashboard...',
+          description: 'Please sign in to continue.',
         });
-        router.push('/dashboard');
-      }
-    });
+        router.push('/signin');
+
+    } catch (error) {
+        const firebaseError = error as FirebaseError;
+        const message = getAuthErrorMessage(firebaseError);
+        form.setError("root", { message });
+        setIsSubmitting(false);
+    }
   }
 
   const { errors } = form.formState;
