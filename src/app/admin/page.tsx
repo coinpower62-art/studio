@@ -30,12 +30,12 @@ export default function AdminSignInPage() {
 
     // Using a timeout to simulate async operation
     setTimeout(() => {
-        if (username === 'admin' && password === 'admin') {
+        if (username === 'master@gmail.com' && password === 'Hostmyapp2577@') {
             localStorage.setItem('admin_logged_in', 'true');
             toast({ title: 'Login successful!', description: 'Redirecting to dashboard...' });
             router.push('/admin/dashboard');
         } else {
-            setError('Invalid username or password.');
+            setError('Invalid email or password.');
         }
         setIsLoading(false);
     }, 500);
@@ -66,13 +66,13 @@ export default function AdminSignInPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="text-slate-300 text-xs font-medium mb-1.5 block">Admin Username</label>
+              <label className="text-slate-300 text-xs font-medium mb-1.5 block">Admin Email</label>
               <Input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 data-testid="input-admin-username"
-                placeholder="admin"
-                autoComplete="username"
+                placeholder="master@gmail.com"
+                autoComplete="email"
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
