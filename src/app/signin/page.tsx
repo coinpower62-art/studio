@@ -25,7 +25,7 @@ import { AlertCircle } from "lucide-react";
 
 const signinSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
+  password: z.string().min(1, "Password is required"),
 });
 
 type SigninForm = z.infer<typeof signinSchema>;
@@ -55,11 +55,9 @@ export default function SignInPage() {
   function getAuthErrorMessage(error: FirebaseError): string {
     switch (error.code) {
       case 'auth/invalid-credential':
-        return 'Invalid email or password. Please try again.';
       case 'auth/user-not-found':
-        return 'No account found with this email address.';
       case 'auth/wrong-password':
-        return 'Incorrect password. Please try again.';
+        return 'Incorrect email or password. Please check your details and try again.';
       default:
         return 'An unexpected error occurred. Please try again.';
     }
@@ -83,7 +81,7 @@ export default function SignInPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-3">
-            <div className="h-16 w-16 rounded-2xl object-cover shadow-2xl bg-primary flex items-center justify-center">
+             <div className="h-16 w-16 rounded-2xl object-cover shadow-2xl bg-primary flex items-center justify-center">
               <svg
                 width="32"
                 height="32"
@@ -130,7 +128,7 @@ export default function SignInPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-700 font-medium text-sm">Email</FormLabel>
+                      <FormLabel className="text-gray-700 font-medium text-sm">Email Address</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
