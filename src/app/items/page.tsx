@@ -1,8 +1,9 @@
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { Button } from '@/components/ui/button'
 
 export default async function ItemsPage() {
+  const supabase = createClient();
   // 1. Fetch data from Supabase
   const { data: items, error } = await supabase.from('items').select('*')
 
@@ -18,6 +19,7 @@ export default async function ItemsPage() {
     
     if (!id) return;
 
+    const supabase = createClient();
     const { error } = await supabase
       .from('items')
       .delete()
