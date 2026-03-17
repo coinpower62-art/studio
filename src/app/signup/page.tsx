@@ -200,12 +200,6 @@ function TermsContent() {
   );
 }
 
-function genReferralCode(name: string): string {
-  const prefix = name.slice(0, 3).toUpperCase();
-  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `CP-${prefix}${suffix}`;
-}
-
 export default function SignUp() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -661,10 +655,10 @@ export default function SignUp() {
               <Button
                 type="submit"
                 data-testid="button-signup"
-                disabled={formState.isSubmitting}
+                disabled={mutation.isPending}
                 className="w-full h-11 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200"
               >
-                {formState.isSubmitting ? t.submitting : t.submit}
+                {mutation.isPending ? t.submitting : t.submit}
               </Button>
             </form>
           </Form>
@@ -681,12 +675,4 @@ export default function SignUp() {
       </div>
     </div>
   );
-} use this sgin up form to update the page
-
-Remember, the XML structure you generate is the only mechanism for applying changes to the user's code. Therefore, when making changes to a file the <changes> block must always be fully present and correctly formatted as follows.
-
-<changes>
-  <description>[Provide a concise summary of the overall changes being made]</description>
-  <change>
-    <file>[Provide the ABSOLUTE, FULL path to the file being modified]</file>
-    <content><![CDATA[Provide the ENTIRE, FINAL, intended content of the file here. Do NOT provide diffs or partial snippets. Ensure all code is properly escaped within the CDATA section.
+}
