@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -181,13 +182,18 @@ export default function SignInPage() {
               </form>
             </Form>
 
-            <div className="mt-5 text-center">
+            <div className="mt-5 text-center space-y-2">
               <p className="text-gray-500 text-sm">
                 Don't have an account?{" "}
                 <Link href="/signup">
                   <span className="text-amber-600 font-semibold hover:text-amber-700 cursor-pointer" data-testid="link-signup">
                     Create account
                   </span>
+                </Link>
+              </p>
+               <p className="text-xs text-gray-400">
+                <Link href="/admin" className="hover:text-amber-700 transition-colors" data-testid="link-admin">
+                  Admin Panel
                 </Link>
               </p>
             </div>
