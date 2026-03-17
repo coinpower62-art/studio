@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -51,6 +52,11 @@ const signupSchema = z.object({
 });
 
 type SignupForm = z.infer<typeof signupSchema>;
+
+function genReferralCode(username: string): string {
+    const code = `CP-${username.slice(0, 4).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    return code.slice(0, 12);
+}
 
 function TermsContent() {
   return (
@@ -219,6 +225,8 @@ export default function SignUp() {
   const [hasReadTerms, setHasReadTerms] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -267,6 +275,7 @@ export default function SignUp() {
   async function onSubmit(values: SignupForm) {
     if (!auth || !firestore) return;
     
+    setIsSubmitting(true);
     form.clearErrors();
     form.setValue('language', LANGUAGES.find(l => l.code === selectedLang)?.name ?? "English (US)");
 
@@ -276,12 +285,8 @@ export default function SignUp() {
       values.password,
       (error: FirebaseError) => {
         const message = getAuthErrorMessage(error);
-        toast({
-          variant: 'destructive',
-          title: 'Sign Up Failed',
-          description: message,
-        });
-        form.reset(values, { keepIsSubmitting: false });
+        form.setError("root", { message });
+        setIsSubmitting(false);
       }
     );
 
@@ -675,4 +680,4 @@ export default function SignUp() {
       </div>
     </div>
   );
-}
+} use this code for the signup page
