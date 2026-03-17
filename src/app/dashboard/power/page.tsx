@@ -367,19 +367,19 @@ function GeneratorCard({ ug, onClaim, isClaiming, uploadedImageUrl }: { ug: Rent
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-green-800 font-bold text-sm">
-                            {periodsReady > 1 ? `${periodsReady} days accumulated!` : "Income ready!"}
+                            {periodsReady > 1 ? `${periodsReady} days of income ready!` : "Daily income ready!"}
                         </p>
                         <p className="text-green-600 text-xs">
-                            ${pendingIncome.toFixed(2)} auto-credited on collect
+                           Total ready to collect: <span className="font-black">${pendingIncome.toFixed(2)}</span>
                         </p>
                     </div>
                     <Button
                         data-testid={`button-claim-${ug.id}`}
                         onClick={onClaim}
                         disabled={isClaiming}
-                        className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-xl px-4 h-9 text-sm shadow-md hover:shadow-lg"
+                        className="bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl px-4 h-9 text-sm shadow-md hover:shadow-lg"
                     >
-                        {isClaiming ? "Processing..." : `Collect $${pendingIncome.toFixed(2)}`}
+                        {isClaiming ? "Collecting..." : "Collect"}
                     </Button>
                 </div>
             </div>
@@ -416,7 +416,7 @@ function GeneratorCard({ ug, onClaim, isClaiming, uploadedImageUrl }: { ug: Rent
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
                         <div>
-                            <p className="text-amber-800 font-semibold text-xs">Auto-earning • Live</p>
+                            <p className="text-amber-800 font-semibold text-xs">Earning • Live</p>
                             <p className="text-amber-600 text-[10px]">Accumulating now</p>
                         </div>
                     </div>
@@ -439,7 +439,7 @@ function GeneratorCard({ ug, onClaim, isClaiming, uploadedImageUrl }: { ug: Rent
           <div className="bg-gray-50 rounded-xl p-2 border border-amber-100/60">
             <p className="text-gray-400 text-[10px]">Status</p>
             <p className={`text-xs font-bold ${isExpired ? "text-gray-400" : isSuspended ? "text-red-600" : canCollect ? "text-green-600" : "text-amber-600"}`}>
-              {canCollect ? "Collect Now" : isExpired ? "Expired" : isSuspended ? "Suspended" : "Auto-Running"}
+              {canCollect ? "Collect Now" : isExpired ? "Expired" : isSuspended ? "Suspended" : "Earning"}
             </p>
           </div>
         </div>
@@ -604,7 +604,7 @@ export default function Power() {
               </div>
               <h1 className="text-2xl sm:text-3xl font-black mb-1 sm:mb-2">Your Active Generators</h1>
               <p className="text-amber-100 text-sm sm:text-base">
-                Click to claim your daily income every 24 hours. Watch the red countdown timer.
+                You must click 'Collect' on each generator every 24 hours to add its income to your balance.
               </p>
             </div>
             <div className="text-center flex-shrink-0 bg-white/20 backdrop-blur-sm rounded-2xl p-4 sm:p-5 border border-white/30">

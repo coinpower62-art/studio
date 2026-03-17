@@ -310,7 +310,7 @@ export default function Market() {
             Investment <span className="text-amber-600">Generators</span>
           </h1>
           <p className="text-gray-500 text-sm max-w-md mx-auto">
-            Rent a generator and claim your daily income every 24 hours in the Power page.
+            Rent a generator and visit the Power page every 24 hours to collect your daily income.
           </p>
         </div>
 
@@ -319,7 +319,7 @@ export default function Market() {
             <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-green-800 font-semibold text-sm">You have active generators!</p>
-              <p className="text-green-600 text-xs">Go to the <button onClick={() => router.push("/dashboard/power")} className="underline font-bold">Power page</button> to claim your daily income every 24 hours.</p>
+              <p className="text-green-600 text-xs">Go to the <button onClick={() => router.push("/dashboard/power")} className="underline font-bold">Power page</button> to collect your daily income.</p>
             </div>
           </div>
         )}
