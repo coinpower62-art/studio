@@ -1,8 +1,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { addItem, deleteItem } from './actions'
+import { deleteItem } from './actions'
+import AddItemForm from './AddItemForm'
 
 export default async function ItemsPage() {
   const supabase = createClient();
@@ -19,15 +19,7 @@ export default async function ItemsPage() {
     <div className="p-4 sm:p-8 max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Items from Supabase</h1>
       
-      <form action={addItem} className="mb-6 bg-white p-4 rounded-xl shadow-md border flex gap-2">
-        <Input
-          name="title"
-          placeholder="Enter a new item title..."
-          className="flex-grow"
-          required
-        />
-        <Button type="submit">Add Item</Button>
-      </form>
+      <AddItemForm />
       
       <div className="bg-white rounded-xl shadow-md border">
         {items && items.length > 0 ? (
