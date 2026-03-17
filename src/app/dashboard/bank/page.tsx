@@ -8,15 +8,7 @@ import {
   PartyPopper, PhoneCall, Hash, Network, User, MapPin, CalendarDays,
   Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X
 } from "lucide-react";
-import {
-  collection,
-  serverTimestamp,
-  doc,
-  Timestamp,
-  query,
-  orderBy,
-  limit,
-} from 'firebase/firestore';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -24,11 +16,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useFirebase, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { useUserStore } from '@/hooks/use-user-store';
-import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { createClient } from "@/lib/supabase/client";
 import { countries as COUNTRIES_DATA } from "@/lib/data";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { createDepositRequest, createWithdrawalRequest, setWithdrawalPin } from "./actions";
 
 // Card validation helpers
 function luhnCheck(num: string): boolean {
@@ -56,28 +47,36 @@ const DEPOSIT_PHONE = "+233592682060";
 const DEPOSIT_NAME = "M.K";
 const COUNTDOWN_SECONDS = 5 * 60;
 
+type Profile = {
+  balance: number;
+  country: string;
+  has_withdrawal_pin: boolean;
+  username: string;
+  full_name: string;
+};
+
 type WithdrawRecord = {
   id: string;
-  userId: string;
+  user_id: string;
   username: string;
-  fullName: string;
+  full_name: string;
   country: string;
   method: string;
   amount: number;
-  netAmount: number;
+  net_amount: number;
   fee: number;
   details: string;
   status: "pending" | "approved" | "rejected";
-  createdAt: Timestamp;
+  created_at: string;
 };
 
 type DepositRecord = {
   id: string;
   amount: number;
-  txId: string;
+  tx_id: string;
   date: string;
   status: "pending" | "approved" | "rejected";
-  createdAt: Timestamp;
+  created_at: string;
 };
 
 const imageMap = {
@@ -119,10 +118,6 @@ function useCountdown(active: boolean) {
   const mins = String(Math.floor(seconds / 60)).padStart(2, "0");
   const secs = String(seconds % 60).padStart(2, "0");
   return { display: `${mins}:${secs}`, expired: seconds === 0 };
-}
-
-function genTxId() {
-  return "TXN" + Math.floor(100000 + Math.random() * 900000);
 }
 
 function PinBoxes({ value, onChange, testId }: { value: string; onChange: (v: string) => void; testId: string }) {
@@ -171,9 +166,12 @@ function PinBoxes({ value, onChange, testId }: { value: string; onChange: (v: st
 export default function BankPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { firestore, user, isUserLoading } = useFirebase();
-  const userProfile = useUserStore();
+  const supabase = createClient();
   
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const [mode, setMode] = useState<Mode>(null);
   const [amount, setAmount] = useState("");
   const [depositTxId, setDepositTxId] = useState("");
@@ -199,19 +197,73 @@ export default function BankPage() {
   const [pinError, setPinError] = useState("");
   const [isSettingPin, setIsSettingPin] = useState(false);
 
-  const depositsRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'users', user.uid, 'depositRequests'), orderBy('createdAt', 'desc'), limit(50));
-  }, [firestore, user]);
-  const { data: depositRecords } = useCollection<DepositRecord>(depositsRef);
-
-  const withdrawalsRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'users', user.uid, 'withdrawalRequests'), orderBy('createdAt', 'desc'), limit(50));
-  }, [firestore, user]);
-  const { data: withdrawRecords } = useCollection<WithdrawalRecord>(withdrawalsRef);
+  const [depositRecords, setDepositRecords] = useState<DepositRecord[]>([]);
+  const [withdrawRecords, setWithdrawRecords] = useState<WithdrawRecord[]>([]);
 
   const { display: countdown, expired } = useCountdown(mode === "deposit");
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        router.push("/login");
+        return;
+      }
+      setUser(data.user);
+    };
+    checkUser();
+  }, [router, supabase.auth]);
+
+  useEffect(() => {
+    if (user) {
+      const fetchData = async () => {
+        setLoading(true);
+        // Fetch profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('balance, country, has_withdrawal_pin, username, full_name')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch user profile.' });
+          console.error(profileError);
+        } else {
+          setProfile(profileData as Profile);
+          setDepositCountry(profileData.country || '');
+        }
+
+        // Fetch deposits
+        const { data: depositsData, error: depositsError } = await supabase
+          .from('deposit_requests')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (depositsError) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch deposit history.' });
+        } else {
+          setDepositRecords(depositsData as DepositRecord[]);
+        }
+
+        // Fetch withdrawals
+        const { data: withdrawalsData, error: withdrawalsError } = await supabase
+          .from('withdrawal_requests')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (withdrawalsError) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch withdrawal history.' });
+        } else {
+          setWithdrawRecords(withdrawalsData as WithdrawRecord[]);
+        }
+        
+        setLoading(false);
+      };
+      fetchData();
+    }
+  }, [user, supabase, toast]);
 
   const copy = (text: string, label: string) =>
     navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!`, description: text }));
@@ -219,7 +271,7 @@ export default function BankPage() {
   const openMode = (m: Mode) => {
     setMode(m); setAmount("");
     setDepositMethod(null);
-    setDepositCountry(userProfile.country || "");
+    if (profile) setDepositCountry(profile.country || "");
     setDepositSuccess(false); setWithdrawSuccess(false);
     setWithdrawMethod(null); setLastTxId("");
     setUsdt({ address: "", network: "TRC20", txId: "" });
@@ -229,81 +281,81 @@ export default function BankPage() {
   };
 
   const handleDepositSubmit = async () => {
-    if (!user || !firestore) return;
+    if (!user) return;
     if (!depositMethod) { toast({ title: "Select a payment method", variant: "destructive" }); return; }
     if (!depositCountry) { toast({ title: "Select your country", variant: "destructive" }); return; }
     if (!amount || parseFloat(amount) <= 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
-    if (depositMethod === "card") {
-      const rawNum = depositCard.number.replace(/\s/g, "");
-      if (rawNum.length < 13 || !luhnCheck(rawNum)) { toast({ title: "Invalid card number", description: "Please check and enter a valid Visa or Mastercard number.", variant: "destructive" }); return; }
-      if (!depositCard.holder.trim()) { toast({ title: "Enter the cardholder name", variant: "destructive" }); return; }
-      if (!depositCard.expiry || depositCard.expiry.length < 5) { toast({ title: "Enter a valid expiry date (MM/YY)", variant: "destructive" }); return; }
-      if (isCardExpired(depositCard.expiry)) { toast({ title: "Card has expired", description: "This card's expiry date has passed. Please use a valid card.", variant: "destructive" }); return; }
-      if (!depositCard.cvv || depositCard.cvv.length < 3) { toast({ title: "Enter the CVV code", variant: "destructive" }); return; }
-      const last4 = rawNum.slice(-4);
-      const autoTxId = `CARD-${last4}-${depositCard.holder.trim().toUpperCase().replace(/\s+/g, "-")}`;
-      if (!depositTxId.trim()) setDepositTxId(autoTxId);
-    } else {
-      if (!depositTxId.trim()) { toast({ title: "Enter your transaction ID", variant: "destructive" }); return; }
-    }
+    
     setIsSubmitting(true);
     const methodLabel = depositMethods.find(m => m.id === depositMethod)?.label || depositMethod;
-    const rawNum = depositCard.number.replace(/\s/g, "");
-    const cardRef = depositMethod === "card"
-      ? `CARD-****${rawNum.slice(-4)} ${depositCard.holder.trim()} ${depositCard.expiry}`
-      : depositTxId.trim();
-    const enrichedTxId = `[${methodLabel}|${depositCountry}] ${cardRef || depositTxId.trim()}`;
     
-    const depositRequestsRef = collection(firestore, 'users', user.uid, 'depositRequests');
-    const newDeposit = {
-      userId: user.uid,
-      username: userProfile.username,
-      fullName: userProfile.fullName,
+    let submissionData: any = {
       amount: parseFloat(amount),
-      txId: enrichedTxId,
-      date: new Date().toLocaleDateString(),
-      status: 'pending',
-      createdAt: serverTimestamp(),
+      method: methodLabel,
+      country: depositCountry
     };
 
-    addDocumentNonBlocking(depositRequestsRef, newDeposit);
-
-    setDepositSuccess(true);
-    setDepositTxId("");
+    if (depositMethod === "card") {
+      const rawNum = depositCard.number.replace(/\s/g, "");
+      if (rawNum.length < 13 || !luhnCheck(rawNum)) { toast({ title: "Invalid card number", description: "Please check and enter a valid Visa or Mastercard number.", variant: "destructive" }); setIsSubmitting(false); return; }
+      if (!depositCard.holder.trim()) { toast({ title: "Enter the cardholder name", variant: "destructive" }); setIsSubmitting(false); return; }
+      if (!depositCard.expiry || depositCard.expiry.length < 5) { toast({ title: "Enter a valid expiry date (MM/YY)", variant: "destructive" }); setIsSubmitting(false); return; }
+      if (isCardExpired(depositCard.expiry)) { toast({ title: "Card has expired", description: "This card's expiry date has passed. Please use a valid card.", variant: "destructive" }); setIsSubmitting(false); return; }
+      if (!depositCard.cvv || depositCard.cvv.length < 3) { toast({ title: "Enter the CVV code", variant: "destructive" }); setIsSubmitting(false); return; }
+      
+      const cardRef = `CARD-****${rawNum.slice(-4)} ${depositCard.holder.trim()} ${depositCard.expiry}`;
+      submissionData.cardDetails = cardRef;
+      submissionData.txId = `CARD-${rawNum.slice(-4)}-${depositCard.holder.trim().toUpperCase().replace(/\s+/g, "-")}`;
+    } else {
+      if (!depositTxId.trim()) { toast({ title: "Enter your transaction ID", variant: "destructive" }); setIsSubmitting(false); return; }
+      submissionData.txId = depositTxId.trim();
+    }
+    
+    const result = await createDepositRequest(submissionData);
     setIsSubmitting(false);
+
+    if (result.error) {
+      toast({ title: 'Deposit Failed', description: result.error, variant: 'destructive' });
+    } else {
+      setDepositSuccess(true);
+      setDepositTxId("");
+      const newRecord = { ...submissionData, id: 'temp-' + Date.now(), status: 'pending', created_at: new Date().toISOString(), tx_id: submissionData.txId };
+      setDepositRecords(prev => [newRecord as DepositRecord, ...prev]);
+    }
   };
   
-  const handleSetPin = () => {
+  const handleSetPin = async () => {
       if (pinInput.length < 6 || pinConfirm.length < 6) { setPinError("Enter all 6 digits"); return; }
       if (pinInput !== pinConfirm) { setPinError("PINs do not match. Try again."); setPinConfirm(""); return; }
-      if (!user || !firestore) return;
+      if (!user) return;
 
       setPinError("");
       setIsSettingPin(true);
 
-      const userRef = doc(firestore, 'users', user.uid);
-      updateDocumentNonBlocking(userRef, { hasWithdrawalPin: true });
-
-      setTimeout(() => {
-          setIsSettingPin(false);
-          setPinMode(null);
-          setPinInput(""); setPinConfirm(""); setPinError("");
-          setMode("withdraw");
-          toast({ title: "Withdrawal PIN set!", description: "Your PIN has been saved securely. You can now withdraw." });
-      }, 1000);
+      const result = await setWithdrawalPin();
+      setIsSettingPin(false);
+      
+      if (result.error) {
+         toast({ title: 'Error', description: result.error, variant: 'destructive' });
+      } else {
+        setPinMode(null);
+        setPinInput(""); setPinConfirm(""); setPinError("");
+        setMode("withdraw");
+        toast({ title: "Withdrawal PIN set!", description: "Your PIN has been saved securely. You can now withdraw." });
+        setProfile(p => p ? {...p, has_withdrawal_pin: true} : null);
+      }
   }
 
   const handleWithdrawalSubmit = async () => {
-    if (!user || !firestore) return;
+    if (!user || !profile) return;
     if (!amount || parseFloat(amount) <= 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
     if (!withdrawMethod) { toast({ title: "Select a payment method", variant: "destructive" }); return; }
     const amt = parseFloat(amount);
     
-    if (amt > userProfile.balance) {
-      toast({ title: "Insufficient balance", description: `Your balance is $${userProfile.balance.toFixed(2)}`, variant: "destructive" });
+    if (amt > profile.balance) {
+      toast({ title: "Insufficient balance", description: `Your balance is $${profile.balance.toFixed(2)}`, variant: "destructive" });
       return;
     }
-    // For demo purposes, we are not validating the PIN itself, just that it was entered.
     if (pinInput.length < 6) {
         toast({ title: "PIN Required", description: `Please enter your 6-digit PIN to authorize this withdrawal.`, variant: "destructive" });
         setPinMode('verify');
@@ -317,51 +369,31 @@ export default function BankPage() {
       if (isCardExpired(card.expiry)) { toast({ title: "Card has expired", description: "This card's expiry date has passed. Please use a valid card.", variant: "destructive" }); return; }
       if (!card.cvv || card.cvv.length < 3) { toast({ title: "Enter the CVV code", variant: "destructive" }); return; }
     }
-    const txId = genTxId();
+    
     setIsSubmitting(true);
-    try {
-      const details = withdrawMethod === "usdt" ? usdt : withdrawMethod === "momo" ? momo : withdrawMethod === "tigo" ? tigo : card;
-      
-      const withdrawalRequestsRef = collection(firestore, 'users', user.uid, 'withdrawalRequests');
-      const newWithdrawal = {
-          userId: user.uid,
-          username: userProfile.username,
-          fullName: userProfile.fullName,
-          country: userProfile.country,
-          method: withdrawMethods.find(m => m.id === withdrawMethod)?.label || withdrawMethod,
-          amount: amt,
-          netAmount: amt - (amt * 0.15), // Assuming 15% fee
-          fee: amt * 0.15,
-          details: JSON.stringify(details),
-          status: 'pending',
-          createdAt: serverTimestamp(),
-      };
-      
-      const userRef = doc(firestore, 'users', user.uid);
-      updateDocumentNonBlocking(userRef, { balance: userProfile.balance - amt });
-      addDocumentNonBlocking(withdrawalRequestsRef, newWithdrawal);
+    const details = withdrawMethod === "usdt" ? usdt : withdrawMethod === "momo" ? momo : withdrawMethod === "tigo" ? tigo : card;
+    const result = await createWithdrawalRequest({
+      amount: amt,
+      method: withdrawMethods.find(m => m.id === withdrawMethod)?.label || withdrawMethod,
+      details: details,
+    });
+    setIsSubmitting(false);
 
+    if (result.error) {
+       toast({ title: 'Withdrawal failed', description: result.error, variant: 'destructive' });
+    } else {
       setWithdrawSuccess(true);
-      setLastTxId(txId);
-    } catch (err: any) {
-      toast({ title: "Withdrawal failed", description: err.message, variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
+      setLastTxId(result.txId || '');
+      setProfile(p => p ? { ...p, balance: p.balance - amt } : null);
     }
   };
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push("/signin");
-    }
-  }, [isUserLoading, user, router]);
-
-  if (isUserLoading) return <div className="p-4 pt-8 max-w-4xl mx-auto"><Skeleton className="h-64 rounded-2xl" /></div>;
-  if (!user) return null;
+  if (loading) return <div className="p-4 pt-8 max-w-4xl mx-auto"><Skeleton className="h-64 rounded-2xl" /></div>;
+  if (!user || !profile) return null;
 
   const hasApprovedDeposit = (depositRecords || []).some((d) => d.status === "approved");
   const allTransactions = [...(depositRecords || []), ...(withdrawRecords || [])]
-    .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
     <div className="bg-[#f7f9f4]">
@@ -451,16 +483,9 @@ export default function BankPage() {
                 </div>
                 <Button data-testid="button-verify-pin"
                   disabled={pinInput.length < 6}
-                  onClick={() => {
-                    if (pinInput.length < 6) { setPinError("Enter all 6 digits"); return; }
-                    // In a real app, you would verify the PIN here. For demo, we just proceed.
-                    setPinError("");
-                    setPinMode(null);
-                    setMode("withdraw");
-                    setAmount(""); setWithdrawMethod(null); setWithdrawSuccess(false);
-                  }}
+                  onClick={handleWithdrawalSubmit}
                   className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-xl h-12 text-base shadow-md disabled:opacity-50">
-                  Unlock Withdrawal
+                  Authorize & Withdraw
                 </Button>
               </div>
             )}
@@ -487,7 +512,7 @@ export default function BankPage() {
               <Wallet className="w-4 h-4 text-amber-100" />
               <p className="text-amber-100 text-xs font-medium">Available Balance</p>
             </div>
-            <p className="text-3xl sm:text-4xl font-bold mt-1 mb-3" data-testid="text-balance">${userProfile.balance.toFixed(2)}</p>
+            <p className="text-3xl sm:text-4xl font-bold mt-1 mb-3" data-testid="text-balance">${profile.balance.toFixed(2)}</p>
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-amber-200" /><span className="text-amber-100 text-xs">Protected Balance</span></div>
               <div className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-amber-200" /><span className="text-amber-100 text-xs">Verified Account</span></div>
@@ -555,7 +580,7 @@ export default function BankPage() {
                   return;
                 }
                 openMode(null);
-                if (!userProfile.hasWithdrawalPin) {
+                if (!profile.has_withdrawal_pin) {
                   setPinMode("security");
                 } else {
                   setPinInput(""); setPinConfirm(""); setPinError("");
@@ -995,11 +1020,11 @@ export default function BankPage() {
               allTransactions
                 .filter(tx => {
                   if (historyTab === 'all') return true;
-                  const isDeposit = 'txId' in tx;
+                  const isDeposit = 'tx_id' in tx;
                   return historyTab === 'deposit' ? isDeposit : !isDeposit;
                 })
                 .map(tx => {
-                  const isDeposit = 'txId' in tx;
+                  const isDeposit = 'tx_id' in tx;
                   const statusColor = tx.status === 'approved' ? 'bg-green-100 text-green-700' : tx.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700';
                   const Icon = isDeposit ? ArrowDownToLine : ArrowUpFromLine;
                   return (
@@ -1009,7 +1034,7 @@ export default function BankPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-800">{isDeposit ? 'Deposit' : 'Withdrawal'} Request</p>
-                        <p className="text-xs text-gray-400 truncate">{isDeposit ? tx.txId : (tx as WithdrawRecord).method} · {tx.createdAt ? new Date(tx.createdAt.seconds * 1000).toLocaleDateString() : 'Processing...'}</p>
+                        <p className="text-xs text-gray-400 truncate">{isDeposit ? (tx as DepositRecord).tx_id : (tx as WithdrawRecord).method} · {new Date(tx.created_at).toLocaleDateString()}</p>
                       </div>
                       <div className="text-right">
                         <p className={`text-sm font-bold ${isDeposit ? 'text-green-600' : 'text-gray-800'}`}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>
