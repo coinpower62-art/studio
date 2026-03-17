@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -8,37 +8,34 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('YOUR_SUPABASE_URL')) {
-    throw new Error('Supabase credentials are not configured correctly in .env. Please check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.')
-  }
-
   const supabase = createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) {
           return request.cookies.get(name)?.value
         },
         set(name, value, options) {
+          // If the cookie is set, update the request's cookies.
           request.cookies.set({ name, value, ...options })
           response = NextResponse.next({
             request: {
               headers: request.headers,
             },
           })
+          // Also update the response's cookies.
           response.cookies.set({ name, value, ...options })
         },
         remove(name, options) {
+          // If the cookie is removed, update the request's cookies.
           request.cookies.set({ name, value: '', ...options })
           response = NextResponse.next({
             request: {
               headers: request.headers,
             },
           })
+          // Also update the response's cookies.
           response.cookies.set({ name, value: '', ...options })
         },
       },
@@ -49,15 +46,24 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const protectedPaths = ['/dashboard', '/items']
-  const isProtected = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))
+  // Define protected routes
+  const protectedPaths = ['/dashboard']
+  const isProtectedRoute = protectedPaths.some((path) =>
+    request.nextUrl.pathname.startsWith(path)
+  )
 
-  if (!user && isProtected) {
+  // If user is not logged in and is trying to access a protected route, redirect to login
+  if (!user && isProtectedRoute) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  // If user is logged in and tries to access login or signup page, redirect to dashboard
+  if (
+    user &&
+    (request.nextUrl.pathname === '/login' ||
+      request.nextUrl.pathname === '/signup')
+  ) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return response
@@ -70,7 +76,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - /auth/callback (Supabase auth callback)
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|auth/callback).*)',
   ],
 }
