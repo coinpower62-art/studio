@@ -34,6 +34,7 @@ import { UserStoreProvider } from "@/hooks/use-user-store";
 import { useAuth, useUser } from "@/firebase";
 import { signOut } from "firebase/auth";
 import Link from "next/link";
+import { AuthGuard } from "@/components/AuthGuard";
 
 const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -111,14 +112,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const auth = useAuth();
-  const { user, isUserLoading } = useUser();
-
-  React.useEffect(() => {
-    if (pathname.startsWith('/admin')) return;
-    if (!isUserLoading && !user) {
-      router.push("/signin");
-    }
-  }, [isUserLoading, user, router, pathname]);
+  const { user } = useUser();
 
   const handleLogout = async () => {
     if (auth) {
@@ -135,16 +129,9 @@ export default function DashboardLayout({
     )
   }
 
-  if (isUserLoading || !user) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <Loader className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
     <UserStoreProvider>
+      <AuthGuard>
         <div className="flex min-h-screen">
             <aside className="hidden md:flex md:flex-col md:w-64 md:border-r">
                  <div className="flex items-center justify-center h-16 border-b">
@@ -215,6 +202,7 @@ export default function DashboardLayout({
                 <BottomNav />
             </div>
         </div>
+      </AuthGuard>
     </UserStoreProvider>
   );
 }
