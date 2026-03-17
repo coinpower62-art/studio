@@ -1,16 +1,23 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Activity, Users, MessageSquare, TrendingUp, Star, Globe, Clock, ArrowUpRight, Shield, Award, BadgeCheck, Building2, CheckCircle2, Landmark, FileText, Crown, Loader
 } from "lucide-react";
+import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/client';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUser } from '@/firebase';
-import { useUserStore } from '@/hooks/use-user-store';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+
+type Profile = {
+  balance: number;
+  country: string;
+  full_name: string;
+  username: string;
+};
 
 const liveActivities = [
   { user: "Marco R.", country: "Italy", action: "Activated PG3 Generator", amount: "+$2,400", time: "2 min ago", avatar: "MR", color: "from-green-400 to-green-600" },
@@ -37,8 +44,9 @@ const announcements = [
 
 export default function ActivityPage() {
   const router = useRouter();
-  const { user, isUserLoading } = useUser();
-  const { balance, country: userCountry } = useUserStore();
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const heroImg = PlaceHolderImages.find(i => i.id === 'activity-hero')?.imageUrl;
   const teamWorkImg = PlaceHolderImages.find(i => i.id === 'activity-teamwork')?.imageUrl;
@@ -48,20 +56,49 @@ export default function ActivityPage() {
   const adminPosts: any[] = [];
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
-        router.push('/signin');
-    }
-  }, [isUserLoading, user, router]);
+    const supabase = createClient();
+    const fetchData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      setUser(user);
 
-  if (isUserLoading || !user) {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('balance, country, full_name, username')
+        .eq('id', user.id)
+        .single();
+      
+      if (profileError || !profileData) {
+        console.error("Error fetching profile:", profileError);
+      } else {
+        setProfile(profileData as Profile);
+      }
+      
+      setIsLoading(false);
+    };
+
+    fetchData();
+  }, [router]);
+
+  if (isLoading || !user || !profile) {
     return (
       <div className="pt-12 p-4 pb-20 max-w-7xl mx-auto">
         <Skeleton className="h-96 rounded-2xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-6">
+            <div className="lg:col-span-2"><Skeleton className="h-64 rounded-2xl" /></div>
+            <div className="space-y-4">
+                <Skeleton className="h-48 rounded-2xl" />
+                <Skeleton className="h-48 rounded-2xl" />
+            </div>
+        </div>
       </div>
     );
   }
 
-  const initials = user.displayName?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "CP";
+  const initials = profile.full_name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "CP";
 
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
@@ -441,18 +478,18 @@ export default function ActivityPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                  <p className="font-bold text-gray-900 text-base sm:text-lg truncate" data-testid="text-profile-name">{user.displayName}</p>
+                  <p className="font-bold text-gray-900 text-base sm:text-lg truncate" data-testid="text-profile-name">{profile.full_name}</p>
                   <p className="text-gray-500 text-xs sm:text-sm truncate" data-testid="text-profile-email">{user.email}</p>
                   <div className="flex items-center gap-1 mt-1 flex-wrap">
                     <Globe className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                    <span className="text-xs text-gray-500">{userCountry}</span>
+                    <span className="text-xs text-gray-500">{profile.country}</span>
                     <Badge className="text-xs px-1.5 py-0 bg-green-100 text-green-700 border-0">Active</Badge>
                   </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { label: "Balance", value: `$${balance.toFixed(2)}`, color: "text-amber-600" },
+                  { label: "Balance", value: `$${profile.balance.toFixed(2)}`, color: "text-amber-600" },
                   { label: "Total Earned", value: "$0.00", color: "text-green-600" },
                   { label: "Active Plans", value: "0", color: "text-blue-600" },
                   { label: "Member Since", value: "Mar 2026", color: "text-purple-600" },
