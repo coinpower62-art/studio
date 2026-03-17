@@ -1,39 +1,79 @@
 'use client';
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { useUserStore, type RentedGenerator } from '@/hooks/use-user-store';
-import { useUser } from '@/firebase';
-import { Zap, TrendingUp, CheckCircle, BarChart3, Gift, Timer, Clock, AlertTriangle, DollarSign, Star } from "lucide-react";
+import { Zap, TrendingUp, CheckCircle, Gift, Timer, AlertTriangle, DollarSign, Star, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import TickerTape from "@/components/TickerTape";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { createClient } from "@/lib/supabase/client";
+import type { User } from '@supabase/supabase-js';
+import { collectEarnings } from "./actions";
+import type { Generator as BaseGenerator } from '@/lib/data';
+
+export type RentedGenerator = {
+  id: string;
+  user_id: string;
+  generator_id: string;
+  rented_at: string;
+  expires_at: string;
+  last_claimed_at: string | null;
+  suspended: boolean;
+  name: string;
+  price: number;
+  daily_income: number;
+  expire_days: number;
+  color: string;
+  icon: string;
+  subtitle: string;
+  roi: string;
+  period: string;
+  investors: string;
+};
 
 const CHART_PAIRS_P = [
   "BTC/USDT","ETH/USDT","BNB/USDT","SOL/USDT","XRP/USDT",
-  "ADA/USDT","DOGE/USDT","TON/USDT","TRX/USDT","MATIC/USDT",
-  "AVAX/USDT","LINK/USDT","DOT/USDT","UNI/USDT","LTC/USDT",
-];
-const FIXED_PAIRS_P: Record<string, string> = {
-  pg1: "BTC/USDT", pg2: "ETH/USDT", pg3: "BNB/USDT", pg4: "SOL/USDT",
-};
-function getGenPairP(genId: string): string {
-  if (FIXED_PAIRS_P[genId]) return FIXED_PAIRS_P[genId];
-  let h = 5381;
-  for (let i = 0; i < genId.length; i++) h = ((h << 5) + h) ^ genId.charCodeAt(i);
-  return CHART_PAIRS_P[Math.abs(h) % CHART_PAIRS_P.length];
-}
+  "ADA/USDT","DOGE/USDT","TON/USDT","TRX/USDT","MATIC/US![CDATA['use client';
 
-const generatorImages: Record<string, string | undefined> = PlaceHolderImages.reduce((acc, img) => {
-  if (img.id.startsWith('gen-')) {
-    acc[img.id.replace('gen-', '')] = img.imageUrl;
-  }
-  return acc;
-}, {} as Record<string, string | undefined>);
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { Zap, TrendingUp, CheckCircle, Gift, Timer, AlertTriangle, DollarSign, Star, Play } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import TickerTape from "@/components/TickerTape";
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { createClient } from "@/lib/supabase/client";
+import type { User } from '@supabase/supabase-js';
+
+import { collectEarnings } from "./actions";
+import type { Generator as BaseGenerator } from '@/lib/data';
+
+export type RentedGenerator = {
+  id: string;
+  user_id: string;
+  generator_id: string;
+  rented_at: string;
+  expires_at: string;
+  last_claimed_at: string | null;
+  suspended: boolean;
+  name: string;
+  price: number;
+  daily_income: number;
+  expire_days: number;
+  color: string;
+  icon: string;
+  subtitle: string;
+  roi: string;
+  period: string;
+  investors: string;
+};
 
 
 const TWENTY_FOUR_H = 24 * 60 * 60 * 1000;
@@ -43,54 +83,33 @@ function useOnVisible(fn: () => void) {
     const h = () => { if (!document.hidden) fn(); };
     document.addEventListener("visibilitychange", h);
     return () => document.removeEventListener("visibilitychange", h);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fn]);
 }
 
-function RedCountdown({ targetMs, label }: { targetMs: number; label: string }) {
-  const [remaining, setRemaining] = useState(Math.max(0, targetMs - Date.now()));
-  const sync = () => setRemaining(Math.max(0, targetMs - Date.now()));
-  useOnVisible(sync);
-  useEffect(() => {
-    const t = setInterval(sync, 1000);
-    return () => clearInterval(t);
-  }, [targetMs]);
-  const h = Math.floor(remaining / 3600000);
-  const m = Math.floor((remaining % 3600000) / 60000);
-  const s = Math.floor((remaining % 60000) / 1000);
-  return (
-    <div className="text-center">
-      <p className="text-gray-500 text-[10px] font-medium mb-1">{label}</p>
+function RedCountdown({ targetMs }: { targetMs: number }) {
+    const [remaining, setRemaining] = useState(Math.max(0, targetMs - Date.now()));
+    const sync = useCallback(() => setRemaining(Math.max(0, targetMs - Date.now())), [targetMs]);
+    useOnVisible(sync);
+    useEffect(() => {
+      const t = setInterval(sync, 1000);
+      return () => clearInterval(t);
+    }, [sync]);
+    const h = Math.floor(remaining / 3600000);
+    const m = Math.floor((remaining % 3600000) / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+    return (
       <div className="flex items-center justify-center gap-0.5">
-        {["h","m","s"].map((unit, i) => {
-          const val = [h, m, s][i];
-          return (
-            <span key={unit}>
-              <span className="inline-block bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded min-w-[1.75rem] text-center">{String(val).padStart(2,"0")}</span>
-              {i < 2 && <span className="text-red-500 font-black text-sm mx-0.5">:</span>}
-            </span>
-          );
-        })}
+        {[h, m, s].map((val, i) => (
+          <span key={i}>
+            <span className="inline-block bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded min-w-[1.75rem] text-center">{String(val).padStart(2,"0")}</span>
+            {i < 2 && <span className="text-red-500 font-black text-sm mx-0.5">:</span>}
+          </span>
+        ))}
       </div>
-    </div>
-  );
+    );
 }
 
 type PCandle = { o: number; h: number; l: number; c: number; v: number };
-function pSeed(N: number): PCandle[] {
-  let p = 42 + Math.random() * 16;
-  return Array.from({ length: N }, () => {
-    const move = (Math.random() - 0.48) * 8;
-    const o = p, c = Math.max(6, Math.min(94, p + move));
-    const h = Math.min(98, Math.max(o, c) + Math.random() * 3.5);
-    const l = Math.max(2, Math.min(o, c) - Math.random() * 3.5);
-    p = c;
-    return { o, h, l, c, v: 15 + Math.random() * 70 };
-  });
-}
-function pOpen(closePrice: number): PCandle {
-  return { o: closePrice, c: closePrice, h: closePrice, l: closePrice, v: 2 + Math.random() * 6 };
-}
 
 function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
   genId: string; dailyIncome: number; genColor: string; suspended: boolean; canCollect: boolean;
@@ -106,7 +125,24 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
   const isActive = !suspended && !canCollect;
   const TICK_MS = 280, TICKS_PER_CANDLE = 18;
   const tickRef = useRef(0);
+  
+  const pSeed = useCallback((N: number): PCandle[] => {
+    let p = 42 + Math.random() * 16;
+    return Array.from({ length: N }, () => {
+      const move = (Math.random() - 0.48) * 8;
+      const o = p, c = Math.max(6, Math.min(94, p + move));
+      const h = Math.min(98, Math.max(o, c) + Math.random() * 3.5);
+      const l = Math.max(2, Math.min(o, c) - Math.random() * 3.5);
+      p = c;
+      return { o, h, l, c, v: 15 + Math.random() * 70 };
+    });
+  }, []);
+
   const [candles, setCandles] = useState<PCandle[]>(() => pSeed(N));
+
+  const pOpen = (closePrice: number): PCandle => {
+    return { o: closePrice, c: closePrice, h: closePrice, l: closePrice, v: 2 + Math.random() * 6 };
+  };
 
   useEffect(() => {
     if (!isActive) return;
@@ -137,7 +173,7 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [isActive]);
+  }, [isActive, pSeed]);
 
   const minP   = Math.min(...candles.map(c => c.l)) - 2;
   const maxP   = Math.max(...candles.map(c => c.h)) + 2;
@@ -248,19 +284,20 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
 function LiveEarningsCounter({ lastRef, dailyIncome, active }: {
   lastRef: number; dailyIncome: number; active: boolean;
 }) {
-  const calc = () => {
+  const calc = useCallback(() => {
     if (!active) return dailyIncome;
     const elapsed = Date.now() - lastRef;
     const fraction = Math.min(1, elapsed / TWENTY_FOUR_H);
     return fraction * dailyIncome;
-  };
+  }, [active, dailyIncome, lastRef]);
+
   const [earned, setEarned] = useState(calc);
   useOnVisible(() => setEarned(calc()));
   useEffect(() => {
     if (!active) { setEarned(dailyIncome); return; }
     const id = setInterval(() => { if (!document.hidden) setEarned(calc()); }, 80);
     return () => clearInterval(id);
-  }, [active, lastRef, dailyIncome]);
+  }, [active, dailyIncome, calc]);
 
   const formatted = earned.toFixed(6);
   const [whole, dec] = formatted.split(".");
@@ -305,41 +342,54 @@ function ExpiryBar({ rentedAt, expiresAt }: { rentedAt: number; expiresAt: numbe
   );
 }
 
-function GeneratorCard({ ug, onClaim, isClaiming, uploadedImageUrl }: { ug: RentedGenerator; onClaim: () => void; isClaiming: boolean; uploadedImageUrl?: string }) {
+function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onClaim: (id: string) => void; isClaiming: boolean; }) {
   const router = useRouter();
   const now = Date.now();
-  const isSuspended = ug.suspended && ug.expiresAt.toMillis() > now;
-  const lastRef = ug.lastClaimed ? ug.lastClaimed.toMillis() : ug.rentedAt.toMillis();
+  const expiresAtMs = new Date(ug.expires_at).getTime();
+  const isSuspended = ug.suspended && expiresAtMs > now;
   
-  const endOfCollection = Math.min(now, ug.expiresAt.toMillis());
+  const lastRef = ug.last_claimed_at ? new Date(ug.last_claimed_at).getTime() : new Date(ug.rented_at).getTime();
+  
+  const endOfCollection = Math.min(now, expiresAtMs);
   const periodsReady = !isSuspended ? Math.floor((endOfCollection - lastRef) / TWENTY_FOUR_H) : 0;
   const canCollect = !isSuspended && periodsReady > 0;
-  const isExpired = ug.expiresAt.toMillis() <= now && !canCollect;
-  const pendingIncome = periodsReady * ug.dailyIncome;
+  const isExpired = expiresAtMs <= now && !canCollect;
+  const pendingIncome = periodsReady * ug.daily_income;
   const nextCreditAt = lastRef + TWENTY_FOUR_H;
 
   const borderColor = isExpired ? "border-gray-200 opacity-60"
     : isSuspended ? "border-red-300 bg-red-50/30"
     : "border-amber-200 hover:shadow-xl hover:border-amber-400";
+  
+  const colorMap = {
+      amber: 'from-amber-400 to-orange-500',
+      green: 'from-green-400 to-emerald-600',
+      blue: 'from-blue-400 to-indigo-600',
+      purple: 'from-purple-500 to-pink-600',
+  };
+  // @ts-ignore
+  const cardColor = colorMap[ug.color] || 'from-gray-400 to-gray-500';
+
+  const uploadedImageUrl = PlaceHolderImages.find(i => i.id === `gen-${ug.generator_id}`)?.imageUrl;
 
   return (
     <div className={`bg-white rounded-2xl border-2 shadow-sm overflow-hidden transition-all ${borderColor}`}>
-      <div className={`bg-gradient-to-r ${isSuspended ? "from-gray-400 to-gray-500" : ug.color} p-4 flex items-center justify-between`}>
+      <div className={`bg-gradient-to-r ${isSuspended ? "from-gray-400 to-gray-500" : cardColor} p-4 flex items-center justify-between`}>
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/30 shadow-lg flex-shrink-0 bg-white/10">
-            {(uploadedImageUrl || generatorImages[ug.generatorId]) ? (
+            {(uploadedImageUrl) ? (
               <img
-                src={uploadedImageUrl || generatorImages[ug.generatorId]}
+                src={uploadedImageUrl}
                 alt={ug.name}
                 className={`w-full h-full object-cover ${isSuspended ? "grayscale" : ""}`}
                 onError={e => { const el = e.currentTarget; el.style.display = "none"; const fb = el.nextElementSibling as HTMLElement; if (fb) fb.style.display = "flex"; }}
               />
             ) : null}
-            <span className={`w-full h-full ${(uploadedImageUrl || generatorImages[ug.generatorId]) ? "hidden" : "flex"} items-center justify-center text-2xl`}>{ug.icon}</span>
+            <span className={`w-full h-full ${uploadedImageUrl ? "hidden" : "flex"} items-center justify-center text-2xl`}>{ug.icon}</span>
           </div>
           <div>
             <p className="font-black text-white text-base">{ug.name}</p>
-            <p className="text-white/70 text-xs">${ug.price.toLocaleString()} · {ug.expireDays} days</p>
+            <p className="text-white/70 text-xs">${ug.price.toLocaleString()} · {ug.expire_days} days</p>
           </div>
         </div>
         <div className="text-right">
@@ -347,7 +397,7 @@ function GeneratorCard({ ug, onClaim, isClaiming, uploadedImageUrl }: { ug: Rent
             <span className="bg-red-500 text-white text-xs font-black px-2 py-1 rounded-lg">SUSPENDED</span>
           ) : (
             <>
-              <p className="text-white text-xl font-black">${ug.dailyIncome}</p>
+              <p className="text-white text-xl font-black">${ug.daily_income}</p>
               <p className="text-white/70 text-xs">per day</p>
             </>
           )}
@@ -355,11 +405,10 @@ function GeneratorCard({ ug, onClaim, isClaiming, uploadedImageUrl }: { ug: Rent
       </div>
 
       <div className="p-4 space-y-3">
-        <ExpiryBar rentedAt={ug.rentedAt.toMillis()} expiresAt={ug.expiresAt.toMillis()} />
+        <ExpiryBar rentedAt={new Date(ug.rented_at).getTime()} expiresAt={expiresAtMs} />
 
-        {/* Live Chart is only shown for non-expired, non-collectable generators */}
         {!isExpired && !canCollect && (
-          <LiveChart genId={ug.id} dailyIncome={ug.dailyIncome} genColor={ug.color} suspended={isSuspended} canCollect={canCollect} />
+          <LiveChart genId={ug.id} dailyIncome={ug.daily_income} genColor={ug.color} suspended={isSuspended} canCollect={canCollect} />
         )}
 
         {canCollect ? (
@@ -373,14 +422,16 @@ function GeneratorCard({ ug, onClaim, isClaiming, uploadedImageUrl }: { ug: Rent
                            Total ready to collect: <span className="font-black">${pendingIncome.toFixed(2)}</span>
                         </p>
                     </div>
-                    <Button
-                        data-testid={`button-claim-${ug.id}`}
-                        onClick={onClaim}
-                        disabled={isClaiming}
-                        className="bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl px-4 h-9 text-sm shadow-md hover:shadow-lg"
-                    >
-                        {isClaiming ? "Collecting..." : "Collect"}
-                    </Button>
+                    <form action={() => onClaim(ug.id)}>
+                      <Button
+                          data-testid={`button-claim-${ug.id}`}
+                          type="submit"
+                          disabled={isClaiming}
+                          className="bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl px-4 h-9 text-sm shadow-md hover:shadow-lg"
+                      >
+                          {isClaiming ? "Collecting..." : "Collect"}
+                      </Button>
+                    </form>
                 </div>
             </div>
         ) : isExpired ? (
@@ -395,7 +446,7 @@ function GeneratorCard({ ug, onClaim, isClaiming, uploadedImageUrl }: { ug: Rent
                     <div>
                         <p className="text-red-800 font-bold text-sm">Generator Suspended</p>
                         {ug.price > 0 ? (
-                           <p className="text-red-600 text-xs">Your balance reached $0. Deposit funds to resume income.</p>
+                           <p className="text-red-600 text-xs">Your balance may be too low. Deposit funds to resume income.</p>
                         ) : (
                            <p className="text-red-600 text-xs">This generator is suspended. Please contact support.</p>
                         )}
@@ -420,11 +471,11 @@ function GeneratorCard({ ug, onClaim, isClaiming, uploadedImageUrl }: { ug: Rent
                             <p className="text-amber-600 text-[10px]">Accumulating now</p>
                         </div>
                     </div>
-                    <LiveEarningsCounter lastRef={lastRef} dailyIncome={ug.dailyIncome} active={true} />
+                    <LiveEarningsCounter lastRef={lastRef} dailyIncome={ug.daily_income} active={true} />
                 </div>
                 <div className="flex items-center justify-between pt-1.5 border-t border-amber-200">
                     <p className="text-amber-700 text-[10px] font-semibold">Collectable in</p>
-                    <RedCountdown targetMs={nextCreditAt} label="" />
+                    <RedCountdown targetMs={nextCreditAt} />
                 </div>
             </div>
         )}
@@ -433,7 +484,7 @@ function GeneratorCard({ ug, onClaim, isClaiming, uploadedImageUrl }: { ug: Rent
           <div className="bg-gray-50 rounded-xl p-2 border border-amber-100/60">
             <p className="text-gray-400 text-[10px]">Last Credit</p>
             <p className="text-gray-700 text-xs font-semibold">
-              {ug.lastClaimed ? new Date(ug.lastClaimed.toMillis()).toLocaleDateString([], { month: "short", day: "numeric" }) + " " + new Date(ug.lastClaimed.toMillis()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Not yet"}
+              {ug.last_claimed_at ? new Date(ug.last_claimed_at).toLocaleDateString([], { month: "short", day: "numeric" }) + " " + new Date(ug.last_claimed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Not yet"}
             </p>
           </div>
           <div className="bg-gray-50 rounded-xl p-2 border border-amber-100/60">
@@ -449,78 +500,53 @@ function GeneratorCard({ ug, onClaim, isClaiming, uploadedImageUrl }: { ug: Rent
 }
 
 function ClaimSuccessOverlay({ amount, generatorName, onDone }: { amount: number; generatorName: string; onDone: () => void }) {
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    timerRef.current = setTimeout(onDone, 4000);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    const timer = setTimeout(onDone, 4000);
+    return () => clearTimeout(timer);
   }, [onDone]);
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in"
       onClick={onDone}
     >
       <div
-        className="mx-4 w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden"
-        style={{ animation: "claimPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both" }}
+        className="mx-4 w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-90 slide-in-from-bottom-10"
         onClick={e => e.stopPropagation()}
       >
         <div className="bg-gradient-to-r from-amber-400 to-amber-600 pt-8 pb-6 flex flex-col items-center gap-2 relative">
-          <div className="absolute top-3 left-6 text-white/60 text-lg" style={{ animation: "claimStar 0.6s 0.2s both" }}>✦</div>
-          <div className="absolute top-5 right-8 text-white/50 text-sm" style={{ animation: "claimStar 0.6s 0.35s both" }}>✦</div>
-          <div className="absolute top-2 right-5 text-white/40 text-xs" style={{ animation: "claimStar 0.6s 0.5s both" }}>✦</div>
-          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ animation: "claimBounce 0.5s 0.1s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+          <Star className="absolute top-3 left-6 text-white/60 w-5 h-5 animate-in zoom-in-50 delay-200" />
+          <Star className="absolute top-5 right-8 text-white/50 w-4 h-4 animate-in zoom-in-50 delay-300" />
+          <Star className="absolute top-2 right-5 text-white/40 w-3 h-3 animate-in zoom-in-50 delay-400" />
+          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg animate-in zoom-in-75 delay-100">
             <DollarSign className="w-8 h-8 text-amber-500" />
           </div>
           <p className="text-white font-black text-xl tracking-wide mt-1">Income Collected!</p>
         </div>
 
-        <div className="px-6 pt-5 pb-2 text-center" style={{ animation: "claimFadeUp 0.4s 0.25s both" }}>
+        <div className="px-6 pt-5 pb-2 text-center animate-in fade-in slide-in-from-bottom-3 delay-200">
           <p className="text-5xl font-black text-green-600 tracking-tight">+${amount.toFixed(2)}</p>
           <p className="text-gray-500 text-sm mt-1">Successfully credited to your balance</p>
         </div>
 
-        <div className="px-5 py-3 mx-4 my-2 bg-amber-50 border border-amber-100 rounded-2xl text-center" style={{ animation: "claimFadeUp 0.4s 0.35s both" }}>
+        <div className="px-5 py-3 mx-4 my-2 bg-amber-50 border border-amber-100 rounded-2xl text-center animate-in fade-in slide-in-from-bottom-3 delay-300">
           <p className="text-amber-800 text-sm font-bold">Great job! 🎉</p>
           <p className="text-amber-700 text-xs mt-0.5">Continue your hard work!</p>
         </div>
 
-        <div className="px-6 pb-5 pt-2 flex flex-col items-center gap-3" style={{ animation: "claimFadeUp 0.4s 0.4s both" }}>
+        <div className="px-6 pb-5 pt-2 flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-3 delay-400">
           <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-full px-4 py-1.5">
             <Zap className="w-3.5 h-3.5 text-amber-500" />
             <span className="text-amber-700 text-xs font-semibold">{generatorName}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-          </div>
           <button
             onClick={onDone}
-            className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-sm shadow-md hover:shadow-lg transition-shadow"
+            className="w-full py-3 mt-2 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-sm shadow-md hover:shadow-lg transition-shadow"
           >
             Continue
           </button>
         </div>
       </div>
-
-      <style>{`
-        @keyframes claimPop {
-          from { opacity: 0; transform: scale(0.7) translateY(40px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        @keyframes claimBounce {
-          from { opacity: 0; transform: scale(0.4); }
-          to   { opacity: 1; transform: scale(1); }
-        }
-        @keyframes claimFadeUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes claimStar {
-          from { opacity: 0; transform: scale(0) rotate(-30deg); }
-          to   { opacity: 1; transform: scale(1) rotate(0deg); }
-        }
-      `}</style>
     </div>
   );
 }
@@ -534,46 +560,87 @@ const powerPlans = [
 export default function Power() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, isUserLoading } = useUser();
-  const { rentedGenerators, collectEarnings, isRentedGeneratorsLoading } = useUserStore();
+  const [user, setUser] = useState<User | null>(null);
+  const [rentedGenerators, setRentedGenerators] = useState<RentedGenerator[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [claimedInfo, setClaimedInfo] = useState<{ amount: number; generatorName: string } | null>(null);
   const [isClaimingId, setIsClaimingId] = useState<string | null>(null);
 
+  const supabase = createClient();
 
-  const handleClaim = (ug: RentedGenerator) => {
-    setIsClaimingId(ug.id);
-    const result = collectEarnings(ug.id);
-    if (result.status === 'success') {
-      setClaimedInfo({ amount: result.earned, generatorName: ug.name });
+  const fetchData = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      router.push('/signin');
+      return;
+    }
+    setUser(user);
+
+    const { data, error } = await supabase
+      .from('rented_generators')
+      .select(`
+        *,
+        generators ( * )
+      `)
+      .eq('user_id', user.id);
+    
+    if (error) {
+      toast({ title: 'Error fetching generators', description: error.message, variant: 'destructive' });
+      setIsLoading(false);
+      return;
+    }
+
+    const enrichedData = data.map(rg => {
+      const baseGen = rg.generators as BaseGenerator | null;
+      return {
+        ...rg,
+        name: baseGen?.name ?? 'Unknown Generator',
+        price: baseGen?.price ?? 0,
+        daily_income: baseGen?.dailyIncome ?? 0,
+        expire_days: baseGen?.expireDays ?? 0,
+        color: baseGen?.color ?? 'gray',
+        icon: baseGen?.icon ?? '?',
+        subtitle: baseGen?.subtitle ?? '',
+        roi: baseGen?.roi ?? '',
+        period: baseGen?.period ?? '',
+        investors: baseGen?.investors ?? '0',
+      }
+    });
+
+    // @ts-ignore
+    setRentedGenerators(enrichedData);
+    setIsLoading(false);
+  }, [supabase, router, toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+
+  const handleClaim = async (rentedGeneratorId: string) => {
+    setIsClaimingId(rentedGeneratorId);
+    const result = await collectEarnings(rentedGeneratorId);
+    if (result.success && result.earned) {
+      const claimedGen = rentedGenerators.find(g => g.id === rentedGeneratorId);
+      setClaimedInfo({ amount: result.earned, generatorName: claimedGen?.name || 'Generator' });
+      fetchData();
     } else {
-      toast({ title: "Cannot claim yet", description: result.message, variant: "destructive" });
+      toast({ variant: "destructive", title: "Cannot claim yet", description: result.message });
     }
     setIsClaimingId(null);
   };
   
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/signin');
-    }
-  }, [isUserLoading, user, router]);
-
-  if (isUserLoading || isRentedGeneratorsLoading) {
-    return <div className="pt-12 p-4 pb-20 max-w-5xl mx-auto"><Skeleton className="h-96 rounded-2xl" /></div>;
+  if (isLoading) {
+    return <div className="pt-12 p-4 pb-20 max-w-6xl mx-auto"><Skeleton className="h-96 rounded-2xl" /></div>;
   }
   if (!user) {
     return null;
   }
 
   const now = Date.now();
-  const activeGenerators = rentedGenerators.filter(ug => ug && ug.expiresAt && ug.expiresAt.toMillis() > now);
-  const expiredGenerators = rentedGenerators.filter(ug => ug && ug.expiresAt && ug.expiresAt.toMillis() <= now);
-  
-  const genImageMap: Record<string, string | undefined> = {};
-  PlaceHolderImages.forEach((img) => {
-    if(img.id.startsWith("gen-")) {
-        genImageMap[img.id.replace("gen-", "")] = img.imageUrl;
-    }
-  });
+  const activeGenerators = rentedGenerators.filter(ug => ug && ug.expires_at && new Date(ug.expires_at).getTime() > now);
+  const expiredGenerators = rentedGenerators.filter(ug => ug && ug.expires_at && new Date(ug.expires_at).getTime() <= now);
 
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
@@ -625,16 +692,15 @@ export default function Power() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {activeGenerators.map(ug => (
                 <GeneratorCard key={ug.id} ug={ug}
-                  onClaim={() => handleClaim(ug)}
+                  onClaim={handleClaim}
                   isClaiming={isClaimingId === ug.id}
-                  uploadedImageUrl={genImageMap[ug.generatorId]}
                 />
               ))}
             </div>
           </div>
         )}
 
-        {rentedGenerators.length === 0 && (
+        {rentedGenerators.length === 0 && !isLoading && (
           <div className="bg-white rounded-2xl border border-amber-100/60 shadow-sm p-10 text-center mb-6">
             <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-4">
               <Zap className="w-8 h-8 text-amber-600" />
@@ -659,9 +725,8 @@ export default function Power() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {expiredGenerators.map(ug => (
                 <GeneratorCard key={ug.id} ug={ug}
-                  onClaim={() => handleClaim(ug)}
+                  onClaim={handleClaim}
                   isClaiming={isClaimingId === ug.id}
-                  uploadedImageUrl={genImageMap[ug.generatorId]}
                 />
               ))}
             </div>
@@ -706,7 +771,7 @@ export default function Power() {
               </div>
               <Button
                 data-testid={`button-activate-${plan.name.toLowerCase().replace(" ", "-")}`}
-                onClick={() => toast({ title: `${plan.name} Activated!`, description: "Your power plan is now active." })}
+                onClick={() => toast({ title: `${plan.name} Activated!`, description: "This is a demo. Your power plan has been activated." })}
                 className="w-full h-10 sm:h-11 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all text-sm">
                 Activate {plan.name}
               </Button>
