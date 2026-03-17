@@ -29,7 +29,6 @@ import {
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserStoreProvider } from "@/hooks/use-user-store";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
@@ -64,6 +63,9 @@ function BottomNav() {
 
 function DashboardHeader({ user }: { user: SupabaseUser | null }) {
   const getInitials = () => {
+    if (user?.user_metadata?.full_name) {
+        return user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
+    }
     if (user?.email) {
       return user.email[0].toUpperCase();
     }
@@ -109,6 +111,9 @@ export default function DashboardLayout({
   }, []);
 
   const getInitials = () => {
+    if (user?.user_metadata?.full_name) {
+        return user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
+    }
     if (user?.email) {
       return user.email[0].toUpperCase();
     }
@@ -132,81 +137,79 @@ export default function DashboardLayout({
   }
 
   return (
-    <UserStoreProvider>
-        <div className="flex min-h-screen">
-            <aside className="hidden md:flex md:flex-col md:w-64 md:border-r">
-                 <div className="flex items-center justify-center h-16 border-b">
-                    <Logo />
-                 </div>
-                 <nav className="flex-1 space-y-1 p-2">
-                    {navItems.map(item => {
-                        const isActive = pathname === item.href;
-                        return (
-                            <Link href={item.href} key={item.href} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
-                                <item.icon className="h-4 w-4" />
-                                <span>{item.label}</span>
-                            </Link>
-                        )
-                    })}
-                 </nav>
-            </aside>
+    <div className="flex min-h-screen">
+        <aside className="hidden md:flex md:flex-col md:w-64 md:border-r">
+             <div className="flex items-center justify-center h-16 border-b">
+                <Logo />
+             </div>
+             <nav className="flex-1 space-y-1 p-2">
+                {navItems.map(item => {
+                    const isActive = pathname === item.href;
+                    return (
+                        <Link href={item.href} key={item.href} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.label}</span>
+                        </Link>
+                    )
+                })}
+             </nav>
+        </aside>
+        
+        <div className="flex flex-col flex-1 overflow-hidden">
+            <DashboardHeader user={user} />
             
-            <div className="flex flex-col flex-1 overflow-hidden">
-                <DashboardHeader user={user} />
-                
-                <header className="sticky top-0 z-30 hidden h-16 items-center gap-4 border-b bg-background/80 px-6 backdrop-blur-sm md:flex">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="search"
-                      placeholder="Search investments..."
-                      className="w-full rounded-lg bg-secondary pl-8 md:w-[200px] lg:w-[320px]"
-                    />
-                  </div>
+            <header className="sticky top-0 z-30 hidden h-16 items-center gap-4 border-b bg-background/80 px-6 backdrop-blur-sm md:flex">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search investments..."
+                  className="w-full rounded-lg bg-secondary pl-8 md:w-[200px] lg:w-[320px]"
+                />
+              </div>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Bell className="h-5 w-5" />
+                <span className="sr-only">Toggle notifications</span>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
-                    <Bell className="h-5 w-5" />
-                    <span className="sr-only">Toggle notifications</span>
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user?.user_metadata.avatar_url || undefined} />
+                       <AvatarFallback>{getInitials()}</AvatarFallback>
+                    </Avatar>
                   </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="rounded-full">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={user?.user_metadata.avatar_url || undefined} />
-                           <AvatarFallback>{getInitials()}</AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Settings</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <form action={logout} className="w-full">
-                        <button type="submit" className="w-full">
-                            <DropdownMenuItem>
-                                <LogOut className="mr-2 h-4 w-4" />
-                                <span>Log out</span>
-                            </DropdownMenuItem>
-                        </button>
-                      </form>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </header>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <form action={logout} className="w-full">
+                    <button type="submit" className="w-full">
+                        <DropdownMenuItem>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                        </DropdownMenuItem>
+                    </button>
+                  </form>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </header>
 
-                <main className="flex-1 overflow-auto bg-[#f7f9f4] p-4 sm:p-6 pb-20 md:pb-6">
-                    {children}
-                </main>
+            <main className="flex-1 overflow-auto bg-[#f7f9f4] p-4 sm:p-6 pb-20 md:pb-6">
+                {children}
+            </main>
 
-                <BottomNav />
-            </div>
+            <BottomNav />
         </div>
-    </UserStoreProvider>
+    </div>
   );
 }
