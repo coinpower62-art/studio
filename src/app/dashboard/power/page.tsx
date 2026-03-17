@@ -308,13 +308,15 @@ function ExpiryBar({ rentedAt, expiresAt }: { rentedAt: number; expiresAt: numbe
 function GeneratorCard({ ug, onClaim, isClaiming, uploadedImageUrl }: { ug: RentedGenerator; onClaim: () => void; isClaiming: boolean; uploadedImageUrl?: string }) {
   const router = useRouter();
   const now = Date.now();
-  const isExpired = ug.expiresAt.toMillis() <= now;
-  const isSuspended = ug.suspended && !isExpired;
+  const isSuspended = ug.suspended && ug.expiresAt.toMillis() > now;
   const lastRef = ug.lastClaimed ? ug.lastClaimed.toMillis() : ug.rentedAt.toMillis();
-  const nextCreditAt = lastRef + TWENTY_FOUR_H;
-  const canCollect = !isExpired && !isSuspended && now >= nextCreditAt;
-  const periodsReady = !isExpired && !isSuspended ? Math.floor((now - lastRef) / TWENTY_FOUR_H) : 0;
+  
+  const endOfCollection = Math.min(now, ug.expiresAt.toMillis());
+  const periodsReady = !isSuspended ? Math.floor((endOfCollection - lastRef) / TWENTY_FOUR_H) : 0;
+  const canCollect = !isSuspended && periodsReady > 0;
+  const isExpired = ug.expiresAt.toMillis() <= now && !canCollect;
   const pendingIncome = periodsReady * ug.dailyIncome;
+  const nextCreditAt = lastRef + TWENTY_FOUR_H;
 
   const borderColor = isExpired ? "border-gray-200 opacity-60"
     : isSuspended ? "border-red-300 bg-red-50/30"
@@ -355,69 +357,76 @@ function GeneratorCard({ ug, onClaim, isClaiming, uploadedImageUrl }: { ug: Rent
       <div className="p-4 space-y-3">
         <ExpiryBar rentedAt={ug.rentedAt.toMillis()} expiresAt={ug.expiresAt.toMillis()} />
 
-        {!isExpired && (
+        {/* Live Chart is only shown for non-expired, non-collectable generators */}
+        {!isExpired && !canCollect && (
           <LiveChart genId={ug.id} dailyIncome={ug.dailyIncome} genColor={ug.color} suspended={isSuspended} canCollect={canCollect} />
         )}
 
-        {isExpired ? (
-          <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-3 border border-gray-200">
-            <AlertTriangle className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <p className="text-gray-500 text-sm">This generator has expired. Rent a new one from the Market.</p>
-          </div>
-        ) : isSuspended ? (
-          <div className="bg-red-50 border border-red-300 rounded-xl p-3 space-y-2">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
-              <div>
-                <p className="text-red-800 font-bold text-sm">Generator Suspended</p>
-                <p className="text-red-600 text-xs">Your balance reached $0. Deposit funds to resume income.</p>
-              </div>
-            </div>
-            <button
-              onClick={() => router.push("/dashboard/bank")}
-              className="w-full text-center text-xs font-bold text-red-700 bg-red-100 hover:bg-red-200 border border-red-300 rounded-lg py-1.5 transition-colors"
-            >
-              Deposit Now to Resume →
-            </button>
-          </div>
-        ) : canCollect ? (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-800 font-bold text-sm">
-                  {periodsReady > 1 ? `${periodsReady} days accumulated!` : "Income ready!"}
-                </p>
-                <p className="text-green-600 text-xs">
-                  ${pendingIncome.toFixed(2)} auto-credited on collect
-                </p>
-              </div>
-              <Button
-                data-testid={`button-claim-${ug.id}`}
-                onClick={onClaim}
-                disabled={isClaiming}
-                className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-xl px-4 h-9 text-sm shadow-md hover:shadow-lg"
-              >
-                {isClaiming ? "Processing..." : `Collect $${pendingIncome.toFixed(2)}`}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
-                <div>
-                  <p className="text-amber-800 font-semibold text-xs">Auto-earning • Live</p>
-                  <p className="text-amber-600 text-[10px]">Accumulating now</p>
+        {canCollect ? (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="text-green-800 font-bold text-sm">
+                            {periodsReady > 1 ? `${periodsReady} days accumulated!` : "Income ready!"}
+                        </p>
+                        <p className="text-green-600 text-xs">
+                            ${pendingIncome.toFixed(2)} auto-credited on collect
+                        </p>
+                    </div>
+                    <Button
+                        data-testid={`button-claim-${ug.id}`}
+                        onClick={onClaim}
+                        disabled={isClaiming}
+                        className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-xl px-4 h-9 text-sm shadow-md hover:shadow-lg"
+                    >
+                        {isClaiming ? "Processing..." : `Collect $${pendingIncome.toFixed(2)}`}
+                    </Button>
                 </div>
-              </div>
-              <LiveEarningsCounter lastRef={lastRef} dailyIncome={ug.dailyIncome} active={!isSuspended && !canCollect && !isExpired} />
             </div>
-            <div className="flex items-center justify-between pt-1.5 border-t border-amber-200">
-              <p className="text-amber-700 text-[10px] font-semibold">Collectable in</p>
-              <RedCountdown targetMs={nextCreditAt} label="" />
+        ) : isExpired ? (
+            <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-3 border border-gray-200">
+                <AlertTriangle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <p className="text-gray-500 text-sm">This generator has expired. Rent a new one from the Market.</p>
             </div>
-          </div>
+        ) : isSuspended ? (
+            <div className="bg-red-50 border border-red-300 rounded-xl p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    <div>
+                        <p className="text-red-800 font-bold text-sm">Generator Suspended</p>
+                        {ug.price > 0 ? (
+                           <p className="text-red-600 text-xs">Your balance reached $0. Deposit funds to resume income.</p>
+                        ) : (
+                           <p className="text-red-600 text-xs">This generator is suspended. Please contact support.</p>
+                        )}
+                    </div>
+                </div>
+                {ug.price > 0 && (
+                    <button
+                        onClick={() => router.push("/dashboard/bank")}
+                        className="w-full text-center text-xs font-bold text-red-700 bg-red-100 hover:bg-red-200 border border-red-300 rounded-lg py-1.5 transition-colors"
+                    >
+                        Deposit Now to Resume →
+                    </button>
+                )}
+            </div>
+        ) : (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+                        <div>
+                            <p className="text-amber-800 font-semibold text-xs">Auto-earning • Live</p>
+                            <p className="text-amber-600 text-[10px]">Accumulating now</p>
+                        </div>
+                    </div>
+                    <LiveEarningsCounter lastRef={lastRef} dailyIncome={ug.dailyIncome} active={true} />
+                </div>
+                <div className="flex items-center justify-between pt-1.5 border-t border-amber-200">
+                    <p className="text-amber-700 text-[10px] font-semibold">Collectable in</p>
+                    <RedCountdown targetMs={nextCreditAt} label="" />
+                </div>
+            </div>
         )}
 
         <div className="grid grid-cols-2 gap-2 text-center">
@@ -430,7 +439,7 @@ function GeneratorCard({ ug, onClaim, isClaiming, uploadedImageUrl }: { ug: Rent
           <div className="bg-gray-50 rounded-xl p-2 border border-amber-100/60">
             <p className="text-gray-400 text-[10px]">Status</p>
             <p className={`text-xs font-bold ${isExpired ? "text-gray-400" : isSuspended ? "text-red-600" : canCollect ? "text-green-600" : "text-amber-600"}`}>
-              {isExpired ? "Expired" : isSuspended ? "Suspended" : canCollect ? "Collect Now" : "Auto-Running"}
+              {canCollect ? "Collect Now" : isExpired ? "Expired" : isSuspended ? "Suspended" : "Auto-Running"}
             </p>
           </div>
         </div>
@@ -650,8 +659,8 @@ export default function Power() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {expiredGenerators.map(ug => (
                 <GeneratorCard key={ug.id} ug={ug}
-                  onClaim={() => {}}
-                  isClaiming={false}
+                  onClaim={() => handleClaim(ug)}
+                  isClaiming={isClaimingId === ug.id}
                   uploadedImageUrl={genImageMap[ug.generatorId]}
                 />
               ))}

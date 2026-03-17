@@ -162,20 +162,25 @@ export function UserStoreProvider({ children }: { children: ReactNode }) {
 
   const collectEarnings = useCallback((rentedInstanceId: string) => {
     if (!firestore || !user || !userRef) return { status: 'error' as const, message: 'Auth not ready' };
-    
+
     const rentedInstance = rentedGenerators.find(g => g.id === rentedInstanceId);
     if (!rentedInstance) return { status: 'error' as const, message: 'Generator not found' };
 
     const now = Date.now();
-    const isExpired = rentedInstance.expiresAt.toMillis() <= now;
-    if (isExpired) return { status: 'error' as const, message: 'Generator has expired' };
-    
+
     if (rentedInstance.suspended) return { status: 'error' as const, message: 'Generator is suspended' };
 
     const lastRef = rentedInstance.lastClaimed ? rentedInstance.lastClaimed.toMillis() : rentedInstance.rentedAt.toMillis();
-    const periodsReady = Math.floor((now - lastRef) / (24 * 60 * 60 * 1000));
+    
+    // Ensure we don't try to calculate periods beyond the expiry date
+    const endOfCollection = Math.min(now, rentedInstance.expiresAt.toMillis());
+    const periodsReady = Math.floor((endOfCollection - lastRef) / (24 * 60 * 60 * 1000));
 
     if (periodsReady <= 0) {
+        const isExpired = rentedInstance.expiresAt.toMillis() <= now;
+        if (isExpired) {
+             return { status: 'error' as const, message: 'Generator has expired and has no pending income.' };
+        }
         return { status: 'error' as const, message: 'Not ready to collect' };
     }
 
