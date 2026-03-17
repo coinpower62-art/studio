@@ -204,67 +204,62 @@ export default function BankPage() {
   const { display: countdown, expired } = useCountdown(mode === "deposit");
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) {
-        router.push("/login");
+    const fetchData = async () => {
+      setLoading(true);
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        router.push('/login');
         return;
       }
-      setUser(data.user);
+      setUser(user);
+
+      // Fetch profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('balance, country, has_withdrawal_pin, username, full_name')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error("Profile Fetch Error:", profileError);
+        setProfile(null);
+      } else {
+        setProfile(profileData as Profile);
+        setDepositCountry(profileData.country || '');
+      }
+
+      // Fetch deposits
+      const { data: depositsData, error: depositsError } = await supabase
+        .from('deposit_requests')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (depositsError) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch deposit history.' });
+      } else {
+        setDepositRecords(depositsData as DepositRecord[]);
+      }
+
+      // Fetch withdrawals
+      const { data: withdrawalsData, error: withdrawalsError } = await supabase
+        .from('withdrawal_requests')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (withdrawalsError) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch withdrawal history.' });
+      } else {
+        setWithdrawRecords(withdrawalsData as WithdrawRecord[]);
+      }
+      
+      setLoading(false);
     };
-    checkUser();
-  }, [router, supabase.auth]);
 
-  useEffect(() => {
-    if (user) {
-      const fetchData = async () => {
-        setLoading(true);
-        // Fetch profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('balance, country, has_withdrawal_pin, username, full_name')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError) {
-          toast({ variant: 'destructive', title: 'Profile Error', description: profileError.message || 'Could not fetch user profile.' });
-          console.error(profileError);
-        } else {
-          setProfile(profileData as Profile);
-          setDepositCountry(profileData.country || '');
-        }
-
-        // Fetch deposits
-        const { data: depositsData, error: depositsError } = await supabase
-          .from('deposit_requests')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (depositsError) {
-          toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch deposit history.' });
-        } else {
-          setDepositRecords(depositsData as DepositRecord[]);
-        }
-
-        // Fetch withdrawals
-        const { data: withdrawalsData, error: withdrawalsError } = await supabase
-          .from('withdrawal_requests')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (withdrawalsError) {
-          toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch withdrawal history.' });
-        } else {
-          setWithdrawRecords(withdrawalsData as WithdrawRecord[]);
-        }
-        
-        setLoading(false);
-      };
-      fetchData();
-    }
-  }, [user, supabase, toast]);
+    fetchData();
+  }, [router, supabase, toast]);
 
   const copy = (text: string, label: string) =>
     navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!`, description: text }));
