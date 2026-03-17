@@ -6,7 +6,7 @@ import {
   Landmark, ArrowDownToLine, ArrowUpFromLine, Wallet, Shield, Clock,
   CheckCircle, Copy, CreditCard, Smartphone, Coins, AlertCircle,
   PartyPopper, PhoneCall, Hash, Network, User, MapPin, CalendarDays,
-  Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X
+  Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X, LogOut
 } from "lucide-react";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -20,6 +20,7 @@ import { createClient } from "@/lib/supabase/client";
 import { countries as COUNTRIES_DATA } from "@/lib/data";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { createDepositRequest, createWithdrawalRequest, setWithdrawalPin } from "./actions";
+import { logout } from "@/app/login/actions";
 
 // Card validation helpers
 function luhnCheck(num: string): boolean {
@@ -226,7 +227,7 @@ export default function BankPage() {
           .single();
 
         if (profileError) {
-          toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch user profile.' });
+          toast({ variant: 'destructive', title: 'Profile Error', description: profileError.message || 'Could not fetch user profile.' });
           console.error(profileError);
         } else {
           setProfile(profileData as Profile);
@@ -389,7 +390,25 @@ export default function BankPage() {
   };
 
   if (loading) return <div className="p-4 pt-8 max-w-4xl mx-auto"><Skeleton className="h-64 rounded-2xl" /></div>;
-  if (!user || !profile) return null;
+  
+  if (!user || !profile) {
+      return (
+        <div className="pt-12 p-4 pb-20 max-w-4xl mx-auto text-center">
+            <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
+            <h2 className="mt-4 text-xl font-bold text-destructive-foreground">User Profile Not Found</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+                We could not load your user profile. This can happen if profile creation failed during signup.
+                Please try signing out and signing back in. If the problem persists, please contact support.
+            </p>
+            <form action={logout} className="mt-6">
+                <Button variant="destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                </Button>
+            </form>
+        </div>
+      )
+  }
 
   const hasApprovedDeposit = (depositRecords || []).some((d) => d.status === "approved");
   const allTransactions = [...(depositRecords || []), ...(withdrawRecords || [])]
