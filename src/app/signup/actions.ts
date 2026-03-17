@@ -1,7 +1,7 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
 
 export async function signup(values: any) {
   const supabase = createClient();
@@ -53,8 +53,6 @@ export async function signup(values: any) {
     return { error: `Could not create user profile: ${profileError.message}` };
   }
 
-  // After sign up, Supabase sends a confirmation email by default.
-  redirect('/login?message=Check your email to confirm your account and sign in.');
-
+  // On success, return no error. Let the client handle the redirect.
   return { error: null };
 }
