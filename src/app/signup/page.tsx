@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 import { useAuth, useFirestore, useUser, initiateEmailSignUp, setDocumentNonBlocking } from '@/firebase';
-import { COUNTRIES, LANGUAGES, PHONE_CODES } from '@/lib/data';
+import { countries, LANGUAGES, PHONE_CODES } from '@/lib/data';
 import { TRANSLATIONS } from '@/lib/translations';
 
 type LangCode = typeof LANGUAGES[number]["code"];
@@ -277,7 +277,7 @@ export default function SignUp() {
     
     setIsSubmitting(true);
     form.clearErrors();
-    form.setValue('language', LANGUAGES.find(l => l.code === selectedLang)?.name ?? "English (US)");
+    form.setValue("language", LANGUAGES.find(l => l.code === selectedLang)?.name ?? "English (US)");
 
     initiateEmailSignUp(
       auth,
@@ -509,7 +509,7 @@ export default function SignUp() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="max-h-56">
-                      {COUNTRIES.map((c) => <SelectItem key={c.value} value={c.label}>{c.label}</SelectItem>)}
+                      {countries.map((c) => <SelectItem key={c.value} value={c.label}>{c.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <FormMessage className="text-red-600 text-xs font-medium" />
@@ -660,10 +660,10 @@ export default function SignUp() {
               <Button
                 type="submit"
                 data-testid="button-signup"
-                disabled={isSubmitting}
+                disabled={mutation.isPending}
                 className="w-full h-11 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200"
               >
-                {isSubmitting ? t.submitting : t.submit}
+                {mutation.isPending ? t.submitting : t.submit}
               </Button>
             </form>
           </Form>
@@ -680,4 +680,4 @@ export default function SignUp() {
       </div>
     </div>
   );
-}
+} use this code to update all of the sign up page with no mistake
