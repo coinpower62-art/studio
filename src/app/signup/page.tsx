@@ -54,7 +54,7 @@ const signupSchema = z.object({
 type SignupForm = z.infer<typeof signupSchema>;
 
 function genReferralCode(username: string): string {
-    const code = `CP-${username.slice(0, 4).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const code = `CP-${'\'\'\''}${username.slice(0, 4).toUpperCase()}${'\'\'\''}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     return code.slice(0, 12);
 }
 
@@ -660,10 +660,10 @@ export default function SignUp() {
               <Button
                 type="submit"
                 data-testid="button-signup"
-                disabled={mutation.isPending}
+                disabled={isSubmitting}
                 className="w-full h-11 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200"
               >
-                {mutation.isPending ? t.submitting : t.submit}
+                {isSubmitting ? t.submitting : t.submit}
               </Button>
             </form>
           </Form>
@@ -680,4 +680,4 @@ export default function SignUp() {
       </div>
     </div>
   );
-} use this code for the signup page
+}
