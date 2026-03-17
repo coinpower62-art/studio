@@ -286,7 +286,7 @@ export default function Market() {
 
   const now = Date.now();
   const activeRentedCounts = new Map<string, number>();
-  rentedGenerators.filter((ug: RentedGenerator) => ug.rentalEndTime.toMillis() > now).forEach((ug: RentedGenerator) => {
+  rentedGenerators.filter((ug: RentedGenerator) => ug.expiresAt.toMillis() > now).forEach((ug: RentedGenerator) => {
     activeRentedCounts.set(ug.generatorId, (activeRentedCounts.get(ug.generatorId) || 0) + 1);
   });
 
@@ -314,7 +314,7 @@ export default function Market() {
           </p>
         </div>
 
-        {rentedGenerators.filter(ug => ug.rentalEndTime.toMillis() > now).length > 0 && (
+        {rentedGenerators.filter(ug => ug.expiresAt.toMillis() > now).length > 0 && (
           <div className="mb-4 bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
             <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
@@ -336,7 +336,7 @@ export default function Market() {
               const rentedCount = activeRentedCounts.get(gen.id) || 0;
               const isRented = rentedCount > 0;
               const isMaxed = gen.id === "pg1" && rentedCount >= 1;
-              const activeUg = rentedGenerators.find(ug => ug.generatorId === gen.id && ug.rentalEndTime.toMillis() > now);
+              const activeUg = rentedGenerators.find(ug => ug.generatorId === gen.id && ug.expiresAt.toMillis() > now);
 
               return (
                 <div key={gen.id} data-testid={`card-generator-${gen.id}`}
@@ -417,7 +417,7 @@ export default function Market() {
                           <Timer className="w-4 h-4 text-red-500" />
                           <span className="text-red-700 text-xs font-semibold">Expires in</span>
                         </div>
-                        <Countdown expiresAt={activeUg.rentalEndTime.toMillis()} label="" />
+                        <Countdown expiresAt={activeUg.expiresAt.toMillis()} label="" />
                       </div>
                     )}
 

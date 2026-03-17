@@ -34,12 +34,12 @@ export function GeneratorCard({ generator, rentedInstance }: GeneratorCardProps)
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
     useEffect(() => {
-        if (!rentedInstance || !(rentedInstance.rentalEndTime instanceof Timestamp)) {
+        if (!rentedInstance || !(rentedInstance.expiresAt instanceof Timestamp)) {
           setTimeLeft(null);
           return;
         }
 
-        const rentalEndTimeMs = rentedInstance.rentalEndTime.toMillis();
+        const rentalEndTimeMs = rentedInstance.expiresAt.toMillis();
 
         const updateTimer = () => {
             const now = Date.now();
@@ -68,16 +68,16 @@ export function GeneratorCard({ generator, rentedInstance }: GeneratorCardProps)
 
     const handleCollect = () => {
         if (rentedInstance) {
-            const result = collectEarnings(rentedInstance);
-            if (result === 'collected') {
+            const result = collectEarnings(rentedInstance.id);
+            if (result.status === 'success') {
                 toast({
                     title: 'Earnings Collected!',
-                    description: `You've collected $${generator.dailyIncome.toFixed(2)}.`,
+                    description: `You've collected $${result.earned.toFixed(2)}.`,
                 });
-            } else if (result === 'expired') {
+            } else {
                 toast({
-                    title: 'Generator Expired',
-                    description: `${generator.name} has completed its rental duration.`,
+                    title: 'Cannot Claim Yet',
+                    description: result.message,
                 });
             }
         }
