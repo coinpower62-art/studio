@@ -38,7 +38,6 @@ export async function signup(values: any) {
     phone: phone,
     language: language,
     referral_code: `CP-${username.toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}`, // Generate a referral code
-    referred_by: referralCode || null,
     balance: 1.00, // Start with a $1 bonus
     has_withdrawal_pin: false,
     referral_count: 0
