@@ -59,6 +59,12 @@
       "description": "CEO portrait for admin page.",
       "imageUrl": "https://picsum.photos/seed/ceoadmin/200/200",
       "imageHint": "professional portrait"
+    },
+    {
+      "id": "signup-logo",
+      "description": "The CoinPower logo for the signup page.",
+      "imageUrl": "https://picsum.photos/seed/coinpowerlogo/64/64",
+      "imageHint": "logo"
     }
   ]
 }

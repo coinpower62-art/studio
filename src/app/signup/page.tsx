@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import {
 import { countries, LANGUAGES, PHONE_CODES } from '@/lib/data';
 import { TRANSLATIONS } from '@/lib/translations';
 import { signup } from "./actions";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 type LangCode = typeof LANGUAGES[number]["code"];
 
@@ -269,34 +271,25 @@ export default function SignUp() {
       ? "border-red-400 focus:border-red-500 bg-red-50 focus-visible:ring-red-200"
       : "border-gray-200 focus:border-amber-400 focus-visible:ring-amber-200"}`;
 
+  const logoImage = PlaceHolderImages.find(p => p.id === 'signup-logo');
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12"
       style={{ background: "linear-gradient(135deg, #0a2e1a 0%, #0f4c2a 45%, #7a5500 80%, #c9891a 100%)" }}>
       <div className="w-full max-w-lg">
         <div className="text-center mb-6">
-           <div className="mx-auto mb-3 h-16 w-16 rounded-2xl object-cover shadow-2xl bg-primary flex items-center justify-center">
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 32 32"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="text-primary-foreground"
-            >
-              <circle cx="16" cy="16" r="14" fill="currentColor" />
-              <path
-                d="M17.866 10.6667L14.666 16.5333H19.2L15.4673 24L18.6673 17.8667H14.134L17.866 10.6667Z"
-                fill="#000"
+           {logoImage ? (
+              <Image
+                src={logoImage.imageUrl}
+                alt="CoinPower Logo"
+                width={64}
+                height={64}
+                className="mx-auto mb-3 rounded-2xl object-cover shadow-2xl"
+                data-ai-hint={logoImage.imageHint}
               />
-              <circle
-                cx="16"
-                cy="16"
-                r="15"
-                stroke="currentColor"
-                strokeWidth="2"
-              />
-            </svg>
-          </div>
+            ) : (
+              <div className="mx-auto mb-3 h-16 w-16 rounded-2xl bg-primary" />
+            )}
           <h1 className="text-2xl sm:text-3xl font-bold text-white">Coin<span className="text-amber-400">Power</span></h1>
           <p className="text-amber-200/80 mt-1 text-sm font-medium">Digital Energy Mining Platform</p>
         </div>
