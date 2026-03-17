@@ -1,9 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
-  Home,
   Settings,
   Bell,
   Search,
@@ -31,10 +30,10 @@ import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserStoreProvider } from "@/hooks/use-user-store";
-import { useAuth, useUser } from "@/firebase";
-import { signOut } from "firebase/auth";
 import Link from "next/link";
-import { AuthGuard } from "@/components/AuthGuard";
+import { createClient } from "@/lib/supabase/client";
+import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { logout } from '@/app/login/actions';
 
 const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -63,24 +62,8 @@ function BottomNav() {
     );
 }
 
-function DashboardHeader() {
-  const router = useRouter();
-  const auth = useAuth();
-  const { user } = useUser();
-
-  const handleLogout = async () => {
-    if (auth) {
-      await signOut(auth);
-    }
-    router.push("/signin");
-  };
-
+function DashboardHeader({ user }: { user: SupabaseUser | null }) {
   const getInitials = () => {
-    if (user?.displayName) {
-      const names = user.displayName.split(' ');
-      const initials = names.map(n => n[0]).join('');
-      return initials.toUpperCase();
-    }
     if (user?.email) {
       return user.email[0].toUpperCase();
     }
@@ -92,12 +75,14 @@ function DashboardHeader() {
       <Logo className="[&>span]:text-white [&>svg]:text-white" />
       <div className="flex items-center gap-2">
          <Avatar className="h-8 w-8 border-2 border-white/50">
-            <AvatarImage src={user?.photoURL || undefined} />
+            <AvatarImage src={user?.user_metadata.avatar_url || undefined} />
             <AvatarFallback className="bg-amber-600 text-white font-bold">{getInitials()}</AvatarFallback>
         </Avatar>
-        <button onClick={handleLogout} className="p-2 rounded-full hover:bg-white/10">
-          <LogOut className="h-5 w-5" />
-        </button>
+        <form action={logout}>
+            <button type="submit" className="p-2 rounded-full hover:bg-white/10">
+              <LogOut className="h-5 w-5" />
+            </button>
+        </form>
       </div>
     </header>
   );
@@ -110,16 +95,25 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const auth = useAuth();
-  const { user } = useUser();
+  const [user, setUser] = React.useState<SupabaseUser | null>(null);
+  const [loading, setLoading] = React.useState(true);
 
-  const handleLogout = async () => {
-    if (auth) {
-      await signOut(auth);
+  React.useEffect(() => {
+      const supabase = createClient();
+      const getUser = async () => {
+          const { data } = await supabase.auth.getUser();
+          setUser(data.user);
+          setLoading(false);
+      }
+      getUser();
+  }, []);
+
+  const getInitials = () => {
+    if (user?.email) {
+      return user.email[0].toUpperCase();
     }
-    router.push("/signin");
-  };
+    return "U";
+  }
 
   if (pathname.startsWith('/admin')) {
     return (
@@ -128,10 +122,17 @@ export default function DashboardLayout({
       </div>
     )
   }
+  
+  if (loading) {
+      return (
+        <div className="flex h-screen items-center justify-center bg-background">
+          <Loader className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+  }
 
   return (
     <UserStoreProvider>
-      <AuthGuard>
         <div className="flex min-h-screen">
             <aside className="hidden md:flex md:flex-col md:w-64 md:border-r">
                  <div className="flex items-center justify-center h-16 border-b">
@@ -151,7 +152,7 @@ export default function DashboardLayout({
             </aside>
             
             <div className="flex flex-col flex-1 overflow-hidden">
-                <DashboardHeader />
+                <DashboardHeader user={user} />
                 
                 <header className="sticky top-0 z-30 hidden h-16 items-center gap-4 border-b bg-background/80 px-6 backdrop-blur-sm md:flex">
                   <div className="relative flex-1">
@@ -170,8 +171,8 @@ export default function DashboardLayout({
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="rounded-full">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={user?.photoURL || undefined} />
-                           <AvatarFallback>{user?.email?.[0].toUpperCase()}</AvatarFallback>
+                          <AvatarImage src={user?.user_metadata.avatar_url || undefined} />
+                           <AvatarFallback>{getInitials()}</AvatarFallback>
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
@@ -187,10 +188,14 @@ export default function DashboardLayout({
                         <span>Settings</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Log out</span>
-                      </DropdownMenuItem>
+                      <form action={logout} className="w-full">
+                        <button type="submit" className="w-full">
+                            <DropdownMenuItem>
+                                <LogOut className="mr-2 h-4 w-4" />
+                                <span>Log out</span>
+                            </DropdownMenuItem>
+                        </button>
+                      </form>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </header>
@@ -202,7 +207,6 @@ export default function DashboardLayout({
                 <BottomNav />
             </div>
         </div>
-      </AuthGuard>
     </UserStoreProvider>
   );
 }
