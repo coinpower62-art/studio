@@ -65,9 +65,23 @@ export default function SignInPage() {
   }
 
   function onSubmit(values: SigninForm) {
-    if (!auth) return;
     setIsSubmitting(true);
     form.clearErrors();
+
+    // Special case for admin login
+    if (values.email === 'master@gmail.com' && values.password === 'Hostmyapp2577@') {
+      localStorage.setItem('admin_logged_in', 'true');
+      toast({ title: 'Admin Login Successful!', description: 'Redirecting to Admin Dashboard...' });
+      router.push('/admin/dashboard');
+      return;
+    }
+
+    // Regular Firebase user sign-in
+    if (!auth) {
+      setIsSubmitting(false);
+      return;
+    }
+    
     initiateEmailSignIn(auth, values.email, values.password, (error: FirebaseError) => {
       const message = getAuthErrorMessage(error);
       form.setError("root", { message });
@@ -189,11 +203,6 @@ export default function SignInPage() {
                   <span className="text-amber-600 font-semibold hover:text-amber-700 cursor-pointer" data-testid="link-signup">
                     Create account
                   </span>
-                </Link>
-              </p>
-               <p className="text-xs text-gray-400">
-                <Link href="/admin" className="hover:text-amber-700 transition-colors" data-testid="link-admin">
-                  Admin Panel
                 </Link>
               </p>
             </div>
