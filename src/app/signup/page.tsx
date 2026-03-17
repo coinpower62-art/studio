@@ -334,7 +334,7 @@ export default function SignUp() {
     });
   }
 
-  const { errors, formState } = form;
+  const { errors } = form.formState;
   const fieldClass = (hasError: boolean) =>
     `h-11 transition-colors text-sm ${hasError
       ? "border-red-400 focus:border-red-500 bg-red-50 focus-visible:ring-red-200"
@@ -680,4 +680,4 @@ export default function SignUp() {
       </div>
     </div>
   );
-} use this code to update all of the sign up page with no mistake
+}
