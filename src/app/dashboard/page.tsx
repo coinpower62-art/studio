@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  TrendingUp, Wallet, ArrowUpRight, ArrowDownRight, Activity, Zap, Globe, Star, BarChart2, Gift, Copy, CheckCircle, Play, Sparkles
+  TrendingUp, Wallet, ArrowUpRight, ArrowDownRight, Activity, Zap, Globe, Star, BarChart2, Gift, Copy, CheckCircle, Play, Sparkles, LogOut
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -9,9 +9,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUser, useFirestore } from "@/firebase";
+import { useUser, useFirestore, useAuth } from "@/firebase";
 import { useUserStore } from "@/hooks/use-user-store";
 import { doc, updateDoc } from 'firebase/firestore';
+import { signOut } from "firebase/auth";
+import { Button } from "@/components/ui/button";
 
 const recentActivities = [
   { type: "deposit", amount: "+$500.00", time: "2h ago" },
@@ -34,6 +36,7 @@ export default function Dashboard() {
   const { user, isUserLoading } = useUser();
   const { balance, fullName, country, referralCode, rentedGenerators, redeemedCodes, addRedeemedCode } = useUserStore();
   const firestore = useFirestore();
+  const auth = useAuth();
 
   const [copied, setCopied] = useState(false);
   const [giftCode, setGiftCode] = useState("");
@@ -86,6 +89,14 @@ export default function Dashboard() {
     }
     setIsRedeeming(false);
   };
+  
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth);
+      router.push("/signin");
+      toast({ title: 'Signed out successfully.' });
+    }
+  };
 
   if (isUserLoading || !user) {
     return (
@@ -123,7 +134,7 @@ export default function Dashboard() {
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <div>
+            <div className="flex-1">
               <p className="font-semibold text-gray-900 text-sm" data-testid="text-username">{fullName}</p>
               <div className="flex items-center gap-1 mt-0.5 flex-wrap">
                 <Globe className="w-3 h-3 text-gray-400 flex-shrink-0" />
@@ -131,6 +142,9 @@ export default function Dashboard() {
                 <Badge className="text-xs px-1.5 py-0 bg-green-100 text-green-700 border-0">Active</Badge>
               </div>
             </div>
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-gray-500 hover:bg-red-50 hover:text-red-500 rounded-lg">
+              <LogOut className="w-5 h-5" />
+            </Button>
           </div>
         </div>
 
