@@ -30,7 +30,7 @@ export default function AdminSignInPage() {
 
     // Using a timeout to simulate async operation
     setTimeout(() => {
-        if (username === 'admin' && password === 'coinpower2026') {
+        if (username === 'admin' && password === 'admin') {
             localStorage.setItem('admin_logged_in', 'true');
             toast({ title: 'Login successful!', description: 'Redirecting to dashboard...' });
             router.push('/admin/dashboard');
