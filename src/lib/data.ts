@@ -178,4 +178,5 @@ export const winners = [
   { name: 'Esi F.', earnings: 14.30 },
   { name: 'Jelani R.', earnings: 8.10 },
   { name: 'Sade W.', earnings: 19.99 },
-  { name: 'Omar G.',
+  { name: 'Omar G.', earnings: 4.20 },
+];
