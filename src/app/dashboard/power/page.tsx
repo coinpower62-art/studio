@@ -524,42 +524,33 @@ const powerPlans = [
 ];
 
 export default function Power() {
-  const [, navigate] = useLocation();
+  const router = useRouter();
   const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
+  const { rentedGenerators, collectEarnings, isRentedGeneratorsLoading } = useUserStore();
   const [claimedInfo, setClaimedInfo] = useState<{ amount: number; generatorName: string } | null>(null);
-  const queryClient = useQueryClient();
 
-  const { data: user, isLoading } = useQuery({ queryKey: ["/api/auth/me"], retry: false });
-  const { data: userGenerators = [], isLoading: ugsLoading } = useQuery<UserGenerator[]>({
-    queryKey: ["/api/user/generators"],
-    enabled: !!user,
-    refetchInterval: 5000,
-  });
-  const { data: allGenerators = [] } = useQuery<any[]>({ queryKey: ["/api/generators"], enabled: !!user });
-  const genImageMap: Record<string, string> = {};
-  (allGenerators as any[]).forEach((g: any) => { if (g.imageUrl) genImageMap[g.id] = g.imageUrl; });
-
-  const claimMutation = useMutation({
-    mutationFn: async (ugId: string) => {
-      const res = await apiRequest("POST", `/api/user/generators/${ugId}/claim`, {});
-      return res.json();
-    },
-    onSuccess: (data: any, ugId: string) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user/generators"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      const genName = userGenerators.find(g => g.id === ugId)?.generatorName ?? "Generator";
-      setClaimedInfo({ amount: data.earned ?? 0, generatorName: genName });
-    },
-    onError: (err: any) => toast({ title: "Cannot claim yet", description: err.message, variant: "destructive" }),
-  });
-
-  if (isLoading || ugsLoading) return <div className="pt-12 p-4 pb-20 max-w-5xl mx-auto"><Skeleton className="h-96 rounded-2xl" /></div>;
-  if (!user) { navigate("/signin"); return null; }
+  const handleClaim = (ug: RentedGenerator) => {
+    const result = collectEarnings(ug.id);
+    if (result.status === 'success') {
+      setClaimedInfo({ amount: result.earned, generatorName: ug.name });
+    } else {
+      toast({ title: "Cannot claim yet", description: result.message, variant: "destructive" });
+    }
+  };
+  
+  if (isUserLoading || isRentedGeneratorsLoading) {
+    return <div className="pt-12 p-4 pb-20 max-w-5xl mx-auto"><Skeleton className="h-96 rounded-2xl" /></div>;
+  }
+  if (!user) {
+    router.push("/signin");
+    return null;
+  }
 
   const now = Date.now();
-  const activeGenerators = userGenerators.filter(ug => ug.expiresAt > now);
-  const expiredGenerators = userGenerators.filter(ug => ug.expiresAt <= now);
-
+  const activeGenerators = rentedGenerators.filter(ug => ug && ug.expiresAt && ug.expiresAt.toMillis() > now);
+  const expiredGenerators = rentedGenerators.filter(ug => ug && ug.expiresAt && ug.expiresAt.toMillis() <= now);
+  
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
       <TickerTape />
@@ -600,7 +591,6 @@ export default function Power() {
           </div>
         </div>
 
-        {/* Active generators */}
         {activeGenerators.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-3">
@@ -611,17 +601,15 @@ export default function Power() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {activeGenerators.map(ug => (
                 <GeneratorCard key={ug.id} ug={ug}
-                  onClaim={() => claimMutation.mutate(ug.id)}
-                  isClaiming={claimMutation.isPending && claimMutation.variables === ug.id}
-                  uploadedImageUrl={genImageMap[ug.generatorId]}
+                  onClaim={() => handleClaim(ug)}
+                  isClaiming={false}
                 />
               ))}
             </div>
           </div>
         )}
 
-        {/* No generators state */}
-        {userGenerators.length === 0 && (
+        {rentedGenerators.length === 0 && (
           <div className="bg-white rounded-2xl border border-amber-100/60 shadow-sm p-10 text-center mb-6">
             <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-4">
               <Zap className="w-8 h-8 text-amber-600" />
@@ -630,14 +618,13 @@ export default function Power() {
             <p className="text-gray-500 text-sm mb-4 max-w-sm mx-auto">
               Go to the Market to rent a generator. Your generators will appear here with a 24-hour claim timer.
             </p>
-            <Button onClick={() => navigate("/market")}
+            <Button onClick={() => router.push("/dashboard/market")}
               className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-xl px-6 h-10 shadow-md">
               Browse Market
             </Button>
           </div>
         )}
 
-        {/* Expired generators */}
         {expiredGenerators.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-3">
@@ -649,14 +636,12 @@ export default function Power() {
                 <GeneratorCard key={ug.id} ug={ug}
                   onClaim={() => {}}
                   isClaiming={false}
-                  uploadedImageUrl={genImageMap[ug.generatorId]}
                 />
               ))}
             </div>
           </div>
         )}
 
-        {/* Power Plans */}
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1 mt-4">Boost Power Plans</h2>
         <p className="text-gray-500 text-center text-sm mb-5 sm:mb-8">Multiply your returns even further</p>
 
@@ -717,4 +702,4 @@ export default function Power() {
       </div>
     </div>
   );
-}    use this code to update the power page
+} use this code to update the power page
