@@ -12,6 +12,7 @@ import TickerTape from "@/components/TickerTape";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { createClient } from "@/lib/supabase/client";
 import type { User } from '@supabase/supabase-js';
+
 import { collectEarnings } from "./actions";
 import type { Generator as BaseGenerator } from '@/lib/data';
 
@@ -37,43 +38,18 @@ export type RentedGenerator = {
 
 const CHART_PAIRS_P = [
   "BTC/USDT","ETH/USDT","BNB/USDT","SOL/USDT","XRP/USDT",
-  "ADA/USDT","DOGE/USDT","TON/USDT","TRX/USDT","MATIC/US![CDATA['use client';
-
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
-import { Zap, TrendingUp, CheckCircle, Gift, Timer, AlertTriangle, DollarSign, Star, Play } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
-import TickerTape from "@/components/TickerTape";
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { createClient } from "@/lib/supabase/client";
-import type { User } from '@supabase/supabase-js';
-
-import { collectEarnings } from "./actions";
-import type { Generator as BaseGenerator } from '@/lib/data';
-
-export type RentedGenerator = {
-  id: string;
-  user_id: string;
-  generator_id: string;
-  rented_at: string;
-  expires_at: string;
-  last_claimed_at: string | null;
-  suspended: boolean;
-  name: string;
-  price: number;
-  daily_income: number;
-  expire_days: number;
-  color: string;
-  icon: string;
-  subtitle: string;
-  roi: string;
-  period: string;
-  investors: string;
+  "ADA/USDT","DOGE/USDT","TON/USDT","TRX/USDT","MATIC/USDT",
+  "AVAX/USDT","LINK/USDT","DOT/USDT","UNI/USDT","LTC/USDT",
+];
+const FIXED_PAIRS_P: Record<string, string> = {
+  pg1: "BTC/USDT", pg2: "ETH/USDT", pg3: "BNB/USDT", pg4: "SOL/USDT",
 };
+function getGenPairP(genId: string): string {
+  if (FIXED_PAIRS_P[genId]) return FIXED_PAIRS_P[genId];
+  let h = 5381;
+  for (let i = 0; i < genId.length; i++) h = ((h << 5) + h) ^ genId.charCodeAt(i);
+  return CHART_PAIRS_P[Math.abs(h) % CHART_PAIRS_P.length];
+}
 
 
 const TWENTY_FOUR_H = 24 * 60 * 60 * 1000;
