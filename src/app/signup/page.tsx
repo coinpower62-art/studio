@@ -7,9 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { updateProfile, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, serverTimestamp } from 'firebase/firestore';
-import type { FirebaseError } from 'firebase/app';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,9 +18,9 @@ import {
   TrendingUp, Users, Banknote, BadgeCheck, Globe
 } from "lucide-react";
 
-import { useAuth, useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
 import { countries, LANGUAGES, PHONE_CODES } from '@/lib/data';
 import { TRANSLATIONS } from '@/lib/translations';
+import { signup } from "./actions";
 
 type LangCode = typeof LANGUAGES[number]["code"];
 
@@ -52,11 +49,6 @@ const signupSchema = z.object({
 });
 
 type SignupForm = z.infer<typeof signupSchema>;
-
-function genReferralCode(username: string): string {
-    const code = `CP-${username.slice(0, 4).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    return code.slice(0, 12);
-}
 
 function TermsContent() {
   return (
@@ -210,9 +202,6 @@ export default function SignUp() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const auth = useAuth();
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
   
   const refFromUrl = searchParams.get("ref") || "";
 
@@ -248,82 +237,29 @@ export default function SignUp() {
   });
   
   useEffect(() => {
-    if (!isUserLoading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, isUserLoading, router]);
-
-  useEffect(() => {
     if (refFromUrl) {
       form.setValue('referralCode', refFromUrl);
     }
   }, [refFromUrl, form]);
-
-  function getAuthErrorMessage(error: FirebaseError): string {
-    switch (error.code) {
-      case 'auth/email-already-in-use':
-        return 'This email address is already in use by another account.';
-      case 'auth/weak-password':
-        return 'The password is too weak. Please choose a stronger password.';
-      case 'auth/invalid-email':
-        return 'The email address is not valid.';
-      default:
-        return 'An unexpected error occurred during sign up. Please try again.';
-    }
-  }
   
   async function onSubmit(values: SignupForm) {
-    if (!auth || !firestore) return;
-    
     setIsSubmitting(true);
     form.clearErrors();
-    form.setValue("language", LANGUAGES.find(l => l.code === selectedLang)?.name ?? "English (US)");
 
-    try {
-        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-        const newUser = userCredential.user;
+    const dialCode = selectedPhoneCode.replace(/[^+\d]/g, "");
+    const fullPhone = dialCode + values.phone;
 
-        await updateProfile(newUser, { displayName: values.fullName });
+    const result = await signup({ ...values, phone: fullPhone, language: selectedLang });
 
-        const userRef = doc(firestore, 'users', newUser.uid);
-        const dialCode = selectedPhoneCode.replace(/[^+\d]/g, "");
-        const fullPhone = dialCode + values.phone;
-
-        const userData: any = {
-          id: newUser.uid,
-          email: values.email,
-          username: values.username,
-          fullName: values.fullName,
-          preferredLanguageCode: selectedLang,
-          country: values.country,
-          phone: fullPhone,
-          balance: 1.0, // $1 bonus
-          referralCode: genReferralCode(values.username),
-          referralCount: 0,
-          hasWithdrawalPin: false,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        };
-
-        if (values.referralCode) {
-          userData.referredBy = values.referralCode;
-        }
-
-        setDocumentNonBlocking(userRef, userData, { merge: false });
-
-        await signOut(auth);
-        
-        toast({
-          title: 'Account created!',
-          description: 'Please sign in to continue.',
-        });
-        router.push('/signin');
-
-    } catch (error) {
-        const firebaseError = error as FirebaseError;
-        const message = getAuthErrorMessage(firebaseError);
-        form.setError("root", { message });
+    if (result?.error) {
+        form.setError("root", { message: result.error });
         setIsSubmitting(false);
+    } else {
+        toast({
+            title: 'Account created!',
+            description: 'Please check your email to confirm your account, then sign in.',
+        });
+        router.push('/login?message=Check your email to confirm your account and sign in.');
     }
   }
 
