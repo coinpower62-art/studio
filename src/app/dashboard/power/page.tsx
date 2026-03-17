@@ -3,17 +3,15 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { useUserStore } from '@/hooks/use-user-store';
+import { useUserStore, type RentedGenerator } from '@/hooks/use-user-store';
 import { useUser } from '@/firebase';
-import { generators as allGenerators, type Generator } from '@/lib/data';
-import { Zap, TrendingUp, Clock, Star, Users, Shield, CheckCircle, AlertTriangle, Timer, Wallet, ArrowDownToLine, Activity, DollarSign, Gift, BarChart3 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Zap, TrendingUp, CheckCircle, BarChart3, Gift, Timer, Clock, AlertTriangle, DollarSign, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import TickerTape from "@/components/TickerTape";
-import type { RentedGenerator } from "@/hooks/use-user-store";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const CHART_PAIRS_P = [
   "BTC/USDT","ETH/USDT","BNB/USDT","SOL/USDT","XRP/USDT",
@@ -30,12 +28,13 @@ function getGenPairP(genId: string): string {
   return CHART_PAIRS_P[Math.abs(h) % CHART_PAIRS_P.length];
 }
 
-const generatorImages: Record<string, string | undefined> = {
-  pg1: PlaceHolderImages.find(i => i.id === 'gen-pg1')?.imageUrl,
-  pg2: PlaceHolderImages.find(i => i.id === 'gen-pg2')?.imageUrl,
-  pg3: PlaceHolderImages.find(i => i.id === 'gen-pg3')?.imageUrl,
-  pg4: PlaceHolderImages.find(i => i.id === 'gen-pg4')?.imageUrl,
-};
+const generatorImages: Record<string, string | undefined> = PlaceHolderImages.reduce((acc, img) => {
+  if (img.id.startsWith('gen-')) {
+    acc[img.id.replace('gen-', '')] = img.imageUrl;
+  }
+  return acc;
+}, {} as Record<string, string | undefined>);
+
 
 const TWENTY_FOUR_H = 24 * 60 * 60 * 1000;
 
@@ -529,21 +528,30 @@ export default function Power() {
   const { user, isUserLoading } = useUser();
   const { rentedGenerators, collectEarnings, isRentedGeneratorsLoading } = useUserStore();
   const [claimedInfo, setClaimedInfo] = useState<{ amount: number; generatorName: string } | null>(null);
+  const [isClaimingId, setIsClaimingId] = useState<string | null>(null);
+
 
   const handleClaim = (ug: RentedGenerator) => {
+    setIsClaimingId(ug.id);
     const result = collectEarnings(ug.id);
     if (result.status === 'success') {
       setClaimedInfo({ amount: result.earned, generatorName: ug.name });
     } else {
       toast({ title: "Cannot claim yet", description: result.message, variant: "destructive" });
     }
+    setIsClaimingId(null);
   };
   
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/signin');
+    }
+  }, [isUserLoading, user, router]);
+
   if (isUserLoading || isRentedGeneratorsLoading) {
     return <div className="pt-12 p-4 pb-20 max-w-5xl mx-auto"><Skeleton className="h-96 rounded-2xl" /></div>;
   }
   if (!user) {
-    router.push("/signin");
     return null;
   }
 
@@ -551,6 +559,13 @@ export default function Power() {
   const activeGenerators = rentedGenerators.filter(ug => ug && ug.expiresAt && ug.expiresAt.toMillis() > now);
   const expiredGenerators = rentedGenerators.filter(ug => ug && ug.expiresAt && ug.expiresAt.toMillis() <= now);
   
+  const genImageMap: Record<string, string | undefined> = {};
+  PlaceHolderImages.forEach((img) => {
+    if(img.id.startsWith("gen-")) {
+        genImageMap[img.id.replace("gen-", "")] = img.imageUrl;
+    }
+  });
+
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
       <TickerTape />
@@ -602,7 +617,8 @@ export default function Power() {
               {activeGenerators.map(ug => (
                 <GeneratorCard key={ug.id} ug={ug}
                   onClaim={() => handleClaim(ug)}
-                  isClaiming={false}
+                  isClaiming={isClaimingId === ug.id}
+                  uploadedImageUrl={genImageMap[ug.generatorId]}
                 />
               ))}
             </div>
@@ -636,6 +652,7 @@ export default function Power() {
                 <GeneratorCard key={ug.id} ug={ug}
                   onClaim={() => {}}
                   isClaiming={false}
+                  uploadedImageUrl={genImageMap[ug.generatorId]}
                 />
               ))}
             </div>
@@ -702,4 +719,4 @@ export default function Power() {
       </div>
     </div>
   );
-} use this code to update the power page
+}
