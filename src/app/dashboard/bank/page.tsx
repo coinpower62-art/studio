@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -683,7 +684,7 @@ export default function BankPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {COUNTRIES_DATA.map((c) => (
-                    <SelectItem key={c.value} value={c.label}>{c.label}</SelectItem>
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

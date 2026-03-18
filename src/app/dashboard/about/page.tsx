@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -48,7 +49,7 @@ const earningWays = [
 ];
 
 export default function AboutPage() {
-  const COUNTRIES = COUNTRIES_DATA.map(c => c.value);
+  const COUNTRIES = COUNTRIES_DATA;
 
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
