@@ -5,8 +5,14 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 export async function login(formData: FormData) {
-  const supabase = createClient()
-
+  let supabase
+  try {
+    supabase = createClient()
+  } catch (error) {
+    const message = (error as Error).message || 'An unexpected error occurred during initialization.';
+    return redirect(`/login?message=${encodeURIComponent(message)}`)
+  }
+  
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
