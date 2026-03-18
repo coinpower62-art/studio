@@ -259,6 +259,7 @@ export default function SignUp() {
         title: "Registration failed",
         description: result.error,
       });
+      form.setError("root", { message: result.error });
       setIsSubmitting(false);
     } else {
       toast({
@@ -278,7 +279,7 @@ export default function SignUp() {
   const logoImage = PlaceHolderImages.find(p => p.id === 'signup-logo');
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8 sm:py-12">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12" style={{ background: "linear-gradient(135deg, #0a2e1a 0%, #0f4c2a 45%, #7a5500 80%, #c9891a 100%)" }}>
       <div className="w-full max-w-lg">
         <div className="text-center mb-6">
            {logoImage ? (
@@ -293,8 +294,8 @@ export default function SignUp() {
             ) : (
               <div className="mx-auto mb-3 h-16 w-16 rounded-2xl bg-primary" />
             )}
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Coin<span className="text-primary">Power</span></h1>
-          <p className="text-muted-foreground mt-1 text-sm font-medium">Digital Energy Mining Platform</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">Coin<span className="text-amber-400">Power</span></h1>
+          <p className="text-amber-200/80 mt-1 text-sm font-medium">Digital Energy Mining Platform</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden p-5 sm:p-8"
@@ -434,7 +435,7 @@ export default function SignUp() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="max-h-56">
-                      {countries.map((c) => <SelectItem key={c.value} value={c.label}>{c.label}</SelectItem>)}
+                      {countries.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <FormMessage className="text-red-600 text-xs font-medium" />
