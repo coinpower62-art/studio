@@ -220,7 +220,11 @@ export default function BankPage() {
       .single();
 
     if (profileError) {
-      console.error("Profile Fetch Error:", profileError);
+      toast({
+        variant: 'destructive',
+        title: 'Error loading profile',
+        description: 'Your profile data could not be loaded. Please try signing out and in again.',
+      });
       setProfile(null);
     } else {
       setProfile(profileData as Profile);
