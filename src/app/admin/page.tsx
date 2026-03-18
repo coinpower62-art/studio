@@ -25,22 +25,31 @@ export default function AdminSignInPage() {
     }
   }, [router]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
-    // Using a timeout to simulate async operation
-    setTimeout(() => {
-        if (username === 'admin' && password === 'admin') {
-            localStorage.setItem('admin_logged_in', 'true');
-            toast({ title: 'Login successful!', description: 'Redirecting to dashboard...' });
-            router.push('/admin/dashboard');
-        } else {
-            setError('Invalid username or password.');
-        }
-        setIsLoading(false);
-    }, 500);
+    try {
+      const response = await fetch('/api/admin/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Invalid username or password.');
+      }
+
+      localStorage.setItem('admin_logged_in', 'true');
+      toast({ title: 'Login successful!', description: 'Redirecting to dashboard...' });
+      router.push('/admin/dashboard');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const logoImage = PlaceHolderImages.find(p => p.id === 'admin-logo');
