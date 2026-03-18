@@ -1,3 +1,4 @@
+
 'use server'
 
 import { revalidatePath } from 'next/cache'
@@ -26,7 +27,13 @@ export async function login(formData: FormData) {
   })
 
   if (error) {
-    return redirect('/login?message=Could not authenticate user.')
+    let message = 'Could not authenticate user.';
+    if (error.message.includes("Invalid login credentials")) {
+        message = "Account does not exist. Please Sign Up to continue.";
+    } else {
+        message = error.message;
+    }
+    return redirect(`/login?message=${encodeURIComponent(message)}`);
   }
 
   revalidatePath('/', 'layout')
