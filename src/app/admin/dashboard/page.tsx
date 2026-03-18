@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -47,10 +48,16 @@ type DepositRequest = {
 
 type ActiveGen = { id: string; name: string; icon: string; dailyIncome: number; expiresAt: number; };
 type UserRecord = {
-  id: string; fullName: string; username: string; email: string;
-  password?: string; country: string; balance: number;
-  referralCode: string | null; referredBy: string | null;
-  referralCount?: number;
+  id: string; 
+  full_name: string; 
+  username: string; 
+  email: string;
+  password?: string; 
+  country: string; 
+  balance: number;
+  referral_code: string | null; 
+  referred_by: string | null;
+  referral_count?: number;
   activeGenerators?: ActiveGen[];
   activeGeneratorCount?: number;
   totalGenerators?: number;
@@ -91,12 +98,6 @@ type ActivityPost = {
 }
 
 // MOCK DATA
-const MOCK_USERS: UserRecord[] = [
-  { id: 'usr_1', fullName: 'John Doe', username: 'johndoe', email: 'john.d@example.com', country: 'United States', balance: 1250, referralCode: 'CP-JOHN', referredBy: null, referralCount: 1, activeGeneratorCount: 2, password: 'password123' },
-  { id: 'usr_2', fullName: 'Ama Serwaa', username: 'amaser', email: 'ama.s@example.com', country: 'Ghana', balance: 850.50, referralCode: 'CP-AMAS', referredBy: 'CP-JOHN', referralCount: 1, activeGeneratorCount: 1, password: 'password123' },
-  { id: 'usr_3', fullName: 'Chioma Okoro', username: 'chiooko', email: 'chioma.o@example.com', country: 'Nigeria', balance: 3200, referralCode: 'CP-CHIO', referredBy: 'CP-AMAS', referralCount: 0, activeGeneratorCount: 3, password: 'password123' },
-];
-
 const MOCK_DEPOSITS: DepositRequest[] = [
   { id: 'dep_1', userId: 'usr_1', username: 'johndoe', fullName: 'John Doe', amount: 500, txId: 'TX12345', date: '2024-03-10', status: 'approved', createdAt: Date.now() - 200000 },
   { id: 'dep_2', userId: 'usr_2', username: 'amaser', fullName: 'Ama Serwaa', amount: 250, txId: 'TX67890', date: '2024-03-11', status: 'pending', createdAt: Date.now() - 100000 },
@@ -192,26 +193,37 @@ export default function AdminDashboard() {
   const [activityPosts, setActivityPosts] = useState<ActivityPost[]>([]);
 
   useEffect(() => {
-    // Simulate auth check
+    const supabase = createClient();
+    // Auth check
     const isAdminLoggedIn = localStorage.getItem('admin_logged_in') === 'true';
     if (!isAdminLoggedIn) {
       router.push('/admin');
-    } else {
-      setAdmin({ name: 'Admin' });
-    }
+      return;
+    } 
+    setAdmin({ name: 'Admin' });
     setAdminLoading(false);
     
-    // Simulate data fetching
-    setTimeout(() => {
-      setUsers(MOCK_USERS);
-      setUsersLoading(false);
-      // @ts-ignore
-      setGenerators(require('@/lib/data').generators);
-      setGensLoading(false);
-      setDeposits(MOCK_DEPOSITS.sort((a,b) => b.createdAt - a.createdAt));
-      setWithdrawals(MOCK_WITHDRAWALS.sort((a,b) => b.createdAt - a.createdAt));
-    }, 1000);
-  }, [router]);
+    // Fetch real user data
+    const fetchUsers = async () => {
+        setUsersLoading(true);
+        const { data, error } = await supabase.from('profiles').select('*');
+        if (error) {
+            toast({ title: 'Error fetching users', description: error.message, variant: 'destructive' });
+            setUsers([]);
+        } else {
+            setUsers(data as UserRecord[]);
+        }
+        setUsersLoading(false);
+    }
+    fetchUsers();
+
+    // Keep mock data for other sections for now
+    // @ts-ignore
+    setGenerators(require('@/lib/data').generators);
+    setGensLoading(false);
+    setDeposits(MOCK_DEPOSITS.sort((a,b) => b.createdAt - a.createdAt));
+    setWithdrawals(MOCK_WITHDRAWALS.sort((a,b) => b.createdAt - a.createdAt));
+  }, [router, toast]);
 
 
   const switchTab = (id: Tab) => {
@@ -223,7 +235,7 @@ export default function AdminDashboard() {
   const [newBalance, setNewBalance] = useState("");
   const [showPassFor, setShowPassFor] = useState<string | null>(null);
   const [showCreateUser, setShowCreateUser] = useState(false);
-  const [createUserForm, setCreateUserForm] = useState({ fullName: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
+  const [createUserForm, setCreateUserForm] = useState({ full_name: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
 
   // Generator modal states
   const [showCreateGen, setShowCreateGen] = useState(false);
@@ -266,15 +278,15 @@ export default function AdminDashboard() {
     const newUser: UserRecord = {
       id: `usr_${Date.now()}`,
       balance: parseFloat(createUserForm.balance),
-      referralCount: 0,
-      referralCode: `CP-NEW${Date.now()}`.slice(0,10),
-      referredBy: null,
+      referral_count: 0,
+      referral_code: `CP-NEW${Date.now()}`.slice(0,10),
+      referred_by: null,
       ...createUserForm
     }
     setUsers(prev => [newUser, ...prev]);
     toast({ title: "User created successfully!" });
     setShowCreateUser(false);
-    setCreateUserForm({ fullName: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
+    setCreateUserForm({ full_name: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
   }
 
   const handleCreateActivityPost = () => {
@@ -352,12 +364,12 @@ export default function AdminDashboard() {
   if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
   if (!admin) { router.push("/admin"); return null; }
 
-  const filteredUsers = users.filter(u => [u.fullName, u.username, u.email, u.country].some(f => f?.toLowerCase().includes(search.toLowerCase())));
+  const filteredUsers = users.filter(u => [u.full_name, u.username, u.email, u.country].some(f => f?.toLowerCase().includes(search.toLowerCase())));
   const totalBalance = users.reduce((s, u) => s + (u.balance || 0), 0);
   const pendingWithdrawalsCount = withdrawals.filter(w => w.status === "pending").length;
   const pendingDepositsCount = deposits.filter(d => d.status === "pending").length;
   const copyText = (text: string, label: string) => navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!` }));
-  const totalReferrals = users.reduce((s, u) => s + (u.referralCount || 0), 0);
+  const totalReferrals = users.reduce((s, u) => s + (u.referral_count || 0), 0);
 
   const tabs: { id: Tab; label: string; icon: any; badge?: number; color: string }[] = [
     { id: "overview",     label: "Overview",    icon: BarChart3,       color: "from-blue-500 to-blue-600" },
@@ -525,11 +537,11 @@ export default function AdminDashboard() {
                   </div>
                   {users.length === 0 ? <p className="text-slate-500 text-sm">No users yet</p> : (
                     <div className="space-y-3">{users.slice(0, 5).map(u => {
-                      const initials = u.fullName?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "??";
+                      const initials = u.full_name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "??";
                       return (
                         <div key={u.id} className="flex items-center gap-3">
                           <Avatar className="w-8 h-8 flex-shrink-0"><AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-white text-xs font-bold">{initials}</AvatarFallback></Avatar>
-                          <div className="flex-1 min-w-0"><p className="text-white text-sm font-medium truncate">{u.fullName}</p><p className="text-slate-400 text-xs">@{u.username}</p></div>
+                          <div className="flex-1 min-w-0"><p className="text-white text-sm font-medium truncate">{u.full_name}</p><p className="text-slate-400 text-xs">@{u.username}</p></div>
                           <p className="text-green-400 text-sm font-bold">${(u.balance || 0).toFixed(2)}</p>
                         </div>
                       );
@@ -593,7 +605,7 @@ export default function AdminDashboard() {
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Full Name *</label>
-                          <Input value={createUserForm.fullName} onChange={e => setCreateUserForm(f => ({ ...f, fullName: e.target.value }))}
+                          <Input value={createUserForm.full_name} onChange={e => setCreateUserForm(f => ({ ...f, full_name: e.target.value }))}
                             placeholder="e.g. Kofi Mensah" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
                         </div>
                         <div>
@@ -637,7 +649,7 @@ export default function AdminDashboard() {
                         <Button onClick={() => setShowCreateUser(false)} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
                         <Button
                           onClick={handleCreateUser}
-                          disabled={!createUserForm.fullName || !createUserForm.username || !createUserForm.email || !createUserForm.password}
+                          disabled={!createUserForm.full_name || !createUserForm.username || !createUserForm.email || !createUserForm.password}
                           className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold">
                            ✓ Create Account
                         </Button>
@@ -654,21 +666,21 @@ export default function AdminDashboard() {
               ) : (
                 <div className="space-y-3">
                   {filteredUsers.map(u => {
-                    const initials = u.fullName?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "??";
+                    const initials = u.full_name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "??";
                     const isShowingPass = showPassFor === u.id;
                     return (
                       <div key={u.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
                         <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex items-center gap-3 min-w-0">
                             <Avatar className="w-10 h-10 flex-shrink-0"><AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-white text-xs font-bold">{initials}</AvatarFallback></Avatar>
-                            <div className="min-w-0"><p className="text-white font-bold text-sm">{u.fullName}</p><p className="text-slate-400 text-xs">@{u.username} · {u.country}</p></div>
+                            <div className="min-w-0"><p className="text-white font-bold text-sm">{u.full_name}</p><p className="text-slate-400 text-xs">@{u.username} · {u.country}</p></div>
                           </div>
                           <p className="text-green-400 font-black text-base flex-shrink-0">${(u.balance || 0).toFixed(2)}</p>
                         </div>
                         
                          {editingUser?.id === u.id ? (
                           <div className="mb-3 p-3 rounded-lg bg-slate-700/50 border border-slate-600">
-                              <p className="text-slate-300 text-xs font-semibold mb-2">Edit Balance for {u.fullName}</p>
+                              <p className="text-slate-300 text-xs font-semibold mb-2">Edit Balance for {u.full_name}</p>
                               <div className="flex gap-2">
                                 <Input 
                                   type="number" 
@@ -693,8 +705,8 @@ export default function AdminDashboard() {
                           <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                             <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Referral Code</p>
                             <div className="flex items-center gap-1.5">
-                              <p className="text-amber-400 text-xs font-bold font-mono">{u.referralCode || "—"}</p>
-                              {u.referralCode && <button onClick={() => copyText(u.referralCode!, "Referral code")} className="text-slate-500 hover:text-amber-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>}
+                              <p className="text-amber-400 text-xs font-bold font-mono">{u.referral_code || "—"}</p>
+                              {u.referral_code && <button onClick={() => copyText(u.referral_code!, "Referral code")} className="text-slate-500 hover:text-amber-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>}
                             </div>
                           </div>
                           <div className="bg-slate-700/50 rounded-xl px-3 py-2">
@@ -717,7 +729,7 @@ export default function AdminDashboard() {
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-900/30 text-blue-400 border border-blue-800 hover:bg-blue-900/50 text-xs font-semibold">
                             <Edit3 className="w-3 h-3" /> Edit Balance
                           </button>
-                          <button onClick={() => openConfirm("Delete User Account", `You are about to permanently delete "${u.fullName}" (@${u.username}). Their balance, generators, and all data will be erased. This CANNOT be undone.`,() => handleDeleteUser(u.id))}
+                          <button onClick={() => openConfirm("Delete User Account", `You are about to permanently delete "${u.full_name}" (@${u.username}). Their balance, generators, and all data will be erased. This CANNOT be undone.`,() => handleDeleteUser(u.id))}
                             data-testid={`button-delete-user-${u.id}`}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-800 hover:bg-red-900/50 text-xs font-semibold">
                             <Trash2 className="w-3 h-3" /> Delete
@@ -842,7 +854,7 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
                   { label: "Total Referrals", value: totalReferrals.toString(), icon: Link2, color: "text-amber-400" },
-                  { label: "Active Codes", value: users.filter((r: any) => r.referralCode).length.toString(), icon: CheckCircle, color: "text-green-400" },
+                  { label: "Active Codes", value: users.filter((r: any) => r.referral_code).length.toString(), icon: CheckCircle, color: "text-green-400" },
                   { label: "Total Users", value: users.length.toString(), icon: Users, color: "text-blue-400" },
                 ].map(({ label, value, icon: Icon, color }) => (
                   <div key={label} className="bg-slate-800 rounded-2xl border border-slate-700 p-4 text-center">
@@ -870,14 +882,14 @@ export default function AdminDashboard() {
                       <tbody className="divide-y divide-slate-700">
                         {users.map((r: any) => (
                           <tr key={r.id} className="hover:bg-slate-700/40 transition-colors">
-                            <td className="px-4 py-3"><p className="text-white font-medium text-sm">{r.fullName}</p><p className="text-slate-400 text-xs">@{r.username}</p></td>
+                            <td className="px-4 py-3"><p className="text-white font-medium text-sm">{r.full_name}</p><p className="text-slate-400 text-xs">@{r.username}</p></td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
-                                <span className="text-amber-400 font-bold font-mono text-xs bg-amber-900/30 border border-amber-700 px-2 py-0.5 rounded-lg">{r.referralCode || "—"}</span>
-                                {r.referralCode && <button onClick={() => copyText(r.referralCode, "Referral code")} className="text-slate-500 hover:text-amber-400"><Copy className="w-3 h-3" /></button>}
+                                <span className="text-amber-400 font-bold font-mono text-xs bg-amber-900/30 border border-amber-700 px-2 py-0.5 rounded-lg">{r.referral_code || "—"}</span>
+                                {r.referral_code && <button onClick={() => copyText(r.referral_code, "Referral code")} className="text-slate-500 hover:text-amber-400"><Copy className="w-3 h-3" /></button>}
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-center"><Badge className={`text-xs border ${(r.referralCount || 0) > 0 ? "bg-green-900/40 text-green-400 border-green-700" : "bg-slate-700 text-slate-400 border-slate-600"}`}>{r.referralCount || 0} users</Badge></td>
+                            <td className="px-4 py-3 text-center"><Badge className={`text-xs border ${(r.referral_count || 0) > 0 ? "bg-green-900/40 text-green-400 border-green-700" : "bg-slate-700 text-slate-400 border-slate-600"}`}>{r.referral_count || 0} users</Badge></td>
                             <td className="px-4 py-3 text-right"><span className="text-green-400 font-bold text-sm">${(r.balance || 0).toFixed(2)}</span></td>
                           </tr>
                         ))}
@@ -1031,7 +1043,7 @@ export default function AdminDashboard() {
                     <select value={activityForm.color} onChange={e => setActivityForm(f => ({ ...f, color: e.target.value }))}
                       data-testid="select-activity-color"
                       className="w-full h-10 bg-slate-700 border border-slate-600 text-white text-sm rounded-lg px-3 focus:border-amber-500 focus:outline-none">
-                      {COLORS.map(c => <option key={c} value={c.value}>{c.label}</option>)}
+                      {COLORS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
                   </div>
                 </div>
@@ -1168,7 +1180,7 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
           <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
             <div className="flex items-center justify-between mb-4"><h3 className="text-white font-bold">Edit User Balance</h3><button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button></div>
-            <p className="text-slate-300 text-sm font-medium">{editingUser.fullName}</p>
+            <p className="text-slate-300 text-sm font-medium">{editingUser.full_name}</p>
             <p className="text-slate-500 text-xs mb-1">@{editingUser.username} · {editingUser.country}</p>
             <p className="text-green-400 text-sm mb-4">Current: ${(editingUser.balance || 0).toFixed(2)}</p>
             <div className="mb-4">
@@ -1350,5 +1362,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    
