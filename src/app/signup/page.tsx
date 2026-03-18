@@ -254,14 +254,18 @@ export default function SignUp() {
     const result = await signup({ ...values, phone: fullPhone, language: selectedLang });
 
     if (result?.error) {
-        form.setError("root", { message: result.error });
-        setIsSubmitting(false);
+      toast({
+        variant: "destructive",
+        title: "Registration failed",
+        description: result.error,
+      });
+      setIsSubmitting(false);
     } else {
-        toast({
-            title: 'Account created!',
-            description: 'Please check your email to confirm your account, then sign in.',
-        });
-        router.push('/login?message=Check your email to confirm your account and sign in.');
+      toast({
+        title: "Account created! Welcome to CoinPower.",
+        description: "You have been credited $1.00.",
+      });
+      router.push("/dashboard");
     }
   }
 
@@ -321,7 +325,7 @@ export default function SignUp() {
                   </SelectValue>
                 </div>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 {LANGUAGES.map((lang) => (
                   <SelectItem key={lang.code} value={lang.code} data-testid={`lang-${lang.code}`}>
                     <span className="flex items-center gap-2">
