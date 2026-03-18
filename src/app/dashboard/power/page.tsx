@@ -277,6 +277,18 @@ function LiveEarningsCounter({ lastRef, dailyIncome, active }: {
 
   const formatted = earned.toFixed(6);
   const [whole, dec] = formatted.split(".");
+
+  if (typeof dec !== 'string') {
+    return (
+      <div className="flex flex-col items-center">
+          <div className="flex items-baseline gap-0.5 font-mono">
+              <span className="text-lg font-black text-gray-400 tracking-tight leading-none">--.--</span>
+          </div>
+          <p className="text-[9px] text-gray-400 mt-0.5">Calculating...</p>
+      </div>
+    );
+  }
+
   const dec1 = dec.slice(0, 2);
   const dec2 = dec.slice(2, 4);
   const dec3 = dec.slice(4, 6);
