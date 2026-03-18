@@ -8,7 +8,7 @@ export async function signup(values: any) {
   const supabase = createClient();
   const origin = headers().get('origin');
 
-  const { email, password, fullName, username, country, phone, language, referralCode } = values;
+  const { email, password, fullName: nameValue, username, country, phone, language, referralCode } = values;
 
   // 1. Check if referral code is valid
   let referredByUserId: string | null = null;
@@ -32,7 +32,7 @@ export async function signup(values: any) {
     options: {
       emailRedirectTo: `${origin}/auth/callback`,
       data: {
-        fullName: fullName,
+        fullName: nameValue,
         username: username,
       },
     },
@@ -53,7 +53,7 @@ export async function signup(values: any) {
   const { error: profileError } = await supabase.from('profiles').insert({
     id: authData.user.id,
     email: email,
-    full_name: fullName,
+    full_name: nameValue,
     username: username,
     country: country,
     phone: phone,
