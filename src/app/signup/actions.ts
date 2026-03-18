@@ -49,8 +49,8 @@ export async function signup(values: any) {
     return { error: 'Could not sign up user. Please try again.' };
   }
   
-  // 3. Create a corresponding profile in the `profiles` table
-  const { error: profileError } = await supabase.from('profiles').insert({
+  // 3. Create or update a corresponding profile in the `profiles` table using upsert
+  const { error: profileError } = await supabase.from('profiles').upsert({
     id: authData.user.id,
     email: email,
     full_name: nameValue,
@@ -65,15 +65,14 @@ export async function signup(values: any) {
     referred_by: referredByUserId,
   });
 
+
   if (profileError) {
-    console.error('Error creating profile:', profileError.message);
-    // Ideally, delete the auth user to keep things consistent.
-    const { data, error } = await supabase.auth.admin.deleteUser(authData.user.id)
-    if(error) {
-      console.error('Failed to delete auth user after profile creation failed', error)
-    }
+    console.error('Error upserting profile:', profileError.message);
+    // If profile creation fails, we should delete the auth user to avoid orphans.
+    await supabase.auth.admin.deleteUser(authData.user.id);
     return { error: `Could not create user profile. Please try again.` };
   }
+
 
   // 4. If the user was referred, increment the referrer's count
   if (referredByUserId) {
