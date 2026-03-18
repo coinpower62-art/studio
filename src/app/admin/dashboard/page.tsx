@@ -3,16 +3,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Shield, Globe, TrendingUp, Zap, Users, Award, CheckCircle, MapPin,
-  Mail, Phone, Gift, UserPlus, Cpu, Trophy, Star, Rocket,
-  DollarSign, LogOut, Search, Edit3, Trash2,
-  CheckCircle2, XCircle, X, BarChart3,
-  ArrowUpFromLine, Settings, ChevronRight, RefreshCw,
-  Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
-  Pencil, ImagePlus, Activity, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Landmark, Info
-} from "lucide-react";
-
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,10 +13,32 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Shield, Users, DollarSign, LogOut, Search, Edit3, Trash2,
+  CheckCircle, XCircle, X, BarChart3, Globe, Zap,
+  ArrowUpFromLine, Settings, ChevronRight, RefreshCw,
+  Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
+  Pencil, ImagePlus,
+  Info, Building2, Phone, Mail, MapPin, Percent, Clock3,
+  ExternalLink, Activity, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift
+} from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
 
+
 type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "generators" | "activity" | "media" | "codes" | "settings" | "about";
+
+const generatorImages: Record<string, string | undefined> = {
+  pg1: PlaceHolderImages.find(i => i.id === 'gen-pg1')?.imageUrl,
+  pg2: PlaceHolderImages.find(i => i.id === 'gen-pg2')?.imageUrl,
+  pg3: PlaceHolderImages.find(i => i.id === 'gen-pg3')?.imageUrl,
+  pg4: PlaceHolderImages.find(i => i.id === 'gen-pg4')?.imageUrl,
+};
+
+const activityDefaultImages: Record<string, string | undefined> = {
+  hero: PlaceHolderImages.find(i => i.id === 'activity-hero')?.imageUrl,
+  teamwork: PlaceHolderImages.find(i => i.id === 'activity-teamwork')?.imageUrl,
+};
 
 type DepositRequest = {
   id: string; userId: string; username: string; fullName: string;
@@ -47,15 +59,15 @@ type UserRecord = {
 
 type Generator = {
   id: string; name: string; subtitle: string; icon: string; color: string;
-  price: number; duration: number; dailyIncome: number; published: boolean;
+  price: number; expireDays: number; dailyIncome: number; published: boolean;
   roi: string; period: string; minInvest: string; maxInvest: string; investors: string;
 };
 
-type NewGenerator = Omit<Generator, "id" | 'isFree'>;
+type NewGenerator = Omit<Generator, "id">;
 
 const BLANK_GEN: NewGenerator = {
   name: "", subtitle: "", icon: "⚡", color: "from-amber-400 to-orange-500",
-  price: 0, duration: 30, dailyIncome: 0, published: false,
+  price: 0, expireDays: 30, dailyIncome: 0, published: false,
   roi: "", period: "Daily", minInvest: "", maxInvest: "", investors: "0",
 };
 
@@ -160,7 +172,7 @@ function DepositRow({ d, onApprove, onReject, approvePending, rejectPending }: {
   );
 }
 
-export default function AdminDashboardPage() {
+export default function AdminDashboard() {
   const router = useRouter();
   const { toast } = useToast();
 
@@ -201,6 +213,7 @@ export default function AdminDashboardPage() {
     }, 1000);
   }, [router]);
 
+
   const switchTab = (id: Tab) => {
     if (id === "users") setSearch("");
     setTab(id);
@@ -212,9 +225,18 @@ export default function AdminDashboardPage() {
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [createUserForm, setCreateUserForm] = useState({ fullName: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
 
+  // Generator modal states
   const [showCreateGen, setShowCreateGen] = useState(false);
   const [editingGen, setEditingGen] = useState<Generator | null>(null);
-  const [genForm, setGenForm] = useState<NewGenerator | Generator>({ ...BLANK_GEN });
+  const [newGen, setNewGen] = useState<NewGenerator>({ ...BLANK_GEN });
+
+  const [uploadingGenId, setUploadingGenId] = useState<string | null>(null);
+  const [uploadingActivity, setUploadingActivity] = useState<string | null>(null);
+  const [newCodeAmount, setNewCodeAmount] = useState("");
+  const [newCodeNote, setNewCodeNote] = useState("");
+  const [generatedCode, setGeneratedCode] = useState<any | null>(null);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [bonusCodes, setBonusCodes] = useState<any[]>([]);
 
   const [activityForm, setActivityForm] = useState({ username: "", country: "", action: "", amount: "", color: "from-amber-400 to-orange-500" });
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void }>({
@@ -254,6 +276,22 @@ export default function AdminDashboardPage() {
     setShowCreateUser(false);
     setCreateUserForm({ fullName: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
   }
+
+  const handleCreateActivityPost = () => {
+    const newPost: ActivityPost = {
+      id: `act_${Date.now()}`,
+      createdAt: Date.now(),
+      ...activityForm,
+    }
+    setActivityPosts(prev => [newPost, ...prev]);
+    toast({ title: "Activity post created!" });
+    setActivityForm({ username: "", country: "", action: "", amount: "", color: "from-amber-400 to-orange-500" });
+  }
+  
+  const handleDeleteActivityPost = (id: string) => {
+    setActivityPosts(prev => prev.filter(p => p.id !== id));
+    toast({ title: "Activity post deleted." });
+  }
   
   const handleApproveDeposit = (id: string) => {
     setDeposits(prev => prev.map(d => d.id === id ? {...d, status: 'approved'} : d));
@@ -286,64 +324,39 @@ export default function AdminDashboardPage() {
     setWithdrawals(prev => prev.filter(w => w.id !== id));
     toast({ title: "Record deleted." });
   }
-  
-  const handleCreateActivityPost = () => {
-    const newPost: ActivityPost = {
-      id: `act_${Date.now()}`,
-      createdAt: Date.now(),
-      ...activityForm,
-    }
-    setActivityPosts(prev => [newPost, ...prev]);
-    toast({ title: "Activity post created!" });
-    setActivityForm({ username: "", country: "", action: "", amount: "", color: "from-amber-400 to-orange-500" });
-  }
-  
-  const handleDeleteActivityPost = (id: string) => {
-    setActivityPosts(prev => prev.filter(p => p.id !== id));
-    toast({ title: "Activity post deleted." });
-  }
 
-  const handleSaveGenerator = () => {
-    if ('id' in genForm && editingGen) { // Update
-        setGenerators(prev => prev.map(g => g.id === editingGen.id ? {...g, ...genForm} : g));
-        toast({ title: "Generator updated!" });
-    } else { // Create
-        const createdGen: Generator = {
-            id: `gen_${Date.now()}`,
-            ...(genForm as NewGenerator),
-        };
-        setGenerators(prev => [createdGen, ...prev]);
-        toast({ title: "Generator created!" });
-    }
+  const handleCreateGenerator = () => {
+    const createdGen: Generator = {
+      id: `gen_${Date.now()}`,
+      ...newGen,
+    };
+    setGenerators(prev => [createdGen, ...prev]);
+    toast({ title: "Generator created!" });
     setShowCreateGen(false);
-    setEditingGen(null);
-  };
+    setNewGen({ ...BLANK_GEN });
+  }
 
-  const openGeneratorModal = (generator: Generator | null) => {
-      if (generator) {
-          setEditingGen(generator);
-          setGenForm(generator);
-      } else {
-          setEditingGen(null);
-          setGenForm({ ...BLANK_GEN });
-      }
-      setShowCreateGen(true);
+  const handleUpdateGenerator = () => {
+    if (editingGen) {
+      setGenerators(prev => prev.map(g => g.id === editingGen.id ? editingGen : g));
+      toast({ title: "Generator updated!" });
+      setEditingGen(null);
+    }
   }
 
   const handleDeleteGenerator = (id: string) => {
     setGenerators(prev => prev.filter(g => g.id !== id));
     toast({ title: 'Generator deleted' });
   };
-  
+
   if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
-  if (!admin) return null; // Should be redirected by useEffect
+  if (!admin) { router.push("/admin"); return null; }
 
   const filteredUsers = users.filter(u => [u.fullName, u.username, u.email, u.country].some(f => f?.toLowerCase().includes(search.toLowerCase())));
   const totalBalance = users.reduce((s, u) => s + (u.balance || 0), 0);
   const pendingWithdrawalsCount = withdrawals.filter(w => w.status === "pending").length;
   const pendingDepositsCount = deposits.filter(d => d.status === "pending").length;
   const copyText = (text: string, label: string) => navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!` }));
-  
   const totalReferrals = users.reduce((s, u) => s + (u.referralCount || 0), 0);
 
   const tabs: { id: Tab; label: string; icon: any; badge?: number; color: string }[] = [
@@ -363,6 +376,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-900 text-white">
 
+      {/* ── GLOBAL CONFIRM DIALOG ── */}
       <AlertDialog open={confirmDialog.open} onOpenChange={open => setConfirmDialog(s => ({ ...s, open }))}>
         <AlertDialogContent className="bg-slate-800 border border-red-700/50 max-w-sm">
           <AlertDialogHeader>
@@ -387,103 +401,7 @@ export default function AdminDashboardPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {showCreateGen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-            <div className="bg-slate-800 border border-slate-600 rounded-2xl w-full max-w-lg shadow-2xl">
-                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
-                    <div>
-                        <h2 className="text-white font-black text-lg">{editingGen ? 'Edit' : 'Create'} Generator</h2>
-                        <p className="text-slate-400 text-xs mt-0.5">{editingGen ? `Editing ${editingGen.name}` : 'Create a new investment generator'}</p>
-                    </div>
-                    <button onClick={() => setShowCreateGen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700"><X className="w-4 h-4" /></button>
-                </div>
-                <div className="p-5 space-y-3 max-h-[80vh] overflow-y-auto">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Name *</label>
-                            <Input value={genForm.name} onChange={e => setGenForm(f => ({ ...f, name: e.target.value }))}
-                                placeholder="e.g. PG5 Generator" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
-                        </div>
-                        <div>
-                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Subtitle *</label>
-                            <Input value={genForm.subtitle} onChange={e => setGenForm(f => ({ ...f, subtitle: e.target.value }))}
-                                placeholder="e.g. Ultra Power Plan" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                          <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Icon (Emoji) *</label>
-                          <Input value={genForm.icon} onChange={e => setGenForm(f => ({ ...f, icon: e.target.value }))}
-                              placeholder="e.g. 🏆" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
-                      </div>
-                       <div>
-                          <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Color Theme *</label>
-                          <select value={genForm.color} onChange={e => setGenForm(f => ({...f, color: e.target.value}))}
-                              className="w-full h-9 rounded-md bg-slate-700 border border-slate-600 text-white text-sm px-3">
-                              {COLORS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                          </select>
-                      </div>
-                    </div>
-                     <div className="grid grid-cols-3 gap-3">
-                        <div>
-                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Price *</label>
-                            <Input type="number" min="0" value={genForm.price} onChange={e => setGenForm(f => ({ ...f, price: Number(e.target.value) }))}
-                                className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
-                        </div>
-                        <div>
-                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Duration (Days) *</label>
-                            <Input type="number" min="1" value={genForm.duration} onChange={e => setGenForm(f => ({ ...f, duration: Number(e.target.value) }))}
-                                className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
-                        </div>
-                         <div>
-                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Daily Income *</label>
-                            <Input type="number" min="0" step="0.01" value={genForm.dailyIncome} onChange={e => setGenForm(f => ({ ...f, dailyIncome: Number(e.target.value) }))}
-                                className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
-                        </div>
-                    </div>
-                     <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">ROI Display</label>
-                            <Input value={genForm.roi} onChange={e => setGenForm(f => ({ ...f, roi: e.target.value }))}
-                                placeholder="e.g. $5.00/day" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
-                        </div>
-                        <div>
-                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Period Display</label>
-                            <Input value={genForm.period} onChange={e => setGenForm(f => ({ ...f, period: e.target.value }))}
-                                placeholder="e.g. Daily" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
-                        </div>
-                    </div>
-                     <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Min/Max Invest</label>
-                            <div className="flex gap-2">
-                              <Input value={genForm.minInvest} onChange={e => setGenForm(f => ({ ...f, minInvest: e.target.value }))} placeholder="e.g. $50" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
-                              <Input value={genForm.maxInvest} onChange={e => setGenForm(f => ({ ...f, maxInvest: e.target.value }))} placeholder="e.g. $100" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Investors Display</label>
-                            <Input value={genForm.investors} onChange={e => setGenForm(f => ({ ...f, investors: e.target.value }))} placeholder="e.g. 500+" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
-                        </div>
-                    </div>
-                     <div className="flex items-center justify-between bg-slate-700/50 rounded-lg p-3">
-                        <label htmlFor="published" className="text-sm font-semibold text-white">Publish Generator</label>
-                        <input id="published" type="checkbox" checked={genForm.published} onChange={e => setGenForm(f => ({...f, published: e.target.checked}))}
-                            className="w-5 h-5 rounded-sm" />
-                    </div>
-                    <div className="flex gap-3 pt-2">
-                        <Button onClick={() => setShowCreateGen(false)} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
-                        <Button
-                            onClick={handleSaveGenerator}
-                            className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold">
-                             ✓ Save Generator
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        </div>
-      )}
-
+      {/* ── SIDEBAR BACKDROP ── */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
@@ -491,7 +409,9 @@ export default function AdminDashboardPage() {
         />
       )}
 
+      {/* ── SLIDE-OUT SIDEBAR ── */}
       <div className={`fixed top-0 left-0 h-full z-50 w-72 bg-slate-900 border-r border-slate-700 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:relative`}>
+        {/* Sidebar header */}
         <div className="flex items-center justify-between px-4 h-14 border-b border-slate-700 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-md">
@@ -507,6 +427,7 @@ export default function AdminDashboardPage() {
           </button>
         </div>
 
+        {/* Admin badge */}
         <div className="mx-3 mt-3 mb-1 flex items-center gap-2.5 bg-slate-800 rounded-xl px-3 py-2.5 border border-slate-700">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-xs font-black text-white flex-shrink-0">A</div>
           <div>
@@ -515,6 +436,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
+        {/* Nav items */}
         <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-0.5">
           {tabs.map(({ id, label, icon: Icon, badge, color }) => {
             const isActive = tab === id;
@@ -541,6 +463,7 @@ export default function AdminDashboardPage() {
           })}
         </nav>
 
+        {/* Sign out */}
         <div className="px-3 pb-4 pt-2 border-t border-slate-700 flex-shrink-0">
           <button onClick={handleSignOut}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-900/30 border border-red-800/50 text-red-400 hover:bg-red-900/50 text-sm font-semibold transition-colors">
@@ -550,6 +473,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
+      {/* ── TOP HEADER (MOBILE) ── */}
       <div className="fixed top-0 left-0 right-0 z-30 bg-slate-800 border-b border-slate-700 px-4 h-12 flex items-center justify-between md:hidden">
         <div className="flex items-center gap-3">
           <button
@@ -572,8 +496,10 @@ export default function AdminDashboardPage() {
         </div>
       </div>
       
-      <div className="flex flex-col md:pl-72">
-        <main className="flex-1 p-4 sm:p-6 pt-16 md:pt-6">
+      <main className="flex flex-col md:pl-72 pt-12 md:pt-0">
+        <div className="flex-1 p-4 sm:p-6">
+
+          {/* ── OVERVIEW ── */}
           {tab === "overview" && (
             <div className="space-y-5">
               <div><h1 className="text-xl sm:text-2xl font-black text-white">Dashboard Overview</h1><p className="text-slate-400 text-sm">Welcome back, Administrator</p></div>
@@ -632,7 +558,8 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-           {tab === "users" && (
+          {/* ── USERS ── */}
+          {tab === "users" && (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div><h1 className="text-xl font-black text-white">User Accounts</h1><p className="text-slate-400 text-sm">{users.length} registered users</p></div>
@@ -651,6 +578,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
+              {/* ── CREATE USER MODAL ── */}
               {showCreateUser && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
                   <div className="bg-slate-800 border border-slate-600 rounded-2xl w-full max-w-md shadow-2xl">
@@ -696,7 +624,7 @@ export default function AdminDashboardPage() {
                           <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Country *</label>
                           <select value={createUserForm.country} onChange={e => setCreateUserForm(f => ({ ...f, country: e.target.value }))}
                             className="w-full h-9 rounded-md bg-slate-700 border border-slate-600 text-white text-sm px-3">
-                            {countries.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                            {countries.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
                         </div>
                         <div>
@@ -718,7 +646,6 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
               )}
-
               {usersLoading ? <p className="text-slate-400 text-sm">Loading...</p> : filteredUsers.length === 0 ? (
                 <div className="bg-slate-800 rounded-2xl border border-slate-700 p-10 text-center">
                   <Users className="w-10 h-10 text-slate-600 mx-auto mb-3" />
@@ -804,7 +731,8 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-           {tab === "deposits" && (
+          {/* ── DEPOSITS ── */}
+          {tab === "deposits" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -835,6 +763,7 @@ export default function AdminDashboardPage() {
             </div>
           )}
           
+          {/* ── WITHDRAWALS ── */}
           {tab === "withdrawals" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-3">
@@ -906,6 +835,7 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
+          {/* ── REFERRALS ── */}
           {tab === "referrals" && (
             <div className="space-y-4">
               <div><h1 className="text-xl font-black text-white">Referral Management</h1><p className="text-slate-400 text-sm">Track referral codes and referred users</p></div>
@@ -959,6 +889,7 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
+          {/* ── GENERATORS FACTORY ── */}
           {tab === "generators" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-3">
@@ -968,113 +899,202 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="flex gap-2">
                   <Button onClick={() => {}} variant="outline" size="sm" className="h-9 border-slate-600 text-slate-300 hover:bg-slate-700"><RefreshCw className="w-3.5 h-3.5" /></Button>
-                  <Button onClick={() => openGeneratorModal(null)}
+                  <Button onClick={() => { setNewGen({ ...BLANK_GEN }); setShowCreateGen(true); }}
                     data-testid="button-create-generator"
                     className="h-9 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-sm flex items-center gap-1.5 rounded-xl shadow-md">
                     <Plus className="w-4 h-4" /> New Generator
                   </Button>
                 </div>
               </div>
+
               {gensLoading ? <p className="text-slate-400 text-sm">Loading...</p> : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {generators.map(g => (
                     <div key={g.id} className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
                       <div className={`bg-gradient-to-r ${g.color} p-4 flex items-center justify-between`}>
                         <div className="flex items-center gap-3">
-                           <span className="text-2xl">{g.icon}</span>
-                           <div>
-                              <div className="flex items-center gap-2">
-                                <p className="font-black text-white text-sm">{g.name}</p>
-                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${g.published ? "bg-green-500 text-white" : "bg-black/30 text-white/70"}`}>
-                                  {g.published ? "LIVE" : "DRAFT"}
-                                </span>
-                              </div>
-                              <p className="text-white/70 text-xs">{g.subtitle}</p>
-                           </div>
+                          <span className="text-2xl">{g.icon}</span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-black text-white text-sm">{g.name}</p>
+                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${g.published ? "bg-green-500 text-white" : "bg-black/30 text-white/70"}`}>
+                                {g.published ? "LIVE" : "DRAFT"}
+                              </span>
+                            </div>
+                            <p className="text-white/70 text-xs">{g.subtitle}</p>
+                          </div>
                         </div>
                         <div className="text-right">
-                           <p className="text-white text-xl font-black">{g.roi}</p>
-                           <p className="text-white/70 text-xs">{g.period}</p>
+                          <p className="text-white text-xl font-black">{g.roi}</p>
+                          <p className="text-white/70 text-xs">{g.period}</p>
                         </div>
                       </div>
                       <div className="p-4 space-y-3">
-                         <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div><span className="text-slate-400">Price:</span> <span className="text-white font-semibold">${g.price.toLocaleString()}</span></div>
-                          <div><span className="text-slate-400">Daily Income:</span> <span className="text-green-400 font-semibold">${g.dailyIncome.toFixed(2)}</span></div>
-                          <div><span className="text-slate-400">Duration:</span> <span className="text-white font-semibold">{g.duration} days</span></div>
-                          <div><span className="text-slate-400">Investors:</span> <span className="text-white font-semibold">{g.investors}</span></div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { label: "Generator ID", value: g.id },
+                            { label: "Rent Price", value: `$${g.price.toLocaleString()}` },
+                            { label: "Expire Days", value: `${g.expireDays} days` },
+                            { label: "Daily Income", value: `$${g.dailyIncome}` },
+                            { label: "Min Invest", value: g.minInvest },
+                            { label: "Max Invest", value: g.maxInvest },
+                          ].map(({ label, value }) => (
+                            <div key={label} className="bg-slate-700/50 rounded-xl px-2.5 py-2">
+                              <p className="text-slate-400 text-[10px]">{label}</p>
+                              <p className="text-white text-xs font-semibold truncate">{value}</p>
+                            </div>
+                          ))}
                         </div>
-                        <div className="flex gap-2 pt-2">
-                          <Button onClick={() => openGeneratorModal(g)} variant="outline" size="sm" className="h-8 flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 gap-1.5"><Pencil className="w-3 h-3" /> Edit</Button>
-                          <Button onClick={() => openConfirm('Delete Generator', `Are you sure you want to delete ${g.name}? This action cannot be undone.`, () => handleDeleteGenerator(g.id))}
-                            variant="destructive" size="sm" className="h-8 flex-1 bg-red-900/40 text-red-400 border border-red-700/50 hover:bg-red-900/60 gap-1.5">
-                            <Trash2 className="w-3 h-3" /> Delete
-                          </Button>
+                        <div className="flex gap-2">
+                          <button onClick={() => setEditingGen({ ...g })}
+                            data-testid={`button-edit-gen-${g.id}`}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-blue-900/30 text-blue-400 border border-blue-800 hover:bg-blue-900/50 text-xs font-semibold">
+                            <Pencil className="w-3 h-3" /> Edit
+                          </button>
+                          <button
+                            onClick={() => {
+                                const updatedGen = {...g, published: !g.published};
+                                setGenerators(gens => gens.map(gen => gen.id === g.id ? updatedGen : gen));
+                                toast({ title: `Generator ${updatedGen.published ? 'published' : 'unpublished'}`});
+                            }}
+                            data-testid={`button-publish-gen-${g.id}`}
+                            className={`flex-1 flex items-center justify-center gap-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all duration-200 ${g.published ? "bg-green-900/30 border-green-600 text-green-300 shadow-[0_0_8px_rgba(34,197,94,0.25)]" : "bg-slate-700/60 border-slate-600 text-slate-400 hover:border-slate-500"}`}
+                          >
+                            <div className={`relative w-9 h-5 rounded-full transition-colors duration-300 flex-shrink-0 ${g.published ? "bg-green-500" : "bg-slate-600"}`}>
+                              <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-300 ${g.published ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+                            </div>
+                            <span className="tracking-widest text-[11px]">{g.published ? "ON" : "OFF"}</span>
+                          </button>
+                          <button onClick={() => openConfirm(
+                              "Delete Generator",
+                              `Are you sure you want to delete "${g.name}"? This cannot be undone.`,
+                              () => handleDeleteGenerator(g.id)
+                            )}
+                            data-testid={`button-delete-gen-${g.id}`}
+                            className="px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-800 hover:bg-red-900/50 text-xs font-semibold">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
+
             </div>
           )}
 
+          {/* ── ACTIVITY POSTS ── */}
           {tab === "activity" && (
-            <div className="space-y-4">
-              <div><h1 className="text-xl font-black text-white">Activity Feed Factory</h1><p className="text-slate-400 text-sm">Manually create posts for the global activity feed</p></div>
-              <div className="bg-slate-800 rounded-2xl border border-slate-700 p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Username</label>
-                    <Input value={activityForm.username} onChange={e => setActivityForm(f => ({ ...f, username: e.target.value }))} placeholder="e.g. Marco R." className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
-                  </div>
-                  <div>
-                    <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Country</label>
-                    <Input value={activityForm.country} onChange={e => setActivityForm(f => ({ ...f, country: e.target.value }))} placeholder="e.g. Italy" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
-                  </div>
-                </div>
+            <div className="space-y-5 max-w-2xl">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Action Description</label>
-                  <Input value={activityForm.action} onChange={e => setActivityForm(f => ({ ...f, action: e.target.value }))} placeholder="e.g. Activated PG3 Generator" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                  <h1 className="text-xl font-black text-white">Activity Feed</h1>
+                  <p className="text-slate-400 text-sm">Add posts that appear in the Live Activity Feed</p>
                 </div>
+                <Button onClick={() => {}} variant="outline" size="sm" className="h-9 border-slate-600 text-slate-300 hover:bg-slate-700"><RefreshCw className="w-3.5 h-3.5" /></Button>
+              </div>
+              <div className="bg-slate-800 rounded-2xl border border-slate-700 p-5 space-y-4">
+                <h2 className="text-white font-bold text-sm flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
+                    <Plus className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  New Activity Post
+                </h2>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Amount</label>
-                    <Input value={activityForm.amount} onChange={e => setActivityForm(f => ({ ...f, amount: e.target.value }))} placeholder="e.g. +$2,400" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                    <label className="text-slate-400 text-xs mb-1.5 block">User Name *</label>
+                    <Input value={activityForm.username} onChange={e => setActivityForm(f => ({ ...f, username: e.target.value }))}
+                      data-testid="input-activity-username" placeholder="e.g. John K."
+                      className="h-10 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500 placeholder:text-slate-500" />
                   </div>
                   <div>
-                    <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Color Theme</label>
-                    <select value={activityForm.color} onChange={e => setActivityForm(f => ({ ...f, color: e.target.value }))} className="w-full h-9 rounded-md bg-slate-700 border border-slate-600 text-white text-sm px-3">
-                      {COLORS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    <label className="text-slate-400 text-xs mb-1.5 block">Country *</label>
+                    <Input value={activityForm.country} onChange={e => setActivityForm(f => ({ ...f, country: e.target.value }))}
+                      data-testid="input-activity-country" placeholder="e.g. Ghana"
+                      className="h-10 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500 placeholder:text-slate-500" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-slate-400 text-xs mb-1.5 block">Action *</label>
+                    <Input value={activityForm.action} onChange={e => setActivityForm(f => ({ ...f, action: e.target.value }))}
+                      data-testid="input-activity-action" placeholder="e.g. Earned daily income"
+                      className="h-10 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500 placeholder:text-slate-500" />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-xs mb-1.5 block">Amount *</label>
+                    <Input value={activityForm.amount} onChange={e => setActivityForm(f => ({ ...f, amount: e.target.value }))}
+                      data-testid="input-activity-amount" placeholder="e.g. +$1.00"
+                      className="h-10 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500 placeholder:text-slate-500" />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-xs mb-1.5 block">Badge Color</label>
+                    <select value={activityForm.color} onChange={e => setActivityForm(f => ({ ...f, color: e.target.value }))}
+                      data-testid="select-activity-color"
+                      className="w-full h-10 bg-slate-700 border border-slate-600 text-white text-sm rounded-lg px-3 focus:border-amber-500 focus:outline-none">
+                      {COLORS.map(c => <option key={c} value={c.value}>{c.label}</option>)}
                     </select>
                   </div>
                 </div>
-                <Button onClick={handleCreateActivityPost} className="w-full bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold">✓ Add Post to Feed</Button>
+                <Button
+                  onClick={handleCreateActivityPost}
+                  disabled={!activityForm.username || !activityForm.country || !activityForm.action || !activityForm.amount}
+                  data-testid="button-add-activity-post"
+                  className="w-full h-10 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold rounded-xl">
+                  Add to Feed
+                </Button>
               </div>
-              <div className="space-y-2">
-                {activityPosts.map(p => (
-                  <div key={p.id} className="bg-slate-800/70 p-3 rounded-xl flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${p.color} flex items-center justify-center`}>
-                        <Activity className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-white">{p.username} · {p.country}</p>
-                        <p className="text-xs text-slate-400">{p.action}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <p className="text-sm font-bold text-green-400">{p.amount}</p>
-                      <button onClick={() => openConfirm("Delete Post", "Are you sure you want to delete this activity post?", () => handleDeleteActivityPost(p.id))} className="w-8 h-8 rounded-lg bg-red-900/30 text-red-400 border border-red-700/50 hover:bg-red-900/50 flex items-center justify-center">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+
+              <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+                <div className="p-4 border-b border-slate-700 flex items-center justify-between">
+                  <h2 className="text-white font-bold text-sm">Published Posts ({activityPosts.length})</h2>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                    <span className="text-green-400 text-xs font-medium">Live on Activity page</span>
                   </div>
-                ))}
+                </div>
+                {activityPosts.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <Activity className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                    <p className="text-slate-400 text-sm">No activity posts yet.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-700">
+                    {activityPosts.map((p: any) => (
+                      <div key={p.id} className="flex items-center gap-3 px-4 py-3">
+                        <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${p.color} flex items-center justify-center flex-shrink-0 text-white text-xs font-bold shadow-sm`}>
+                          {p.avatar || p.username?.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-white text-xs font-semibold">{p.username}</p>
+                            <span className="text-slate-500 text-xs">·</span>
+                            <span className="text-slate-400 text-xs flex items-center gap-1"><Globe className="w-3 h-3" />{p.country}</span>
+                          </div>
+                          <p className="text-slate-400 text-xs truncate">{p.action}</p>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <p className="text-green-400 text-xs font-bold flex items-center gap-0.5">
+                            <ArrowUpRight className="w-3 h-3" />{p.amount}
+                          </p>
+                          <button onClick={() => openConfirm(
+                              "Delete Activity Post",
+                              `Remove this activity post by "${p.username}"?`,
+                              () => handleDeleteActivityPost(p.id)
+                            )}
+                            data-testid={`button-delete-activity-${p.id}`}
+                            className="p-1.5 rounded-lg bg-red-900/30 text-red-400 border border-red-800 hover:bg-red-900/50 transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
 
+          {/* ── MEDIA ── */}
           {tab === "media" && (
              <div className="space-y-4">
               <div><h1 className="text-xl font-black text-white">Media Management</h1><p className="text-slate-400 text-sm">Update images for generators and activity page</p></div>
@@ -1097,7 +1117,7 @@ export default function AdminDashboardPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {['hero', 'teamwork'].map(id => (
                       <div key={id} className="text-center">
-                         <img src={PlaceHolderImages.find(i => i.id === `activity-${id}`)?.imageUrl} alt={id} className="w-full h-auto rounded-lg aspect-[16/9] object-cover" />
+                         <img src={activityDefaultImages[id]} alt={id} className="w-full h-auto rounded-lg aspect-[16/9] object-cover" />
                          <label htmlFor={`act-upload-${id}`} className="mt-2 text-xs text-amber-400 cursor-pointer hover:underline">
                             Upload {id} image
                          </label>
@@ -1109,8 +1129,9 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
+          {/* ── GIFT CODES ── */}
           {tab === "codes" && (
-             <div className="space-y-4">
+            <div className="space-y-4">
               <div><h1 className="text-xl font-black text-white">Gift Code Generator</h1><p className="text-slate-400 text-sm">Create bonus codes that add funds to a user's account</p></div>
                <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
                   <h3 className="font-bold text-white">Create New Code</h3>
@@ -1119,6 +1140,7 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
+          {/* ── SETTINGS ── */}
           {tab === "settings" && (
             <div className="space-y-4">
               <div><h1 className="text-xl font-black text-white">Site Settings</h1><p className="text-slate-400 text-sm">Manage global configurations</p></div>
@@ -1128,20 +1150,205 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
+          {/* ── ABOUT ── */}
           {tab === "about" && (
             <div className="space-y-4">
                <div><h1 className="text-xl font-black text-white">About CoinPower</h1><p className="text-slate-400 text-sm">Version and system information</p></div>
                <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-2">
                  <p className="text-white">CoinPower Admin Panel v1.0.0</p>
-                 <p className="text-slate-400 text-xs">Built with Next.js, Firebase, and shadcn/ui.</p>
+                 <p className="text-slate-400 text-xs">Built with Next.js, Supabase, and shadcn/ui.</p>
                </div>
             </div>
           )}
-          
-        </main>
-      </div>
+        </div>
+      </main>
 
+      {/* Edit Balance Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="flex items-center justify-between mb-4"><h3 className="text-white font-bold">Edit User Balance</h3><button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button></div>
+            <p className="text-slate-300 text-sm font-medium">{editingUser.fullName}</p>
+            <p className="text-slate-500 text-xs mb-1">@{editingUser.username} · {editingUser.country}</p>
+            <p className="text-green-400 text-sm mb-4">Current: ${(editingUser.balance || 0).toFixed(2)}</p>
+            <div className="mb-4">
+              <label className="text-slate-300 text-xs font-medium mb-1.5 block">New Balance ($)</label>
+              <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">$</span>
+                <Input type="number" value={newBalance} onChange={e => setNewBalance(e.target.value)} data-testid="input-new-balance" placeholder="0.00" min="0" step="0.01" className="pl-7 h-11 bg-slate-700 border-slate-600 text-white focus:border-amber-500" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => setEditingUser(null)} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
+              <Button onClick={() => handleUpdateBalance(editingUser.id, parseFloat(newBalance) || 0)} data-testid="button-save-balance" className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold">
+                Save Balance
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Generator Modal */}
+      {showCreateGen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}>
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <div><h3 className="text-white font-black text-lg">Create New Generator</h3><p className="text-slate-400 text-xs mt-0.5">Fill in the details and publish</p></div>
+              <button onClick={() => setShowCreateGen(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Generator Name *</label>
+                  <Input value={newGen.name} onChange={e => setNewGen({ ...newGen, name: e.target.value })} placeholder="e.g. PG5 Generator" data-testid="input-gen-name" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Subtitle</label>
+                  <Input value={newGen.subtitle} onChange={e => setNewGen({ ...newGen, subtitle: e.target.value })} placeholder="e.g. Ultra Power Plan" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Rent Price ($) *</label>
+                  <Input type="number" value={newGen.price || ""} onChange={e => setNewGen({ ...newGen, price: parseFloat(e.target.value) || 0 })} placeholder="100" data-testid="input-gen-price" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Expire Days *</label>
+                  <Input type="number" value={newGen.expireDays || ""} onChange={e => setNewGen({ ...newGen, expireDays: parseInt(e.target.value) || 0 })} placeholder="30" data-testid="input-gen-expire" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Daily Income ($) *</label>
+                  <Input type="number" value={newGen.dailyIncome || ""} onChange={e => setNewGen({ ...newGen, dailyIncome: parseFloat(e.target.value) || 0 })} placeholder="10" data-testid="input-gen-income" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">ROI Display</label>
+                  <Input value={newGen.roi} onChange={e => setNewGen({ ...newGen, roi: e.target.value })} placeholder="e.g. 8%" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Period</label>
+                  <Input value={newGen.period} onChange={e => setNewGen({ ...newGen, period: e.target.value })} placeholder="Daily" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Icon (emoji)</label>
+                  <Input value={newGen.icon} onChange={e => setNewGen({ ...newGen, icon: e.target.value })} placeholder="⚡" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500 text-center" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Min Invest</label>
+                  <Input value={newGen.minInvest} onChange={e => setNewGen({ ...newGen, minInvest: e.target.value })} placeholder="$100" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Max Invest</label>
+                  <Input value={newGen.maxInvest} onChange={e => setNewGen({ ...newGen, maxInvest: e.target.value })} placeholder="$9,999" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-slate-300 text-xs font-medium mb-2 block">Color Theme</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {COLORS.map(c => (
+                    <button key={c.value} onClick={() => setNewGen({ ...newGen, color: c.value })}
+                      className={`h-10 rounded-xl bg-gradient-to-r ${c.value} text-white text-xs font-bold border-2 transition-all ${newGen.color === c.value ? "border-white scale-105" : "border-transparent opacity-70 hover:opacity-100"}`}>
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between bg-slate-700/50 rounded-xl px-4 py-3">
+                <div>
+                  <p className="text-white text-sm font-semibold">Publish immediately</p>
+                  <p className="text-slate-400 text-xs">Make visible in Market</p>
+                </div>
+                <button onClick={() => setNewGen({ ...newGen, published: !newGen.published })}
+                  data-testid="toggle-gen-published"
+                  className={`w-12 h-6 rounded-full transition-colors relative ${newGen.published ? "bg-green-500" : "bg-slate-600"}`}>
+                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${newGen.published ? "translate-x-6" : "translate-x-0.5"}`} />
+                </button>
+              </div>
+
+              {/* Preview */}
+              {newGen.name && (
+                <div className={`rounded-xl bg-gradient-to-r ${newGen.color} p-3 flex items-center gap-3`}>
+                  <span className="text-2xl">{newGen.icon}</span>
+                  <div className="flex-1">
+                    <p className="text-white font-black text-sm">{newGen.name}</p>
+                    <p className="text-white/70 text-xs">${newGen.price}/rent · ${newGen.dailyIncome}/day · {newGen.expireDays}d</p>
+                  </div>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${newGen.published ? "bg-green-500 text-white" : "bg-black/30 text-white/70"}`}>{newGen.published ? "LIVE" : "DRAFT"}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 mt-5">
+              <Button onClick={() => setShowCreateGen(false)} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
+              <Button
+                onClick={() => { if (!newGen.name) { toast({ title: "Name is required", variant: "destructive" }); return; } handleCreateGenerator(); }}
+                data-testid="button-save-new-generator"
+                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold">
+                <Plus className="w-4 h-4 mr-1" /> Create Generator
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Generator Modal */}
+      {editingGen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}>
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-bold flex items-center gap-2"><span>{editingGen.icon}</span>{editingGen.name}</h3>
+              <button onClick={() => setEditingGen(null)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-3">
+              {[
+                { label: "Name", key: "name", type: "text" },
+                { label: "Subtitle", key: "subtitle", type: "text" },
+                { label: "ROI Display", key: "roi", type: "text" },
+                { label: "Period", key: "period", type: "text" },
+                { label: "Rent Price ($)", key: "price", type: "number" },
+                { label: "Expire Days", key: "expireDays", type: "number" },
+                { label: "Daily Income ($)", key: "dailyIncome", type: "number" },
+                { label: "Min Invest", key: "minInvest", type: "text" },
+                { label: "Max Invest", key: "maxInvest", type: "text" },
+                { label: "Investors", key: "investors", type: "text" },
+              ].map(({ label, key, type }) => (
+                <div key={key}>
+                  <label className="text-slate-400 text-xs font-medium mb-1 block">{label}</label>
+                  <Input type={type} value={(editingGen as any)[key]} onChange={e => setEditingGen({ ...editingGen, [key]: type === "number" ? parseFloat(e.target.value) || 0 : e.target.value })}
+                    className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+              ))}
+              <div>
+                <label className="text-slate-300 text-xs font-medium mb-2 block">Color Theme</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {COLORS.map(c => (
+                    <button key={c.value} onClick={() => setEditingGen({ ...editingGen, color: c.value })}
+                      className={`h-8 rounded-xl bg-gradient-to-r ${c.value} text-white text-xs font-bold border-2 transition-all ${editingGen.color === c.value ? "border-white scale-105" : "border-transparent opacity-70"}`}>
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button onClick={() => setEditingGen(null)} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
+              <Button onClick={handleUpdateGenerator} data-testid="button-save-generator" className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold">
+                <Save className="w-3.5 h-3.5 mr-1.5" /> Save Changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
+    
