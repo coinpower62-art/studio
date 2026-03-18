@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from "react";
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import TickerTape from "@/components/TickerTape";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { User } from '@supabase/supabase-js';
 import { rentGeneratorAction } from './actions';
 
@@ -277,7 +278,6 @@ export default function Market() {
   const [lowBalanceGen, setLowBalanceGen] = useState<{ name: string; price: number } | null>(null);
   const [isRenting, setIsRenting] = useState<string | null>(null);
 
-  const supabase = createClient();
   const generators = allGenerators;
 
   const fetchData = async () => {
