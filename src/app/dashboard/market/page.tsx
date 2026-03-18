@@ -15,7 +15,6 @@ import TickerTape from "@/components/TickerTape";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from '@supabase/supabase-js';
-import { rentGeneratorAction } from './actions';
 
 export type RentedGenerator = {
   id: string;
@@ -321,21 +320,36 @@ export default function Market() {
   
   const handleRentClick = async (gen: Generator) => {
     setIsRenting(gen.id);
-    const result = await rentGeneratorAction(gen.id);
-
-    if (result.error === 'insufficient_funds') {
-      if (profile) {
-        setLowBalanceGen({ name: gen.name, price: gen.price });
+    try {
+      if (!user) {
+        throw new Error("User not authenticated.");
       }
-    } else if (result.error) {
-       toast({ title: "Failed to rent generator", description: result.error, variant: 'destructive' });
-    } else {
-      toast({ title: "Generator rented!", description: "Moves to your Power page. Claim daily income every 24 hours." });
-      // Refetch data to update the UI
-      setIsLoading(true);
-      await fetchData();
+
+      const { error } = await supabase.rpc('rent_generator_transaction', {
+        p_user_id: user.id,
+        p_gen_id: gen.id,
+        p_price: gen.price,
+        p_duration: gen.expireDays
+      });
+
+      if (error) {
+        if (error.message.toLowerCase().includes('insufficient funds')) {
+           if (profile) {
+             setLowBalanceGen({ name: gen.name, price: gen.price });
+           }
+        } else {
+          throw error;
+        }
+      } else {
+        toast({ title: "Generator rented!", description: "Moves to your Power page. Claim daily income every 24 hours." });
+        setIsLoading(true);
+        await fetchData();
+      }
+    } catch (err: any) {
+      toast({ title: "Could not rent the generator", description: err.message || 'An unknown error occurred.', variant: "destructive" });
+    } finally {
+      setIsRenting(null);
     }
-    setIsRenting(null);
   };
 
   if (isLoading || !user || !profile) return (
