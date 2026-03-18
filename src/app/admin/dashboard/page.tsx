@@ -29,18 +29,6 @@ import { countries } from "@/lib/data";
 
 type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "generators" | "activity" | "media" | "codes" | "settings" | "about";
 
-const generatorImages: Record<string, string | undefined> = {
-  pg1: PlaceHolderImages.find(i => i.id === 'gen-pg1')?.imageUrl,
-  pg2: PlaceHolderImages.find(i => i.id === 'gen-pg2')?.imageUrl,
-  pg3: PlaceHolderImages.find(i => i.id === 'gen-pg3')?.imageUrl,
-  pg4: PlaceHolderImages.find(i => i.id === 'gen-pg4')?.imageUrl,
-};
-
-const activityDefaultImages: Record<string, string | undefined> = {
-  hero: PlaceHolderImages.find(i => i.id === 'activity-hero')?.imageUrl,
-  teamwork: PlaceHolderImages.find(i => i.id === 'activity-teamwork')?.imageUrl,
-};
-
 type DepositRequest = {
   id: string; user_id: string; username: string; full_name: string;
   amount: number; tx_id: string; date: string; status: "pending" | "approved" | "rejected"; created_at: string;
@@ -63,6 +51,7 @@ type Generator = {
   id: string; name: string; subtitle: string; icon: string; color: string;
   price: number; expireDays: number; dailyIncome: number; published: boolean;
   roi: string; period: string; minInvest: string; maxInvest: string; investors: string;
+  image_url?: string;
 };
 
 type NewGenerator = Omit<Generator, "id">;
@@ -90,6 +79,11 @@ type WithdrawalRecord = {
 
 type ActivityPost = {
   id: string; username: string; country: string; action: string; amount: string; color: string; created_at: string;
+}
+
+type MediaAsset = {
+    id: string;
+    url: string;
 }
 
 function DepositRow({ d, onApprove, onReject, approvePending, rejectPending }: {
@@ -183,6 +177,11 @@ export default function AdminDashboard() {
 
   const [activityPosts, setActivityPosts] = useState<ActivityPost[]>([]);
   const [activityLoading, setActivityLoading] = useState(true);
+  
+  const [media, setMedia] = useState<MediaAsset[]>([]);
+  const [mediaLoading, setMediaLoading] = useState(true);
+  const [uploading, setUploading] = useState<string | null>(null);
+
 
   const fetchData = async () => {
       setUsersLoading(true);
@@ -190,6 +189,7 @@ export default function AdminDashboard() {
       setDepositsLoading(true);
       setWithdrawalsLoading(true);
       setActivityLoading(true);
+      setMediaLoading(true);
       
       const { data: usersData, error: usersError } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
       if (usersError) toast({ title: 'Error fetching users', description: usersError.message, variant: 'destructive' });
@@ -215,6 +215,11 @@ export default function AdminDashboard() {
       if (activityError) toast({ title: 'Error fetching activity posts', description: activityError.message, variant: 'destructive' });
       else setActivityPosts(activityData as ActivityPost[]);
       setActivityLoading(false);
+
+      const { data: mediaData, error: mediaError } = await supabase.from('media').select('*');
+      if (mediaError) toast({ title: 'Error fetching media assets', description: mediaError.message, variant: 'destructive' });
+      else setMedia(mediaData as MediaAsset[]);
+      setMediaLoading(false);
   }
 
   useEffect(() => {
@@ -247,8 +252,6 @@ export default function AdminDashboard() {
   const [editingGen, setEditingGen] = useState<Generator | null>(null);
   const [newGen, setNewGen] = useState<NewGenerator>({ ...BLANK_GEN });
 
-  const [uploadingGenId, setUploadingGenId] = useState<string | null>(null);
-  const [uploadingActivity, setUploadingActivity] = useState<string | null>(null);
   const [newCodeAmount, setNewCodeAmount] = useState("");
   const [newCodeNote, setNewCodeNote] = useState("");
   const [generatedCode, setGeneratedCode] = useState<any | null>(null);
@@ -452,6 +455,43 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleImageUpload = async (bucket: 'generator-images' | 'activity-images', id: string, file: File) => {
+    setUploading(id);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${id}-${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage.from(bucket).upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+        toast({ title: 'Upload Failed', description: uploadError.message, variant: 'destructive' });
+        setUploading(null);
+        return;
+    }
+
+    const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+    const publicUrl = data.publicUrl;
+
+    if (bucket === 'generator-images') {
+        const { error } = await supabase.from('generators').update({ image_url: publicUrl }).eq('id', id);
+        if (error) {
+            toast({ title: 'Database Update Failed', description: error.message, variant: 'destructive' });
+        } else {
+            await fetchData();
+            toast({ title: 'Generator image updated!' });
+        }
+    } else if (bucket === 'activity-images') {
+        const { error } = await supabase.from('media').upsert({ id: id, url: publicUrl });
+        if (error) {
+            toast({ title: 'Database Update Failed', description: error.message, variant: 'destructive' });
+        } else {
+            await fetchData();
+            toast({ title: 'Activity image updated!' });
+        }
+    }
+    setUploading(null);
+  };
+
   if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
   if (!admin) { router.push("/admin"); return null; }
 
@@ -461,6 +501,9 @@ export default function AdminDashboard() {
   const pendingDepositsCount = deposits.filter(d => d.status === "pending").length;
   const copyText = (text: string, label: string) => navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!` }));
   const totalReferrals = users.reduce((s, u) => s + (u.referral_count || 0), 0);
+
+  const heroImg = media.find(m => m.id === 'hero')?.url || PlaceHolderImages.find(i => i.id === 'activity-hero')?.imageUrl;
+  const teamworkImg = media.find(m => m.id === 'teamwork')?.url || PlaceHolderImages.find(i => i.id === 'activity-teamwork')?.imageUrl;
 
   const tabs: { id: Tab; label: string; icon: any; badge?: number; color: string }[] = [
     { id: "overview",     label: "Overview",    icon: BarChart3,       color: "from-blue-500 to-blue-600" },
@@ -1206,29 +1249,41 @@ export default function AdminDashboard() {
               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
                   <h3 className="font-bold text-white">Generator Images</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {['pg1', 'pg2', 'pg3', 'pg4'].map(id => (
-                      <div key={id} className="text-center">
-                         <img src={PlaceHolderImages.find(i => i.id === `gen-${id}`)?.imageUrl} alt={id} className="w-full h-auto rounded-lg aspect-square object-cover" />
-                         <label htmlFor={`gen-upload-${id}`} className="mt-2 text-xs text-amber-400 cursor-pointer hover:underline">
-                            Upload for {id.toUpperCase()}
-                         </label>
-                         <input type="file" id={`gen-upload-${id}`} className="hidden" accept="image/*" disabled />
-                      </div>
-                    ))}
+                    {generators.map(g => {
+                      const isUploading = uploading === `gen-${g.id}`;
+                      return (
+                        <div key={g.id} className="text-center">
+                          <img src={g.image_url || PlaceHolderImages.find(i => i.id === `gen-${g.id}`)?.imageUrl} alt={g.name} className="w-full h-auto rounded-lg aspect-square object-cover" />
+                           <label htmlFor={`gen-upload-${g.id}`} className={`mt-2 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                              {isUploading ? 'Uploading...' : `Upload for ${g.id.toUpperCase()}`}
+                           </label>
+                           <input type="file" id={`gen-upload-${g.id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
+                             const file = e.target.files?.[0];
+                             if (file) await handleImageUpload('generator-images', g.id, file);
+                           }}/>
+                        </div>
+                      )
+                    })}
                   </div>
               </div>
               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
                   <h3 className="font-bold text-white">Activity Page Images</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {['hero', 'teamwork'].map(id => (
-                      <div key={id} className="text-center">
-                         <img src={activityDefaultImages[id]} alt={id} className="w-full h-auto rounded-lg aspect-[16/9] object-cover" />
-                         <label htmlFor={`act-upload-${id}`} className="mt-2 text-xs text-amber-400 cursor-pointer hover:underline">
-                            Upload {id} image
-                         </label>
-                         <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled />
-                      </div>
-                    ))}
+                      {['hero', 'teamwork'].map(id => {
+                        const isUploading = uploading === `act-${id}`;
+                        return (
+                          <div key={id} className="text-center">
+                            <img src={id === 'hero' ? heroImg : teamworkImg} alt={id} className="w-full h-auto rounded-lg aspect-[16/9] object-cover" />
+                             <label htmlFor={`act-upload-${id}`} className={`mt-2 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                {isUploading ? 'Uploading...' : `Upload ${id} image`}
+                             </label>
+                             <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
+                               const file = e.target.files?.[0];
+                               if (file) await handleImageUpload('activity-images', id, file);
+                             }} />
+                          </div>
+                        )
+                      })}
                   </div>
               </div>
             </div>
