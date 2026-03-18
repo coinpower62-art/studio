@@ -65,6 +65,12 @@
       "description": "The CoinPower logo for the signup page.",
       "imageUrl": "https://picsum.photos/seed/coinpowerlogo/64/64",
       "imageHint": "logo"
+    },
+    {
+      "id": "admin-logo",
+      "description": "The CoinPower logo for the admin signin page.",
+      "imageUrl": "https://picsum.photos/seed/adminlogo/80/80",
+      "imageHint": "logo shield"
     }
   ]
 }

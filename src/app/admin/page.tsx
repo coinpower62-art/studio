@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Shield, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import Image from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function AdminSignInPage() {
   const router = useRouter();
@@ -40,14 +42,27 @@ export default function AdminSignInPage() {
         setIsLoading(false);
     }, 500);
   };
+  
+  const logoImage = PlaceHolderImages.find(p => p.id === 'admin-logo');
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)" }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-            <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 object-cover shadow-2xl mx-auto mb-4 flex items-center justify-center">
-                <Shield className="w-10 h-10 text-amber-400"/>
-            </div>
+            {logoImage ? (
+                <Image
+                    src={logoImage.imageUrl}
+                    alt="CoinPower"
+                    width={80}
+                    height={80}
+                    className="h-20 w-20 rounded-2xl object-cover shadow-2xl mx-auto mb-4"
+                    data-ai-hint={logoImage.imageHint}
+                />
+            ) : (
+                <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 object-cover shadow-2xl mx-auto mb-4 flex items-center justify-center">
+                    <Shield className="w-10 h-10 text-amber-400"/>
+                </div>
+            )}
           <div className="flex items-center justify-center gap-2 mb-1">
             <Shield className="w-4 h-4 text-amber-400" />
             <span className="text-amber-400 font-bold text-sm tracking-wider uppercase">CoinPower Admin</span>
