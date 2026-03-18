@@ -30,8 +30,9 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import Link from 'next/link';
-import { useUser } from '@/firebase';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 const DEPOSIT_PHONE = "+233592682060";
 const DEPOSIT_NAME = "M.F";
@@ -203,7 +204,18 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export default function SupportPage() {
-  const { user, isUserLoading } = useUser();
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setIsUserLoading(false);
+    };
+    fetchUser();
+  }, []);
 
   return (
     <div className="pt-12 pb-24 min-h-screen bg-[#f7f9f4]">
