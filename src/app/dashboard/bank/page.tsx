@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import {
   Landmark, ArrowDownToLine, ArrowUpFromLine, Wallet, Shield, Clock,
@@ -203,63 +203,60 @@ export default function BankPage() {
 
   const { display: countdown, expired } = useCountdown(mode === "deposit");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-      if (authError || !user) {
-        router.push('/login');
-        return;
-      }
-      setUser(user);
+    if (authError || !user) {
+      router.push('/login');
+      return;
+    }
+    setUser(user);
 
-      // Fetch profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('balance, country, has_withdrawal_pin, username, full_name')
-        .eq('id', user.id)
-        .single();
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('balance, country, has_withdrawal_pin, username, full_name')
+      .eq('id', user.id)
+      .single();
 
-      if (profileError) {
-        console.error("Profile Fetch Error:", profileError);
-        setProfile(null);
-      } else {
-        setProfile(profileData as Profile);
-        setDepositCountry(profileData.country || '');
-      }
+    if (profileError) {
+      console.error("Profile Fetch Error:", profileError);
+      setProfile(null);
+    } else {
+      setProfile(profileData as Profile);
+      setDepositCountry(profileData.country || '');
+    }
 
-      // Fetch deposits
-      const { data: depositsData, error: depositsError } = await supabase
-        .from('deposit_requests')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+    const { data: depositsData, error: depositsError } = await supabase
+      .from('deposit_requests')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
-      if (depositsError) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch deposit history.' });
-      } else {
-        setDepositRecords(depositsData as DepositRecord[]);
-      }
+    if (depositsError) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch deposit history.' });
+    } else {
+      setDepositRecords(depositsData as DepositRecord[]);
+    }
 
-      // Fetch withdrawals
-      const { data: withdrawalsData, error: withdrawalsError } = await supabase
-        .from('withdrawal_requests')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+    const { data: withdrawalsData, error: withdrawalsError } = await supabase
+      .from('withdrawal_requests')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
-      if (withdrawalsError) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch withdrawal history.' });
-      } else {
-        setWithdrawRecords(withdrawalsData as WithdrawRecord[]);
-      }
-      
-      setLoading(false);
-    };
-
-    fetchData();
+    if (withdrawalsError) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch withdrawal history.' });
+    } else {
+      setWithdrawRecords(withdrawalsData as WithdrawRecord[]);
+    }
+    
+    setLoading(false);
   }, [router, supabase, toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const copy = (text: string, label: string) =>
     navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!`, description: text }));
@@ -316,6 +313,7 @@ export default function BankPage() {
       setDepositSuccess(true);
       setDepositTxId("");
       const newRecord = { ...submissionData, id: 'temp-' + Date.now(), status: 'pending', created_at: new Date().toISOString(), tx_id: submissionData.txId };
+      // @ts-ignore
       setDepositRecords(prev => [newRecord as DepositRecord, ...prev]);
     }
   };

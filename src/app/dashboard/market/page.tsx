@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { generators as allGenerators, type Generator } from '@/lib/data';
@@ -14,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import TickerTape from "@/components/TickerTape";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 import type { User } from '@supabase/supabase-js';
 import { rentGeneratorAction } from './actions';
 
@@ -279,11 +278,12 @@ export default function Market() {
   const [isRenting, setIsRenting] = useState<string | null>(null);
 
   const generators = allGenerators;
+  const supabase = createClient();
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-          router.push('/signin');
+          router.push('/login');
           return;
       }
       setUser(user);
@@ -313,11 +313,11 @@ export default function Market() {
       }
       
       setIsLoading(false);
-  };
+  }, [router, supabase, toast]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
   
   const handleRentClick = async (gen: Generator) => {
     setIsRenting(gen.id);

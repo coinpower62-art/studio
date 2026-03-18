@@ -548,7 +548,7 @@ export default function Power() {
   const fetchData = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      router.push('/signin');
+      router.push('/login');
       return;
     }
     setUser(user);
