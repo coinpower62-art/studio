@@ -3,8 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { useUserStore } from '@/hooks/use-user-store';
-import { useUser as useAuthUser } from '@/firebase';
 import { generators as allGenerators, type Generator } from '@/lib/data';
 import { Zap, TrendingUp, Clock, Star, Users, Shield, CheckCircle, AlertCircle, Timer, Wallet, ArrowDownToLine, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +13,23 @@ import {
 } from "@/components/ui/dialog";
 import TickerTape from "@/components/TickerTape";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import type { RentedGenerator } from "@/hooks/use-user-store";
+import { createClient } from "@/lib/supabase/client";
+import type { User } from '@supabase/supabase-js';
+import { rentGeneratorAction } from './actions';
+
+export type RentedGenerator = {
+  id: string;
+  user_id: string;
+  generator_id: string;
+  rented_at: string;
+  expires_at: string;
+  last_claimed_at: string | null;
+  suspended: boolean;
+};
+
+type Profile = {
+    balance: number;
+};
 
 const CHART_PAIRS = [
   "BTC/USDT","ETH/USDT","BNB/USDT","SOL/USDT","XRP/USDT",
@@ -255,39 +269,87 @@ function LiveChart({ genId, dailyIncome, color, isRented }: {
 export default function Market() {
   const router = useRouter();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [rentedGenerators, setRentedGenerators] = useState<RentedGenerator[]>([]);
+  
   const [lowBalanceGen, setLowBalanceGen] = useState<{ name: string; price: number } | null>(null);
   const [isRenting, setIsRenting] = useState<string | null>(null);
 
-  const { user, isUserLoading } = useAuthUser();
-  const { balance, rentedGenerators, rentGenerator } = useUserStore();
+  const supabase = createClient();
   const generators = allGenerators;
-  
-  const handleRentClick = (gen: Generator) => {
-    setIsRenting(gen.id);
-    const result = rentGenerator(gen.id);
 
-    if (result === 'insufficient_funds') {
-      setLowBalanceGen({ name: gen.name, price: gen.price });
-      setIsRenting(null);
-    } else {
-      toast({ title: "Generator rented!", description: "Moves to your Power page. Claim daily income every 24 hours." });
-      setTimeout(() => setIsRenting(null), 1000);
-    }
+  const fetchData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+          router.push('/signin');
+          return;
+      }
+      setUser(user);
+
+      const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('balance')
+          .eq('id', user.id)
+          .single();
+      
+      if (profileError) {
+          toast({ title: 'Error fetching profile', variant: 'destructive'});
+          setProfile(null);
+      } else {
+          setProfile(profileData as Profile);
+      }
+      
+      const { data: rentedData, error: rentedError } = await supabase
+          .from('rented_generators')
+          .select('*')
+          .eq('user_id', user.id);
+
+      if (rentedError) {
+          toast({ title: 'Error fetching generators', variant: 'destructive'});
+      } else {
+          setRentedGenerators(rentedData as RentedGenerator[]);
+      }
+      
+      setIsLoading(false);
   };
 
-  if (isUserLoading) return (
+  useEffect(() => {
+    fetchData();
+  }, []);
+  
+  const handleRentClick = async (gen: Generator) => {
+    setIsRenting(gen.id);
+    const result = await rentGeneratorAction(gen.id);
+
+    if (result.error === 'insufficient_funds') {
+      if (profile) {
+        setLowBalanceGen({ name: gen.name, price: gen.price });
+      }
+    } else if (result.error) {
+       toast({ title: "Failed to rent generator", description: result.error, variant: 'destructive' });
+    } else {
+      toast({ title: "Generator rented!", description: "Moves to your Power page. Claim daily income every 24 hours." });
+      // Refetch data to update the UI
+      setIsLoading(true);
+      await fetchData();
+    }
+    setIsRenting(null);
+  };
+
+  if (isLoading || !user || !profile) return (
     <div className="pt-12 p-4 pb-20 max-w-7xl mx-auto">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-80 rounded-2xl" />)}
       </div>
     </div>
   );
-  if (!user) { router.push("/signin"); return null; }
 
   const now = Date.now();
   const activeRentedCounts = new Map<string, number>();
-  rentedGenerators.filter((ug: RentedGenerator) => ug.expiresAt.toMillis() > now).forEach((ug: RentedGenerator) => {
-    activeRentedCounts.set(ug.generatorId, (activeRentedCounts.get(ug.generatorId) || 0) + 1);
+  rentedGenerators.filter((ug: RentedGenerator) => new Date(ug.expires_at).getTime() > now).forEach((ug: RentedGenerator) => {
+    activeRentedCounts.set(ug.generator_id, (activeRentedCounts.get(ug.generator_id) || 0) + 1);
   });
 
   const colorMap: Record<string, { bg: string; border: string; badge: string; badgeText: string; gradS: string; gradE: string; badgeLabel: string }> = {
@@ -314,7 +376,7 @@ export default function Market() {
           </p>
         </div>
 
-        {rentedGenerators.filter(ug => ug.expiresAt.toMillis() > now).length > 0 && (
+        {rentedGenerators.filter(ug => new Date(ug.expires_at).getTime() > now).length > 0 && (
           <div className="mb-4 bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
             <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
@@ -336,7 +398,7 @@ export default function Market() {
               const rentedCount = activeRentedCounts.get(gen.id) || 0;
               const isRented = rentedCount > 0;
               const isMaxed = gen.id === "pg1" && rentedCount >= 1;
-              const activeUg = rentedGenerators.find(ug => ug.generatorId === gen.id && ug.expiresAt.toMillis() > now);
+              const activeUg = rentedGenerators.find(ug => ug.generator_id === gen.id && new Date(ug.expires_at).getTime() > now);
 
               return (
                 <div key={gen.id} data-testid={`card-generator-${gen.id}`}
@@ -417,7 +479,7 @@ export default function Market() {
                           <Timer className="w-4 h-4 text-red-500" />
                           <span className="text-red-700 text-xs font-semibold">Expires in</span>
                         </div>
-                        <Countdown expiresAt={activeUg.expiresAt.toMillis()} label="" />
+                        <Countdown expiresAt={new Date(activeUg.expires_at).getTime()} label="" />
                       </div>
                     )}
 
@@ -492,7 +554,7 @@ export default function Market() {
             </DialogDescription>
           </div>
           <div className="p-5 space-y-4">
-            {lowBalanceGen && (
+            {lowBalanceGen && profile && (
               <div className="space-y-2">
                 <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
                   <span className="text-gray-500 text-sm">Generator</span>
@@ -504,12 +566,12 @@ export default function Market() {
                 </div>
                 <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
                   <span className="text-gray-500 text-sm">Your Balance</span>
-                  <span className="font-black text-gray-900 text-sm">${(balance).toFixed(2)}</span>
+                  <span className="font-black text-gray-900 text-sm">${profile.balance.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center bg-red-50 border border-red-100 rounded-xl px-4 py-3">
                   <span className="text-red-600 text-sm font-medium">Shortfall</span>
                   <span className="font-black text-red-600 text-sm">
-                    ${Math.max(0, lowBalanceGen.price - (balance)).toFixed(2)}
+                    ${Math.max(0, lowBalanceGen.price - profile.balance).toFixed(2)}
                   </span>
                 </div>
               </div>
