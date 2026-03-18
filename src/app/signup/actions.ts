@@ -32,7 +32,7 @@ export async function signup(values: any) {
     options: {
       emailRedirectTo: `${origin}/auth/callback`,
       data: {
-        full_name: fullName,
+        fullName: fullName,
         username: username,
       },
     },
