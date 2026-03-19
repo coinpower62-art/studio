@@ -114,6 +114,9 @@ export default {
         'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
         'dot-bounce': 'dot-bounce 1.2s ease-in-out infinite',
       },
+      transitionTimingFunction: {
+        'custom-in-out': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+      },
     },
   },
   plugins: [require('tailwindcss-animate')],

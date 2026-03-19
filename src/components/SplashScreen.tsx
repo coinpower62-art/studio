@@ -18,7 +18,7 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
       style={{pointerEvents: phase === 'out' ? 'none' : 'all'}}
     >
       <div
-        className={`relative mb-7 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${phase === "in" ? "opacity-0 scale-60" : "opacity-100 scale-100"}`}
+        className={`relative mb-7 transition-all duration-500 ease-custom-in-out ${phase === "in" ? "opacity-0 scale-60" : "opacity-100 scale-100"}`}
       >
         <div className="absolute -inset-2.5 rounded-full bg-radial-glow animate-pulse-glow" />
         <div className="w-[108px] h-[108px] rounded-[28px] border-[3px] border-amber-500/70 shadow-[0_0_40px_rgba(201,137,26,0.4),_0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden">
