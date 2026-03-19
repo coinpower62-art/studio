@@ -27,7 +27,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
 
 
-type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "generators" | "activity" | "media" | "codes" | "settings" | "about";
+type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "generators" | "media" | "codes" | "settings" | "about";
 
 type DepositRequest = {
   id: string; user_id: string; username: string; full_name: string;
@@ -52,17 +52,6 @@ type Generator = {
   price: number; expireDays: number; dailyIncome: number; published: boolean;
   roi: string; period: string; minInvest: string; maxInvest: string; investors: string;
   image_url?: string;
-};
-
-type ActivityPost = {
-  id: string;
-  username: string;
-  country: string;
-  action: string;
-  amount: string;
-  color: string;
-  avatar?: string;
-  created_at: string;
 };
 
 type NewGenerator = Omit<Generator, "id">;
@@ -186,10 +175,6 @@ export default function AdminDashboard() {
   const [mediaLoading, setMediaLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
   
-  const [activityPosts, setActivityPosts] = useState<ActivityPost[]>([]);
-  const [activityPostsLoading, setActivityPostsLoading] = useState(true);
-  const [activityForm, setActivityForm] = useState({ username: "", country: "", action: "", amount: "", color: "from-amber-400 to-orange-500" });
-
 
   const fetchData = async () => {
       setUsersLoading(true);
@@ -197,14 +182,13 @@ export default function AdminDashboard() {
       setDepositsLoading(true);
       setWithdrawalsLoading(true);
       setMediaLoading(true);
-      setActivityPostsLoading(true);
       
       const { data: usersData, error: usersError } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
       if (usersError) toast({ title: 'Error fetching users', description: usersError.message, variant: 'destructive' });
       else setUsers(usersData as UserRecord[]);
       setUsersLoading(false);
 
-      const { data: gensData, error: gensError } = await supabase.from('generators').select('*').order('created_at', { ascending: false });
+      const { data: gensData, error: gensError } = await supabase.from('generators').select('*').order('name', { ascending: true });
       if (gensError) toast({ title: 'Error fetching generators', description: gensError.message, variant: 'destructive' });
       else setGenerators(gensData as Generator[]);
       setGensLoading(false);
@@ -224,10 +208,6 @@ export default function AdminDashboard() {
       else setMedia(mediaData as MediaAsset[]);
       setMediaLoading(false);
       
-      const { data: activityData, error: activityError } = await supabase.from('activity_posts').select('*').order('created_at', { ascending: false });
-      if (activityError) toast({ title: 'Error fetching activity posts', description: activityError.message, variant: 'destructive' });
-      else setActivityPosts(activityData as ActivityPost[]);
-      setActivityPostsLoading(false);
   }
 
   useEffect(() => {
@@ -441,27 +421,6 @@ export default function AdminDashboard() {
     }
   };
   
-  const handleCreateActivityPost = async () => {
-    const { data, error } = await supabase.from('activity_posts').insert([activityForm]).select().single();
-    if(error) {
-      toast({ title: "Error creating activity post", description: error.message, variant: "destructive" });
-    } else {
-      setActivityPosts(prev => [data as ActivityPost, ...prev]);
-      toast({ title: "Activity post created!" });
-      setActivityForm({ username: "", country: "", action: "", amount: "", color: "from-amber-400 to-orange-500" });
-    }
-  };
-
-  const handleDeleteActivityPost = async (id: string) => {
-      const { error } = await supabase.from('activity_posts').delete().eq('id', id);
-      if (error) {
-          toast({ title: "Error deleting activity post", description: error.message, variant: 'destructive' });
-      } else {
-          setActivityPosts(prev => prev.filter(p => p.id !== id));
-          toast({ title: 'Activity post deleted' });
-      }
-  };
-
   const handleImageUpload = async (bucket: 'generator-images' | 'activity-images', id: string, file: File) => {
     setUploading(id);
     const fileExt = file.name.split('.').pop();
@@ -519,7 +478,6 @@ export default function AdminDashboard() {
     { id: "withdrawals",  label: "Withdrawals", icon: ArrowUpFromLine, color: "from-amber-500 to-orange-500",  badge: pendingWithdrawalsCount || undefined },
     { id: "referrals",    label: "Referrals",   icon: Link2,           color: "from-pink-500 to-rose-600" },
     { id: "generators",   label: "Generators",  icon: Zap,             color: "from-yellow-400 to-amber-500",  badge: generators.length },
-    { id: "activity",     label: "Activity",    icon: Activity,        color: "from-emerald-500 to-green-600" },
     { id: "media",        label: "Media",       icon: ImagePlus,       color: "from-teal-500 to-cyan-600" },
     { id: "codes",        label: "Gift Codes",  icon: Gift,            color: "from-rose-500 to-pink-600" },
     { id: "settings",     label: "Settings",    icon: Settings,        color: "from-slate-500 to-slate-600" },
@@ -1136,125 +1094,6 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-            </div>
-          )}
-
-          {/* ── ACTIVITY POSTS ── */}
-          {tab === "activity" && (
-            <div className="space-y-5 max-w-2xl">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h1 className="text-xl font-black text-white">Activity Feed</h1>
-                  <p className="text-slate-400 text-sm">Add posts that appear in the Live Activity Feed</p>
-                </div>
-                <Button onClick={fetchData} variant="outline" size="sm" className="h-9 border-slate-600 text-slate-300 hover:bg-slate-700"><RefreshCw className="w-3.5 h-3.5" /></Button>
-              </div>
-
-              {/* Add Post Form */}
-              <div className="bg-slate-800 rounded-2xl border border-slate-700 p-5 space-y-4">
-                <h2 className="text-white font-bold text-sm flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
-                    <Plus className="w-3.5 h-3.5 text-white" />
-                  </div>
-                  New Activity Post
-                </h2>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-slate-400 text-xs mb-1.5 block">User Name *</label>
-                    <Input value={activityForm.username} onChange={function(e) { return setActivityForm(function(f) { return ({ ...f, username: e.target.value }); }); }}
-                      data-testid="input-activity-username" placeholder="e.g. John K."
-                      className="h-10 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500 placeholder:text-slate-500" />
-                  </div>
-                  <div>
-                    <label className="text-slate-400 text-xs mb-1.5 block">Country *</label>
-                    <Input value={activityForm.country} onChange={function(e) { return setActivityForm(function(f) { return ({ ...f, country: e.target.value }); }); }}
-                      data-testid="input-activity-country" placeholder="e.g. Ghana"
-                      className="h-10 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500 placeholder:text-slate-500" />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="text-slate-400 text-xs mb-1.5 block">Action *</label>
-                    <Input value={activityForm.action} onChange={function(e) { return setActivityForm(function(f) { return ({ ...f, action: e.target.value }); }); }}
-                      data-testid="input-activity-action" placeholder="e.g. Earned daily income from PG2 Generator"
-                      className="h-10 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500 placeholder:text-slate-500" />
-                  </div>
-                  <div>
-                    <label className="text-slate-400 text-xs mb-1.5 block">Amount *</label>
-                    <Input value={activityForm.amount} onChange={function(e) { return setActivityForm(function(f) { return ({ ...f, amount: e.target.value }); }); }}
-                      data-testid="input-activity-amount" placeholder="e.g. +$1.00"
-                      className="h-10 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500 placeholder:text-slate-500" />
-                  </div>
-                  <div>
-                    <label className="text-slate-400 text-xs mb-1.5 block">Badge Color</label>
-                    <select value={activityForm.color} onChange={function(e) { return setActivityForm(function(f) { return ({ ...f, color: e.target.value }); }); }}
-                      data-testid="select-activity-color"
-                      className="w-full h-10 bg-slate-700 border border-slate-600 text-white text-sm rounded-lg px-3 focus:border-amber-500 focus:outline-none">
-                      <option value="from-amber-400 to-orange-500">Gold</option>
-                      <option value="from-green-400 to-emerald-600">Green</option>
-                      <option value="from-blue-400 to-indigo-600">Blue</option>
-                      <option value="from-purple-500 to-pink-600">Purple</option>
-                      <option value="from-red-400 to-rose-500">Red</option>
-                      <option value="from-teal-400 to-cyan-500">Teal</option>
-                    </select>
-                  </div>
-                </div>
-                <Button
-                  onClick={handleCreateActivityPost}
-                  disabled={!activityForm.username || !activityForm.country || !activityForm.action || !activityForm.amount}
-                  data-testid="button-add-activity-post"
-                  className="w-full h-10 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold rounded-xl">
-                  Add to Feed
-                </Button>
-              </div>
-
-              {/* Posts List */}
-              <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
-                <div className="p-4 border-b border-slate-700 flex items-center justify-between">
-                  <h2 className="text-white font-bold text-sm">Published Posts ({activityPosts.length})</h2>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                    <span className="text-green-400 text-xs font-medium">Live on Activity page</span>
-                  </div>
-                </div>
-                {activityPostsLoading ? <p className="p-4 text-slate-400 text-sm">Loading posts...</p> : activityPosts.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <Activity className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                    <p className="text-slate-400 text-sm">No activity posts yet.</p>
-                    <p className="text-slate-500 text-xs mt-1">Add your first post above to populate the activity feed.</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-slate-700">
-                    {activityPosts.map(function(p) { return (
-                      <div key={p.id} className="flex items-center gap-3 px-4 py-3">
-                        <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${p.color} flex items-center justify-center flex-shrink-0 text-white text-xs font-bold shadow-sm`}>
-                          {p.avatar || p.username?.slice(0, 2).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-white text-xs font-semibold">{p.username}</p>
-                            <span className="text-slate-500 text-xs">·</span>
-                            <span className="text-slate-400 text-xs flex items-center gap-1"><Globe className="w-3 h-3" />{p.country}</span>
-                          </div>
-                          <p className="text-slate-400 text-xs truncate">{p.action}</p>
-                        </div>
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          <p className="text-green-400 text-xs font-bold flex items-center gap-0.5">
-                            <ArrowUpRight className="w-3 h-3" />{p.amount}
-                          </p>
-                          <button onClick={function() { return openConfirm(
-                              "Delete Activity Post",
-                              `Remove this activity post by "${p.username}"? It will disappear from the Activity feed immediately.`,
-                              function() { return handleDeleteActivityPost(p.id); }
-                            ); }}
-                            data-testid={`button-delete-activity-${p.id}`}
-                            className="p-1.5 rounded-lg bg-red-900/30 text-red-400 border border-red-800 hover:bg-red-900/50 transition-colors">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ); })}
-                  </div>
-                )}
-              </div>
             </div>
           )}
 
