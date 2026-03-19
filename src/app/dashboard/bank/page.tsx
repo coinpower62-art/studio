@@ -224,17 +224,17 @@ export default function BankPage() {
       .from('profiles')
       .select('balance, country, has_withdrawal_pin, username, full_name')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (profileError && profileError.message) {
+    if (profileError) {
       toast({
         variant: 'destructive',
         title: 'Error loading profile',
-        description: profileError.message || 'Your profile data could not be loaded. Please try signing out and in again.',
+        description: profileError.message,
       });
       setProfile(null);
     } else {
-      setProfile(profileData as Profile);
+      setProfile(profileData as Profile | null);
       if (profileData) {
         setDepositCountry(profileData.country || '');
       }

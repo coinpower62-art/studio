@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { generators as allGenerators, type Generator } from '@/lib/data';
-import { Zap, TrendingUp, Clock, Star, Users, Shield, CheckCircle, AlertCircle, Timer, Wallet, ArrowDownToLine, Activity } from "lucide-react";
+import { Zap, TrendingUp, Clock, Star, Users, Shield, CheckCircle, AlertCircle, Timer, Wallet, ArrowDownToLine, Activity, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,6 +17,7 @@ import TickerTape from "@/components/TickerTape";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from '@supabase/supabase-js';
+import { logout } from "@/app/login/actions";
 
 export type RentedGenerator = {
   id: string;
@@ -267,6 +268,16 @@ function LiveChart({ genId, dailyIncome, color, isRented }: {
   );
 }
 
+function MarketPageSkeleton() {
+    return (
+      <div className="pt-12 p-4 pb-20 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[...Array(4)].map(function(_, i) { return <Skeleton key={i} className="h-80 rounded-2xl" />; })}
+        </div>
+      </div>
+    );
+}
+
 export default function Market() {
   const router = useRouter();
   const { toast } = useToast();
@@ -293,13 +304,13 @@ export default function Market() {
           .from('profiles')
           .select('balance')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
       
-      if (profileError && profileError.message) {
+      if (profileError) {
           toast({ title: 'Error fetching profile', variant: 'destructive', description: profileError.message });
           setProfile(null);
       } else {
-          setProfile(profileData as Profile);
+          setProfile(profileData as Profile | null);
       }
       
       const { data: rentedData, error: rentedError } = await supabase
@@ -354,13 +365,26 @@ export default function Market() {
     }
   };
 
-  if (isLoading || !user || !profile) return (
-    <div className="pt-12 p-4 pb-20 max-w-7xl mx-auto">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {[...Array(4)].map(function(_, i) { return <Skeleton key={i} className="h-80 rounded-2xl" />; })}
-      </div>
-    </div>
-  );
+  if (isLoading) return <MarketPageSkeleton />;
+  
+  if (!user || !profile) {
+      return (
+        <div className="pt-12 p-4 pb-20 max-w-4xl mx-auto text-center">
+            <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
+            <h2 className="mt-4 text-xl font-bold text-destructive-foreground">User Profile Not Found</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+                We could not load your user profile. This can happen if profile creation failed during signup.
+                Please try signing out and signing back in. If the problem persists, please contact support.
+            </p>
+            <form action={logout} className="mt-6">
+                <Button variant="destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                </Button>
+            </form>
+        </div>
+      )
+  }
 
   const now = Date.now();
   const activeRentedCounts = new Map<string, number>();

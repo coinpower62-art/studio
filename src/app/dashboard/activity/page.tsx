@@ -5,7 +5,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import {
-  Activity, Users, MessageSquare, TrendingUp, Star, Globe, Clock, ArrowUpRight, Shield, Award, BadgeCheck, Building2, CheckCircle2, Landmark, FileText, Crown, Loader
+  Activity, Users, MessageSquare, TrendingUp, Star, Globe, Clock, ArrowUpRight, Shield, Award, BadgeCheck, Building2, CheckCircle2, Landmark, FileText, Crown, Loader, AlertCircle, LogOut
 } from "lucide-react";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { logout } from '@/app/login/actions';
 
 type Profile = {
   balance: number;
@@ -88,17 +90,17 @@ export default function ActivityPage() {
         .from('profiles')
         .select('balance, country, full_name, username')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       
-      if (profileError && profileError.message) {
+      if (profileError) {
         toast({
           variant: 'destructive',
           title: 'Error loading profile',
-          description: profileError.message || 'Your profile could not be loaded.'
+          description: profileError.message
         });
         setProfile(null);
       } else {
-        setProfile(profileData as Profile);
+        setProfile(profileData as Profile | null);
       }
       
       setIsLoading(false);
@@ -107,8 +109,27 @@ export default function ActivityPage() {
     fetchData();
   }, [router, toast]);
 
-  if (isLoading || !user || !profile) {
+  if (isLoading) {
     return <ActivityPageSkeleton />;
+  }
+
+  if (!user || !profile) {
+      return (
+        <div className="pt-12 p-4 pb-20 max-w-4xl mx-auto text-center">
+            <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
+            <h2 className="mt-4 text-xl font-bold text-destructive-foreground">User Profile Not Found</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+                We could not load your user profile. This can happen if profile creation failed during signup.
+                Please try signing out and signing back in. If the problem persists, please contact support.
+            </p>
+            <form action={logout} className="mt-6">
+                <Button variant="destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                </Button>
+            </form>
+        </div>
+      )
   }
 
   const initials = profile.full_name?.split(" ").map(function(n) { return n[0]; }).join("").toUpperCase().slice(0, 2) || "CP";
