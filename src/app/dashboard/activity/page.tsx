@@ -45,6 +45,21 @@ const announcements = [
   { title: "System maintenance scheduled for Mar 15", date: "Mar 7, 2026", tag: "Info", tagColor: "bg-blue-100 text-blue-700" },
 ];
 
+function ActivityPageSkeleton() {
+    return (
+      <div className="pt-12 p-4 pb-20 max-w-7xl mx-auto">
+        <Skeleton className="h-96 rounded-2xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-6">
+            <div className="lg:col-span-2"><Skeleton className="h-64 rounded-2xl" /></div>
+            <div className="space-y-4">
+                <Skeleton className="h-48 rounded-2xl" />
+                <Skeleton className="h-48 rounded-2xl" />
+            </div>
+        </div>
+    </div>
+    );
+}
+
 export default function ActivityPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -93,17 +108,7 @@ export default function ActivityPage() {
   }, [router, toast]);
 
   if (isLoading || !user || !profile) {
-    return (
-      <div className="pt-12 p-4 pb-20 max-w-7xl mx-auto">
-        <Skeleton className="h-96 rounded-2xl" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-6">
-            <div className="lg:col-span-2"><Skeleton className="h-64 rounded-2xl" /></div>
-            <div className="space-y-4">
-                <Skeleton className="h-48 rounded-2xl" />
-                <Skeleton className="h-48 rounded-2xl" />
-            </div>
-        </div>
-    )
+    return <ActivityPageSkeleton />;
   }
 
   const initials = profile.full_name?.split(" ").map(function(n) { return n[0]; }).join("").toUpperCase().slice(0, 2) || "CP";

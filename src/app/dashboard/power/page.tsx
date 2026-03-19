@@ -548,6 +548,10 @@ const powerPlans = [
   { name: "Gold Power", price: "$1,000/mo", boost: "10x", multiplier: 10, color: "from-amber-400 to-amber-600", features: ["10x return multiplier", "Dedicated manager", "Real-time analytics", "24/7 VIP support"] },
 ];
 
+function PowerPageSkeleton() {
+    return <div className="pt-12 p-4 pb-20 max-w-6xl mx-auto"><Skeleton className="h-96 rounded-2xl" /></div>;
+}
+
 export default function Power() {
   const router = useRouter();
   const { toast } = useToast();
@@ -623,7 +627,7 @@ export default function Power() {
   };
   
   if (isLoading) {
-    return <div className="pt-12 p-4 pb-20 max-w-6xl mx-auto"><Skeleton className="h-96 rounded-2xl" /></div>
+    return <PowerPageSkeleton />;
   }
   if (!user) {
     return null;

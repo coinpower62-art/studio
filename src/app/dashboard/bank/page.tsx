@@ -167,6 +167,10 @@ function PinBoxes({ value, onChange, testId }: { value: string; onChange: (v: st
   );
 }
 
+function BankPageSkeleton() {
+    return <div className="p-4 pt-8 max-w-4xl mx-auto"><Skeleton className="h-64 rounded-2xl" /></div>;
+}
+
 export default function BankPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -392,7 +396,7 @@ export default function BankPage() {
     }
   };
 
-  if (loading) return <div className="p-4 pt-8 max-w-4xl mx-auto"><Skeleton className="h-64 rounded-2xl" /></div>;
+  if (loading) return <BankPageSkeleton />;
   
   if (!user || !profile) {
       return (
