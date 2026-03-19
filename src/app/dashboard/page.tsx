@@ -44,7 +44,7 @@ export default async function DashboardPage() {
         referral_code: referral_code || `CP-${((username || 'USER').slice(0,4)).toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}`,
         balance: 1.00, // The $1 sign-up bonus
         has_withdrawal_pin: false,
-    }).select().single();
+    });
     
     if (insertError) {
         console.error("Fatal error creating profile:", insertError);
