@@ -23,11 +23,38 @@ export default async function DashboardPage() {
     return redirect('/login');
   }
 
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single();
+
+  // If the profile doesn't exist, create it. This is a one-time setup for new users.
+  if (!profile) {
+    const { data: newProfile, error: insertError } = await supabase.from('profiles').insert({
+      id: user.id,
+      email: user.email,
+      full_name: user.user_metadata.full_name,
+      username: user.user_metadata.username,
+      country: user.user_metadata.country,
+      phone: user.user_metadata.phone,
+      language: user.user_metadata.language,
+      referral_code: `CP-${user.user_metadata.username.toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}`,
+      balance: 1.00, // Start with a $1 bonus
+      has_withdrawal_pin: false,
+      referral_count: 0,
+      referred_by: null, // Referral logic can be added later
+    }).select().single();
+
+    if (insertError) {
+      console.error("CRITICAL: Failed to create user profile after login.", insertError);
+      // Not redirecting to an error page, but the UI might be broken for this user.
+      // The `profile` variable will remain null.
+    } else {
+        profile = newProfile;
+    }
+  }
+
 
   // For the dashboard widgets, we'll fetch some aggregate data.
   // In a real app, you might use RPC functions for performance.
@@ -149,5 +176,3 @@ export default async function DashboardPage() {
     </div>
   );
 }
-
-    
