@@ -103,7 +103,7 @@ export default function ActivityPage() {
                 <Skeleton className="h-48 rounded-2xl" />
             </div>
         </div>
-    );
+    )
   }
 
   const initials = profile.full_name?.split(" ").map(function(n) { return n[0]; }).join("").toUpperCase().slice(0, 2) || "CP";

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -82,11 +83,11 @@ type DepositRecord = {
 };
 
 const imageMap = {
-  momo: PlaceHolderImages.find(i => i.id === 'mtn-momo')?.imageUrl,
-  usdt: PlaceHolderImages.find(i => i.id === 'usdt')?.imageUrl,
-  card: PlaceHolderImages.find(i => i.id === 'visa-mastercard')?.imageUrl,
-  telecel: PlaceHolderImages.find(i => i.id === 'telecel')?.imageUrl,
-  tigo: PlaceHolderImages.find(i => i.id === 'tigo')?.imageUrl,
+  momo: PlaceHolderImages.find(function(i) { return i.id === 'mtn-momo'; })?.imageUrl,
+  usdt: PlaceHolderImages.find(function(i) { return i.id === 'usdt'; })?.imageUrl,
+  card: PlaceHolderImages.find(function(i) { return i.id === 'visa-mastercard'; })?.imageUrl,
+  telecel: PlaceHolderImages.find(function(i) { return i.id === 'telecel'; })?.imageUrl,
+  tigo: PlaceHolderImages.find(function(i) { return i.id === 'tigo'; })?.imageUrl,
 };
 
 const depositMethods = [
@@ -108,14 +109,14 @@ type Mode = "deposit" | "withdraw" | null;
 function useCountdown(active: boolean) {
   const [seconds, setSeconds] = useState(COUNTDOWN_SECONDS);
   const ref = useRef<ReturnType<typeof setInterval> | null>(null);
-  useEffect(() => {
+  useEffect(function() {
     if (active) {
       setSeconds(COUNTDOWN_SECONDS);
-      ref.current = setInterval(() => setSeconds((s) => (s > 0 ? s - 1 : 0)), 1000);
+      ref.current = setInterval(function() { return setSeconds(function(s) { return (s > 0 ? s - 1 : 0); }); }, 1000);
     } else {
       if (ref.current) clearInterval(ref.current);
     }
-    return () => { if (ref.current) clearInterval(ref.current); };
+    return function() { if (ref.current) clearInterval(ref.current); };
   }, [active]);
   const mins = String(Math.floor(seconds / 60)).padStart(2, "0");
   const secs = String(seconds % 60).padStart(2, "0");
@@ -126,14 +127,14 @@ function PinBoxes({ value, onChange, testId }: { value: string; onChange: (v: st
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const digits = value.split("").concat(Array(6).fill("")).slice(0, 6);
 
-  const handleChange = (i: number, v: string) => {
+  const handleChange = function(i: number, v: string) {
     const ch = v.replace(/\D/g, "").slice(-1);
     const d = [...digits]; d[i] = ch;
     onChange(d.join("").replace(/\s/g, ""));
     if (ch && i < 5) inputRefs.current[i + 1]?.focus();
   };
 
-  const handleKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = function(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Backspace") {
       if (digits[i]) {
         const d = [...digits]; d[i] = ""; onChange(d.join("").replace(/\s/g, ""));
@@ -150,17 +151,18 @@ function PinBoxes({ value, onChange, testId }: { value: string; onChange: (v: st
 
   return (
     <div className="flex gap-2 justify-center">
-      {digits.map((digit, i) => (
+      {digits.map(function(digit, i) {
+        return (
         <input key={i}
-          ref={(el) => { inputRefs.current[i] = el; }}
+          ref={function(el) { inputRefs.current[i] = el; }}
           type="password" inputMode="numeric" maxLength={1}
-          value={digit} onChange={(e) => handleChange(i, e.target.value)}
-          onKeyDown={(e) => handleKeyDown(i, e)}
-          onFocus={(e) => e.target.select()}
+          value={digit} onChange={function(e) { return handleChange(i, e.target.value); }}
+          onKeyDown={function(e) { return handleKeyDown(i, e); }}
+          onFocus={function(e) { return e.target.select(); }}
           data-testid={`${testId}-${i}`}
           className={`w-11 h-12 text-center text-xl font-bold rounded-xl border-2 bg-white shadow-sm transition-colors focus:outline-none ${digit ? "border-amber-400 text-amber-600" : "border-gray-200 text-gray-400"} focus:border-amber-500 focus:ring-2 focus:ring-amber-200`}
         />
-      ))}
+      )})}
     </div>
   );
 }
@@ -204,7 +206,7 @@ export default function BankPage() {
 
   const { display: countdown, expired } = useCountdown(mode === "deposit");
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async function() {
     setLoading(true);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -261,14 +263,15 @@ export default function BankPage() {
     setLoading(false);
   }, [router, supabase, toast]);
 
-  useEffect(() => {
+  useEffect(function() {
     fetchData();
   }, [fetchData]);
 
-  const copy = (text: string, label: string) =>
-    navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!`, description: text }));
+  const copy = function(text: string, label: string) {
+    return navigator.clipboard.writeText(text).then(function() { return toast({ title: `${label} copied!`, description: text }); });
+  }
 
-  const openMode = (m: Mode) => {
+  const openMode = function(m: Mode) {
     setMode(m); setAmount("");
     setDepositMethod(null);
     if (profile) setDepositCountry(profile.country || "");
@@ -280,14 +283,14 @@ export default function BankPage() {
     setDepositCard({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
   };
 
-  const handleDepositSubmit = async () => {
+  const handleDepositSubmit = async function() {
     if (!user) return;
     if (!depositMethod) { toast({ title: "Select a payment method", variant: "destructive" }); return; }
     if (!depositCountry) { toast({ title: "Select your country", variant: "destructive" }); return; }
     if (!amount || parseFloat(amount) <= 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
     
     setIsSubmitting(true);
-    const methodLabel = depositMethods.find(m => m.id === depositMethod)?.label || depositMethod;
+    const methodLabel = depositMethods.find(function(m) { return m.id === depositMethod; })?.label || depositMethod;
     
     let submissionData: any = {
       amount: parseFloat(amount),
@@ -321,11 +324,11 @@ export default function BankPage() {
       setDepositTxId("");
       const newRecord = { ...submissionData, id: 'temp-' + Date.now(), status: 'pending', created_at: new Date().toISOString(), tx_id: submissionData.txId };
       // @ts-ignore
-      setDepositRecords(prev => [newRecord as DepositRecord, ...prev]);
+      setDepositRecords(function(prev) { return [newRecord as DepositRecord, ...prev]; });
     }
   };
   
-  const handleSetPin = async () => {
+  const handleSetPin = async function() {
       if (pinInput.length < 6 || pinConfirm.length < 6) { setPinError("Enter all 6 digits"); return; }
       if (pinInput !== pinConfirm) { setPinError("PINs do not match. Try again."); setPinConfirm(""); return; }
       if (!user) return;
@@ -343,11 +346,11 @@ export default function BankPage() {
         setPinInput(""); setPinConfirm(""); setPinError("");
         setMode("withdraw");
         toast({ title: "Withdrawal PIN set!", description: "Your PIN has been saved securely. You can now withdraw." });
-        setProfile(p => p ? {...p, has_withdrawal_pin: true} : null);
+        setProfile(function(p) { return p ? {...p, has_withdrawal_pin: true} : null; });
       }
   }
 
-  const handleWithdrawalSubmit = async () => {
+  const handleWithdrawalSubmit = async function() {
     if (!user || !profile) return;
     if (!amount || parseFloat(amount) <= 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
     if (!withdrawMethod) { toast({ title: "Select a payment method", variant: "destructive" }); return; }
@@ -375,7 +378,7 @@ export default function BankPage() {
     const details = withdrawMethod === "usdt" ? usdt : withdrawMethod === "momo" ? momo : withdrawMethod === "tigo" ? tigo : card;
     const result = await createWithdrawalRequest({
       amount: amt,
-      method: withdrawMethods.find(m => m.id === withdrawMethod)?.label || withdrawMethod,
+      method: withdrawMethods.find(function(m) { return m.id === withdrawMethod; })?.label || withdrawMethod,
       details: details,
     });
     setIsSubmitting(false);
@@ -385,7 +388,7 @@ export default function BankPage() {
     } else {
       setWithdrawSuccess(true);
       setLastTxId(result.txId || '');
-      setProfile(p => p ? { ...p, balance: p.balance - amt } : null);
+      setProfile(function(p) { return p ? { ...p, balance: p.balance - amt } : null; });
     }
   };
 
@@ -410,16 +413,16 @@ export default function BankPage() {
       )
   }
 
-  const hasApprovedDeposit = (depositRecords || []).some((d) => d.status === "approved");
+  const hasApprovedDeposit = (depositRecords || []).some(function(d) { return d.status === "approved"; });
   const allTransactions = [...(depositRecords || []), ...(withdrawRecords || [])]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    .sort(function(a, b) { return new Date(b.created_at).getTime() - new Date(a.created_at).getTime(); });
 
   return (
     <div className="bg-[#f7f9f4]">
       {pinMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 relative">
-            <button onClick={() => { setPinMode(null); setPinInput(""); setPinConfirm(""); setPinError(""); }}
+            <button onClick={function() { setPinMode(null); setPinInput(""); setPinConfirm(""); setPinError(""); }}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors" data-testid="button-close-pin">
               <X className="w-5 h-5" />
             </button>
@@ -440,7 +443,8 @@ export default function BankPage() {
                     ["Funds Protection", "Prevents unauthorized withdrawals"],
                     ["Easy to Use", "Just 6 digits — simple and fast"],
                     ["One-Time Setup", "Set it once, use it forever"],
-                  ].map(([title, desc]) => (
+                  ].map(function([title, desc]) {
+                    return (
                     <div key={title} className="flex items-start gap-2">
                       <ShieldCheck className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                       <div>
@@ -448,9 +452,9 @@ export default function BankPage() {
                         <p className="text-xs text-gray-500">{desc}</p>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
-                <Button onClick={() => { setPinMode("setup"); setPinInput(""); setPinConfirm(""); setPinError(""); }}
+                <Button onClick={function() { setPinMode("setup"); setPinInput(""); setPinConfirm(""); setPinError(""); }}
                   data-testid="button-setup-pin" className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-xl h-12 text-base shadow-md hover:shadow-lg transition-all">
                   <Lock className="w-4 h-4 mr-2" /> Set Up My Withdrawal PIN
                 </Button>
@@ -483,7 +487,7 @@ export default function BankPage() {
                   className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-xl h-12 text-base shadow-md disabled:opacity-50">
                   {isSettingPin ? "Saving…" : "Create PIN & Continue"}
                 </Button>
-                <button onClick={() => setPinMode("security")} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">← Back</button>
+                <button onClick={function() { return setPinMode("security"); }} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">← Back</button>
               </div>
             )}
 
@@ -539,7 +543,7 @@ export default function BankPage() {
           </div>
         </div>
 
-        {(() => {
+        {function() {
           const today = new Date().getDay();
           const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
           return (
@@ -556,7 +560,8 @@ export default function BankPage() {
                     Withdrawals are processed <strong>Monday to Saturday</strong> within 1–24 hours. On <strong>Sundays</strong>, the platform is active but withdrawal accounts are closed — any request submitted on Sunday will be processed the following <strong>Monday</strong>.
                   </p>
                   <div className="flex gap-1.5 mt-3 flex-wrap">
-                    {days.map((d, i) => (
+                    {days.map(function(d, i) {
+                      return (
                       <span key={d} className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                         i === 0
                           ? "bg-red-500 text-white"
@@ -566,18 +571,18 @@ export default function BankPage() {
                       }`}>
                         {d}{i === 0 ? " ✕" : ""}
                       </span>
-                    ))}
+                    )})}
                   </div>
                 </div>
               </div>
             </div>
           );
-        })()}
+        }()}
 
         <div className="space-y-3">
             <div 
               data-testid="button-deposit" 
-              onClick={() => openMode('deposit')}
+              onClick={function() { return openMode('deposit'); }}
               className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-amber-300 hover:bg-amber-50/50 transition-all"
             >
               <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
@@ -593,7 +598,7 @@ export default function BankPage() {
 
             <div 
               data-testid="button-withdraw"
-              onClick={() => {
+              onClick={function() {
                 if (!hasApprovedDeposit) {
                   toast({ title: "Deposit required", description: "You must have at least one approved deposit before you can withdraw.", variant: "destructive" });
                   return;
@@ -631,9 +636,10 @@ export default function BankPage() {
             </div>
             <p className="text-gray-500 text-xs">Choose how you want to make your deposit</p>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              {depositMethods.map(({ id, label, icon: Icon, img, desc, color }) => (
+              {depositMethods.map(function({ id, label, icon: Icon, img, desc, color }) {
+                return (
                 <button key={id} data-testid={`deposit-method-${id}`}
-                  onClick={() => setDepositMethod(id)}
+                  onClick={function() { return setDepositMethod(id); }}
                   className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border-2 border-gray-200 hover:border-green-400 hover:bg-green-50/40 transition-all duration-150">
                   <div className={`w-11 h-11 rounded-xl overflow-hidden shadow-md ${img ? "" : `bg-gradient-to-br ${color} flex items-center justify-center`}`}>
                     {img ? <img src={img} alt={label} className="w-full h-full object-cover" /> : <Icon className="w-5 h-5 text-white" />}
@@ -643,7 +649,7 @@ export default function BankPage() {
                     <p className="text-gray-400 text-[10px] leading-tight hidden sm:block">{desc}</p>
                   </div>
                 </button>
-              ))}
+              )})}
             </div>
           </div>
         )}
@@ -652,13 +658,13 @@ export default function BankPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-4 sm:p-6 my-4 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <button onClick={() => setDepositMethod(null)} data-testid="button-back-deposit-method"
+                <button onClick={function() { return setDepositMethod(null); }} data-testid="button-back-deposit-method"
                   className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                   <ChevronLeft className="w-4 h-4 text-gray-500" />
                 </button>
                 <div>
                   <h3 className="font-bold text-gray-900 text-sm sm:text-base">
-                    {depositMethods.find(m => m.id === depositMethod)?.label} Deposit
+                    {depositMethods.find(function(m) { return m.id === depositMethod; })?.label} Deposit
                   </h3>
                   <p className="text-gray-400 text-xs">Fill in your details below</p>
                 </div>
@@ -685,9 +691,10 @@ export default function BankPage() {
                   <SelectValue placeholder="Select your country" />
                 </SelectTrigger>
                 <SelectContent>
-                  {COUNTRIES_DATA.map((c) => (
+                  {COUNTRIES_DATA.map(function(c) {
+                    return (
                     <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
+                  )})}
                 </SelectContent>
               </Select>
             </div>
@@ -705,7 +712,7 @@ export default function BankPage() {
                     <p className="text-xs text-gray-400">Account Name</p>
                     <p className="font-bold text-gray-900 text-sm sm:text-base">{DEPOSIT_NAME}</p>
                   </div>
-                  <button data-testid="copy-name" onClick={() => copy(DEPOSIT_NAME, "Name")}
+                  <button data-testid="copy-name" onClick={function() { return copy(DEPOSIT_NAME, "Name"); }}
                     className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
                     <Copy className="w-4 h-4 text-amber-600" />
                   </button>
@@ -715,7 +722,7 @@ export default function BankPage() {
                     <p className="text-xs text-gray-400">MTN MOMO Number</p>
                     <p className="font-bold text-gray-900 text-lg tracking-widest">{DEPOSIT_PHONE}</p>
                   </div>
-                  <button data-testid="copy-phone" onClick={() => copy(DEPOSIT_PHONE, "Phone number")}
+                  <button data-testid="copy-phone" onClick={function() { return copy(DEPOSIT_PHONE, "Phone number"); }}
                     className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
                     <Copy className="w-4 h-4 text-amber-600" />
                   </button>
@@ -741,7 +748,7 @@ export default function BankPage() {
                     <p className="text-xs text-gray-400">Account Name</p>
                     <p className="font-bold text-gray-900 text-sm sm:text-base">{DEPOSIT_NAME}</p>
                   </div>
-                  <button data-testid="copy-telecel-name" onClick={() => copy(DEPOSIT_NAME, "Name")}
+                  <button data-testid="copy-telecel-name" onClick={function() { return copy(DEPOSIT_NAME, "Name"); }}
                     className="p-2 rounded-lg bg-red-50 hover:bg-red-100 transition-colors border border-red-200">
                     <Copy className="w-4 h-4 text-red-600" />
                   </button>
@@ -751,7 +758,7 @@ export default function BankPage() {
                     <p className="text-xs text-gray-400">Telecel Cash Number</p>
                     <p className="font-bold text-gray-900 text-lg tracking-widest">{DEPOSIT_PHONE}</p>
                   </div>
-                  <button data-testid="copy-telecel-phone" onClick={() => copy(DEPOSIT_PHONE, "Phone number")}
+                  <button data-testid="copy-telecel-phone" onClick={function() { return copy(DEPOSIT_PHONE, "Phone number"); }}
                     className="p-2 rounded-lg bg-red-50 hover:bg-red-100 transition-colors border border-red-200">
                     <Copy className="w-4 h-4 text-red-600" />
                   </button>
@@ -776,16 +783,17 @@ export default function BankPage() {
                   <p className="text-xs text-gray-400 mb-1">Wallet Address (TRC20 / ERC20 / BEP20)</p>
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-mono text-xs text-gray-900 font-bold break-all">TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE</p>
-                    <button data-testid="copy-usdt-address" onClick={() => copy("TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE", "Wallet address")}
+                    <button data-testid="copy-usdt-address" onClick={function() { return copy("TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE", "Wallet address"); }}
                       className="p-2 rounded-lg bg-teal-50 hover:bg-teal-100 transition-colors border border-teal-200 flex-shrink-0">
                       <Copy className="w-4 h-4 text-teal-600" />
                     </button>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  {["TRC20", "ERC20", "BEP20"].map((net) => (
+                  {["TRC20", "ERC20", "BEP20"].map(function(net) {
+                    return (
                     <span key={net} className="px-2.5 py-1 text-xs font-bold rounded-lg bg-teal-100 text-teal-700 border border-teal-200">{net}</span>
-                  ))}
+                  )})}
                 </div>
                 <div className="bg-teal-50 border border-teal-200 rounded-lg px-3 py-2.5">
                   <p className="text-teal-800 text-xs leading-relaxed font-medium">
@@ -842,7 +850,7 @@ export default function BankPage() {
                       inputMode="numeric"
                       maxLength={19}
                       placeholder="0000 0000 0000 0000"
-                      onChange={(e) => {
+                      onChange={function(e) {
                         const digits = e.target.value.replace(/\D/g, "").slice(0, 16);
                         const formatted = digits.replace(/(.{4})/g, "$1 ").trim();
                         setDepositCard({ ...depositCard, number: formatted });
@@ -857,7 +865,7 @@ export default function BankPage() {
                       data-testid="input-deposit-card-holder"
                       value={depositCard.holder}
                       placeholder="Name as on card"
-                      onChange={(e) => setDepositCard({ ...depositCard, holder: e.target.value.toUpperCase() })}
+                      onChange={function(e) { return setDepositCard({ ...depositCard, holder: e.target.value.toUpperCase() }); }}
                       className="h-11 border-gray-200 focus:border-blue-400 text-sm font-semibold uppercase"
                     />
                   </div>
@@ -871,7 +879,7 @@ export default function BankPage() {
                         inputMode="numeric"
                         placeholder="MM / YY"
                         maxLength={5}
-                        onChange={(e) => {
+                        onChange={function(e) {
                           const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
                           const formatted = digits.length > 2 ? `${digits.slice(0,2)}/${digits.slice(2)}` : digits;
                           setDepositCard({ ...depositCard, expiry: formatted });
@@ -882,7 +890,7 @@ export default function BankPage() {
                     <div>
                       <label className="text-xs font-medium text-gray-600 mb-1.5 block flex items-center gap-1">
                         CVV / CVC
-                        <button type="button" onClick={() => setDepositCard(c => ({ ...c, cvvVisible: !c.cvvVisible }))}
+                        <button type="button" onClick={function() { return setDepositCard(function(c) { return ({ ...c, cvvVisible: !c.cvvVisible }); }); }}
                           className="text-gray-400 hover:text-gray-600 transition-colors">
                           <Shield className="w-3 h-3" />
                         </button>
@@ -894,7 +902,7 @@ export default function BankPage() {
                         inputMode="numeric"
                         placeholder="•••"
                         maxLength={4}
-                        onChange={(e) => setDepositCard({ ...depositCard, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                        onChange={function(e) { return setDepositCard({ ...depositCard, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) }); }}
                         className="h-11 border-gray-200 focus:border-blue-400 font-mono text-sm text-center tracking-widest"
                       />
                     </div>
@@ -913,17 +921,18 @@ export default function BankPage() {
                 <label className="text-xs font-medium text-gray-600 mb-1.5 block">Amount Sent ($)</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
-                  <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
+                  <Input type="number" value={amount} onChange={function(e) { return setAmount(e.target.value); }}
                     data-testid="input-amount" placeholder="0.00" min="0" step="0.01"
                     className="pl-7 h-11 border-gray-200 focus:border-green-400 text-lg font-semibold" />
                 </div>
                 <div className="flex gap-2 mt-2 flex-wrap">
-                  {["50", "100", "250", "500"].map((q) => (
-                    <button key={q} onClick={() => setAmount(q)} data-testid={`quick-amount-${q}`}
+                  {["50", "100", "250", "500"].map(function(q) {
+                    return (
+                    <button key={q} onClick={function() { return setAmount(q); }} data-testid={`quick-amount-${q}`}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 transition-colors">
                       ${q}
                     </button>
-                  ))}
+                  )})}
                 </div>
               </div>
               {depositMethod !== "card" && (
@@ -933,7 +942,7 @@ export default function BankPage() {
                   </label>
                   <div className="relative">
                     <Hash className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <Input value={depositTxId} onChange={(e) => setDepositTxId(e.target.value)}
+                    <Input value={depositTxId} onChange={function(e) { return setDepositTxId(e.target.value); }}
                       data-testid="input-deposit-txid"
                       placeholder={depositMethod === "usdt" ? "e.g. 0x1234abcd..." : "e.g. TXN123456"}
                       className="pl-9 h-11 border-gray-200 focus:border-green-400 font-mono text-sm" />
@@ -956,7 +965,7 @@ export default function BankPage() {
             </div>
             <h3 className="text-lg font-bold text-gray-900">Deposit Submitted!</h3>
             <p className="text-gray-500 text-sm">Your deposit of <span className="font-semibold text-green-600">${amount}</span> has been submitted. Your balance will be credited after confirmation.</p>
-            <Button onClick={() => openMode(null)} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl h-10 px-6">Done</Button>
+            <Button onClick={function() { return openMode(null); }} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl h-10 px-6">Done</Button>
           </div>
         )}
 
@@ -975,8 +984,9 @@ export default function BankPage() {
             <div>
               <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-3">Select Payment Method</h3>
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {withdrawMethods.map(({ id, label, icon: Icon, img, desc, color }) => (
-                  <button key={id} data-testid={`method-${id}`} onClick={() => setWithdrawMethod(id)}
+                {withdrawMethods.map(function({ id, label, icon: Icon, img, desc, color }) {
+                  return (
+                  <button key={id} data-testid={`method-${id}`} onClick={function() { return setWithdrawMethod(id); }}
                     className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-150 ${withdrawMethod === id ? "border-amber-500 bg-amber-50 shadow-md" : "border-gray-200 hover:border-amber-200 hover:bg-amber-50/40"}`}>
                     <div className={`w-9 h-9 rounded-xl overflow-hidden shadow-sm ${img ? "" : `bg-gradient-to-br ${color} flex items-center justify-center`}`}>
                       {img ? <img src={img} alt={label} className="w-full h-full object-cover" /> : <Icon className="w-4 h-4 text-white" />}
@@ -984,7 +994,7 @@ export default function BankPage() {
                     <p className="font-bold text-gray-900 text-xs">{label}</p>
                     <p className="text-gray-400 text-[10px] text-center leading-tight hidden sm:block">{desc}</p>
                   </button>
-                ))}
+                )})}
               </div>
             </div>
 
@@ -994,7 +1004,7 @@ export default function BankPage() {
                 <label className="text-xs font-medium text-gray-600 mb-1.5 block">Amount to Withdraw ($)</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
-                  <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
+                  <Input type="number" value={amount} onChange={function(e) { return setAmount(e.target.value); }}
                     data-testid="input-withdraw-amount" placeholder="0.00" min="0" step="0.01"
                     className="pl-7 h-11 border-gray-200 focus:border-amber-400 text-lg font-semibold" />
                 </div>
@@ -1017,7 +1027,7 @@ export default function BankPage() {
             <h3 className="text-lg font-bold text-gray-900">Withdrawal Submitted!</h3>
             <p className="text-gray-500 text-sm">Your withdrawal request for <span className="font-semibold text-green-600">${amount}</span> has been submitted for processing.</p>
             {lastTxId && <p className="text-xs text-gray-400">TXN ID: {lastTxId}</p>}
-            <Button onClick={() => openMode(null)} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl h-10 px-6">Done</Button>
+            <Button onClick={function() { return openMode(null); }} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl h-10 px-6">Done</Button>
           </div>
         )}
 
@@ -1026,23 +1036,24 @@ export default function BankPage() {
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-gray-900 text-sm sm:text-base">Transaction History</h3>
             <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
-              {(["all", "deposit", "withdraw"] as const).map(tab => (
-                <button key={tab} onClick={() => setHistoryTab(tab)}
+              {(["all", "deposit", "withdraw"] as const).map(function(tab) {
+                return (
+                <button key={tab} onClick={function() { return setHistoryTab(tab); }}
                   className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${historyTab === tab ? "bg-white text-amber-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </button>
-              ))}
+              )})}
             </div>
           </div>
           <div className="space-y-2">
             {allTransactions.length > 0 ? (
               allTransactions
-                .filter(tx => {
+                .filter(function(tx) {
                   if (historyTab === 'all') return true;
                   const isDeposit = 'tx_id' in tx;
                   return historyTab === 'deposit' ? isDeposit : !isDeposit;
                 })
-                .map(tx => {
+                .map(function(tx) {
                   const isDeposit = 'tx_id' in tx;
                   const statusColor = tx.status === 'approved' ? 'bg-green-100 text-green-700' : tx.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700';
                   const Icon = isDeposit ? ArrowDownToLine : ArrowUpFromLine;

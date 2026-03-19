@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -76,7 +77,8 @@ function RedCountdown({ targetMs }: { targetMs: number }) {
     const s = Math.floor((remaining % 60000) / 1000);
     return (
       <div className="flex items-center justify-center gap-0.5">
-        {[h, m, s].map(function(val, i) { return (
+        {[h, m, s].map(function(val, i) {
+          return (
           <span key={i}>
             <span className="inline-block bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded min-w-[1.75rem] text-center">{String(val).padStart(2,"0")}</span>
             {i < 2 && <span className="text-red-500 font-black text-sm mx-0.5">:</span>}
@@ -117,7 +119,7 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
 
   const [candles, setCandles] = useState<PCandle[]>(function() { return pSeed(N); });
 
-  const pOpen = (closePrice: number): PCandle => {
+  const pOpen = function(closePrice: number): PCandle {
     return { o: closePrice, c: closePrice, h: closePrice, l: closePrice, v: 2 + Math.random() * 6 };
   };
 
@@ -156,15 +158,15 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
   const maxP   = Math.max(...candles.map(function(c) { return c.h; })) + 2;
   const pRange = maxP - minP || 1;
   const maxVol = Math.max(...candles.map(function(c) { return c.v; })) || 1;
-  const toX    = (i: number) => PAD_L + (i + 0.5) * (chartW / N);
-  const toPY   = (p: number) => mainTop + mainH * (1 - (p - minP) / pRange);
-  const toVY   = (v: number) => volBot  - volH  * (v / maxVol);
+  const toX    = function(i: number) { return PAD_L + (i + 0.5) * (chartW / N); };
+  const toPY   = function(p: number) { return mainTop + mainH * (1 - (p - minP) / pRange); };
+  const toVY   = function(v: number) { return volBot  - volH  * (v / maxVol); };
   const cw     = (chartW / N) * 0.62;
 
   const last   = candles[N - 1];
   const isUp   = last.c >= last.o;
   const priceColor = isActive ? (isUp ? "#22c55e" : "#f87171") : "#374151";
-  const toPriceLabel = (p: number) => `$${(dailyIncome * (0.88 + (p / 96) * 0.26)).toFixed(3)}`;
+  const toPriceLabel = function(p: number) { return `$${(dailyIncome * (0.88 + (p / 96) * 0.26)).toFixed(3)}`; };
 
   return (
     <div className="relative w-full rounded-xl overflow-hidden border" style={{
@@ -558,7 +560,7 @@ export default function Power() {
 
   const supabase = createClient();
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async function() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       router.push('/login');
@@ -602,12 +604,12 @@ export default function Power() {
     setIsLoading(false);
   }, [supabase, router, toast]);
 
-  useEffect(() => {
+  useEffect(function() {
     fetchData();
   }, [fetchData]);
 
 
-  const handleClaim = async (rentedGeneratorId: string) => {
+  const handleClaim = async function(rentedGeneratorId: string) {
     setIsClaimingId(rentedGeneratorId);
     const result = await collectEarnings(rentedGeneratorId);
     if (result.success && result.earned) {
@@ -621,7 +623,7 @@ export default function Power() {
   };
   
   if (isLoading) {
-    return <div className="pt-12 p-4 pb-20 max-w-6xl mx-auto"><Skeleton className="h-96 rounded-2xl" /></div>;
+    return <div className="pt-12 p-4 pb-20 max-w-6xl mx-auto"><Skeleton className="h-96 rounded-2xl" /></div>
   }
   if (!user) {
     return null;
@@ -645,7 +647,8 @@ export default function Power() {
 
         <div className="relative overflow-hidden bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 rounded-2xl sm:rounded-3xl p-5 sm:p-8 my-4 sm:my-6 text-white shadow-2xl">
           <div className="absolute inset-0 opacity-20">
-            {[...Array(4)].map(function(_, i) { return (
+            {[...Array(4)].map(function(_, i) {
+              return (
               <div key={i} className="absolute rounded-full border-2 border-white"
                 style={{ width: `${(i + 1) * 100}px`, height: `${(i + 1) * 100}px`, top: "50%", right: "-30px", transform: "translateY(-50%)" }} />
             ); })}
@@ -679,7 +682,8 @@ export default function Power() {
               <Badge className="bg-green-100 text-green-700 border-0">{activeGenerators.length}</Badge>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {activeGenerators.map(function(ug) { return (
+              {activeGenerators.map(function(ug) {
+                return (
                 <GeneratorCard key={ug.id} ug={ug}
                   onClaim={handleClaim}
                   isClaiming={isClaimingId === ug.id}
@@ -712,7 +716,8 @@ export default function Power() {
               <Badge className="bg-gray-100 text-gray-500 border-0 text-xs">{expiredGenerators.length}</Badge>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {expiredGenerators.map(function(ug) { return (
+              {expiredGenerators.map(function(ug) {
+                return (
                 <GeneratorCard key={ug.id} ug={ug}
                   onClaim={handleClaim}
                   isClaiming={isClaimingId === ug.id}
@@ -726,7 +731,8 @@ export default function Power() {
         <p className="text-gray-500 text-center text-sm mb-5 sm:mb-8">Multiply your returns even further</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {powerPlans.map(function(plan) { return (
+          {powerPlans.map(function(plan) {
+            return (
             <div key={plan.name}
               data-testid={`card-power-${plan.name.toLowerCase().replace(" ", "-")}`}
               className={`relative bg-white rounded-2xl border-2 ${plan.popular ? "border-amber-400 shadow-xl shadow-amber-100" : "border-gray-200 shadow-sm"} p-5 sm:p-6 hover:shadow-lg transition-all duration-300`}>
@@ -745,7 +751,8 @@ export default function Power() {
               </div>
               <p className="text-amber-600 font-semibold text-base sm:text-lg mb-4 sm:mb-5">{plan.price}</p>
               <div className="space-y-2 mb-5">
-                {plan.features.map(function(f) { return (
+                {plan.features.map(function(f) {
+                  return (
                   <div key={f} className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                     <span className="text-xs sm:text-sm text-gray-600">{f}</span>
