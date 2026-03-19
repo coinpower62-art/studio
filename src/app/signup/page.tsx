@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -42,10 +43,10 @@ const signupSchema = z.object({
   confirmPassword: z.string().min(1, "Please confirm your password"),
   referralCode: z.string().optional(),
   language: z.string(),
-  agreedToTerms: z.boolean().refine(val => val === true, {
+  agreedToTerms: z.boolean().refine(function(val) { return val === true; }, {
     message: "Please scroll through and agree to the Terms & Privacy Policy to continue.",
   }),
-}).refine((d) => d.password === d.confirmPassword, {
+}).refine(function(d) { return d.password === d.confirmPassword; }, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
 });
@@ -63,12 +64,13 @@ function TermsContent() {
           { icon: Users, text: "50,000+ members earning worldwide" },
           { icon: Banknote, text: "Fast withdrawals, 1–24 hour processing" },
           { icon: BadgeCheck, text: "Licensed & regulated — EU MiCA compliant" },
-        ].map(({ icon: Icon, text }) => (
+        ].map(function({ icon: Icon, text }) {
+          return (
           <div key={text} className="flex items-start gap-1.5 bg-green-50 rounded-lg p-2 border border-green-100">
             <Icon className="w-3 h-3 text-green-600 flex-shrink-0 mt-0.5" />
             <span className="text-green-800 font-medium" style={{ fontSize: "10px" }}>{text}</span>
           </div>
-        ))}
+        )})}
       </div>
 
       {/* PRIVACY POLICY */}
@@ -218,16 +220,16 @@ export default function SignUp() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleScroll = useCallback(() => {
+  const handleScroll = useCallback(function() {
     const el = scrollRef.current;
     if (!el) return;
     const atBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 24;
     if (atBottom) setHasReadTerms(true);
   }, []);
 
-  const openTerms = () => {
+  const openTerms = function() {
     setTermsOpen(true);
-    setTimeout(() => {
+    setTimeout(function() {
       scrollRef.current?.addEventListener("scroll", handleScroll, { passive: true });
     }, 100);
   };
@@ -238,7 +240,7 @@ export default function SignUp() {
     mode: "onTouched",
   });
   
-  useEffect(() => {
+  useEffect(function() {
     if (refFromUrl) {
       form.setValue('referralCode', refFromUrl);
     }
@@ -271,15 +273,16 @@ export default function SignUp() {
   }
 
   const { errors } = form.formState;
-  const fieldClass = (hasError: boolean) =>
-    `h-11 transition-colors text-sm ${hasError
+  const fieldClass = function(hasError: boolean) {
+    return `h-11 transition-colors text-sm ${hasError
       ? "border-red-400 focus:border-red-500 bg-red-50 focus-visible:ring-red-200"
       : "border-gray-200 focus:border-amber-400 focus-visible:ring-amber-200"}`;
+  }
 
-  const logoImage = PlaceHolderImages.find(p => p.id === 'signup-logo');
+  const logoImage = PlaceHolderImages.find(function(p) { return p.id === 'signup-logo'; });
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12" style={{ background: "linear-gradient(135deg, #0a2e1a 0%, #0f4c2a 45%, #7a5500 80%, #c9891a 100%)" }}>
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8 sm:py-12">
       <div className="w-full max-w-lg">
         <div className="text-center mb-6">
            {logoImage ? (
@@ -294,12 +297,11 @@ export default function SignUp() {
             ) : (
               <div className="mx-auto mb-3 h-16 w-16 rounded-2xl bg-primary" />
             )}
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">Coin<span className="text-amber-400">Power</span></h1>
-          <p className="text-amber-200/80 mt-1 text-sm font-medium">Digital Energy Mining Platform</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Coin<span className="text-primary">Power</span></h1>
+          <p className="text-muted-foreground mt-1 text-sm font-medium">Digital Energy Mining Platform</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden p-5 sm:p-8"
-          style={{ borderTop: "4px solid transparent", borderImage: "linear-gradient(90deg,#0f4c2a,#c9891a,#0f4c2a) 1" }}>
+        <div className="bg-card rounded-2xl shadow-2xl overflow-hidden p-5 sm:p-8">
 
           {/* ── Language Picker ── */}
           <div className="mb-5">
@@ -309,9 +311,9 @@ export default function SignUp() {
             </label>
             <Select
               value={selectedLang}
-              onValueChange={(val) => {
+              onValueChange={function(val) {
                 setSelectedLang(val as LangCode);
-                form.setValue("language", LANGUAGES.find(l => l.code === val)?.name ?? "English (US)");
+                form.setValue("language", LANGUAGES.find(function(l) { return l.code === val; })?.name ?? "English (US)");
               }}
             >
               <SelectTrigger data-testid="language-picker" className="h-11 text-sm border-gray-200 focus:border-amber-400 focus:ring-amber-200">
@@ -319,21 +321,22 @@ export default function SignUp() {
                   <Globe className="w-4 h-4 text-amber-500 flex-shrink-0" />
                   <SelectValue placeholder={t.selectLang}>
                     <span className="flex items-center gap-2">
-                      <span className="text-lg leading-none">{LANGUAGES.find(l => l.code === selectedLang)?.flag}</span>
-                      <span>{LANGUAGES.find(l => l.code === selectedLang)?.name}</span>
+                      <span className="text-lg leading-none">{LANGUAGES.find(function(l) { return l.code === selectedLang; })?.flag}</span>
+                      <span>{LANGUAGES.find(function(l) { return l.code === selectedLang; })?.name}</span>
                     </span>
                   </SelectValue>
                 </div>
               </SelectTrigger>
               <SelectContent className="max-h-60">
-                {LANGUAGES.map((lang) => (
+                {LANGUAGES.map(function(lang) {
+                  return (
                   <SelectItem key={lang.code} value={lang.code} data-testid={`lang-${lang.code}`}>
                     <span className="flex items-center gap-2">
                       <span className="text-xl leading-none">{lang.flag}</span>
                       <span>{lang.name}</span>
                     </span>
                   </SelectItem>
-                ))}
+                )})}
               </SelectContent>
             </Select>
           </div>
@@ -361,47 +364,52 @@ export default function SignUp() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-3.5" noValidate>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <FormField control={form.control} name="fullName" render={({ field }) => (
+                <FormField control={form.control} name="fullName" render={function({ field }) {
+                  return (
                   <FormItem>
                     <FormControl>
                       <Input {...field} data-testid="input-fullname" placeholder={t.fullName} className={fieldClass(!!errors.fullName)} />
                     </FormControl>
                     <FormMessage className="text-red-600 text-xs font-medium" />
                   </FormItem>
-                )} />
-                <FormField control={form.control} name="username" render={({ field }) => (
+                )}} />
+                <FormField control={form.control} name="username" render={function({ field }) {
+                  return (
                   <FormItem>
                     <FormControl>
                       <Input {...field} data-testid="input-username" placeholder={t.username} className={fieldClass(!!errors.username)} />
                     </FormControl>
                     <FormMessage className="text-red-600 text-xs font-medium" />
                   </FormItem>
-                )} />
+                )}} />
               </div>
 
-              <FormField control={form.control} name="email" render={({ field }) => (
+              <FormField control={form.control} name="email" render={function({ field }) {
+                return (
                 <FormItem>
                   <FormControl>
                     <Input {...field} type="email" data-testid="input-email" placeholder={t.email} className={fieldClass(!!errors.email)} />
                   </FormControl>
                   <FormMessage className="text-red-600 text-xs font-medium" />
                 </FormItem>
-              )} />
+              )}} />
 
               {/* Phone number with country code */}
-              <FormField control={form.control} name="phone" render={({ field }) => (
+              <FormField control={form.control} name="phone" render={function({ field }) {
+                return (
                 <FormItem>
                   <FormControl>
                     <div className={`flex h-11 rounded-lg border overflow-hidden transition-colors ${errors.phone ? "border-red-400 bg-red-50" : "border-gray-200 focus-within:border-amber-400"}`}>
                       <Select value={selectedPhoneCode} onValueChange={setSelectedPhoneCode}>
                         <SelectTrigger data-testid="select-phone-code" className="w-[5.5rem] h-full rounded-none border-0 border-r border-gray-200 bg-gray-50 focus:ring-0 text-sm font-medium px-2 shrink-0">
                           <span className="flex items-center gap-1 truncate">
-                            <span>{PHONE_CODES.find(p => `${p.flag}${p.code}` === selectedPhoneCode)?.flag}</span>
+                            <span>{PHONE_CODES.find(function(p) { return `${p.flag}${p.code}` === selectedPhoneCode; })?.flag}</span>
                             <span className="text-xs">{selectedPhoneCode.replace(/[^+\d]/g, "")}</span>
                           </span>
                         </SelectTrigger>
                         <SelectContent className="max-h-60">
-                          {PHONE_CODES.map((p) => (
+                          {PHONE_CODES.map(function(p) {
+                            return (
                             <SelectItem key={`${p.flag}${p.code}`} value={`${p.flag}${p.code}`}>
                               <span className="flex items-center gap-1.5">
                                 <span>{p.flag}</span>
@@ -409,7 +417,7 @@ export default function SignUp() {
                                 <span className="text-gray-500 text-xs">{p.label}</span>
                               </span>
                             </SelectItem>
-                          ))}
+                          )})}
                         </SelectContent>
                       </Select>
                       <input
@@ -424,9 +432,10 @@ export default function SignUp() {
                   </FormControl>
                   <FormMessage className="text-red-600 text-xs font-medium" />
                 </FormItem>
-              )} />
+              )}} />
 
-              <FormField control={form.control} name="country" render={({ field }) => (
+              <FormField control={form.control} name="country" render={function({ field }) {
+                return (
                 <FormItem>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
@@ -435,33 +444,36 @@ export default function SignUp() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="max-h-56">
-                      {countries.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      {countries.map(function(c) { return <SelectItem key={c} value={c}>{c}</SelectItem>; })}
                     </SelectContent>
                   </Select>
                   <FormMessage className="text-red-600 text-xs font-medium" />
                 </FormItem>
-              )} />
+              )}} />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <FormField control={form.control} name="password" render={({ field }) => (
+                <FormField control={form.control} name="password" render={function({ field }) {
+                  return (
                   <FormItem>
                     <FormControl>
                       <Input {...field} type="password" data-testid="input-password" placeholder={t.password} className={fieldClass(!!errors.password)} />
                     </FormControl>
                     <FormMessage className="text-red-600 text-xs font-medium" />
                   </FormItem>
-                )} />
-                <FormField control={form.control} name="confirmPassword" render={({ field }) => (
+                )}} />
+                <FormField control={form.control} name="confirmPassword" render={function({ field }) {
+                  return (
                   <FormItem>
                     <FormControl>
                       <Input {...field} type="password" data-testid="input-confirm-password" placeholder={t.confirmPassword} className={fieldClass(!!errors.confirmPassword)} />
                     </FormControl>
                     <FormMessage className="text-red-600 text-xs font-medium" />
                   </FormItem>
-                )} />
+                )}} />
               </div>
 
-              <FormField control={form.control} name="referralCode" render={({ field }) => (
+              <FormField control={form.control} name="referralCode" render={function({ field }) {
+                return (
                 <FormItem>
                   <FormControl>
                     <div className="relative">
@@ -471,13 +483,13 @@ export default function SignUp() {
                         data-testid="input-referral-code"
                         placeholder="Paste referral code here (e.g. CP-ABCD1234)"
                         autoComplete="off"
-                        onKeyDown={(e) => {
+                        onKeyDown={function(e) {
                           const allowed = ["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"];
                           if (allowed.includes(e.key)) return;
                           if ((e.ctrlKey || e.metaKey) && ["v","a","c","x","z"].includes(e.key.toLowerCase())) return;
                           e.preventDefault();
                         }}
-                        onPaste={(e) => {
+                        onPaste={function(e) {
                           e.preventDefault();
                           const text = e.clipboardData.getData("text").trim().toUpperCase();
                           field.onChange(text);
@@ -487,7 +499,7 @@ export default function SignUp() {
                       {/* Paste button */}
                       <button
                         type="button"
-                        onClick={async () => {
+                        onClick={async function() {
                           try {
                             const text = await navigator.clipboard.readText();
                             field.onChange(text.trim().toUpperCase());
@@ -502,7 +514,7 @@ export default function SignUp() {
                   <p className="text-[10px] text-gray-400 mt-1 pl-1">Paste a referral code — typing is disabled to prevent guessing</p>
                   <FormMessage className="text-red-600 text-xs font-medium" />
                 </FormItem>
-              )} />
+              )}} />
 
               {/* ── Terms & Privacy Policy Box ── */}
               <div className="rounded-xl border-2 border-amber-200 overflow-hidden">
@@ -556,7 +568,8 @@ export default function SignUp() {
               </div>
 
               {/* ── Agreement Checkbox — locked until scrolled ── */}
-              <FormField control={form.control} name="agreedToTerms" render={({ field }) => (
+              <FormField control={form.control} name="agreedToTerms" render={function({ field }) {
+                return (
                 <FormItem>
                   <FormControl>
                     <div className={`rounded-xl border-2 p-3.5 transition-all duration-300 ${hasReadTerms ? "border-green-300 bg-green-50" : "border-gray-200 bg-gray-50 opacity-60"}`}>
@@ -570,7 +583,7 @@ export default function SignUp() {
                         <input
                           type="checkbox"
                           checked={field.value}
-                          onChange={e => { if (hasReadTerms) field.onChange(e.target.checked); }}
+                          onChange={function(e) { if (hasReadTerms) field.onChange(e.target.checked); }}
                           disabled={!hasReadTerms}
                           data-testid="checkbox-agree-terms"
                           className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-green-700 cursor-pointer flex-shrink-0 disabled:cursor-not-allowed"
@@ -581,7 +594,7 @@ export default function SignUp() {
                   </FormControl>
                   <FormMessage className="text-red-600 text-xs font-medium" />
                 </FormItem>
-              )} />
+              )}} />
 
               <Button
                 type="submit"
@@ -607,3 +620,4 @@ export default function SignUp() {
     </div>
   );
 }
+

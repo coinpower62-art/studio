@@ -52,16 +52,16 @@ export default function ActivityPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const heroImg = PlaceHolderImages.find(i => i.id === 'activity-hero')?.imageUrl;
-  const teamWorkImg = PlaceHolderImages.find(i => i.id === 'activity-teamwork')?.imageUrl;
-  const ceoImg = PlaceHolderImages.find(i => i.id === 'ceo-portrait')?.imageUrl;
+  const heroImg = PlaceHolderImages.find(function(i) { return i.id === 'activity-hero'; })?.imageUrl;
+  const teamWorkImg = PlaceHolderImages.find(function(i) { return i.id === 'activity-teamwork'; })?.imageUrl;
+  const ceoImg = PlaceHolderImages.find(function(i) { return i.id === 'ceo-portrait'; })?.imageUrl;
   
   // For now, admin posts are static.
   const adminPosts: any[] = [];
 
-  useEffect(() => {
+  useEffect(function() {
     const supabase = createClient();
-    const fetchData = async () => {
+    const fetchData = async function() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push('/login');
@@ -106,7 +106,7 @@ export default function ActivityPage() {
     );
   }
 
-  const initials = profile.full_name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "CP";
+  const initials = profile.full_name?.split(" ").map(function(n) { return n[0]; }).join("").toUpperCase().slice(0, 2) || "CP";
 
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
@@ -138,7 +138,8 @@ export default function ActivityPage() {
               </Badge>
             </div>
             <div className="divide-y divide-gray-50">
-              {adminPosts.map((p: any) => (
+              {adminPosts.map(function(p: any) {
+                return (
                 <div key={p.id} className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4 hover:bg-gray-50 transition-colors">
                   <Avatar className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0">
                     <AvatarFallback className={`bg-gradient-to-br ${p.color} text-white text-xs font-bold`}>
@@ -166,8 +167,9 @@ export default function ActivityPage() {
                     </p>
                   </div>
                 </div>
-              ))}
-              {liveActivities.map(({ user: u, country, action, amount, time, avatar, color }, i) => (
+              )})}
+              {liveActivities.map(function({ user: u, country, action, amount, time, avatar, color }, i) {
+                return (
                 <div key={i} className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4 hover:bg-gray-50 transition-colors">
                   <Avatar className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0">
                     <AvatarFallback className={`bg-gradient-to-br ${color} text-white text-xs font-bold`}>
@@ -195,7 +197,7 @@ export default function ActivityPage() {
                     </p>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           </div>
 
@@ -213,7 +215,8 @@ export default function ActivityPage() {
               </div>
               <div className="overflow-hidden" style={{ height: "220px" }}>
                 <div className="animate-scroll-up">
-                  {[...topInvestors, ...topInvestors].map(({ name, country, profit, rank, avatar, color }, i) => (
+                  {[...topInvestors, ...topInvestors].map(function({ name, country, profit, rank, avatar, color }, i) {
+                    return (
                     <div key={i} className="flex items-center gap-2 sm:gap-3 py-2 border-b border-gray-50 last:border-0">
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 ${
                         rank === 1 ? "bg-amber-500" : rank === 2 ? "bg-gray-400" : rank === 3 ? "bg-yellow-700" : "bg-gray-300"
@@ -231,7 +234,7 @@ export default function ActivityPage() {
                       </div>
                       <span className="text-xs font-bold text-green-600 flex-shrink-0">{profit}</span>
                     </div>
-                  ))}
+                  )})}
                 </div>
               </div>
             </div>
@@ -242,13 +245,14 @@ export default function ActivityPage() {
                 Announcements
               </h2>
               <div className="space-y-2 sm:space-y-3">
-                {announcements.map(({ title, date, tag, tagColor }) => (
+                {announcements.map(function({ title, date, tag, tagColor }) {
+                  return (
                   <div key={title} className="p-3 rounded-xl bg-gray-50 border border-gray-100">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${tagColor} mb-1 inline-block`}>{tag}</span>
                     <p className="text-xs sm:text-sm font-medium text-gray-800">{title}</p>
                     <p className="text-xs text-gray-400 mt-1">{date}</p>
                   </div>
-                ))}
+                )})}
               </div>
             </div>
           </div>
@@ -329,15 +333,17 @@ export default function ActivityPage() {
                 stampColor: "#4a1080",
                 headerColor: "from-[#4a1080] to-[#7b2fbe]",
               },
-            ].map(({ icon: Icon, body, bodyFull, ref, desc, issued, expires, badge, stampColor, headerColor }) => (
+            ].map(function({ icon: Icon, body, bodyFull, ref, desc, issued, expires, badge, stampColor, headerColor }) {
+              return (
               <div key={body} className="relative rounded-2xl overflow-hidden shadow-lg"
                 style={{ border: "3px solid #c9a84c", background: "linear-gradient(135deg,#fffdf4 0%,#fff8e1 50%,#fffdf4 100%)" }}>
                 <div className="absolute inset-[6px] rounded-xl pointer-events-none z-10"
                   style={{ border: "1.5px solid #c9a84c", opacity: 0.5 }} />
-                {["top-2 left-2", "top-2 right-2", "bottom-2 left-2", "bottom-2 right-2"].map((pos) => (
+                {["top-2 left-2", "top-2 right-2", "bottom-2 left-2", "bottom-2 right-2"].map(function(pos) {
+                  return (
                   <div key={pos} className={`absolute ${pos} w-4 h-4 z-20 pointer-events-none`}
                     style={{ background: "radial-gradient(circle,#c9a84c 30%,transparent 70%)", opacity: 0.7 }} />
-                ))}
+                )})}
                 <div className={`bg-gradient-to-r ${headerColor} px-4 py-3 flex items-center gap-3`}>
                   <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
                     <Icon className="w-4 h-4 text-white" />
@@ -408,7 +414,7 @@ export default function ActivityPage() {
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
 
           <div className="border-t border-gray-100 px-4 sm:px-6 py-3 bg-gray-50/50 flex items-center gap-2 rounded-b-2xl">
@@ -454,20 +460,22 @@ export default function ActivityPage() {
                     { label: "Countries", value: "21", icon: "🌍" },
                     { label: "Investors", value: "26K+", icon: "👥" },
                     { label: "Volume", value: "$2.4M/day", icon: "📈" },
-                  ].map(({ label, value, icon }) => (
+                  ].map(function({ label, value, icon }) {
+                    return (
                     <div key={label} className="bg-gray-50 rounded-xl p-2.5 text-center border border-gray-100">
                       <p className="text-base mb-0.5">{icon}</p>
                       <p className="font-black text-gray-900 text-sm">{value}</p>
                       <p className="text-xs text-gray-500">{label}</p>
                     </div>
-                  ))}
+                  )})}
                 </div>
               </div>
             </div>
             <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap items-center gap-2">
-              {["Fintech Innovator", "EU Certified Advisor", "Digital Asset Expert", "CONSOB Registered"].map((tag) => (
+              {["Fintech Innovator", "EU Certified Advisor", "Digital Asset Expert", "CONSOB Registered"].map(function(tag) {
+                return (
                 <span key={tag} className="px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold">{tag}</span>
-              ))}
+              )})}
             </div>
           </div>
         </div>
@@ -501,12 +509,13 @@ export default function ActivityPage() {
                   { label: "Total Earned", value: "$0.00", color: "text-green-600" },
                   { label: "Active Plans", value: "0", color: "text-blue-600" },
                   { label: "Member Since", value: "Mar 2026", color: "text-purple-600" },
-                ].map(({ label, value, color }) => (
+                ].map(function({ label, value, color }) {
+                  return (
                   <div key={label} className="bg-gray-50 rounded-xl p-2.5 sm:p-3">
                     <p className="text-xs text-gray-500">{label}</p>
                     <p className={`font-bold ${color} text-sm mt-0.5`}>{value}</p>
                   </div>
-                ))}
+                )})}
               </div>
             </div>
           </div>
@@ -524,12 +533,13 @@ export default function ActivityPage() {
                   <p className="text-xl sm:text-2xl font-black">26,160</p>
                   <p className="text-gray-200 text-xs sm:text-sm">Active Investors Worldwide</p>
                   <div className="flex gap-3 sm:gap-4 mt-2 sm:mt-3">
-                    {[{ flag: "🇮🇹", count: "2,340" }, { flag: "🇬🇭", count: "890" }, { flag: "🇺🇸", count: "5,120" }].map(({ flag, count }) => (
+                    {[{ flag: "🇮🇹", count: "2,340" }, { flag: "🇬🇭", count: "890" }, { flag: "🇺🇸", count: "5,120" }].map(function({ flag, count }) {
+                      return (
                       <div key={flag} className="text-center">
                         <p className="text-base sm:text-lg">{flag}</p>
                         <p className="text-xs text-gray-200">{count}</p>
                       </div>
-                    ))}
+                    )})}
                   </div>
                 </div>
               </div>
@@ -538,13 +548,14 @@ export default function ActivityPage() {
                   { label: "Countries", value: "21", icon: "🌍" },
                   { label: "Daily Volume", value: "$2.4M", icon: "📈" },
                   { label: "Satisfaction", value: "98%", icon: "⭐" },
-                ].map(({ label, value, icon }) => (
+                ].map(function({ label, value, icon }) {
+                  return (
                   <div key={label} className="bg-gray-50 rounded-xl p-2 sm:p-3 text-center">
                     <p className="text-lg sm:text-xl mb-0.5">{icon}</p>
                     <p className="font-bold text-gray-900 text-xs sm:text-sm">{value}</p>
                     <p className="text-xs text-gray-500">{label}</p>
                   </div>
-                ))}
+                )})}
               </div>
             </div>
           </div>

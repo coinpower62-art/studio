@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -47,28 +48,28 @@ function getGenPair(genId: string): string {
 }
 
 const generatorImages: Record<string, string | undefined> = {
-  pg1: PlaceHolderImages.find(i => i.id === 'gen-pg1')?.imageUrl,
-  pg2: PlaceHolderImages.find(i => i.id === 'gen-pg2')?.imageUrl,
-  pg3: PlaceHolderImages.find(i => i.id === 'gen-pg3')?.imageUrl,
-  pg4: PlaceHolderImages.find(i => i.id === 'gen-pg4')?.imageUrl,
+  pg1: PlaceHolderImages.find(function(i) { return i.id === 'gen-pg1'; })?.imageUrl,
+  pg2: PlaceHolderImages.find(function(i) { return i.id === 'gen-pg2'; })?.imageUrl,
+  pg3: PlaceHolderImages.find(function(i) { return i.id === 'gen-pg3'; })?.imageUrl,
+  pg4: PlaceHolderImages.find(function(i) { return i.id === 'gen-pg4'; })?.imageUrl,
 };
 
 function useOnVisible(fn: () => void) {
-  useEffect(() => {
-    const h = () => { if (!document.hidden) fn(); };
+  useEffect(function() {
+    const h = function() { if (!document.hidden) fn(); };
     document.addEventListener("visibilitychange", h);
-    return () => document.removeEventListener("visibilitychange", h);
+    return function() { return document.removeEventListener("visibilitychange", h); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }
 
 function Countdown({ expiresAt, label = "Expires" }: { expiresAt: number; label?: string }) {
   const [remaining, setRemaining] = useState(expiresAt - Date.now());
-  const sync = () => setRemaining(expiresAt - Date.now());
+  const sync = function() { return setRemaining(expiresAt - Date.now()); };
   useOnVisible(sync);
-  useEffect(() => {
+  useEffect(function() {
     const t = setInterval(sync, 1000);
-    return () => clearInterval(t);
+    return function() { return clearInterval(t); };
   }, [expiresAt]);
   if (remaining <= 0) return <span className="text-red-500 text-xs font-bold">EXPIRED</span>;
   const d = Math.floor(remaining / 86400000);
@@ -93,7 +94,7 @@ function Countdown({ expiresAt, label = "Expires" }: { expiresAt: number; label?
 type Candle = { o: number; h: number; l: number; c: number; v: number };
 function seedCandles(N: number): Candle[] {
   let p = 42 + Math.random() * 16;
-  return Array.from({ length: N }, () => {
+  return Array.from({ length: N }, function() {
     const move = (Math.random() - 0.48) * 8;
     const o = p, c = Math.max(6, Math.min(94, p + move));
     const h = Math.min(98, Math.max(o, c) + Math.random() * 3.5);
@@ -119,14 +120,14 @@ function LiveChart({ genId, dailyIncome, color, isRented }: {
 
   const TICK_MS = 280, TICKS_PER_CANDLE = 18;
   const tickRef = useRef(0);
-  const [candles, setCandles] = useState<Candle[]>(() => seedCandles(N));
+  const [candles, setCandles] = useState<Candle[]>(function() { return seedCandles(N); });
 
-  useEffect(() => {
+  useEffect(function() {
     if (!isRented) return;
     tickRef.current = 0;
-    const tick = () => {
+    const tick = function() {
       if (document.hidden) return;
-      setCandles(prev => {
+      setCandles(function(prev) {
         const arr = [...prev];
         const live = { ...arr[arr.length - 1] };
         const delta = (Math.random() - 0.49) * 2.4 + (Math.random() - 0.5) * 0.8;
@@ -145,27 +146,27 @@ function LiveChart({ genId, dailyIncome, color, isRented }: {
     };
     const id = setInterval(tick, TICK_MS);
     /* Immediately continue chart when user returns to tab */
-    const onVisible = () => { if (!document.hidden) tick(); };
+    const onVisible = function() { if (!document.hidden) tick(); };
     document.addEventListener("visibilitychange", onVisible);
-    return () => {
+    return function() {
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [isRented]);
 
-  const minP = Math.min(...candles.map(c => c.l)) - 2;
-  const maxP = Math.max(...candles.map(c => c.h)) + 2;
+  const minP = Math.min(...candles.map(function(c) { return c.l; })) - 2;
+  const maxP = Math.max(...candles.map(function(c) { return c.h; })) + 2;
   const pRange = maxP - minP || 1;
-  const maxVol = Math.max(...candles.map(c => c.v)) || 1;
-  const toX  = (i: number) => PAD_L + (i + 0.5) * (chartW / N);
-  const toPY = (p: number) => mainTop + mainH * (1 - (p - minP) / pRange);
-  const toVY = (v: number) => volBot  - volH  * (v / maxVol);
+  const maxVol = Math.max(...candles.map(function(c) { return c.v; })) || 1;
+  const toX  = function(i: number) { return PAD_L + (i + 0.5) * (chartW / N); };
+  const toPY = function(p: number) { return mainTop + mainH * (1 - (p - minP) / pRange); };
+  const toVY = function(v: number) { return volBot  - volH  * (v / maxVol); };
   const cw   = (chartW / N) * 0.62;
 
   const last  = candles[N - 1];
   const isUp  = last.c >= last.o;
   const priceColor = isRented ? (isUp ? "#22c55e" : "#f87171") : "#374151";
-  const toPriceLabel = (p: number) => `$${(dailyIncome * (0.88 + (p / 96) * 0.26)).toFixed(3)}`;
+  const toPriceLabel = function(p: number) { return `$${(dailyIncome * (0.88 + (p / 96) * 0.26)).toFixed(3)}`; };
 
   return (
     <div className="relative w-full rounded-xl overflow-hidden border" style={{
@@ -175,7 +176,7 @@ function LiveChart({ genId, dailyIncome, color, isRented }: {
     }}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none">
         {/* Horizontal grid lines */}
-        {[0.25, 0.5, 0.75].map((f, i) => {
+        {[0.25, 0.5, 0.75].map(function(f, i) {
           const y = mainTop + mainH * f;
           return (
             <g key={i}>
@@ -191,7 +192,7 @@ function LiveChart({ genId, dailyIncome, color, isRented }: {
         <line x1={PAD_L} y1={(mainBot + 2).toFixed(1)} x2={W - PAD_R} y2={(mainBot + 2).toFixed(1)}
           stroke="#fff" strokeOpacity="0.06" strokeWidth="0.5" />
         {/* Candles + volume bars */}
-        {candles.map((c, i) => {
+        {candles.map(function(c, i) {
           const cx   = toX(i);
           const bull = c.c >= c.o;
           const col  = isRented ? (bull ? "#22c55e" : "#f87171") : "#374151";
@@ -215,7 +216,7 @@ function LiveChart({ genId, dailyIncome, color, isRented }: {
           );
         })}
         {/* Current price dashed line + tag */}
-        {isRented && (() => {
+        {isRented && (function() {
           const py = toPY(last.c);
           return (
             <>
@@ -280,7 +281,7 @@ export default function Market() {
   const generators = allGenerators;
   const supabase = createClient();
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async function() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
           router.push('/login');
@@ -315,11 +316,11 @@ export default function Market() {
       setIsLoading(false);
   }, [router, supabase, toast]);
 
-  useEffect(() => {
+  useEffect(function() {
     fetchData();
   }, [fetchData]);
   
-  const handleRentClick = async (gen: Generator) => {
+  const handleRentClick = async function(gen: Generator) {
     setIsRenting(gen.id);
     try {
       if (!user) {
@@ -356,14 +357,14 @@ export default function Market() {
   if (isLoading || !user || !profile) return (
     <div className="pt-12 p-4 pb-20 max-w-7xl mx-auto">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-80 rounded-2xl" />)}
+        {[...Array(4)].map(function(_, i) { return <Skeleton key={i} className="h-80 rounded-2xl" />; })}
       </div>
     </div>
   );
 
   const now = Date.now();
   const activeRentedCounts = new Map<string, number>();
-  rentedGenerators.filter((ug: RentedGenerator) => new Date(ug.expires_at).getTime() > now).forEach((ug: RentedGenerator) => {
+  rentedGenerators.filter(function(ug: RentedGenerator) { return new Date(ug.expires_at).getTime() > now; }).forEach(function(ug: RentedGenerator) {
     activeRentedCounts.set(ug.generator_id, (activeRentedCounts.get(ug.generator_id) || 0) + 1);
   });
 
@@ -391,12 +392,12 @@ export default function Market() {
           </p>
         </div>
 
-        {rentedGenerators.filter(ug => new Date(ug.expires_at).getTime() > now).length > 0 && (
+        {rentedGenerators.filter(function(ug) { return new Date(ug.expires_at).getTime() > now; }).length > 0 && (
           <div className="mb-4 bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
             <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-green-800 font-semibold text-sm">You have active generators!</p>
-              <p className="text-green-600 text-xs">Go to the <button onClick={() => router.push("/dashboard/power")} className="underline font-bold">Power page</button> to collect your daily income.</p>
+              <p className="text-green-600 text-xs">Go to the <button onClick={function() { return router.push("/dashboard/power"); }} className="underline font-bold">Power page</button> to collect your daily income.</p>
             </div>
           </div>
         )}
@@ -408,12 +409,12 @@ export default function Market() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-10">
-            {generators.map((gen) => {
+            {generators.map(function(gen) {
               const cm = colorMap[gen.color] || colorMap["amber"];
               const rentedCount = activeRentedCounts.get(gen.id) || 0;
               const isRented = rentedCount > 0;
               const isMaxed = gen.id === "pg1" && rentedCount >= 1;
-              const activeUg = rentedGenerators.find(ug => ug.generator_id === gen.id && new Date(ug.expires_at).getTime() > now);
+              const activeUg = rentedGenerators.find(function(ug) { return ug.generator_id === gen.id && new Date(ug.expires_at).getTime() > now; });
 
               return (
                 <div key={gen.id} data-testid={`card-generator-${gen.id}`}
@@ -447,7 +448,7 @@ export default function Market() {
                           src={generatorImages[gen.id]}
                           alt={gen.name}
                           className="w-full h-full object-cover"
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget.parentElement as HTMLElement).style.background = `linear-gradient(135deg, ${cm.gradS} 0%, ${cm.gradE} 100%)`; }}
+                          onError={function(e) { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget.parentElement as HTMLElement).style.background = `linear-gradient(135deg, ${cm.gradS} 0%, ${cm.gradE} 100%)`; }}
                         />
                     </div>
 
@@ -505,7 +506,7 @@ export default function Market() {
                         >
                           <CheckCircle className="w-4 h-4" /> Active (1 per account)
                         </Button>
-                        <Button variant="outline" onClick={() => router.push("/dashboard/power")}
+                        <Button variant="outline" onClick={function() { return router.push("/dashboard/power"); }}
                           className="w-full rounded-xl h-9 text-xs font-semibold border-amber-300 text-amber-700 hover:bg-amber-50 flex items-center gap-1.5 justify-center">
                           <Zap className="w-3.5 h-3.5" /> Go to Power Page
                         </Button>
@@ -514,7 +515,7 @@ export default function Market() {
                       <div className="flex flex-col gap-2">
                         <Button
                           data-testid={`button-rent-${gen.id}`}
-                          onClick={() => handleRentClick(gen)}
+                          onClick={function() { return handleRentClick(gen); }}
                           disabled={isRenting === gen.id}
                           className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-xl h-10 sm:h-11 shadow-md transition-all flex items-center gap-2 justify-center text-sm"
                         >
@@ -526,7 +527,7 @@ export default function Market() {
                           }
                         </Button>
                         {isRented && (
-                          <Button variant="outline" onClick={() => router.push("/dashboard/power")}
+                          <Button variant="outline" onClick={function() { return router.push("/dashboard/power"); }}
                             className="w-full rounded-xl h-9 text-xs font-semibold border-amber-300 text-amber-700 hover:bg-amber-50 flex items-center gap-1.5 justify-center">
                             <Zap className="w-3.5 h-3.5" /> Go to Power Page
                           </Button>
@@ -546,18 +547,19 @@ export default function Market() {
               { icon: Shield, label: "Secured", value: "$50M+", color: "text-amber-600" },
               { icon: Users, label: "Investors", value: "26K+", color: "text-green-600" },
               { icon: TrendingUp, label: "Paid Out", value: "$8.2M+", color: "text-blue-600" },
-            ].map(({ icon: Icon, label, value, color }) => (
+            ].map(function({ icon: Icon, label, value, color }) {
+              return (
               <div key={label} className="flex flex-col items-center gap-1 sm:gap-2">
                 <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${color}`} />
                 <p className="text-lg sm:text-2xl font-bold text-gray-900">{value}</p>
                 <p className="text-gray-500 text-xs">{label}</p>
               </div>
-            ))}
+            )})}
           </div>
         </div>
       </div>
 
-      <Dialog open={!!lowBalanceGen} onOpenChange={(open) => { if (!open) setLowBalanceGen(null); }}>
+      <Dialog open={!!lowBalanceGen} onOpenChange={function(open) { if (!open) setLowBalanceGen(null); }}>
         <DialogContent className="max-w-sm mx-auto rounded-2xl p-0 overflow-hidden" data-testid="dialog-low-balance">
           <div className="bg-gradient-to-br from-red-500 to-orange-500 p-5 text-white text-center">
             <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
@@ -597,14 +599,14 @@ export default function Market() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => setLowBalanceGen(null)}
+                onClick={function() { return setLowBalanceGen(null); }}
                 className="flex-1 rounded-xl h-11 font-semibold border-gray-200"
                 data-testid="button-low-balance-cancel"
               >
                 Cancel
               </Button>
               <Button
-                onClick={() => { setLowBalanceGen(null); router.push("/dashboard/bank"); }}
+                onClick={function() { setLowBalanceGen(null); router.push("/dashboard/bank"); }}
                 className="flex-1 rounded-xl h-11 font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md flex items-center gap-2 justify-center"
                 data-testid="button-low-balance-deposit"
               >
