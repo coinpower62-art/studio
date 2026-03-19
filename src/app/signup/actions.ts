@@ -8,9 +8,11 @@ export async function signup(values: any) {
   const supabase = createClient();
   const origin = headers().get('origin');
 
-  const { email, password, fullName: nameValue, username, country, phone, language, referralCode } = values;
+  const { email, password, fullName: nameValue, username } = values;
 
-  // Sign up the user in Supabase Auth, passing all profile data in the metadata
+  // Sign up the user in Supabase Auth, passing only essential data in the metadata.
+  // This assumes a database trigger is responsible for creating the public.profiles record.
+  // By simplifying the data, we reduce the chance of the trigger failing due to a schema mismatch.
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -19,10 +21,6 @@ export async function signup(values: any) {
       data: {
         full_name: nameValue,
         username: username,
-        country: country,
-        phone: phone,
-        language: language,
-        // We'll handle referral logic later if needed
       },
     },
   });
@@ -31,10 +29,10 @@ export async function signup(values: any) {
     if (error.message.includes('User already registered')) {
         return { error: 'A user with this email address already exists.' };
     }
+    // The generic "Database error saving new user" often points to a failing trigger.
     return { error: `Registration failed: ${error.message}` };
   }
 
-  // The profile will be created on the first visit to the dashboard.
-  // This action's only job is to create the auth user.
+  // If signUp is successful, we assume the trigger has created the profile.
   return { error: null };
 }
