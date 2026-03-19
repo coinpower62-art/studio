@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -73,18 +74,15 @@ export default function ActivityPage() {
         .eq('id', user.id)
         .single();
       
-      if (profileData) {
-        setProfile(profileData as Profile);
-      } else {
+      if (profileError && profileError.message) {
+        toast({
+          variant: 'destructive',
+          title: 'Error loading profile',
+          description: profileError.message || 'Your profile could not be loaded.'
+        });
         setProfile(null);
-        if (profileError && Object.keys(profileError).length > 0) {
-            console.error("Error fetching profile:", profileError);
-            toast({
-              variant: 'destructive',
-              title: 'Error loading profile',
-              description: profileError.message || 'Your profile could not be loaded.'
-            });
-        }
+      } else {
+        setProfile(profileData as Profile);
       }
       
       setIsLoading(false);
@@ -554,3 +552,5 @@ export default function ActivityPage() {
     </div>
   );
 }
+
+    

@@ -220,16 +220,18 @@ export default function BankPage() {
       .eq('id', user.id)
       .single();
 
-    if (profileError) {
+    if (profileError && profileError.message) {
       toast({
         variant: 'destructive',
         title: 'Error loading profile',
-        description: 'Your profile data could not be loaded. Please try signing out and in again.',
+        description: profileError.message || 'Your profile data could not be loaded. Please try signing out and in again.',
       });
       setProfile(null);
     } else {
       setProfile(profileData as Profile);
-      setDepositCountry(profileData.country || '');
+      if (profileData) {
+        setDepositCountry(profileData.country || '');
+      }
     }
 
     const { data: depositsData, error: depositsError } = await supabase
@@ -1071,3 +1073,5 @@ export default function BankPage() {
     </div>
   );
 }
+
+    

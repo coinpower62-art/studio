@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -293,8 +294,8 @@ export default function Market() {
           .eq('id', user.id)
           .single();
       
-      if (profileError) {
-          toast({ title: 'Error fetching profile', variant: 'destructive'});
+      if (profileError && profileError.message) {
+          toast({ title: 'Error fetching profile', variant: 'destructive', description: profileError.message });
           setProfile(null);
       } else {
           setProfile(profileData as Profile);
@@ -502,7 +503,7 @@ export default function Market() {
                         <Button disabled
                           className="w-full bg-amber-50 border border-amber-300 text-amber-600 font-semibold rounded-xl h-10 sm:h-11 flex items-center gap-2 justify-center text-sm cursor-not-allowed"
                         >
-                          <CheckCircle className="w-4 h-4" /> Already Active — 1 per account
+                          <CheckCircle className="w-4 h-4" /> Active (1 per account)
                         </Button>
                         <Button variant="outline" onClick={() => router.push("/dashboard/power")}
                           className="w-full rounded-xl h-9 text-xs font-semibold border-amber-300 text-amber-700 hover:bg-amber-50 flex items-center gap-1.5 justify-center">
@@ -616,3 +617,5 @@ export default function Market() {
     </div>
   );
 }
+
+    
