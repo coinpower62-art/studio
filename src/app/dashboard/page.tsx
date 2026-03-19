@@ -5,14 +5,101 @@ import {
   Users,
   DollarSign,
   ArrowUpFromLine,
-  Globe,
   ChevronRight,
   Zap,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
+import { Suspense } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
+// Helper component for stat skeleton
+function StatSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+      <Skeleton className="w-9 h-9 rounded-xl mb-3" />
+      <Skeleton className="w-20 h-7 mb-1" />
+      <Skeleton className="w-24 h-4" />
+    </div>
+  );
+}
+
+// Data fetching component for Total Users
+async function TotalUsersStat() {
+  const supabase = createClient();
+  const { count: userCount } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true });
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-3 shadow-lg">
+        <Users className="w-4 h-4 text-white" />
+      </div>
+      <p className="text-xl font-black text-gray-900">{String(userCount ?? 0)}</p>
+      <p className="text-gray-500 text-xs mt-0.5">Total Users</p>
+    </div>
+  );
+}
+
+// Data fetching component for Pending Withdrawals
+async function PendingWithdrawalsStat() {
+  const supabase = createClient();
+  const { data: withdrawals } = await supabase
+    .from('withdrawal_requests')
+    .select('status');
+  const pendingWithdrawalsCount = withdrawals?.filter(function(w) { return w.status === 'pending'; }).length ?? 0;
+  
+  return (
+     <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center mb-3 shadow-lg">
+          <ArrowUpFromLine className="w-4 h-4 text-white" />
+        </div>
+        <p className="text-xl font-black text-gray-900">{String(pendingWithdrawalsCount)}</p>
+        <p className="text-gray-500 text-xs mt-0.5">Pending Withdrawals</p>
+      </div>
+  );
+}
+
+// Data fetching component for Active Generators
+async function ActiveGeneratorsStat() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    // This component is only rendered for logged-in users, but as a safeguard:
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-3 shadow-lg">
+          <Zap className="w-4 h-4 text-white" />
+        </div>
+        <p className="text-xl font-black text-gray-900">0</p>
+        <p className="text-gray-500 text-xs mt-0.5">Active Generators</p>
+      </div>
+    );
+  }
+
+  const { data: rentedGenerators } = await supabase
+    .from('rented_generators')
+    .select('id, expires_at')
+    .eq('user_id', user.id);
+    
+  const now = new Date().getTime();
+  const activeGeneratorCount = rentedGenerators?.filter(function(g) { return new Date(g.expires_at).getTime() > now; }).length ?? 0;
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-3 shadow-lg">
+        <Zap className="w-4 h-4 text-white" />
+      </div>
+      <p className="text-xl font-black text-gray-900">{String(activeGeneratorCount)}</p>
+      <p className="text-gray-500 text-xs mt-0.5">Active Generators</p>
+    </div>
+  );
+}
+
+// The main page component
 export default async function DashboardPage() {
   const supabase = createClient();
 
@@ -24,14 +111,14 @@ export default async function DashboardPage() {
     return redirect('/login');
   }
 
-  // Fetch the user's profile.
+  // Fetch the user's profile. This is critical and should not be suspended.
   let { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
-    .maybeSingle();
+    .single();
 
-  // If a profile doesn't exist, create it. This makes the app resilient to trigger failures.
+  // Self-healing profile creation logic
   if (!profile) {
     const { full_name, username, country, phone, referral_code } = user.user_metadata;
     const { error: insertError } = await supabase.from('profiles').insert({
@@ -58,28 +145,6 @@ export default async function DashboardPage() {
   }
 
 
-  // For the dashboard widgets, we'll fetch some aggregate data.
-  // In a real app, you might use RPC functions for performance.
-  const { count: userCount } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true });
-
-  const { data: withdrawals } = await supabase
-    .from('withdrawal_requests')
-    .select('status');
-  
-  const { data: rentedGenerators } = await supabase
-    .from('rented_generators')
-    .select('id, expires_at')
-    .eq('user_id', user.id);
-
-  const pendingWithdrawalsCount =
-    withdrawals?.filter(function(w) { return w.status === 'pending'; }).length ?? 0;
-  
-  const now = new Date().getTime();
-  const activeGeneratorCount = rentedGenerators?.filter(function(g) { return new Date(g.expires_at).getTime() > now; }).length ?? 0;
-
-
   const initials =
     profile?.full_name
       ?.split(' ')
@@ -98,45 +163,25 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          {
-            label: 'Your Balance',
-            value: `$${(profile?.balance ?? 0).toFixed(2)}`,
-            icon: DollarSign,
-            color: 'from-green-500 to-green-600',
-          },
-          {
-            label: 'Total Users',
-            value: String(userCount ?? 0),
-            icon: Users,
-            color: 'from-blue-500 to-blue-600',
-          },
-          {
-            label: 'Pending Withdrawals',
-            value: String(pendingWithdrawalsCount),
-            icon: ArrowUpFromLine,
-            color: 'from-amber-500 to-amber-600',
-          },
-          {
-            label: 'Active Generators',
-            value: String(activeGeneratorCount),
-            icon: Zap,
-            color: 'from-purple-500 to-purple-600',
-          },
-        ].map(function({ label, value, icon: Icon, color }) { return (
-          <div
-            key={label}
-            className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm"
-          >
-            <div
-              className={`w-9 h-9 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-3 shadow-lg`}
-            >
-              <Icon className="w-4 h-4 text-white" />
-            </div>
-            <p className="text-xl font-black text-gray-900">{value}</p>
-            <p className="text-gray-500 text-xs mt-0.5">{label}</p>
+        {/* Balance is available immediately from the profile fetch */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-3 shadow-lg">
+            <DollarSign className="w-4 h-4 text-white" />
           </div>
-        ); })}
+          <p className="text-xl font-black text-gray-900">${(profile?.balance ?? 0).toFixed(2)}</p>
+          <p className="text-gray-500 text-xs mt-0.5">Your Balance</p>
+        </div>
+
+        {/* Suspend the other stats to stream them in */}
+        <Suspense fallback={<StatSkeleton />}>
+          <TotalUsersStat />
+        </Suspense>
+        <Suspense fallback={<StatSkeleton />}>
+          <PendingWithdrawalsStat />
+        </Suspense>
+        <Suspense fallback={<StatSkeleton />}>
+          <ActiveGeneratorsStat />
+        </Suspense>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
