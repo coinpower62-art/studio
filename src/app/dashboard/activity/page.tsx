@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useToast } from '@/hooks/use-toast';
 
 type Profile = {
   balance: number;
@@ -44,6 +45,7 @@ const announcements = [
 
 export default function ActivityPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,17 +73,25 @@ export default function ActivityPage() {
         .eq('id', user.id)
         .single();
       
-      if (profileError || !profileData) {
-        console.error("Error fetching profile:", profileError);
-      } else {
+      if (profileData) {
         setProfile(profileData as Profile);
+      } else {
+        setProfile(null);
+        if (profileError && Object.keys(profileError).length > 0) {
+            console.error("Error fetching profile:", profileError);
+            toast({
+              variant: 'destructive',
+              title: 'Error loading profile',
+              description: profileError.message || 'Your profile could not be loaded.'
+            });
+        }
       }
       
       setIsLoading(false);
     };
 
     fetchData();
-  }, [router]);
+  }, [router, toast]);
 
   if (isLoading || !user || !profile) {
     return (
@@ -94,7 +104,6 @@ export default function ActivityPage() {
                 <Skeleton className="h-48 rounded-2xl" />
             </div>
         </div>
-      </div>
     );
   }
 
