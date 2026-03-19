@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -105,7 +106,7 @@ export default function ActivityPage() {
     );
   }
 
-  const initials = profile.full_name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "CP";
+  const initials = profile.full_name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "CP";
 
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
@@ -552,5 +553,7 @@ export default function ActivityPage() {
     </div>
   );
 }
+
+    
 
     

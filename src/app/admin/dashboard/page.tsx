@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from "react";
@@ -366,7 +367,7 @@ export default function AdminDashboard() {
   const handleRejectDeposit = async (id: string) => {
     const { error } = await supabase.from('deposit_requests').update({ status: 'rejected' }).eq('id', id);
     if (error) {
-      toast({ title: "Error rejecting deposit", description: error.message, variant: 'destructive' });
+      toast({ title: "Error rejecting deposit", description: error.message, variant: "destructive" });
     } else {
       setDeposits(prev => prev.map(d => d.id === id ? {...d, status: 'rejected'} : d));
       toast({ title: "Deposit rejected." });
@@ -671,7 +672,7 @@ export default function AdminDashboard() {
                   </div>
                   {users.length === 0 ? <p className="text-slate-500 text-sm">No users yet</p> : (
                     <div className="space-y-3">{users.slice(0, 5).map(u => {
-                      const initials = u.full_name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "??";
+                      const initials = u.full_name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "??";
                       return (
                         <div key={u.id} className="flex items-center gap-3">
                           <Avatar className="w-8 h-8 flex-shrink-0"><AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-white text-xs font-bold">{initials}</AvatarFallback></Avatar>
@@ -800,7 +801,7 @@ export default function AdminDashboard() {
               ) : (
                 <div className="space-y-3">
                   {filteredUsers.map(u => {
-                    const initials = u.full_name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "??";
+                    const initials = u.full_name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "??";
                     const isShowingPass = showPassFor === u.id;
                     return (
                       <div key={u.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
@@ -1510,3 +1511,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
