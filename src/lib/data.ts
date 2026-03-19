@@ -100,7 +100,7 @@ export const generators: Generator[] = [
     icon: '⚡',
     color: 'amber',
     price: 0,
-    expireDays: 3,
+    expireDays: 2,
     dailyIncome: 0.20,
     published: true,
     roi: '$0.20/day',

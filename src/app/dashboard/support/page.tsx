@@ -114,7 +114,7 @@ const steps = [
     tip: "PG1 is completely FREE — perfect to start earning with $0 investment!",
     tipIcon: Star,
     generators: [
-      { id: "PG1", price: "FREE", daily: "$0.20/day", total: "$0.60", days: 3, color: "bg-amber-100 text-amber-800" },
+      { id: "PG1", price: "FREE", daily: "$0.20/day", total: "$0.40", days: 2, color: "bg-amber-100 text-amber-800" },
       { id: "PG2", price: "$10", daily: "$1.00/day", total: "$10.00", days: 10, color: "bg-green-100 text-green-800" },
       { id: "PG3", price: "$15", daily: "$1.20/day", total: "$18.00", days: 15, color: "bg-blue-100 text-blue-800" },
       { id: "PG4", price: "$20", daily: "$1.50/day", total: "$30.00", days: 20, color: "bg-purple-100 text-purple-800" },
