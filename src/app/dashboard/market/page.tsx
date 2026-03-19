@@ -18,6 +18,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from '@supabase/supabase-js';
 import { logout } from "@/app/login/actions";
+import { rentGeneratorAction } from "./actions";
 
 export type RentedGenerator = {
   id: string;
@@ -334,28 +335,16 @@ export default function Market() {
   const handleRentClick = async function(gen: Generator) {
     setIsRenting(gen.id);
     try {
-      if (!user) {
-        throw new Error("User not authenticated.");
-      }
+      const result = await rentGeneratorAction(gen.id);
 
-      const { error } = await supabase.rpc('rent_generator_transaction', {
-        p_user_id: user.id,
-        p_gen_id: gen.id,
-        p_price: gen.price,
-        p_duration: gen.expireDays
-      });
-
-      if (error) {
-        if (error.message.toLowerCase().includes('insufficient funds')) {
-           if (profile) {
-             setLowBalanceGen({ name: gen.name, price: gen.price });
-           }
+      if (result.error) {
+        if (result.error === 'insufficient_funds' && profile) {
+           setLowBalanceGen({ name: gen.name, price: gen.price });
         } else {
-          throw error;
+          throw new Error(result.error);
         }
       } else {
         toast({ title: "Generator rented!", description: "Moves to your Power page. Claim daily income every 24 hours." });
-        setIsLoading(true);
         await fetchData();
       }
     } catch (err: any) {
@@ -643,5 +632,3 @@ export default function Market() {
     </div>
   );
 }
-
-    
