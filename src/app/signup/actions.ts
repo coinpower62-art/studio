@@ -2,11 +2,16 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
 
 export async function signup(values: any) {
   console.log("Signup action started...");
   const supabase = createClient();
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
   const origin = headers().get('origin');
 
   const { email, password, fullName: nameValue, username, country, phone, language, referralCode } = values;
@@ -16,7 +21,7 @@ export async function signup(values: any) {
   let referredByUserId: string | null = null;
   if (referralCode) {
     console.log(`Checking referral code: ${referralCode}`);
-    const { data: referringUser, error: referralError } = await supabase
+    const { data: referringUser, error: referralError } = await supabaseAdmin
       .from('profiles')
       .select('id')
       .eq('referral_code', referralCode)
@@ -74,7 +79,7 @@ export async function signup(values: any) {
     referral_count: 0,
     referred_by: referredByUserId,
   };
-  const { error: profileError } = await supabase.from('profiles').upsert(profileData);
+  const { error: profileError } = await supabaseAdmin.from('profiles').upsert(profileData);
 
 
   if (profileError) {
@@ -82,7 +87,7 @@ export async function signup(values: any) {
     console.error('Data sent to upsert:', profileData);
     // If profile creation fails, we should delete the auth user to avoid orphans.
     console.log(`Attempting to delete orphaned auth user: ${authData.user.id}`);
-    await supabase.auth.admin.deleteUser(authData.user.id);
+    await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
     console.log("Orphaned auth user deleted.");
     return { error: `Could not create user profile. This is a critical error. The user was not created.` };
   }
@@ -92,14 +97,14 @@ export async function signup(values: any) {
   // 4. If the user was referred, increment the referrer's count
   if (referredByUserId) {
       console.log(`Attempting to increment referral count for user ID: ${referredByUserId}`);
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('profiles')
         .select('referral_count')
         .eq('id', referredByUserId)
         .single()
       
       if (data) {
-        const {error: updateError} = await supabase
+        const {error: updateError} = await supabaseAdmin
           .from('profiles')
           .update({ referral_count: (data.referral_count || 0) + 1 })
           .eq('id', referredByUserId)
