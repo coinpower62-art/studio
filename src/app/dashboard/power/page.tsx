@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -55,32 +56,32 @@ function getGenPairP(genId: string): string {
 const TWENTY_FOUR_H = 24 * 60 * 60 * 1000;
 
 function useOnVisible(fn: () => void) {
-  useEffect(() => {
-    const h = () => { if (!document.hidden) fn(); };
+  useEffect(function() {
+    const h = function() { if (!document.hidden) fn(); };
     document.addEventListener("visibilitychange", h);
-    return () => document.removeEventListener("visibilitychange", h);
+    return function() { return document.removeEventListener("visibilitychange", h); };
   }, [fn]);
 }
 
 function RedCountdown({ targetMs }: { targetMs: number }) {
     const [remaining, setRemaining] = useState(Math.max(0, targetMs - Date.now()));
-    const sync = useCallback(() => setRemaining(Math.max(0, targetMs - Date.now())), [targetMs]);
+    const sync = useCallback(function() { return setRemaining(Math.max(0, targetMs - Date.now())); }, [targetMs]);
     useOnVisible(sync);
-    useEffect(() => {
+    useEffect(function() {
       const t = setInterval(sync, 1000);
-      return () => clearInterval(t);
+      return function() { return clearInterval(t); };
     }, [sync]);
     const h = Math.floor(remaining / 3600000);
     const m = Math.floor((remaining % 3600000) / 60000);
     const s = Math.floor((remaining % 60000) / 1000);
     return (
       <div className="flex items-center justify-center gap-0.5">
-        {[h, m, s].map((val, i) => (
+        {[h, m, s].map(function(val, i) { return (
           <span key={i}>
             <span className="inline-block bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded min-w-[1.75rem] text-center">{String(val).padStart(2,"0")}</span>
             {i < 2 && <span className="text-red-500 font-black text-sm mx-0.5">:</span>}
           </span>
-        ))}
+        ); })}
       </div>
     );
 }
@@ -102,9 +103,9 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
   const TICK_MS = 280, TICKS_PER_CANDLE = 18;
   const tickRef = useRef(0);
   
-  const pSeed = useCallback((N: number): PCandle[] => {
+  const pSeed = useCallback(function(N: number): PCandle[] {
     let p = 42 + Math.random() * 16;
-    return Array.from({ length: N }, () => {
+    return Array.from({ length: N }, function() {
       const move = (Math.random() - 0.48) * 8;
       const o = p, c = Math.max(6, Math.min(94, p + move));
       const h = Math.min(98, Math.max(o, c) + Math.random() * 3.5);
@@ -114,18 +115,18 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
     });
   }, []);
 
-  const [candles, setCandles] = useState<PCandle[]>(() => pSeed(N));
+  const [candles, setCandles] = useState<PCandle[]>(function() { return pSeed(N); });
 
   const pOpen = (closePrice: number): PCandle => {
     return { o: closePrice, c: closePrice, h: closePrice, l: closePrice, v: 2 + Math.random() * 6 };
   };
 
-  useEffect(() => {
+  useEffect(function() {
     if (!isActive) return;
     tickRef.current = 0;
-    const tick = () => {
+    const tick = function() {
       if (document.hidden) return;
-      setCandles(prev => {
+      setCandles(function(prev) {
         const arr = [...prev];
         const live = { ...arr[arr.length - 1] };
         const delta = (Math.random() - 0.49) * 2.4 + (Math.random() - 0.5) * 0.8;
@@ -143,18 +144,18 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
       });
     };
     const id = setInterval(tick, TICK_MS);
-    const onVisible = () => { if (!document.hidden) tick(); };
+    const onVisible = function() { if (!document.hidden) tick(); };
     document.addEventListener("visibilitychange", onVisible);
-    return () => {
+    return function() {
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [isActive, pSeed]);
 
-  const minP   = Math.min(...candles.map(c => c.l)) - 2;
-  const maxP   = Math.max(...candles.map(c => c.h)) + 2;
+  const minP   = Math.min(...candles.map(function(c) { return c.l; })) - 2;
+  const maxP   = Math.max(...candles.map(function(c) { return c.h; })) + 2;
   const pRange = maxP - minP || 1;
-  const maxVol = Math.max(...candles.map(c => c.v)) || 1;
+  const maxVol = Math.max(...candles.map(function(c) { return c.v; })) || 1;
   const toX    = (i: number) => PAD_L + (i + 0.5) * (chartW / N);
   const toPY   = (p: number) => mainTop + mainH * (1 - (p - minP) / pRange);
   const toVY   = (v: number) => volBot  - volH  * (v / maxVol);
@@ -172,7 +173,7 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
       borderColor: isActive ? (isUp ? "#22c55e33" : "#f8717133") : "#ffffff0a",
     }}>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none">
-        {[0.25, 0.5, 0.75].map((f, i) => {
+        {[0.25, 0.5, 0.75].map(function(f, i) {
           const y = mainTop + mainH * f;
           return (
             <g key={i}>
@@ -186,7 +187,7 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
         })}
         <line x1={PAD_L} y1={(mainBot + 2).toFixed(1)} x2={W - PAD_R} y2={(mainBot + 2).toFixed(1)}
           stroke="#fff" strokeOpacity="0.06" strokeWidth="0.5" />
-        {candles.map((c, i) => {
+        {candles.map(function(c, i) {
           const cx   = toX(i);
           const bull = c.c >= c.o;
           const col  = isActive ? (bull ? "#22c55e" : "#f87171") : "#374151";
@@ -206,7 +207,7 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
             </g>
           );
         })}
-        {isActive && (() => {
+        {isActive && (function() {
           const py = toPY(last.c);
           return (
             <>
@@ -260,7 +261,7 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
 function LiveEarningsCounter({ lastRef, dailyIncome, active }: {
   lastRef: number; dailyIncome: number; active: boolean;
 }) {
-  const calc = useCallback(() => {
+  const calc = useCallback(function() {
     if (!active) return dailyIncome;
     const elapsed = Date.now() - lastRef;
     const fraction = Math.min(1, elapsed / TWENTY_FOUR_H);
@@ -268,11 +269,11 @@ function LiveEarningsCounter({ lastRef, dailyIncome, active }: {
   }, [active, dailyIncome, lastRef]);
 
   const [earned, setEarned] = useState(calc);
-  useOnVisible(() => setEarned(calc()));
-  useEffect(() => {
+  useOnVisible(function() { return setEarned(calc()); });
+  useEffect(function() {
     if (!active) { setEarned(dailyIncome); return; }
-    const id = setInterval(() => { if (!document.hidden) setEarned(calc()); }, 80);
-    return () => clearInterval(id);
+    const id = setInterval(function() { if (!document.hidden) setEarned(calc()); }, 80);
+    return function() { return clearInterval(id); };
   }, [active, dailyIncome, calc]);
 
   const formatted = earned.toFixed(6);
@@ -308,10 +309,10 @@ function LiveEarningsCounter({ lastRef, dailyIncome, active }: {
 
 function ExpiryBar({ rentedAt, expiresAt }: { rentedAt: number; expiresAt: number }) {
   const [now, setNow] = useState(Date.now());
-  useOnVisible(() => setNow(Date.now()));
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 10000);
-    return () => clearInterval(t);
+  useOnVisible(function() { return setNow(Date.now()); });
+  useEffect(function() {
+    const t = setInterval(function() { return setNow(Date.now()); }, 10000);
+    return function() { return clearInterval(t); };
   }, []);
   const total = expiresAt - rentedAt;
   const elapsed = now - rentedAt;
@@ -358,7 +359,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
   // @ts-ignore
   const cardColor = colorMap[ug.color] || 'from-gray-400 to-gray-500';
 
-  const uploadedImageUrl = PlaceHolderImages.find(i => i.id === `gen-${ug.generator_id}`)?.imageUrl;
+  const uploadedImageUrl = PlaceHolderImages.find(function(i) { return i.id === `gen-${ug.generator_id}`; })?.imageUrl;
 
   return (
     <div className={`bg-white rounded-2xl border-2 shadow-sm overflow-hidden transition-all ${borderColor}`}>
@@ -370,7 +371,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                 src={uploadedImageUrl}
                 alt={ug.name}
                 className={`w-full h-full object-cover ${isSuspended ? "grayscale" : ""}`}
-                onError={e => { const el = e.currentTarget; el.style.display = "none"; const fb = el.nextElementSibling as HTMLElement; if (fb) fb.style.display = "flex"; }}
+                onError={function(e) { const el = e.currentTarget; el.style.display = "none"; const fb = el.nextElementSibling as HTMLElement; if (fb) fb.style.display = "flex"; }}
               />
             ) : null}
             <span className={`w-full h-full ${uploadedImageUrl ? "hidden" : "flex"} items-center justify-center text-2xl`}>{ug.icon}</span>
@@ -410,7 +411,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                            Total ready to collect: <span className="font-black">${pendingIncome.toFixed(2)}</span>
                         </p>
                     </div>
-                    <form action={() => onClaim(ug.id)}>
+                    <form action={function() { return onClaim(ug.id); }}>
                       <Button
                           data-testid={`button-claim-${ug.id}`}
                           type="submit"
@@ -442,7 +443,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                 </div>
                 {ug.price > 0 && (
                     <button
-                        onClick={() => router.push("/dashboard/bank")}
+                        onClick={function() { return router.push("/dashboard/bank"); }}
                         className="w-full text-center text-xs font-bold text-red-700 bg-red-100 hover:bg-red-200 border border-red-300 rounded-lg py-1.5 transition-colors"
                     >
                         Deposit Now to Resume →
@@ -488,9 +489,9 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
 }
 
 function ClaimSuccessOverlay({ amount, generatorName, onDone }: { amount: number; generatorName: string; onDone: () => void }) {
-  useEffect(() => {
+  useEffect(function() {
     const timer = setTimeout(onDone, 4000);
-    return () => clearTimeout(timer);
+    return function() { return clearTimeout(timer); };
   }, [onDone]);
 
   return (
@@ -500,7 +501,7 @@ function ClaimSuccessOverlay({ amount, generatorName, onDone }: { amount: number
     >
       <div
         className="mx-4 w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-90 slide-in-from-bottom-10"
-        onClick={e => e.stopPropagation()}
+        onClick={function(e) { return e.stopPropagation(); }}
       >
         <div className="bg-gradient-to-r from-amber-400 to-amber-600 pt-8 pb-6 flex flex-col items-center gap-2 relative">
           <Star className="absolute top-3 left-6 text-white/60 w-5 h-5 animate-in zoom-in-50 delay-200" />
@@ -579,7 +580,7 @@ export default function Power() {
       return;
     }
 
-    const enrichedData = data.map(rg => {
+    const enrichedData = data.map(function(rg) {
       const baseGen = rg.generators as BaseGenerator | null;
       return {
         ...rg,
@@ -610,7 +611,7 @@ export default function Power() {
     setIsClaimingId(rentedGeneratorId);
     const result = await collectEarnings(rentedGeneratorId);
     if (result.success && result.earned) {
-      const claimedGen = rentedGenerators.find(g => g.id === rentedGeneratorId);
+      const claimedGen = rentedGenerators.find(function(g) { return g.id === rentedGeneratorId; });
       setClaimedInfo({ amount: result.earned, generatorName: claimedGen?.name || 'Generator' });
       fetchData();
     } else {
@@ -627,8 +628,8 @@ export default function Power() {
   }
 
   const now = Date.now();
-  const activeGenerators = rentedGenerators.filter(ug => ug && ug.expires_at && new Date(ug.expires_at).getTime() > now);
-  const expiredGenerators = rentedGenerators.filter(ug => ug && ug.expires_at && new Date(ug.expires_at).getTime() <= now);
+  const activeGenerators = rentedGenerators.filter(function(ug) { return ug && ug.expires_at && new Date(ug.expires_at).getTime() > now; });
+  const expiredGenerators = rentedGenerators.filter(function(ug) { return ug && ug.expires_at && new Date(ug.expires_at).getTime() <= now; });
 
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
@@ -637,17 +638,17 @@ export default function Power() {
         <ClaimSuccessOverlay
           amount={claimedInfo.amount}
           generatorName={claimedInfo.generatorName}
-          onDone={() => setClaimedInfo(null)}
+          onDone={function() { return setClaimedInfo(null); }}
         />
       )}
       <div className="max-w-6xl mx-auto px-3 sm:px-6">
 
         <div className="relative overflow-hidden bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 rounded-2xl sm:rounded-3xl p-5 sm:p-8 my-4 sm:my-6 text-white shadow-2xl">
           <div className="absolute inset-0 opacity-20">
-            {[...Array(4)].map((_, i) => (
+            {[...Array(4)].map(function(_, i) { return (
               <div key={i} className="absolute rounded-full border-2 border-white"
                 style={{ width: `${(i + 1) * 100}px`, height: `${(i + 1) * 100}px`, top: "50%", right: "-30px", transform: "translateY(-50%)" }} />
-            ))}
+            ); })}
           </div>
           <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex-1">
@@ -678,12 +679,12 @@ export default function Power() {
               <Badge className="bg-green-100 text-green-700 border-0">{activeGenerators.length}</Badge>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {activeGenerators.map(ug => (
+              {activeGenerators.map(function(ug) { return (
                 <GeneratorCard key={ug.id} ug={ug}
                   onClaim={handleClaim}
                   isClaiming={isClaimingId === ug.id}
                 />
-              ))}
+              ); })}
             </div>
           </div>
         )}
@@ -697,7 +698,7 @@ export default function Power() {
             <p className="text-gray-500 text-sm mb-4 max-w-sm mx-auto">
               Go to the Market to rent a generator. Your generators will appear here with a 24-hour claim timer.
             </p>
-            <Button onClick={() => router.push("/dashboard/market")}
+            <Button onClick={function() { return router.push("/dashboard/market"); }}
               className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-xl px-6 h-10 shadow-md">
               Browse Market
             </Button>
@@ -711,12 +712,12 @@ export default function Power() {
               <Badge className="bg-gray-100 text-gray-500 border-0 text-xs">{expiredGenerators.length}</Badge>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {expiredGenerators.map(ug => (
+              {expiredGenerators.map(function(ug) { return (
                 <GeneratorCard key={ug.id} ug={ug}
                   onClaim={handleClaim}
                   isClaiming={isClaimingId === ug.id}
                 />
-              ))}
+              ); })}
             </div>
           </div>
         )}
@@ -725,7 +726,7 @@ export default function Power() {
         <p className="text-gray-500 text-center text-sm mb-5 sm:mb-8">Multiply your returns even further</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {powerPlans.map((plan) => (
+          {powerPlans.map(function(plan) { return (
             <div key={plan.name}
               data-testid={`card-power-${plan.name.toLowerCase().replace(" ", "-")}`}
               className={`relative bg-white rounded-2xl border-2 ${plan.popular ? "border-amber-400 shadow-xl shadow-amber-100" : "border-gray-200 shadow-sm"} p-5 sm:p-6 hover:shadow-lg transition-all duration-300`}>
@@ -744,12 +745,12 @@ export default function Power() {
               </div>
               <p className="text-amber-600 font-semibold text-base sm:text-lg mb-4 sm:mb-5">{plan.price}</p>
               <div className="space-y-2 mb-5">
-                {plan.features.map(f => (
+                {plan.features.map(function(f) { return (
                   <div key={f} className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                     <span className="text-xs sm:text-sm text-gray-600">{f}</span>
                   </div>
-                ))}
+                ); })}
               </div>
               <div className="mb-4">
                 <div className="flex justify-between text-xs text-gray-500 mb-1">
@@ -759,12 +760,12 @@ export default function Power() {
               </div>
               <Button
                 data-testid={`button-activate-${plan.name.toLowerCase().replace(" ", "-")}`}
-                onClick={() => toast({ title: `${plan.name} Activated!`, description: "This is a demo. Your power plan has been activated." })}
+                onClick={function() { return toast({ title: `${plan.name} Activated!`, description: "This is a demo. Your power plan has been activated." }); }}
                 className="w-full h-10 sm:h-11 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all text-sm">
                 Activate {plan.name}
               </Button>
             </div>
-          ))}
+          ); })}
         </div>
 
         <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 sm:p-6 flex items-start gap-3 sm:gap-4">
@@ -782,3 +783,5 @@ export default function Power() {
     </div>
   );
 }
+
+    

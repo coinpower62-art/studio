@@ -1,3 +1,4 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import {
@@ -39,12 +40,12 @@ export default async function DashboardPage() {
     .select('status');
 
   const pendingWithdrawalsCount =
-    withdrawals?.filter((w) => w.status === 'pending').length ?? 0;
+    withdrawals?.filter(function(w) { return w.status === 'pending'; }).length ?? 0;
 
   const initials =
     profile?.full_name
       ?.split(' ')
-      .map((n) => n[0])
+      .map(function(n) { return n[0]; })
       .join('')
       .toUpperCase()
       .slice(0, 2) || '??';
@@ -84,7 +85,7 @@ export default async function DashboardPage() {
             icon: Zap,
             color: 'from-purple-500 to-purple-600',
           },
-        ].map(({ label, value, icon: Icon, color }) => (
+        ].map(function({ label, value, icon: Icon, color }) { return (
           <div
             key={label}
             className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm"
@@ -97,7 +98,7 @@ export default async function DashboardPage() {
             <p className="text-xl font-black text-gray-900">{value}</p>
             <p className="text-gray-500 text-xs mt-0.5">{label}</p>
           </div>
-        ))}
+        ); })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

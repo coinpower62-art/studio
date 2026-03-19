@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -234,12 +235,12 @@ export default function SupportPage() {
             { icon: Shield, label: "Secure" },
             { icon: Zap, label: "Easy Setup" },
             { icon: TrendingUp, label: "Daily Income" },
-          ].map(({ icon: Icon, label }) => (
+          ].map(function({ icon: Icon, label }) { return (
             <div key={label} className="flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1.5">
               <Icon className="w-3.5 h-3.5 text-amber-200" />
               <span className="text-white text-xs font-semibold">{label}</span>
             </div>
-          ))}
+          ); })}
         </div>
 
         {/* Watch cartoon video button */}
@@ -265,14 +266,14 @@ export default function SupportPage() {
         <div className="flex items-center justify-between bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
           <p className="text-gray-500 text-xs font-medium">{steps.length} easy steps to get started</p>
           <div className="flex gap-1">
-            {steps.map((s) => (
+            {steps.map(function(s) { return (
               <div key={s.num} className={`w-5 h-1.5 rounded-full bg-gradient-to-r ${s.color}`} />
-            ))}
+            ); })}
           </div>
         </div>
 
         {/* Steps */}
-        {steps.map((step) => {
+        {steps.map(function(step) {
           const Icon = step.icon;
           const TipIcon = step.tipIcon;
           return (
@@ -297,14 +298,14 @@ export default function SupportPage() {
               <div className="p-4 space-y-4">
                 {/* Steps list */}
                 <ul className="space-y-2.5">
-                  {step.details.map((d, i) => (
+                  {step.details.map(function(d, i) { return (
                     <li key={i} className="flex items-start gap-2.5">
                       <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0 mt-0.5`}>
                         <span className="text-white text-[10px] font-black">{i + 1}</span>
                       </div>
                       <p className="text-gray-700 text-sm leading-relaxed">{d}</p>
                     </li>
-                  ))}
+                  ); })}
                 </ul>
 
                 {/* MTN MOMO details (Step 2 only) */}
@@ -353,14 +354,14 @@ export default function SupportPage() {
                       <p className="text-gray-400 text-[10px] font-bold uppercase">Daily</p>
                       <p className="text-gray-400 text-[10px] font-bold uppercase">Total</p>
                     </div>
-                    {step.generators.map((g) => (
+                    {step.generators.map(function(g) { return (
                       <div key={g.id} className="grid grid-cols-4 px-3 py-2.5 border-t border-gray-50 text-center items-center">
                         <span className={`inline-block text-xs font-black px-1.5 py-0.5 rounded-lg ${g.color}`}>{g.id}</span>
                         <p className="text-gray-900 text-xs font-bold">{g.price}</p>
                         <p className="text-green-700 text-xs font-semibold">{g.daily}</p>
                         <p className="text-amber-700 text-xs font-bold">{g.total}</p>
                       </div>
-                    ))}
+                    ); })}
                     <div className="bg-gray-50 px-3 py-1.5 text-center">
                       <p className="text-gray-400 text-[10px]">Total income over the full period</p>
                     </div>
@@ -437,7 +438,7 @@ export default function SupportPage() {
             </p>
           </div>
           <Accordion type="single" collapsible className="w-full bg-card p-4 rounded-xl border shadow-sm">
-            {faqs.map((faq, index) => (
+            {faqs.map(function(faq, index) { return (
               <AccordionItem value={`item-${index}`} key={index}>
                 <AccordionTrigger className="text-left font-semibold text-gray-800 hover:no-underline">
                   {faq.question}
@@ -446,10 +447,12 @@ export default function SupportPage() {
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>
-            ))}
+            ); })}
           </Accordion>
         </div>
       </div>
     </div>
   );
 }
+
+    

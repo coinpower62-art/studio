@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -48,7 +49,7 @@ function BottomNav() {
     const pathname = usePathname();
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around border-t bg-white p-1 md:hidden shadow-top">
-            {navItems.map(item => {
+            {navItems.map(function(item) {
                 const isActive = pathname === item.href;
                 return (
                     <Link href={item.href} key={item.href} className={`flex flex-col items-center justify-center text-center p-1 rounded-md w-16 h-14 transition-colors ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-500 hover:bg-gray-100'}`}>
@@ -64,7 +65,7 @@ function BottomNav() {
 function DashboardHeader({ user }: { user: SupabaseUser | null }) {
   const getInitials = () => {
     if (user?.user_metadata?.full_name) {
-        return user.user_metadata.full_name.split(' ').map((n) => n[0]).join('').toUpperCase();
+        return user.user_metadata.full_name.split(' ').map(function(n) { return n[0]; }).join('').toUpperCase();
     }
     if (user?.email) {
       return user.email[0].toUpperCase();
@@ -112,7 +113,7 @@ export default function DashboardLayout({
 
   const getInitials = () => {
     if (user?.user_metadata?.full_name) {
-        return user.user_metadata.full_name.split(' ').map((n) => n[0]).join('').toUpperCase();
+        return user.user_metadata.full_name.split(' ').map(function(n) { return n[0]; }).join('').toUpperCase();
     }
     if (user?.email) {
       return user.email[0].toUpperCase();
@@ -143,7 +144,7 @@ export default function DashboardLayout({
                 <Logo />
              </div>
              <nav className="flex-1 space-y-1 p-2">
-                {navItems.map(item => {
+                {navItems.map(function(item) {
                     const isActive = pathname === item.href;
                     return (
                         <Link href={item.href} key={item.href} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>
