@@ -1,20 +1,11 @@
 
 import { NextResponse } from 'next/server';
 
+// This API route is deprecated as of the admin login consolidation.
+// Admin login is now handled via the primary /login server action.
 export async function POST(request: Request) {
-  const { username, password } = await request.json();
-
-  // --- This is a temporary, insecure login for demonstration purposes. ---
-  // --- In a real application, you should use a secure authentication method ---
-  // --- and store credentials in your database, not in the code. ---
-  const ADMIN_USERNAME = "admin";
-  const ADMIN_PASSWORD = "password";
-
-  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-    // In a real app, you would typically generate a JWT or session cookie here.
-    // For this implementation, we are just confirming the credentials are valid.
-    return NextResponse.json({ success: true });
-  }
-
-  return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
+  return NextResponse.json(
+    { message: "This route is no longer in use. Please use the main /login page." },
+    { status: 410 } // 410 Gone
+  );
 }

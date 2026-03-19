@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from "react";
@@ -225,9 +224,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     // Auth check
-    const isAdminLoggedIn = localStorage.getItem('admin_logged_in') === 'true';
+    const isAdminLoggedIn = document.cookie.split('; ').find(row => row.startsWith('admin_logged_in='))?.split('=')[1] === 'true';
     if (!isAdminLoggedIn) {
-      router.push('/admin');
+      router.push('/login');
       return;
     } 
     setAdmin({ name: 'Admin' });
@@ -268,8 +267,8 @@ export default function AdminDashboard() {
 
   // --- DB Mutations ---
   const handleSignOut = () => {
-    localStorage.removeItem('admin_logged_in');
-    router.push('/admin');
+    document.cookie = "admin_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    router.push('/login');
   };
 
   const handleUpdateBalance = async (userId: string, newBalance: number) => {
@@ -494,7 +493,7 @@ export default function AdminDashboard() {
   };
 
   if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
-  if (!admin) { router.push("/admin"); return null; }
+  if (!admin) { router.push("/login"); return null; }
 
   const filteredUsers = users.filter(function(u) { return [u.full_name, u.username, u.email, u.country].some(function(f) { return f?.toLowerCase().includes(search.toLowerCase()); }); });
   const totalBalance = users.reduce(function(s, u) { return s + (u.balance || 0); }, 0);

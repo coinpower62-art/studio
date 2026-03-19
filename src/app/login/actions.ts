@@ -4,8 +4,19 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 
 export async function login(formData: FormData) {
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
+
+  // Admin Login Check
+  if (email.toLowerCase() === 'admin' && password === 'password') {
+      cookies().set('admin_logged_in', 'true', { path: '/' });
+      return redirect('/admin/dashboard');
+  }
+  
+  // Regular User Login
   let supabase
   try {
     supabase = createClient()
@@ -14,9 +25,6 @@ export async function login(formData: FormData) {
     return redirect(`/login?message=${encodeURIComponent(message)}`)
   }
   
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-
   if (!email || !password) {
     return redirect('/login?message=Email and password are required.')
   }
