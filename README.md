@@ -4,14 +4,14 @@ This is a NextJS starter app built with Supabase and shadcn/ui.
 
 ## Getting Started
 
-To get started with your local development environment, you'll need to configure your Supabase credentials.
+To get started with your local development environment, your Supabase credentials have been added to the `.env` file.
 
-1.  **Create a `.env.local` file** by making a copy of the `.env` file in the root of the project.
-2.  **Add your Supabase credentials** to the `.env.local` file. You can find your Project URL and anon key in your Supabase project's API settings.
+1.  **Add your Supabase Anon Key** to the `.env` file where it says `YOUR_SUPABASE_ANON_KEY`. You can find this in your Supabase project's API settings.
+
+2.  **Create a `.env.local` file** by making a copy of the `.env` file in the root of the project. This will load the environment variables for your local development.
 
     ```bash
-    NEXT_PUBLIC_SUPABASE_URL=https://your-project-url.supabase.co
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-public-anon-key
+    cp .env .env.local
     ```
 
 3.  **Run the development server**:
