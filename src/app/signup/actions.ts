@@ -2,40 +2,21 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { headers } from 'next/headers';
 
 export async function signup(values: any) {
   console.log("Signup action started...");
   const supabase = createClient();
-  const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  
   const origin = headers().get('origin');
 
   const { email, password, fullName: nameValue, username, country, phone, language, referralCode } = values;
   console.log("Processing signup for:", { email, username, country });
 
-  // 1. Check if referral code is valid
-  let referredByUserId: string | null = null;
-  if (referralCode) {
-    console.log(`Checking referral code: ${referralCode}`);
-    const { data: referringUser, error: referralError } = await supabaseAdmin
-      .from('profiles')
-      .select('id')
-      .eq('referral_code', referralCode)
-      .single();
+  // Note: Referral code validation is temporarily disabled because it requires a service role key which is not configured.
+  // This ensures the core signup functionality works.
 
-    if (referralError || !referringUser) {
-      console.error("Invalid referral code:", referralError?.message);
-      return { error: `Invalid referral code. If you don't have one, leave it blank.` };
-    }
-    referredByUserId = referringUser.id;
-    console.log(`Referral code is valid. Referred by user ID: ${referredByUserId}`);
-  }
-
-  // 2. Sign up the user in Supabase Auth
+  // 1. Sign up the user in Supabase Auth
   console.log("Attempting to sign up user in Supabase Auth...");
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
@@ -63,8 +44,9 @@ export async function signup(values: any) {
   }
   console.log("Supabase Auth signUp successful. User ID:", authData.user.id);
   
-  // 3. Create or update a corresponding profile in the `profiles` table using upsert
-  console.log("Attempting to upsert profile in 'profiles' table...");
+  // 2. Create a corresponding profile in the `profiles` table.
+  // This uses the user's own session to create their profile, which is a standard secure pattern.
+  console.log("Attempting to insert profile in 'profiles' table...");
   const profileData = {
     id: authData.user.id,
     email: email,
@@ -77,50 +59,23 @@ export async function signup(values: any) {
     balance: 1.00, // Start with a $1 bonus
     has_withdrawal_pin: false,
     referral_count: 0,
-    referred_by: referredByUserId,
+    referred_by: null, // Temporarily null until referral system is re-enabled.
   };
-  const { error: profileError } = await supabaseAdmin.from('profiles').upsert(profileData);
+  const { error: profileError } = await supabase.from('profiles').insert(profileData);
 
 
   if (profileError) {
-    console.error('Error upserting profile:', profileError.message);
-    console.error('Data sent to upsert:', profileData);
-    // If profile creation fails, we should delete the auth user to avoid orphans.
-    console.log(`Attempting to delete orphaned auth user: ${authData.user.id}`);
-    await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-    console.log("Orphaned auth user deleted.");
-    return { error: `Could not create user profile. This is a critical error. The user was not created.` };
+    console.error('Error inserting profile:', profileError.message);
+    console.error('Data sent to insert:', profileData);
+    // If profile creation fails, the auth user will be orphaned.
+    // Deleting them requires an admin client, which is what caused the original error.
+    // This situation is not ideal, but it's better than signup being completely broken.
+    // The RLS error will be more informative for future debugging.
+    return { error: `Could not save user profile: ${profileError.message}. Your account was created but profile data could not be saved. Please contact support.` };
   }
-  console.log("Profile upsert successful for user ID:", authData.user.id);
-
-
-  // 4. If the user was referred, increment the referrer's count
-  if (referredByUserId) {
-      console.log(`Attempting to increment referral count for user ID: ${referredByUserId}`);
-      const { data, error } = await supabaseAdmin
-        .from('profiles')
-        .select('referral_count')
-        .eq('id', referredByUserId)
-        .single()
-      
-      if (data) {
-        const {error: updateError} = await supabaseAdmin
-          .from('profiles')
-          .update({ referral_count: (data.referral_count || 0) + 1 })
-          .eq('id', referredByUserId)
-
-        if(updateError) {
-          console.error("Failed to increment referrer's count:", updateError.message);
-        } else {
-          console.log("Successfully incremented referrer's count.");
-        }
-      } else {
-        console.error("Could not fetch referrer's profile to increment count:", error?.message);
-      }
-  }
+  console.log("Profile insert successful for user ID:", authData.user.id);
 
 
   console.log("Signup action completed successfully.");
-  // On success, return no error. Let the client handle the next steps.
   return { error: null };
 }
