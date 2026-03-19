@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { rentGeneratorAction } from './market/actions';
 
 // Helper component for stat skeleton
 function StatSkeleton() {
@@ -139,7 +140,10 @@ export default async function DashboardPage() {
         return redirect(`/login?message=Could not create your user profile. Please contact support.`);
     }
 
-    // After creating the profile, revalidate and redirect to ensure the page re-renders with the new data.
+    // Automatically rent the free PG1 generator for the new user.
+    await rentGeneratorAction('pg1');
+
+    // After creating the profile and renting the generator, revalidate and redirect to ensure the page re-renders with the new data.
     revalidatePath('/dashboard', 'layout');
     redirect('/dashboard');
   }
