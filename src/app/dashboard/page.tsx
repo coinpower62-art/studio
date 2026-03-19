@@ -11,94 +11,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
-import { Suspense } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { rentGeneratorAction } from './market/actions';
-
-// Helper component for stat skeleton
-function StatSkeleton() {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-      <Skeleton className="w-9 h-9 rounded-xl mb-3" />
-      <Skeleton className="w-20 h-7 mb-1" />
-      <Skeleton className="w-24 h-4" />
-    </div>
-  );
-}
-
-// Data fetching component for Total Users
-async function TotalUsersStat() {
-  const supabase = createClient();
-  const { count: userCount } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true });
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-3 shadow-lg">
-        <Users className="w-4 h-4 text-white" />
-      </div>
-      <p className="text-xl font-black text-gray-900">{String(userCount ?? 0)}</p>
-      <p className="text-gray-500 text-xs mt-0.5">Total Users</p>
-    </div>
-  );
-}
-
-// Data fetching component for Pending Withdrawals
-async function PendingWithdrawalsStat() {
-  const supabase = createClient();
-  const { data: withdrawals } = await supabase
-    .from('withdrawal_requests')
-    .select('status');
-  const pendingWithdrawalsCount = withdrawals?.filter(function(w) { return w.status === 'pending'; }).length ?? 0;
-  
-  return (
-     <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center mb-3 shadow-lg">
-          <ArrowUpFromLine className="w-4 h-4 text-white" />
-        </div>
-        <p className="text-xl font-black text-gray-900">{String(pendingWithdrawalsCount)}</p>
-        <p className="text-gray-500 text-xs mt-0.5">Pending Withdrawals</p>
-      </div>
-  );
-}
-
-// Data fetching component for Active Generators
-async function ActiveGeneratorsStat() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    // This component is only rendered for logged-in users, but as a safeguard:
-    return (
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-3 shadow-lg">
-          <Zap className="w-4 h-4 text-white" />
-        </div>
-        <p className="text-xl font-black text-gray-900">0</p>
-        <p className="text-gray-500 text-xs mt-0.5">Active Generators</p>
-      </div>
-    );
-  }
-
-  const { data: rentedGenerators } = await supabase
-    .from('rented_generators')
-    .select('id, expires_at')
-    .eq('user_id', user.id);
-    
-  const now = new Date().getTime();
-  const activeGeneratorCount = rentedGenerators?.filter(function(g) { return new Date(g.expires_at).getTime() > now; }).length ?? 0;
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-3 shadow-lg">
-        <Zap className="w-4 h-4 text-white" />
-      </div>
-      <p className="text-xl font-black text-gray-900">{String(activeGeneratorCount)}</p>
-      <p className="text-gray-500 text-xs mt-0.5">Active Generators</p>
-    </div>
-  );
-}
 
 // The main page component
 export default async function DashboardPage() {
@@ -112,12 +25,20 @@ export default async function DashboardPage() {
     return redirect('/login');
   }
 
-  // Fetch the user's profile. This is critical and should not be suspended.
-  let { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  // Fetch all data concurrently for better performance
+  const [
+    profileResult,
+    userCountResult,
+    withdrawalsResult,
+    rentedGeneratorsResult,
+  ] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }),
+    supabase.from('withdrawal_requests').select('status'),
+    supabase.from('rented_generators').select('id, expires_at').eq('user_id', user.id),
+  ]);
+
+  let { data: profile } = profileResult;
 
   // Self-healing profile creation logic
   if (!profile) {
@@ -136,18 +57,19 @@ export default async function DashboardPage() {
     
     if (insertError) {
         console.error("Fatal error creating profile:", insertError);
-        // Redirect to a safe page with an error.
         return redirect(`/login?message=Could not create your user profile. Please contact support.`);
     }
 
-    // Automatically rent the free PG1 generator for the new user.
     await rentGeneratorAction('pg1');
-
-    // After creating the profile and renting the generator, revalidate and redirect to ensure the page re-renders with the new data.
     revalidatePath('/dashboard', 'layout');
     redirect('/dashboard');
   }
 
+  const userCount = userCountResult.count ?? 0;
+  const pendingWithdrawalsCount = withdrawalsResult.data?.filter(w => w.status === 'pending').length ?? 0;
+  
+  const now = new Date().getTime();
+  const activeGeneratorCount = rentedGeneratorsResult.data?.filter(g => new Date(g.expires_at).getTime() > now).length ?? 0;
 
   const initials =
     profile?.full_name
@@ -167,7 +89,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Balance is available immediately from the profile fetch */}
+        {/* Balance */}
         <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-3 shadow-lg">
             <DollarSign className="w-4 h-4 text-white" />
@@ -176,16 +98,32 @@ export default async function DashboardPage() {
           <p className="text-gray-500 text-xs mt-0.5">Your Balance</p>
         </div>
 
-        {/* Suspend the other stats to stream them in */}
-        <Suspense fallback={<StatSkeleton />}>
-          <TotalUsersStat />
-        </Suspense>
-        <Suspense fallback={<StatSkeleton />}>
-          <PendingWithdrawalsStat />
-        </Suspense>
-        <Suspense fallback={<StatSkeleton />}>
-          <ActiveGeneratorsStat />
-        </Suspense>
+        {/* Total Users */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-3 shadow-lg">
+            <Users className="w-4 h-4 text-white" />
+          </div>
+          <p className="text-xl font-black text-gray-900">{String(userCount)}</p>
+          <p className="text-gray-500 text-xs mt-0.5">Total Users</p>
+        </div>
+        
+        {/* Pending Withdrawals */}
+         <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center mb-3 shadow-lg">
+              <ArrowUpFromLine className="w-4 h-4 text-white" />
+            </div>
+            <p className="text-xl font-black text-gray-900">{String(pendingWithdrawalsCount)}</p>
+            <p className="text-gray-500 text-xs mt-0.5">Pending Withdrawals</p>
+          </div>
+
+        {/* Active Generators */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-3 shadow-lg">
+            <Zap className="w-4 h-4 text-white" />
+          </div>
+          <p className="text-xl font-black text-gray-900">{String(activeGeneratorCount)}</p>
+          <p className="text-gray-500 text-xs mt-0.5">Active Generators</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
