@@ -8,19 +8,22 @@ export async function signup(values: any) {
   const supabase = createClient();
   const origin = headers().get('origin');
 
-  const { email, password, fullName: nameValue, username } = values;
+  const { email, password, fullName, username, country, phone, referralCode } = values;
 
-  // Sign up the user in Supabase Auth, passing only essential data in the metadata.
-  // This assumes a database trigger is responsible for creating the public.profiles record.
-  // By simplifying the data, we reduce the chance of the trigger failing due to a schema mismatch.
+  // The new user's profile information will be passed in the `options.data` property
+  // of the `signUp` method. This metadata will be used on the dashboard page to create
+  // the user's profile, making the process resilient to database trigger failures.
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       emailRedirectTo: `${origin}/auth/callback`,
       data: {
-        full_name: nameValue,
+        full_name: fullName,
         username: username,
+        country: country,
+        phone: phone,
+        referral_code: referralCode,
       },
     },
   });
@@ -29,10 +32,9 @@ export async function signup(values: any) {
     if (error.message.includes('User already registered')) {
         return { error: 'A user with this email address already exists.' };
     }
-    // The generic "Database error saving new user" often points to a failing trigger.
+    // This error is often caused by a failing database trigger or RLS policy.
     return { error: `Registration failed: ${error.message}` };
   }
 
-  // If signUp is successful, we assume the trigger has created the profile.
   return { error: null };
 }

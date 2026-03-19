@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { revalidatePath } from 'next/cache';
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -23,13 +24,39 @@ export default async function DashboardPage() {
     return redirect('/login');
   }
 
-  // Fetch the user's profile. We now assume this is created by a database trigger
-  // upon user signup. If it doesn't exist, something is wrong with the trigger setup.
-  const { data: profile } = await supabase
+  // Fetch the user's profile.
+  let { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
+
+  // If a profile doesn't exist, create it. This makes the app resilient to trigger failures.
+  if (!profile) {
+    const { full_name, username, country, phone, referral_code } = user.user_metadata;
+    const { error: insertError } = await supabase.from('profiles').insert({
+        id: user.id,
+        email: user.email,
+        full_name: full_name || 'New User',
+        username: username || user.email?.split('@')[0] || 'newuser',
+        country: country || 'Unknown',
+        phone: phone,
+        referral_code: referral_code || `CP-${((username || 'USER').slice(0,4)).toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}`,
+        balance: 1.00, // The $1 sign-up bonus
+        has_withdrawal_pin: false,
+    }).select().single();
+    
+    if (insertError) {
+        console.error("Fatal error creating profile:", insertError);
+        // Redirect to a safe page with an error.
+        return redirect(`/login?message=Could not create your user profile. Please contact support.`);
+    }
+
+    // After creating the profile, revalidate and redirect to ensure the page re-renders with the new data.
+    revalidatePath('/dashboard', 'layout');
+    redirect('/dashboard');
+  }
+
 
   // For the dashboard widgets, we'll fetch some aggregate data.
   // In a real app, you might use RPC functions for performance.
@@ -40,9 +67,18 @@ export default async function DashboardPage() {
   const { data: withdrawals } = await supabase
     .from('withdrawal_requests')
     .select('status');
+  
+  const { data: rentedGenerators } = await supabase
+    .from('rented_generators')
+    .select('id, expires_at')
+    .eq('user_id', user.id);
 
   const pendingWithdrawalsCount =
     withdrawals?.filter(function(w) { return w.status === 'pending'; }).length ?? 0;
+  
+  const now = new Date().getTime();
+  const activeGeneratorCount = rentedGenerators?.filter(function(g) { return new Date(g.expires_at).getTime() > now; }).length ?? 0;
+
 
   const initials =
     profile?.full_name
@@ -83,7 +119,7 @@ export default async function DashboardPage() {
           },
           {
             label: 'Active Generators',
-            value: '0',
+            value: String(activeGeneratorCount),
             icon: Zap,
             color: 'from-purple-500 to-purple-600',
           },
