@@ -80,13 +80,13 @@ export interface Generator {
   icon: string;
   color: string;
   price: number;
-  expireDays: number;
-  dailyIncome: number;
+  expire_days: number;
+  daily_income: number;
   published: boolean;
   roi: string;
   period: string;
-  minInvest: string;
-  maxInvest: string;
+  min_invest: string;
+  max_invest: string;
   investors: string;
   isFree?: boolean;
   imageUrl?: string;
@@ -100,13 +100,13 @@ export const generators: Generator[] = [
     icon: '⚡',
     color: 'amber',
     price: 0,
-    expireDays: 2,
-    dailyIncome: 0.20,
+    expire_days: 2,
+    daily_income: 0.20,
     published: true,
     roi: '$0.20/day',
     period: 'Daily',
-    minInvest: '$0',
-    maxInvest: '$9',
+    min_invest: '$0',
+    max_invest: '$9',
     investors: '12,450',
     isFree: true,
     imageUrl: PlaceHolderImages.find(i => i.id === 'gen-pg1')?.imageUrl,
@@ -118,13 +118,13 @@ export const generators: Generator[] = [
     icon: '🚀',
     color: 'green',
     price: 10,
-    expireDays: 10,
-    dailyIncome: 1.00,
+    expire_days: 10,
+    daily_income: 1.00,
     published: true,
     roi: '$1.00/day',
     period: 'Daily',
-    minInvest: '$10',
-    maxInvest: '$14',
+    min_invest: '$10',
+    max_invest: '$14',
     investors: '8,320',
     imageUrl: PlaceHolderImages.find(i => i.id === 'gen-pg2')?.imageUrl,
   },
@@ -135,13 +135,13 @@ export const generators: Generator[] = [
     icon: '💎',
     color: 'blue',
     price: 15,
-    expireDays: 15,
-    dailyIncome: 1.20,
+    expire_days: 15,
+    daily_income: 1.20,
     published: true,
     roi: '$1.20/day',
     period: 'Daily',
-    minInvest: '$15',
-    maxInvest: '$19',
+    min_invest: '$15',
+    max_invest: '$19',
     investors: '4,100',
     imageUrl: PlaceHolderImages.find(i => i.id === 'gen-pg3')?.imageUrl,
   },
@@ -152,13 +152,13 @@ export const generators: Generator[] = [
     icon: '👑',
     color: 'purple',
     price: 20,
-    expireDays: 20,
-    dailyIncome: 1.50,
+    expire_days: 20,
+    daily_income: 1.50,
     published: true,
     roi: '$1.50/day',
     period: 'Daily',
-    minInvest: '$20',
-    maxInvest: 'Unlimited',
+    min_invest: '$20',
+    max_invest: 'Unlimited',
     investors: '1,290',
     imageUrl: PlaceHolderImages.find(i => i.id === 'gen-pg4')?.imageUrl,
   }

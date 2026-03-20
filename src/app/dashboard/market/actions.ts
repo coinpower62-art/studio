@@ -59,7 +59,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     }
     
     const rentedAt = new Date();
-    const expiresAt = new Date(rentedAt.getTime() + generatorToRent.expireDays * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(rentedAt.getTime() + generatorToRent.expire_days * 24 * 60 * 60 * 1000);
 
     const { error: rentalError } = await supabase
         .from('rented_generators')

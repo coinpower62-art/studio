@@ -469,7 +469,7 @@ export default function Market() {
                     <div className="flex items-center justify-between mt-3 px-1">
                       <div className="flex items-center gap-1.5 bg-white/80 border border-amber-200 rounded-lg px-2.5 py-1.5 shadow-sm">
                         <Clock className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-                        <span className="text-xs font-bold text-gray-800">{gen.expireDays} Days</span>
+                        <span className="text-xs font-bold text-gray-800">{gen.expire_days} Days</span>
                       </div>
                       <div className="flex items-center gap-1.5 bg-white/80 border border-green-200 rounded-lg px-2.5 py-1.5 shadow-sm">
                         <TrendingUp className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
@@ -484,7 +484,7 @@ export default function Market() {
 
                   <div className="p-4 sm:p-5">
                     <div className="mb-4">
-                      <LiveChart genId={gen.id} dailyIncome={gen.dailyIncome} color={gen.color} isRented={isRented} />
+                      <LiveChart genId={gen.id} dailyIncome={gen.daily_income} color={gen.color} isRented={isRented} />
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 mb-4">
@@ -494,11 +494,11 @@ export default function Market() {
                       </div>
                       <div className="bg-green-50 rounded-xl px-2 py-2 text-center border border-green-100">
                         <p className="text-green-500 text-[10px] font-medium">Daily Income</p>
-                        <p className="text-green-700 font-black text-sm">${gen.dailyIncome}</p>
+                        <p className="text-green-700 font-black text-sm">${gen.daily_income}</p>
                       </div>
                       <div className="bg-amber-50 rounded-xl px-2 py-2 text-center border border-amber-100">
                         <p className="text-amber-500 text-[10px] font-medium">Total Income</p>
-                        <p className="text-amber-700 font-black text-sm">${(gen.dailyIncome * gen.expireDays).toFixed(2)}</p>
+                        <p className="text-amber-700 font-black text-sm">${(gen.daily_income * gen.expire_days).toFixed(2)}</p>
                       </div>
                     </div>
 

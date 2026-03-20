@@ -49,8 +49,8 @@ type UserRecord = {
 
 type Generator = {
   id: string; name: string; subtitle: string; icon: string; color: string;
-  price: number; expireDays: number; dailyIncome: number; published: boolean;
-  roi: string; period: string; minInvest: string; maxInvest: string; investors: string;
+  price: number; expire_days: number; daily_income: number; published: boolean;
+  roi: string; period: string; min_invest: string; max_invest: string; investors: string;
   image_url?: string;
 };
 
@@ -58,8 +58,8 @@ type NewGenerator = Omit<Generator, "id">;
 
 const BLANK_GEN: NewGenerator = {
   name: "", subtitle: "", icon: "⚡", color: "from-amber-400 to-orange-500",
-  price: 0, expireDays: 30, dailyIncome: 0, published: false,
-  roi: "", period: "Daily", minInvest: "", maxInvest: "", investors: "0",
+  price: 0, expire_days: 30, daily_income: 0, published: false,
+  roi: "", period: "Daily", min_invest: "", max_invest: "", investors: "0",
 };
 
 const COLORS = [
@@ -1043,10 +1043,10 @@ export default function AdminDashboard() {
                           {[
                             { label: "Generator ID", value: g.id },
                             { label: "Rent Price", value: `$${g.price.toLocaleString()}` },
-                            { label: "Expire Days", value: `${g.expireDays} days` },
-                            { label: "Daily Income", value: `$${g.dailyIncome}` },
-                            { label: "Min Invest", value: g.minInvest },
-                            { label: "Max Invest", value: g.maxInvest },
+                            { label: "Expire Days", value: `${g.expire_days} days` },
+                            { label: "Daily Income", value: `$${g.daily_income}` },
+                            { label: "Min Invest", value: g.min_invest },
+                            { label: "Max Invest", value: g.max_invest },
                           ].map(function({ label, value }) { return (
                             <div key={label} className="bg-slate-700/50 rounded-xl px-2.5 py-2">
                               <p className="text-slate-400 text-[10px]">{label}</p>
@@ -1230,11 +1230,11 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Expire Days *</label>
-                  <Input type="number" value={newGen.expireDays || ""} onChange={function(e) { return setNewGen({ ...newGen, expireDays: parseInt(e.target.value) || 0 }); }} placeholder="30" data-testid="input-gen-expire" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                  <Input type="number" value={newGen.expire_days || ""} onChange={function(e) { return setNewGen({ ...newGen, expire_days: parseInt(e.target.value) || 0 }); }} placeholder="30" data-testid="input-gen-expire" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Daily Income ($) *</label>
-                  <Input type="number" value={newGen.dailyIncome || ""} onChange={function(e) { return setNewGen({ ...newGen, dailyIncome: parseFloat(e.target.value) || 0 }); }} placeholder="10" data-testid="input-gen-income" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                  <Input type="number" value={newGen.daily_income || ""} onChange={function(e) { return setNewGen({ ...newGen, daily_income: parseFloat(e.target.value) || 0 }); }} placeholder="10" data-testid="input-gen-income" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
               </div>
 
@@ -1256,11 +1256,11 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Min Invest</label>
-                  <Input value={newGen.minInvest} onChange={function(e) { return setNewGen({ ...newGen, minInvest: e.target.value }); }} placeholder="$100" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                  <Input value={newGen.min_invest} onChange={function(e) { return setNewGen({ ...newGen, min_invest: e.target.value }); }} placeholder="$100" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Max Invest</label>
-                  <Input value={newGen.maxInvest} onChange={function(e) { return setNewGen({ ...newGen, maxInvest: e.target.value }); }} placeholder="$9,999" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                  <Input value={newGen.max_invest} onChange={function(e) { return setNewGen({ ...newGen, max_invest: e.target.value }); }} placeholder="$9,999" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
               </div>
 
@@ -1294,7 +1294,7 @@ export default function AdminDashboard() {
                   <span className="text-2xl">{newGen.icon}</span>
                   <div className="flex-1">
                     <p className="text-white font-black text-sm">{newGen.name}</p>
-                    <p className="text-white/70 text-xs">${newGen.price}/rent · ${newGen.dailyIncome}/day · {newGen.expireDays}d</p>
+                    <p className="text-white/70 text-xs">${newGen.price}/rent · ${newGen.daily_income}/day · {newGen.expire_days}d</p>
                   </div>
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${newGen.published ? "bg-green-500 text-white" : "bg-black/30 text-white/70"}`}>{newGen.published ? "LIVE" : "DRAFT"}</span>
                 </div>
@@ -1329,10 +1329,10 @@ export default function AdminDashboard() {
                 { label: "ROI Display", key: "roi", type: "text" },
                 { label: "Period", key: "period", type: "text" },
                 { label: "Rent Price ($)", key: "price", type: "number" },
-                { label: "Expire Days", key: "expireDays", type: "number" },
-                { label: "Daily Income ($)", key: "dailyIncome", type: "number" },
-                { label: "Min Invest", key: "minInvest", type: "text" },
-                { label: "Max Invest", key: "maxInvest", type: "text" },
+                { label: "Expire Days", key: "expire_days", type: "number" },
+                { label: "Daily Income ($)", key: "daily_income", type: "number" },
+                { label: "Min Invest", key: "min_invest", type: "text" },
+                { label: "Max Invest", key: "max_invest", type: "text" },
                 { label: "Investors", key: "investors", type: "text" },
               ].map(function({ label, key, type }) { return (
                 <div key={key}>
