@@ -8,11 +8,11 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  const supabaseUrl = process.env.SUPABASE_URL
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Missing server-side environment variables: SUPABASE_URL and SUPABASE_ANON_KEY are required! Check your .env.local file.")
+    throw new Error("Missing environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are required! Check your .env file and deployment secrets.")
   }
 
   const supabase = createServerClient(
