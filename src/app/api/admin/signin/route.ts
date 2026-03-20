@@ -1,5 +1,6 @@
-
 import { NextResponse } from 'next/server';
+
+export const runtime = 'edge';
 
 // This API route is deprecated as of the admin login consolidation.
 // Admin login is now handled via the primary /login server action.

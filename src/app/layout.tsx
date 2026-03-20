@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { SplashProvider } from '@/components/SplashProvider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
+export const runtime = 'edge';
+
 export const metadata: Metadata = {
   title: 'CoinPower',
   description: 'Your powerhouse for crypto investment.',
