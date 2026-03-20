@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -72,10 +72,10 @@ const COLORS = [
 ];
 
 const DEFAULT_GENERATORS = [
-  { id: 'pg1', name: "PG1 Generator", subtitle: "Starter Power Plan", icon: "⚡", color: "from-amber-400 to-orange-500", price: 0, expire_days: 3, daily_income: 0.20, published: true, roi: "$0.20/day", period: "Daily", min_invest: "$0", max_invest: "$9", investors: "12,450" },
-  { id: 'pg2', name: "PG2 Generator", subtitle: "Growth Power Plan", icon: "🚀", color: "from-green-400 to-emerald-600", price: 10, expire_days: 10, daily_income: 1.00, published: true, roi: "$1.00/day", period: "Daily", min_invest: "$10", max_invest: "$14", investors: "8,320" },
-  { id: 'pg3', name: "PG3 Generator", subtitle: "Pro Power Plan", icon: "💎", color: "from-blue-400 to-indigo-600", price: 15, expire_days: 15, daily_income: 1.20, published: true, roi: "$1.20/day", period: "Daily", min_invest: "$15", max_invest: "$19", investors: "4,100" },
-  { id: 'pg4', name: "PG4 Generator", subtitle: "Elite Power Plan", icon: "👑", color: "from-purple-500 to-pink-600", price: 20, expire_days: 20, daily_income: 1.50, published: true, roi: "$1.50/day", period: "Daily", min_invest: "$20", max_invest: "Unlimited", investors: "1,290" },
+  { id: 'pg1', name: "PG1 Generator", subtitle: "Basic Power", icon: "⚡", color: "from-amber-400 to-orange-500", price: 0, expire_days: 2, daily_income: 0.5, published: true, roi: "10%", period: "Daily", min_invest: "$0", max_invest: "$0", investors: "12050" },
+  { id: 'pg2', name: "PG2 Generator", subtitle: "Standard Power", icon: "🔋", color: "from-green-400 to-emerald-600", price: 25, expire_days: 30, daily_income: 2.5, published: true, roi: "12%", period: "Daily", min_invest: "$25", max_invest: "$1000", investors: "8520" },
+  { id: 'pg3', name: "PG3 Generator", subtitle: "Mega Power", icon: "💡", color: "from-blue-400 to-indigo-600", price: 100, expire_days: 45, daily_income: 10, published: true, roi: "15%", period: "Daily", min_invest: "$100", max_invest: "$5000", investors: "4310" },
+  { id: 'pg4', name: "PG4 Generator", subtitle: "Ultra Power", icon: "🚀", color: "from-purple-500 to-pink-600", price: 500, expire_days: 60, daily_income: 55, published: true, roi: "20%", period: "Daily", min_invest: "$500", max_invest: "$20000", investors: "1250" },
 ];
 
 
@@ -156,6 +156,7 @@ function DepositRow({ d, onApprove, onReject, approvePending, rejectPending }: {
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const supabase = createClient();
 
