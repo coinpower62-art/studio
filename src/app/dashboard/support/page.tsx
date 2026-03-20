@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -213,7 +214,7 @@ export default function SupportPage() {
   }, []);
 
   return (
-    <div className="pt-12 pb-24 min-h-screen bg-[#f7f9f4]">
+    <div className="pb-24 min-h-screen">
       {/* Hero */}
       <div className="bg-gradient-to-br from-amber-500 to-amber-700 px-4 py-8 text-center shadow-lg">
         <div className="flex items-center justify-center gap-2 mb-2">

@@ -198,7 +198,7 @@ export default function Market() {
   const publishedGenerators = generators.filter(g => g.published);
 
   return (
-    <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
+    <div className="pb-20 min-h-screen">
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
 
         <div className="text-center py-4 sm:py-8 mb-2">

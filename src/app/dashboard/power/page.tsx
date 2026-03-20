@@ -637,7 +637,7 @@ export default function Power() {
   const expiredGenerators = rentedGenerators.filter(function(ug) { return ug && ug.expires_at && new Date(ug.expires_at).getTime() <= now; });
 
   return (
-    <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
+    <div className="pb-20 min-h-screen">
       
       {claimedInfo && (
         <ClaimSuccessOverlay
@@ -795,3 +795,4 @@ export default function Power() {
 }
 
     
+

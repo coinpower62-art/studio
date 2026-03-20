@@ -64,6 +64,7 @@ function BottomNav() {
 }
 
 function DashboardHeader({ user }: { user: SupabaseUser | null }) {
+  const pathname = usePathname();
   const getInitials = () => {
     if (user?.user_metadata?.full_name) {
         return user.user_metadata.full_name.split(' ').map(function(n) { return n[0]; }).join('').toUpperCase();
@@ -72,6 +73,10 @@ function DashboardHeader({ user }: { user: SupabaseUser | null }) {
       return user.email[0].toUpperCase();
     }
     return "U";
+  }
+
+  if (pathname !== '/dashboard') {
+    return null;
   }
 
   return (
@@ -217,5 +222,3 @@ export default function DashboardLayout({
     </div>
   );
 }
-
-    

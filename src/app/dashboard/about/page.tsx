@@ -52,7 +52,7 @@ export default function AboutPage() {
   const COUNTRIES = COUNTRIES_DATA;
 
   return (
-    <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
+    <div className="pb-20 min-h-screen">
       <div className="max-w-6xl mx-auto px-3 sm:px-6">
 
         {/* ── Hero Banner ── */}

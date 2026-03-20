@@ -49,7 +49,7 @@ const announcements = [
 
 function ActivityPageSkeleton() {
     return (
-      <div className="pt-12 p-4 pb-20 max-w-7xl mx-auto">
+      <div className="p-4 pb-20 max-w-7xl mx-auto">
         <Skeleton className="h-96 rounded-2xl" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-6">
             <div className="lg:col-span-2"><Skeleton className="h-64 rounded-2xl" /></div>
@@ -135,7 +135,7 @@ export default function ActivityPage() {
   const initials = profile.full_name?.split(" ").map(function(n) { return n[0]; }).join("").toUpperCase().slice(0, 2) || "CP";
 
   return (
-    <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
+    <div className="pb-20 min-h-screen">
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
 
         {/* Hero banner */}
@@ -594,3 +594,4 @@ export default function ActivityPage() {
     
 
     
+
