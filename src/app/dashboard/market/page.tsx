@@ -2,11 +2,11 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { generators as allGenerators, type Generator } from '@/lib/data';
-import { Zap, TrendingUp, Clock, Star, Users, Shield, CheckCircle, AlertCircle, Timer, Wallet, ArrowDownToLine, Activity, LogOut } from "lucide-react";
+import type { Generator } from '@/lib/data';
+import { Zap, TrendingUp, Clock, Star, Users, Shield, CheckCircle, AlertCircle, Timer, Wallet, ArrowDownToLine, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,13 +48,6 @@ function getGenPair(genId: string): string {
   for (let i = 0; i < genId.length; i++) h = ((h << 5) + h) ^ genId.charCodeAt(i);
   return CHART_PAIRS[Math.abs(h) % CHART_PAIRS.length];
 }
-
-const generatorImages: Record<string, string | undefined> = {
-  pg1: PlaceHolderImages.find(function(i) { return i.id === 'gen-pg1'; })?.imageUrl,
-  pg2: PlaceHolderImages.find(function(i) { return i.id === 'gen-pg2'; })?.imageUrl,
-  pg3: PlaceHolderImages.find(function(i) { return i.id === 'gen-pg3'; })?.imageUrl,
-  pg4: PlaceHolderImages.find(function(i) { return i.id === 'gen-pg4'; })?.imageUrl,
-};
 
 function useOnVisible(fn: () => void) {
   useEffect(function() {
@@ -285,12 +278,12 @@ export default function Market() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [generators, setGenerators] = useState<Generator[]>([]);
   const [rentedGenerators, setRentedGenerators] = useState<RentedGenerator[]>([]);
   
   const [lowBalanceGen, setLowBalanceGen] = useState<{ name: string; price: number } | null>(null);
   const [isRenting, setIsRenting] = useState<string | null>(null);
 
-  const generators = allGenerators;
   const supabase = createClient();
 
   const fetchData = useCallback(async function() {
@@ -323,6 +316,18 @@ export default function Market() {
           toast({ title: 'Error fetching generators', variant: 'destructive'});
       } else {
           setRentedGenerators(rentedData as RentedGenerator[]);
+      }
+
+      const { data: allGenerators, error: generatorsError } = await supabase
+        .from('generators')
+        .select('*')
+        .order('price', { ascending: true });
+
+      if (generatorsError) {
+          toast({ title: 'Error fetching market generators', variant: 'destructive'});
+          setGenerators([]);
+      } else {
+          setGenerators(allGenerators as Generator[]);
       }
       
       setIsLoading(false);
@@ -458,7 +463,7 @@ export default function Market() {
 
                     <div className="w-full h-52 sm:h-64 rounded-xl overflow-hidden shadow-inner">
                       <img
-                          src={generatorImages[gen.id]}
+                          src={gen.image_url || PlaceHolderImages.find(i => i.id === `gen-${gen.id}`)?.imageUrl}
                           alt={gen.name}
                           className="w-full h-full object-cover"
                           onError={function(e) { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget.parentElement as HTMLElement).style.background = `linear-gradient(135deg, ${cm.gradS} 0%, ${cm.gradE} 100%)`; }}
@@ -494,11 +499,11 @@ export default function Market() {
                       </div>
                       <div className="bg-green-50 rounded-xl px-2 py-2 text-center border border-green-100">
                         <p className="text-green-500 text-[10px] font-medium">Daily Income</p>
-                        <p className="text-green-700 font-black text-sm">${gen.daily_income}</p>
+                        <p className="text-green-700 font-black text-sm">$${gen.daily_income}</p>
                       </div>
                       <div className="bg-amber-50 rounded-xl px-2 py-2 text-center border border-amber-100">
                         <p className="text-amber-500 text-[10px] font-medium">Total Income</p>
-                        <p className="text-amber-700 font-black text-sm">${(gen.daily_income * gen.expire_days).toFixed(2)}</p>
+                        <p className="text-amber-700 font-black text-sm">$${(gen.daily_income * gen.expire_days).toFixed(2)}</p>
                       </div>
                     </div>
 
@@ -592,16 +597,16 @@ export default function Market() {
                 </div>
                 <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
                   <span className="text-gray-500 text-sm">Required</span>
-                  <span className="font-black text-red-600 text-sm">${lowBalanceGen.price.toLocaleString()}</span>
+                  <span className="font-black text-red-600 text-sm">$${lowBalanceGen.price.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
                   <span className="text-gray-500 text-sm">Your Balance</span>
-                  <span className="font-black text-gray-900 text-sm">${profile.balance.toFixed(2)}</span>
+                  <span className="font-black text-gray-900 text-sm">$${profile.balance.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center bg-red-50 border border-red-100 rounded-xl px-4 py-3">
                   <span className="text-red-600 text-sm font-medium">Shortfall</span>
                   <span className="font-black text-red-600 text-sm">
-                    ${Math.max(0, lowBalanceGen.price - profile.balance).toFixed(2)}
+                    $${Math.max(0, lowBalanceGen.price - profile.balance).toFixed(2)}
                   </span>
                 </div>
               </div>

@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { generators as allGenerators } from '@/lib/data';
 
 export async function rentGeneratorAction(generatorId: string): Promise<{ error?: string }> {
     const supabase = createClient();
@@ -22,8 +21,13 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         return { error: 'Could not find your user profile.' };
     }
 
-    const generatorToRent = allGenerators.find(g => g.id === generatorId);
-    if (!generatorToRent) {
+    const { data: generatorToRent, error: generatorError } = await supabase
+        .from('generators')
+        .select('*')
+        .eq('id', generatorId)
+        .single();
+
+    if (generatorError || !generatorToRent) {
         return { error: 'Generator not found.' };
     }
     

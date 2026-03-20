@@ -107,18 +107,12 @@ const steps = [
     subtitle: "Choose a generator from the Market",
     details: [
       "Go to the Market tab at the bottom",
-      "Browse PG1 (FREE), PG2 ($10), PG3 ($15), or PG4 ($20)",
+      "Browse available generators like PG1 (FREE), PG2, PG3, or PG4",
       "Each generator shows its daily income and total income for the period",
       "Tap the Activate / Rent button to start earning",
     ],
     tip: "PG1 is completely FREE — perfect to start earning with $0 investment!",
     tipIcon: Star,
-    generators: [
-      { id: "PG1", price: "FREE", daily: "$0.20/day", total: "$0.40", days: 2, color: "bg-amber-100 text-amber-800" },
-      { id: "PG2", price: "$10", daily: "$1.00/day", total: "$10.00", days: 10, color: "bg-green-100 text-green-800" },
-      { id: "PG3", price: "$15", daily: "$1.20/day", total: "$18.00", days: 15, color: "bg-blue-100 text-blue-800" },
-      { id: "PG4", price: "$20", daily: "$1.50/day", total: "$30.00", days: 20, color: "bg-purple-100 text-purple-800" },
-    ],
     action: { label: "Go to Market", href: "/dashboard/market" },
   },
   {
@@ -344,30 +338,7 @@ export default function SupportPage() {
                     </div>
                   </div>
                 )}
-
-                {/* Generator table (Step 4 only) */}
-                {step.generators && (
-                  <div className="rounded-xl overflow-hidden border border-gray-100">
-                    <div className="grid grid-cols-4 bg-gray-50 px-3 py-2 text-center">
-                      <p className="text-gray-400 text-[10px] font-bold uppercase">Plan</p>
-                      <p className="text-gray-400 text-[10px] font-bold uppercase">Cost</p>
-                      <p className="text-gray-400 text-[10px] font-bold uppercase">Daily</p>
-                      <p className="text-gray-400 text-[10px] font-bold uppercase">Total</p>
-                    </div>
-                    {step.generators.map(function(g) { return (
-                      <div key={g.id} className="grid grid-cols-4 px-3 py-2.5 border-t border-gray-50 text-center items-center">
-                        <span className={`inline-block text-xs font-black px-1.5 py-0.5 rounded-lg ${g.color}`}>{g.id}</span>
-                        <p className="text-gray-900 text-xs font-bold">{g.price}</p>
-                        <p className="text-green-700 text-xs font-semibold">{g.daily}</p>
-                        <p className="text-amber-700 text-xs font-bold">{g.total}</p>
-                      </div>
-                    ); })}
-                    <div className="bg-gray-50 px-3 py-1.5 text-center">
-                      <p className="text-gray-400 text-[10px]">Total income over the full period</p>
-                    </div>
-                  </div>
-                )}
-
+                
                 {/* Tip box */}
                 <div className={`${step.bgLight} border ${step.borderColor} rounded-xl p-3 flex items-start gap-2`}>
                   <TipIcon className="w-4 h-4 flex-shrink-0 mt-0.5 text-gray-600" />
@@ -454,5 +425,3 @@ export default function SupportPage() {
     </div>
   );
 }
-
-    

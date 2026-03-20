@@ -89,80 +89,10 @@ export interface Generator {
   max_invest: string;
   investors: string;
   isFree?: boolean;
-  imageUrl?: string;
+  image_url?: string;
 }
 
-export const generators: Generator[] = [
-  {
-    id: 'pg1',
-    name: 'PG1 Generator',
-    subtitle: 'Starter Power Plan',
-    icon: '⚡',
-    color: 'amber',
-    price: 0,
-    expire_days: 2,
-    daily_income: 0.20,
-    published: true,
-    roi: '$0.20/day',
-    period: 'Daily',
-    min_invest: '$0',
-    max_invest: '$9',
-    investors: '12,450',
-    isFree: true,
-    imageUrl: PlaceHolderImages.find(i => i.id === 'gen-pg1')?.imageUrl,
-  },
-  {
-    id: 'pg2',
-    name: 'PG2 Generator',
-    subtitle: 'Growth Power Plan',
-    icon: '🚀',
-    color: 'green',
-    price: 10,
-    expire_days: 10,
-    daily_income: 1.00,
-    published: true,
-    roi: '$1.00/day',
-    period: 'Daily',
-    min_invest: '$10',
-    max_invest: '$14',
-    investors: '8,320',
-    imageUrl: PlaceHolderImages.find(i => i.id === 'gen-pg2')?.imageUrl,
-  },
-  {
-    id: 'pg3',
-    name: 'PG3 Generator',
-    subtitle: 'Pro Power Plan',
-    icon: '💎',
-    color: 'blue',
-    price: 15,
-    expire_days: 15,
-    daily_income: 1.20,
-    published: true,
-    roi: '$1.20/day',
-    period: 'Daily',
-    min_invest: '$15',
-    max_invest: '$19',
-    investors: '4,100',
-    imageUrl: PlaceHolderImages.find(i => i.id === 'gen-pg3')?.imageUrl,
-  },
-  {
-    id: 'pg4',
-    name: 'PG4 Generator',
-    subtitle: 'Elite Power Plan',
-    icon: '👑',
-    color: 'purple',
-    price: 20,
-    expire_days: 20,
-    daily_income: 1.50,
-    published: true,
-    roi: '$1.50/day',
-    period: 'Daily',
-    min_invest: '$20',
-    max_invest: 'Unlimited',
-    investors: '1,290',
-    imageUrl: PlaceHolderImages.find(i => i.id === 'gen-pg4')?.imageUrl,
-  }
-];
+export const generators: Generator[] = [];
 
 export const winners = [
   { name: 'Kwame A.', earnings: 5.20 },

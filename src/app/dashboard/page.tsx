@@ -60,7 +60,9 @@ export default async function DashboardPage() {
         return redirect(`/login?message=Could not create your user profile. Please contact support.`);
     }
 
+    // Automatically rent the free PG1 generator for new users.
     await rentGeneratorAction('pg1');
+    
     revalidatePath('/dashboard', 'layout');
     redirect('/dashboard');
   }
