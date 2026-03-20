@@ -188,6 +188,7 @@ export default function Market() {
   rentedGenerators.filter(function(ug: RentedGenerator) { return new Date(ug.expires_at).getTime() > now; }).forEach(function(ug: RentedGenerator) {
     activeRentedCounts.set(ug.generator_id, (activeRentedCounts.get(ug.generator_id) || 0) + 1);
   });
+  const hasEverRentedPg1 = rentedGenerators.some(g => g.generator_id === 'pg1');
 
   const colorMap: Record<string, { bg: string; border: string; badge: string; badgeText: string; gradS: string; gradE: string; badgeLabel: string }> = {
     "from-amber-400 to-orange-500": { bg: "from-amber-50 to-orange-50", border: "border-amber-200", badge: "bg-amber-100", badgeText: "text-amber-700", gradS: "#f59e0b", gradE: "#f97316", badgeLabel: "Popular" },
@@ -230,11 +231,11 @@ export default function Market() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-10">
-            {generators.filter(gen => (activeRentedCounts.get(gen.id) || 0) < (gen.id === 'pg1' ? 1 : 2)).map((gen) => {
+            {generators.map((gen) => {
               const cm = colorMap[gen.color] || colorMap["from-amber-400 to-orange-500"];
               const rentedCount = activeRentedCounts.get(gen.id) || 0;
               const isRented = rentedCount > 0;
-              const isMaxed = gen.id === 'pg1' ? rentedCount >=1 : rentedCount >= 2;
+              const isMaxed = gen.id === 'pg1' ? hasEverRentedPg1 : rentedCount >= 2;
               const activeUg = rentedGenerators.find(ug => ug.generator_id === gen.id && new Date(ug.expires_at).getTime() > now);
 
               return (
@@ -251,16 +252,15 @@ export default function Market() {
                         <span className={'text-xs font-semibold px-2 py-1 rounded-full ' + cm.badge + ' ' + cm.badgeText}>
                           {cm.badgeLabel}
                         </span>
-                        {isRented && gen.id === "pg1" && (
+                        {gen.id === "pg1" && hasEverRentedPg1 ? (
                           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" /> Active (1 only)
+                            <CheckCircle className="w-3 h-3" /> Rented (1 only)
                           </span>
-                        )}
-                        {isRented && gen.id !== "pg1" && (
+                        ) : isRented ? (
                           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 flex items-center gap-1">
                             <CheckCircle className="w-3 h-3" /> {rentedCount}/2 Active
                           </span>
-                        )}
+                        ) : null}
                       </div>
                     </div>
 
@@ -320,7 +320,7 @@ export default function Market() {
                         <Button disabled
                           className="w-full bg-gray-100 border border-gray-300 text-gray-400 font-semibold rounded-xl h-10 sm:h-11 flex items-center gap-2 justify-center text-sm cursor-not-allowed"
                         >
-                          <CheckCircle className="w-4 h-4" /> {gen.id === 'pg1' ? 'Active (1 only)' : 'Max Reached (2/2)'}
+                          <CheckCircle className="w-4 h-4" /> {gen.id === 'pg1' ? 'Rented (1 only)' : 'Max Reached (2/2)'}
                         </Button>
                          { isRented &&
                             <Button variant="outline" onClick={() => router.push("/dashboard/power")}
@@ -436,4 +436,3 @@ export default function Market() {
     </div>
   );
 }
-

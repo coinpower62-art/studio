@@ -45,7 +45,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
              return { error: 'Could not verify your existing generators.' };
         }
         if (count && count > 0) {
-            return { error: 'You can only have one PG1 Generator active at a time.' };
+            return { error: 'You can only rent the free PG1 Generator once.' };
         }
     }
 
