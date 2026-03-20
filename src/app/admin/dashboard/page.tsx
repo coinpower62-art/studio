@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
@@ -26,7 +26,6 @@ import {
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
 
-
 type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "generators" | "media" | "codes" | "settings" | "about";
 
 type DepositRequest = {
@@ -35,16 +34,17 @@ type DepositRequest = {
 };
 
 type UserRecord = {
-  id: string; 
-  full_name: string; 
-  username: string; 
+  id: string;
+  full_name: string;
+  username: string;
   email: string;
-  country: string; 
+  country: string;
   balance: number;
-  referral_code: string | null; 
+  referral_code: string | null;
   referred_by: string | null;
   referral_count?: number;
   phone?: string;
+  created_at: string;
 };
 
 type Generator = {
@@ -154,7 +154,8 @@ function DepositRow({ d, onApprove, onReject, approvePending, rejectPending }: {
   );
 }
 
-export default function AdminDashboard() {
+
+function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -167,10 +168,10 @@ export default function AdminDashboard() {
   // --- Data State ---
   const [admin, setAdmin] = useState<{name: string} | null>(null);
   const [adminLoading, setAdminLoading] = useState(true);
-  
+
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
-  
+
   const [generators, setGenerators] = useState<Generator[]>([]);
   const [gensLoading, setGensLoading] = useState(true);
 
@@ -179,11 +180,11 @@ export default function AdminDashboard() {
 
   const [withdrawals, setWithdrawals] = useState<WithdrawalRecord[]>([]);
   const [withdrawalsLoading, setWithdrawalsLoading] = useState(true);
-  
+
   const [media, setMedia] = useState<MediaAsset[]>([]);
   const [mediaLoading, setMediaLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
-  
+
 
   const fetchData = async () => {
       setUsersLoading(true);
@@ -191,7 +192,7 @@ export default function AdminDashboard() {
       setDepositsLoading(true);
       setWithdrawalsLoading(true);
       setMediaLoading(true);
-      
+
       const { data: usersData, error: usersError } = await supabase.from('profiles').select('*');
       if (usersError) toast({ title: 'Error fetching users', description: usersError.message, variant: 'destructive' });
       else setUsers(usersData as UserRecord[]);
@@ -216,7 +217,7 @@ export default function AdminDashboard() {
       if (mediaError) toast({ title: 'Error fetching media assets', description: mediaError.message, variant: 'destructive' });
       else setMedia(mediaData as MediaAsset[]);
       setMediaLoading(false);
-      
+
   }
 
   useEffect(() => {
@@ -225,7 +226,7 @@ export default function AdminDashboard() {
     if (!isAdminLoggedIn) {
       router.push('/login');
       return;
-    } 
+    }
     setAdmin({ name: 'Admin' });
     setAdminLoading(false);
     fetchData();
@@ -373,7 +374,7 @@ export default function AdminDashboard() {
       toast({ title: "Error rejecting withdrawal", description: withdrawalError.message, variant: "destructive" });
       return;
     }
-    
+
     const { error: balanceError } = await supabase.from('profiles').update({ balance: profile.balance + withdrawal.amount }).eq('id', withdrawal.user_id);
     if(balanceError) {
       await supabase.from('withdrawal_requests').update({ status: 'pending' }).eq('id', id);
@@ -429,7 +430,7 @@ export default function AdminDashboard() {
       toast({ title: 'Generator deleted' });
     }
   };
-  
+
   const handleImageUpload = async (bucket: 'generator-images' | 'activity-images', id: string, file: File) => {
     if (bucket === 'generator-images') {
         setUploading(`gen-${id}`);
@@ -471,7 +472,7 @@ export default function AdminDashboard() {
     }
     setUploading(null);
   };
-  
+
   const handleSeedGenerators = async () => {
     // Delete all existing generators
     const { error: deleteError } = await supabase.from('generators').delete().filter('id', 'not.is', null);
@@ -504,6 +505,8 @@ export default function AdminDashboard() {
 
   const heroImg = media.find(function(m) { return m.id === 'hero'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'activity-hero'; })?.imageUrl;
   const teamworkImg = media.find(function(m) { return m.id === 'teamwork'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'activity-teamwork'; })?.imageUrl;
+
+  const recentUsers = users.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const tabs: { id: Tab; label: string; icon: any; badge?: number; color: string }[] = [
     { id: "overview",     label: "Overview",    icon: BarChart3,       color: "from-blue-500 to-blue-600" },
@@ -643,7 +646,7 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
-      
+
       <main className="flex flex-col md:pl-72 pt-12 md:pt-0">
         <div className="flex-1 p-4 sm:p-6">
 
@@ -671,8 +674,8 @@ export default function AdminDashboard() {
                     <h3 className="font-bold text-white text-sm">Recent Users</h3>
                     <button onClick={function() { return switchTab("users"); }} className="text-amber-400 text-xs flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></button>
                   </div>
-                  {users.length === 0 ? <p className="text-slate-500 text-sm">No users yet</p> : (
-                    <div className="space-y-3">{users.slice(0, 5).map(function(u) {
+                  {recentUsers.length === 0 ? <p className="text-slate-500 text-sm">No users yet</p> : (
+                    <div className="space-y-3">{recentUsers.slice(0, 5).map(function(u) {
                       const initials = u.full_name?.split(" ").map(function(n) { return n[0]; }).join("").toUpperCase().slice(0, 2) || "??";
                       return (
                         <div key={u.id} className="flex items-center gap-3">
@@ -813,15 +816,15 @@ export default function AdminDashboard() {
                           </div>
                           <p className="text-green-400 font-black text-base flex-shrink-0">${(u.balance || 0).toFixed(2)}</p>
                         </div>
-                        
+
                          {editingUser?.id === u.id ? (
                           <div className="mb-3 p-3 rounded-lg bg-slate-700/50 border border-slate-600">
                               <p className="text-slate-300 text-xs font-semibold mb-2">Edit Balance for {u.full_name}</p>
                               <div className="flex gap-2">
-                                <Input 
-                                  type="number" 
-                                  value={newBalance} 
-                                  onChange={function(e) { return setNewBalance(e.target.value); }} 
+                                <Input
+                                  type="number"
+                                  value={newBalance}
+                                  onChange={function(e) { return setNewBalance(e.target.value); }}
                                   className="h-8 bg-slate-600 border-slate-500 text-white text-sm"
                                 />
                                 <Button size="sm" onClick={function() { return handleUpdateBalance(u.id, parseFloat(newBalance)); }} className="h-8 bg-green-600 hover:bg-green-500 text-white">Save</Button>
@@ -856,7 +859,7 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex flex-wrap gap-2">
                           <button onClick={function() { setEditingUser(u); setNewBalance(String(u.balance || 0)); }}
                             data-testid={`button-edit-user-${u.id}`}
@@ -908,7 +911,7 @@ export default function AdminDashboard() {
               )}
             </div>
           )}
-          
+
           {/* ── WITHDRAWALS ── */}
           {tab === "withdrawals" && (
             <div className="space-y-4">
@@ -1426,5 +1429,13 @@ export default function AdminDashboard() {
       )}
     </div>
   );
+}
+
+export default function AdminDashboard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading Dashboard...</p></div>}>
+      <DashboardContent />
+    </Suspense>
+  )
 }
     
