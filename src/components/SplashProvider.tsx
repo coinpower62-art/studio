@@ -4,7 +4,7 @@ import { SplashScreen } from './SplashScreen';
 import { usePathname } from 'next/navigation';
 
 // Paths where the splash screen should NOT appear
-const NO_SPLASH_PATHS = ["/signin", "/signup", "/admin", "/admin/dashboard", "/video-tutorial"];
+const NO_SPLASH_PATHS = ["/admin", "/admin/dashboard", "/video-tutorial"];
 
 export function SplashProvider({children}: {children: ReactNode}) {
     const pathname = usePathname();

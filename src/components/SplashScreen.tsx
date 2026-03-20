@@ -33,15 +33,8 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
                 >
                     <circle cx="16" cy="16" r="14" fill="currentColor" />
                     <path
-                    d="M17.866 10.6667L14.666 16.5333H19.2L15.4673 24L18.6673 17.8667H14.134L17.866 10.6667Z"
-                    fill="#000"
-                    />
-                    <circle
-                    cx="16"
-                    cy="16"
-                    r="15"
-                    stroke="currentColor"
-                    strokeWidth="2"
+                        d="M19 12L14.5 19L17 19L13 26L17.5 18L15 18L19 12Z"
+                        fill="#000"
                     />
                 </svg>
             </div>
