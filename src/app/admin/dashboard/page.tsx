@@ -183,7 +183,7 @@ export default function AdminDashboard() {
       setWithdrawalsLoading(true);
       setMediaLoading(true);
       
-      const { data: usersData, error: usersError } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+      const { data: usersData, error: usersError } = await supabase.from('profiles').select('*');
       if (usersError) toast({ title: 'Error fetching users', description: usersError.message, variant: 'destructive' });
       else setUsers(usersData as UserRecord[]);
       setUsersLoading(false);
@@ -1391,3 +1391,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
