@@ -422,7 +422,11 @@ export default function AdminDashboard() {
   };
   
   const handleImageUpload = async (bucket: 'generator-images' | 'activity-images', id: string, file: File) => {
-    setUploading(id);
+    if (bucket === 'generator-images') {
+        setUploading(`gen-${id}`);
+    } else {
+        setUploading(`act-${id}`);
+    }
     const fileExt = file.name.split('.').pop();
     const fileName = `${id}-${Date.now()}.${fileExt}`;
     const filePath = `${fileName}`;
@@ -439,7 +443,8 @@ export default function AdminDashboard() {
     const publicUrl = data.publicUrl;
 
     if (bucket === 'generator-images') {
-        const { error } = await supabase.from('generators').update({ image_url: publicUrl }).eq('id', id);
+        const name = id.toUpperCase();
+        const { error } = await supabase.from('generators').upsert({ id: id, name: name, image_url: publicUrl }, { onConflict: 'id' });
         if (error) {
             toast({ title: 'Database Update Failed', description: error.message, variant: 'destructive' });
         } else {
@@ -483,6 +488,9 @@ export default function AdminDashboard() {
     { id: "settings",     label: "Settings",    icon: Settings,        color: "from-slate-500 to-slate-600" },
     { id: "about",        label: "About",       icon: Info,            color: "from-indigo-500 to-indigo-600" },
   ];
+
+  const coreGeneratorIds = ['pg1', 'pg2', 'pg3', 'pg4'];
+  const otherGenerators = generators.filter(g => !coreGeneratorIds.includes(g.id));
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
@@ -1104,7 +1112,25 @@ export default function AdminDashboard() {
               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
                   <h3 className="font-bold text-white">Generator Images</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {generators.map(function(g) {
+                    {coreGeneratorIds.map(function(id) {
+                      const g = generators.find(gen => gen.id === id);
+                      const imageUrl = g?.image_url || PlaceHolderImages.find(function(i) { return i.id === `gen-${id}`; })?.imageUrl;
+                      const name = g?.name || id.toUpperCase();
+                      const isUploading = uploading === `gen-${id}`;
+                      return (
+                        <div key={id} className="text-center">
+                          <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-square object-cover" />
+                           <label htmlFor={`gen-upload-${id}`} className={`mt-2 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                              {isUploading ? 'Uploading...' : `Upload for ${id.toUpperCase()}`}
+                           </label>
+                           <input type="file" id={`gen-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
+                             const file = e.target.files?.[0];
+                             if (file) await handleImageUpload('generator-images', id, file);
+                           }}/>
+                        </div>
+                      );
+                    })}
+                    {otherGenerators.map(function(g) {
                       const isUploading = uploading === `gen-${g.id}`;
                       return (
                         <div key={g.id} className="text-center">
