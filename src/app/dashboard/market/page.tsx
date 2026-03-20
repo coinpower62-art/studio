@@ -427,7 +427,7 @@ export default function Market() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-10">
-            {generators.map(function(gen) {
+            {generators.filter(g => g.published).map(function(gen) {
               const cm = colorMap[gen.color] || colorMap["amber"];
               const rentedCount = activeRentedCounts.get(gen.id) || 0;
               const isRented = rentedCount > 0;
