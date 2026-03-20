@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
@@ -197,6 +196,8 @@ export default function Market() {
     "from-purple-500 to-pink-600": { bg: "from-purple-50 to-pink-50", border: "border-purple-200", badge: "bg-purple-100", badgeText: "text-purple-700", gradS: "#8b5cf6", gradE: "#ec4899", badgeLabel: "Premium" },
   };
 
+  const publishedGenerators = generators.filter(g => g.published);
+
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
       <TickerTape />
@@ -224,14 +225,16 @@ export default function Market() {
           </div>
         )}
 
-        {generators.length === 0 ? (
-          <div className="text-center py-16">
+        {publishedGenerators.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
             <Zap className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-400">No generators available right now.</p>
+            <h3 className="font-bold text-gray-800">Market is Currently Empty</h3>
+            <p className="text-gray-500 text-sm mt-1">There are no generators available for rent at the moment.</p>
+            <p className="text-gray-400 text-xs mt-3">Please check back later.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-10">
-            {generators.map((gen) => {
+            {publishedGenerators.map((gen) => {
               const cm = colorMap[gen.color] || colorMap["from-amber-400 to-orange-500"];
               const rentedCount = activeRentedCounts.get(gen.id) || 0;
               const isRented = rentedCount > 0;
