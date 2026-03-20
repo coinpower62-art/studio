@@ -21,7 +21,7 @@ import {
   Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
   Pencil, ImagePlus, Activity,
   Info, Building2, Phone, Mail, MapPin, Percent, Clock3,
-  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift
+  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
@@ -70,6 +70,14 @@ const COLORS = [
   { label: "Red", value: "from-red-500 to-rose-600" },
   { label: "Teal", value: "from-teal-400 to-cyan-600" },
 ];
+
+const DEFAULT_GENERATORS = [
+  { id: 'pg1', name: "PG1 Generator", subtitle: "Starter Power Plan", icon: "⚡", color: "from-amber-400 to-orange-500", price: 0, expire_days: 3, daily_income: 0.20, published: true, roi: "$0.20/day", period: "Daily", min_invest: "$0", max_invest: "$9", investors: "12,450" },
+  { id: 'pg2', name: "PG2 Generator", subtitle: "Growth Power Plan", icon: "🚀", color: "from-green-400 to-emerald-600", price: 10, expire_days: 10, daily_income: 1.00, published: true, roi: "$1.00/day", period: "Daily", min_invest: "$10", max_invest: "$14", investors: "8,320" },
+  { id: 'pg3', name: "PG3 Generator", subtitle: "Pro Power Plan", icon: "💎", color: "from-blue-400 to-indigo-600", price: 15, expire_days: 15, daily_income: 1.20, published: true, roi: "$1.20/day", period: "Daily", min_invest: "$15", max_invest: "$19", investors: "4,100" },
+  { id: 'pg4', name: "PG4 Generator", subtitle: "Elite Power Plan", icon: "👑", color: "from-purple-500 to-pink-600", price: 20, expire_days: 20, daily_income: 1.50, published: true, roi: "$1.50/day", period: "Daily", min_invest: "$20", max_invest: "Unlimited", investors: "1,290" },
+];
+
 
 type WithdrawalRecord = {
   id: string; user_id: string; username: string; full_name: string; country: string;
@@ -188,7 +196,7 @@ export default function AdminDashboard() {
       else setUsers(usersData as UserRecord[]);
       setUsersLoading(false);
 
-      const { data: gensData, error: gensError } = await supabase.from('generators').select('*').order('name', { ascending: true });
+      const { data: gensData, error: gensError } = await supabase.from('generators').select('*').order('price', { ascending: true });
       if (gensError) toast({ title: 'Error fetching generators', description: gensError.message, variant: 'destructive' });
       else setGenerators(gensData as Generator[]);
       setGensLoading(false);
@@ -462,6 +470,26 @@ export default function AdminDashboard() {
     }
     setUploading(null);
   };
+  
+  const handleSeedGenerators = async () => {
+    // Delete all existing generators
+    const { error: deleteError } = await supabase.from('generators').delete().filter('id', 'not.is', null);
+    if (deleteError) {
+      toast({ title: "Error clearing generators", description: deleteError.message, variant: 'destructive' });
+      return;
+    }
+
+    // Insert the default generators
+    const { data, error: insertError } = await supabase.from('generators').insert(DEFAULT_GENERATORS).select();
+
+    if (insertError) {
+      toast({ title: "Error seeding generators", description: insertError.message, variant: 'destructive' });
+    } else {
+      toast({ title: "Success", description: "Default generators have been seeded." });
+      setGenerators(data as Generator[]);
+    }
+  };
+
 
   if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
   if (!admin) { router.push("/login"); return null; }
@@ -1015,6 +1043,13 @@ export default function AdminDashboard() {
                   <p className="text-slate-400 text-sm">Create, edit, publish generators · {generators.length} total · {generators.filter(function(g) { return g.published; }).length} published</p>
                 </div>
                 <div className="flex gap-2">
+                  <Button onClick={() => openConfirm(
+                    "Seed Default Generators?",
+                    "This will DELETE all current generators and replace them with the 4 default (PG1-PG4) generators. This cannot be undone.",
+                    handleSeedGenerators
+                  )} variant="outline" size="sm" className="h-9 border-orange-700/50 bg-orange-950 text-orange-300 hover:bg-orange-900 hover:text-orange-200">
+                    <DatabaseZap className="w-4 h-4 mr-2" /> Seed Defaults
+                  </Button>
                   <Button onClick={function() { return fetchData(); }} variant="outline" size="sm" className="h-9 border-slate-600 text-slate-300 hover:bg-slate-700"><RefreshCw className="w-3.5 h-3.5" /></Button>
                   <Button onClick={function() { setNewGen({ ...BLANK_GEN }); setShowCreateGen(true); }}
                     data-testid="button-create-generator"
@@ -1391,5 +1426,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
     
