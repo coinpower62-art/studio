@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import TickerTape from "@/components/TickerTape";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { createClient } from "@/lib/supabase/client";
 import type { User } from '@supabase/supabase-js';
@@ -639,7 +638,7 @@ export default function Power() {
 
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
-      <TickerTape />
+      
       {claimedInfo && (
         <ClaimSuccessOverlay
           amount={claimedInfo.amount}

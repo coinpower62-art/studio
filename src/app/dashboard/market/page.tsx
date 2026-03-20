@@ -12,7 +12,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
-import TickerTape from "@/components/TickerTape";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from '@supabase/supabase-js';
@@ -200,7 +199,6 @@ export default function Market() {
 
   return (
     <div className="pt-12 pb-20 min-h-screen bg-[#f7f9f4]">
-      <TickerTape />
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
 
         <div className="text-center py-4 sm:py-8 mb-2">

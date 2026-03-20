@@ -34,6 +34,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { logout } from '@/app/login/actions';
+import TickerTape from "@/components/TickerTape";
 
 const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -204,6 +205,8 @@ export default function DashboardLayout({
                 </DropdownMenuContent>
               </DropdownMenu>
             </header>
+            
+            {pathname === '/dashboard' && <TickerTape />}
 
             <main className="flex-1 overflow-auto bg-[#f7f9f4] p-4 sm:p-6 pb-20 md:pb-6">
                 {children}
