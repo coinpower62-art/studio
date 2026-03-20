@@ -1,4 +1,3 @@
-
 import { login } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,11 +51,6 @@ export default function LoginPage({
                     Sign up
                 </Link>
             </p>
-            <div className="mt-4 text-center text-xs text-muted-foreground p-4 border rounded-lg bg-card">
-              <p className="font-bold">Admin Login (for demonstration):</p>
-              <p>Username: <span className="font-mono text-primary">admin</span></p>
-              <p>Password: <span className="font-mono text-primary">password</span></p>
-            </div>
             </form>
       </div>
     </div>
