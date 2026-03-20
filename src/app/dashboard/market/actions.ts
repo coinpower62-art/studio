@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -25,10 +26,11 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         .from('generators')
         .select('*')
         .eq('id', generatorId)
+        .eq('published', true)
         .single();
 
     if (generatorError || !generatorToRent) {
-        return { error: 'Generator not found.' };
+        return { error: 'Generator not found or is not available for rent.' };
     }
     
     // PG1 is free and can only be rented once
