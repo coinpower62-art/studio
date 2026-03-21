@@ -1,6 +1,4 @@
-import { defineCloudflareConfig } from "@opennextjs/cloudflare";
-
-export default defineCloudflareConfig({
+export default {
   default: {
     override: {
       wrapper: "cloudflare-node",
@@ -9,4 +7,4 @@ export default defineCloudflareConfig({
       tagCache: "dummy",
     },
   },
-});
+};
