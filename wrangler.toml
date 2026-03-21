@@ -9,4 +9,4 @@ binding = "ASSETS"
 
 [[kv_namespaces]]
 binding = "NEXT_CACHE_WORKERS_KV"
-id = "PASTE_YOUR_KV_ID_HERE"
+id = "[PASTE YOUR LONG ID FROM CLOUDFLARE HERE]"
