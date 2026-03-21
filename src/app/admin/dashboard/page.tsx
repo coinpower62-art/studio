@@ -505,6 +505,7 @@ function DashboardContent() {
 
   const heroImg = media.find(function(m) { return m.id === 'hero'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'activity-hero'; })?.imageUrl;
   const teamworkImg = media.find(function(m) { return m.id === 'teamwork'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'activity-teamwork'; })?.imageUrl;
+  const logoImg = media.find(function(m) { return m.id === 'app-logo'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'signup-logo'; })?.imageUrl;
 
   const recentUsers = users.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
@@ -1147,7 +1148,25 @@ function DashboardContent() {
           {/* ── MEDIA ── */}
           {tab === "media" && (
              <div className="space-y-4">
-              <div><h1 className="text-xl font-black text-white">Media Management</h1><p className="text-slate-400 text-sm">Update images for generators and activity page</p></div>
+              <div><h1 className="text-xl font-black text-white">Media Management</h1><p className="text-slate-400 text-sm">Update images for app logo, generators, and activity page</p></div>
+
+               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Application Logo</h3>
+                  <p className="text-sm text-slate-400">This logo appears on the Sign In and Sign Up pages.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="text-center">
+                          <img src={logoImg} alt="App Logo" className="w-full h-auto rounded-lg aspect-square object-cover bg-slate-700 p-4" />
+                           <label htmlFor={`act-upload-app-logo`} className={`mt-2 text-xs cursor-pointer hover:underline ${uploading === 'act-app-logo' ? 'text-slate-400' : 'text-amber-400'}`}>
+                              {uploading === 'act-app-logo' ? 'Uploading...' : 'Upload new logo'}
+                           </label>
+                           <input type="file" id={`act-upload-app-logo`} className="hidden" accept="image/*" disabled={uploading === 'act-app-logo'} onChange={async function(e) {
+                               const file = e.target.files?.[0];
+                               if (file) await handleImageUpload('activity-images', 'app-logo', file);
+                           }}/>
+                      </div>
+                  </div>
+              </div>
+
               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
                   <h3 className="font-bold text-white">Generator Images</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

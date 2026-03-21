@@ -1,4 +1,6 @@
 
+'use client';
+
 import { login } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -6,29 +8,51 @@ import { User, Lock } from 'lucide-react'
 import Link from "next/link"
 import Image from 'next/image'
 import { PlaceHolderImages } from '@/lib/placeholder-images'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function LoginPage({
   searchParams,
 }: {
   searchParams?: { message: string }
 }) {
-  const logoImage = PlaceHolderImages.find((p) => p.id === 'signup-logo');
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const placeholderLogo = PlaceHolderImages.find((p) => p.id === 'signup-logo');
+
+  useEffect(() => {
+    const supabase = createClient();
+    const fetchLogo = async () => {
+      const { data, error } = await supabase
+        .from('media')
+        .select('url')
+        .eq('id', 'app-logo')
+        .single();
+      
+      if (data?.url) {
+        setLogoUrl(data.url);
+      } else {
+        setLogoUrl(placeholderLogo?.imageUrl || '');
+      }
+    };
+    fetchLogo();
+  }, [placeholderLogo]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm">
             <div className="text-center mb-8">
-               {logoImage ? (
+               {logoUrl ? (
                   <Image
-                    src={logoImage.imageUrl}
+                    src={logoUrl}
                     alt="CoinPower Logo"
                     width={64}
                     height={64}
                     className="mx-auto mb-3 rounded-2xl object-cover shadow-2xl"
-                    data-ai-hint={logoImage.imageHint}
+                    data-ai-hint={placeholderLogo?.imageHint}
                   />
                 ) : (
-                  <div className="mx-auto mb-3 h-16 w-16 rounded-2xl bg-primary" />
+                  <Skeleton className="mx-auto mb-3 h-16 w-16 rounded-2xl" />
                 )}
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Coin<span className="text-primary">Power</span></h1>
               <p className="text-muted-foreground mt-1 text-sm font-medium">Sign in to access your dashboard</p>
