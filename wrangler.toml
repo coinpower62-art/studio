@@ -11,7 +11,10 @@
   "kv_namespaces": [
     {
       "binding": "NEXT_CACHE_WORKERS_KV",
-      "id": "PASTE_YOUR_KV_ID_HERE"
+      "id": ""kv_namespaces": [{
+                    "binding": "KV_BINDING",
+                    "id": "c7798fa691964622bd2e4b6aa07fd054"
+                 }]
     }
   ]
 }
