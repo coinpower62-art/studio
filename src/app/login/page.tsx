@@ -1,4 +1,3 @@
-
 'use client';
 
 import { login } from './actions'
@@ -8,15 +7,15 @@ import { User, Lock } from 'lucide-react'
 import Link from "next/link"
 import Image from 'next/image'
 import { PlaceHolderImages } from '@/lib/placeholder-images'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useSearchParams } from 'next/navigation';
 
-export default function LoginPage({
-  searchParams,
-}: {
-  searchParams?: { message: string }
-}) {
+function LoginComponent() {
+  const searchParams = useSearchParams();
+  const message = searchParams.get('message');
+
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const placeholderLogo = PlaceHolderImages.find((p) => p.id === 'signup-logo');
 
@@ -81,9 +80,9 @@ export default function LoginPage({
                 />
             </div>
             <Button>Sign In</Button>
-            {searchParams?.message && (
+            {message && (
                 <p className="mt-4 p-4 bg-destructive/10 text-destructive text-center rounded-lg">
-                {searchParams.message}
+                {message}
                 </p>
             )}
             <p className="text-center text-sm text-muted-foreground">
@@ -96,4 +95,12 @@ export default function LoginPage({
       </div>
     </div>
   )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginComponent />
+    </Suspense>
+  );
 }
