@@ -411,7 +411,8 @@ function DashboardContent() {
 
   const handleUpdateGenerator = async () => {
     if (editingGen) {
-      const { error } = await supabase.from('generators').update(editingGen).eq('id', editingGen.id);
+      const { id, ...updateData } = editingGen;
+      const { error } = await supabase.from('generators').update(updateData).eq('id', id);
       if (error) {
         toast({ title: "Error updating generator", description: error.message, variant: "destructive" });
       } else {
@@ -462,7 +463,7 @@ function DashboardContent() {
             toast({ title: 'Generator image updated!' });
         }
     } else if (bucket === 'activity-image') {
-        const { error } = await supabase.from('media').upsert({ id: id, url: publicUrl });
+        const { error } = await supabase.from('media').upsert({ id: id, url: publicUrl }, { onConflict: 'id' });
         if (error) {
             toast({ title: 'Database Update Failed', description: error.message, variant: 'destructive' });
         } else {
@@ -1177,7 +1178,7 @@ function DashboardContent() {
                       const isUploading = uploading === `gen-${id}`;
                       return (
                         <div key={id} className="text-center">
-                          <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-square object-cover" />
+                          <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-square object-contain bg-slate-700" />
                            <label htmlFor={`gen-upload-${id}`} className={`mt-2 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
                               {isUploading ? 'Uploading...' : `Upload for ${id.toUpperCase()}`}
                            </label>
@@ -1192,7 +1193,7 @@ function DashboardContent() {
                       const isUploading = uploading === `gen-${g.id}`;
                       return (
                         <div key={g.id} className="text-center">
-                          <img src={g.image_url || PlaceHolderImages.find(function(i) { return i.id === `gen-${g.id}`; })?.imageUrl} alt={g.name} className="w-full h-auto rounded-lg aspect-square object-cover" />
+                          <img src={g.image_url || PlaceHolderImages.find(function(i) { return i.id === `gen-${g.id}`; })?.imageUrl} alt={g.name} className="w-full h-auto rounded-lg aspect-square object-contain bg-slate-700" />
                            <label htmlFor={`gen-upload-${g.id}`} className={`mt-2 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
                               {isUploading ? 'Uploading...' : `Upload for ${g.id.toUpperCase()}`}
                            </label>
@@ -1458,4 +1459,3 @@ export default function AdminDashboard() {
   )
 }
     
-

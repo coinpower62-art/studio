@@ -372,7 +372,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
               <img
                 src={imageUrl}
                 alt={ug.name}
-                className={`w-full h-full object-cover ${isSuspended ? "grayscale" : ""}`}
+                className={`w-full h-full object-contain ${isSuspended ? "grayscale" : ""}`}
                 onError={function(e) { const el = e.currentTarget; el.style.display = "none"; const fb = el.nextElementSibling as HTMLElement; if (fb) fb.style.display = "flex"; }}
               />
             ) : null}

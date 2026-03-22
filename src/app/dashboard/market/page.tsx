@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
@@ -265,11 +266,11 @@ export default function Market() {
                       </div>
                     </div>
 
-                    <div className="w-full h-52 sm:h-64 rounded-xl overflow-hidden shadow-inner">
+                    <div className="w-full h-52 sm:h-64 rounded-xl overflow-hidden shadow-inner bg-white/30">
                         <img
                           src={gen.image_url || PlaceHolderImages.find(i => i.id === 'gen-' + gen.id)?.imageUrl}
                           alt={gen.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                           onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget.parentElement as HTMLElement).style.background = 'linear-gradient(135deg, ' + cm.gradS + ' 0%, ' + cm.gradE + ' 100%)'; }}
                         />
                     </div>
