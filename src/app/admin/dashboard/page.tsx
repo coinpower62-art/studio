@@ -442,7 +442,7 @@ function DashboardContent() {
     }
     const fileExt = file.name.split('.').pop();
     const fileName = `${id}-${Date.now()}.${fileExt}`;
-    const folder = type === 'generator' ? 'generators' : 'media';
+    const folder = type === 'generator' ? 'generator-image' : 'activity-image';
     const filePath = `${folder}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(filePath, file, { upsert: true });
