@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
+import { adminUpdateGeneratorImage, adminUpsertMedia } from "./actions";
 
 type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "generators" | "media" | "codes" | "settings" | "about";
 
@@ -456,23 +457,20 @@ function DashboardContent() {
     const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
     const publicUrl = data.publicUrl;
 
+    let result;
     if (type === 'generator') {
-        const { error } = await supabase.from('generators').update({ image_url: publicUrl }).eq('id', id);
-        if (error) {
-            toast({ title: 'Database Update Failed', description: error.message, variant: 'destructive' });
-        } else {
-            await fetchData();
-            toast({ title: 'Generator image updated!' });
-        }
-    } else if (type === 'activity') {
-        const { error } = await supabase.from('media').upsert({ id: id, url: publicUrl }, { onConflict: 'id' });
-        if (error) {
-            toast({ title: 'Database Update Failed', description: error.message, variant: 'destructive' });
-        } else {
-            await fetchData();
-            toast({ title: 'Activity image updated!' });
-        }
+        result = await adminUpdateGeneratorImage(id, publicUrl);
+    } else { // type === 'activity'
+        result = await adminUpsertMedia(id, publicUrl);
     }
+
+    if (result.error) {
+        toast({ title: 'Database Update Failed', description: result.error, variant: 'destructive' });
+    } else {
+        await fetchData();
+        toast({ title: `Image updated for ${id}!` });
+    }
+
     setUploading(null);
   };
 
