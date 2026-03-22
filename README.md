@@ -29,7 +29,7 @@ Run the following SQL in your Supabase SQL Editor to set up the necessary tables
 -- 1. PROFILES TABLE (FOR USERS)
 -- Stores public-facing user data and links to Supabase Auth.
 -- =================================================================
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id uuid NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   updated_at timestamp with time zone,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -48,11 +48,13 @@ CREATE TABLE public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Allow users to view their own profile
+DROP POLICY IF EXISTS "Users can view their own profile." ON public.profiles;
 CREATE POLICY "Users can view their own profile."
 ON public.profiles FOR SELECT
 USING (auth.uid() = id);
 
 -- Policy: Allow users to update their own profile
+DROP POLICY IF EXISTS "Users can update their own profile." ON public.profiles;
 CREATE POLICY "Users can update their own profile."
 ON public.profiles FOR UPDATE
 USING (auth.uid() = id)
@@ -82,6 +84,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Create the trigger
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
@@ -92,7 +95,7 @@ CREATE TRIGGER on_auth_user_created
 -- =================================================================
 
 -- Generators Table
-CREATE TABLE public.generators (
+CREATE TABLE IF NOT EXISTS public.generators (
   id text NOT NULL PRIMARY KEY,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   name text,
@@ -111,19 +114,21 @@ CREATE TABLE public.generators (
   image_url text
 );
 ALTER TABLE public.generators ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Generators are viewable by everyone." ON public.generators;
 CREATE POLICY "Generators are viewable by everyone." ON public.generators FOR SELECT USING (true);
 
 -- Media Table
-CREATE TABLE public.media (
+CREATE TABLE IF NOT EXISTS public.media (
   id text NOT NULL PRIMARY KEY,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   url text
 );
 ALTER TABLE public.media ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Media is viewable by everyone." ON public.media;
 CREATE POLICY "Media is viewable by everyone." ON public.media FOR SELECT USING (true);
 
 -- Deposit Requests Table
-CREATE TABLE public.deposit_requests (
+CREATE TABLE IF NOT EXISTS public.deposit_requests (
   id uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -135,10 +140,11 @@ CREATE TABLE public.deposit_requests (
   date text
 );
 ALTER TABLE public.deposit_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view and create their own deposit requests." ON public.deposit_requests;
 CREATE POLICY "Users can view and create their own deposit requests." ON public.deposit_requests FOR ALL USING (auth.uid() = user_id);
 
 -- Withdrawal Requests Table
-CREATE TABLE public.withdrawal_requests (
+CREATE TABLE IF NOT EXISTS public.withdrawal_requests (
   id uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -153,10 +159,11 @@ CREATE TABLE public.withdrawal_requests (
   status text
 );
 ALTER TABLE public.withdrawal_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view and create their own withdrawal requests." ON public.withdrawal_requests;
 CREATE POLICY "Users can view and create their own withdrawal requests." ON public.withdrawal_requests FOR ALL USING (auth.uid() = user_id);
 
 -- Rented Generators Table
-CREATE TABLE public.rented_generators (
+CREATE TABLE IF NOT EXISTS public.rented_generators (
   id uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   generator_id text REFERENCES public.generators(id) ON DELETE SET NULL,
@@ -167,6 +174,7 @@ CREATE TABLE public.rented_generators (
   suspended boolean DEFAULT false NOT NULL
 );
 ALTER TABLE public.rented_generators ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage their own rented generators." ON public.rented_generators;
 CREATE POLICY "Users can manage their own rented generators." ON public.rented_generators FOR ALL USING (auth.uid() = user_id);
 
 -- =================================================================
@@ -180,11 +188,13 @@ VALUES ('site_assets', 'site_assets', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
 -- Policy: Allow public read access to all files in the bucket
+DROP POLICY IF EXISTS "Public read access for site assets" ON storage.objects;
 CREATE POLICY "Public read access for site assets"
 ON storage.objects FOR SELECT
 USING ( bucket_id = 'site_assets' );
 
 -- Policy: Allow authenticated users to upload files
+DROP POLICY IF EXISTS "Authenticated users can upload assets" ON storage.objects;
 CREATE POLICY "Authenticated users can upload assets"
 ON storage.objects FOR INSERT
 TO authenticated
@@ -201,5 +211,4 @@ VALUES
   ('pg3', 'PG3 Generator', 'Mega Power', '💡', 'from-blue-400 to-indigo-600', 100, 45, 10, true, '15%', 'Daily', '$100', '$5000', '4310'),
   ('pg4', 'PG4 Generator', 'Ultra Power', '🚀', 'from-purple-500 to-pink-600', 500, 60, 55, true, '20%', 'Daily', '$500', '$20000', '1250')
 ON CONFLICT(id) DO NOTHING;
-
 ```
