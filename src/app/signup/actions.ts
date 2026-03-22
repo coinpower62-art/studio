@@ -24,6 +24,8 @@ export async function signup(values: any) {
         country: country,
         phone: phone,
         referral_code: referralCode,
+        balance: 1.00,
+        has_withdrawal_pin: false,
       },
     },
   });
