@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, Suspense } from "react";
@@ -431,8 +432,8 @@ function DashboardContent() {
     }
   };
 
-  const handleImageUpload = async (bucket: 'generator-images' | 'activity-images', id: string, file: File) => {
-    if (bucket === 'generator-images') {
+  const handleImageUpload = async (bucket: 'gennerator-image' | 'activity-image', id: string, file: File) => {
+    if (bucket === 'gennerator-image') {
         setUploading(`gen-${id}`);
     } else {
         setUploading(`act-${id}`);
@@ -452,7 +453,7 @@ function DashboardContent() {
     const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
     const publicUrl = data.publicUrl;
 
-    if (bucket === 'generator-images') {
+    if (bucket === 'gennerator-image') {
         const name = id.toUpperCase();
         const { error } = await supabase.from('generators').upsert({ id: id, name: name, image_url: publicUrl }, { onConflict: 'id' });
         if (error) {
@@ -461,7 +462,7 @@ function DashboardContent() {
             await fetchData();
             toast({ title: 'Generator image updated!' });
         }
-    } else if (bucket === 'activity-images') {
+    } else if (bucket === 'activity-image') {
         const { error } = await supabase.from('media').upsert({ id: id, url: publicUrl });
         if (error) {
             toast({ title: 'Database Update Failed', description: error.message, variant: 'destructive' });
@@ -1161,7 +1162,7 @@ function DashboardContent() {
                            </label>
                            <input type="file" id={`act-upload-app-logo`} className="hidden" accept="image/*" disabled={uploading === 'act-app-logo'} onChange={async function(e) {
                                const file = e.target.files?.[0];
-                               if (file) await handleImageUpload('activity-images', 'app-logo', file);
+                               if (file) await handleImageUpload('activity-image', 'app-logo', file);
                            }}/>
                       </div>
                   </div>
@@ -1183,7 +1184,7 @@ function DashboardContent() {
                            </label>
                            <input type="file" id={`gen-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
                              const file = e.target.files?.[0];
-                             if (file) await handleImageUpload('generator-images', id, file);
+                             if (file) await handleImageUpload('gennerator-image', id, file);
                            }}/>
                         </div>
                       );
@@ -1198,7 +1199,7 @@ function DashboardContent() {
                            </label>
                            <input type="file" id={`gen-upload-${g.id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
                              const file = e.target.files?.[0];
-                             if (file) await handleImageUpload('generator-images', g.id, file);
+                             if (file) await handleImageUpload('gennerator-image', g.id, file);
                            }}/>
                         </div>
                       );
@@ -1218,7 +1219,7 @@ function DashboardContent() {
                              </label>
                              <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
                                const file = e.target.files?.[0];
-                               if (file) await handleImageUpload('activity-images', id, file);
+                               if (file) await handleImageUpload('activity-image', id, file);
                              }} />
                           </div>
                         );
