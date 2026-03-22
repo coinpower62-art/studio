@@ -42,7 +42,11 @@ export default async function DashboardPage() {
 
   // Self-healing profile creation logic
   if (!profile) {
-    const { full_name, username, country, phone, referral_code } = user.user_metadata;
+    const { full_name, username, country, phone, referral_code, referred_by } = user.user_metadata;
+    
+    // Fallback logic in case the trigger fails. This should be consistent with the signup action.
+    const newUserReferralCode = referral_code || `CP-${((username || 'USER').slice(0, 4)).toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}`;
+
     const { error: insertError } = await supabase.from('profiles').insert({
         id: user.id,
         email: user.email,
@@ -50,7 +54,8 @@ export default async function DashboardPage() {
         username: username || user.email?.split('@')[0] || 'newuser',
         country: country || 'Unknown',
         phone: phone,
-        referral_code: referral_code || `CP-${((username || 'USER').slice(0,4)).toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}`,
+        referral_code: newUserReferralCode, // New user's own code
+        referred_by: referred_by || null, // Referrer's code
         balance: 1.00, // The $1 sign-up bonus
         has_withdrawal_pin: false,
     });

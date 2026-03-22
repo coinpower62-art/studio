@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -9,6 +8,9 @@ export async function signup(values: any) {
   const origin = headers().get('origin');
 
   const { email, password, fullName, username, country, phone, referralCode } = values;
+
+  // Generate a unique referral code for the new user.
+  const newUserReferralCode = `CP-${username.slice(0, 4).toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}`;
 
   // The new user's profile information will be passed in the `options.data` property
   // of the `signUp` method. This metadata will be used on the dashboard page to create
@@ -23,7 +25,8 @@ export async function signup(values: any) {
         username: username,
         country: country,
         phone: phone,
-        referral_code: referralCode,
+        referral_code: newUserReferralCode, // The new user's OWN code
+        referred_by: referralCode || null, // The code of the user who referred them (can be empty/null)
         balance: 1.00,
         has_withdrawal_pin: false,
       },

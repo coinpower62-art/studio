@@ -67,7 +67,7 @@ WITH CHECK (auth.uid() = id);
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, full_name, username, email, country, phone, referral_code, balance, has_withdrawal_pin)
+  INSERT INTO public.profiles (id, full_name, username, email, country, phone, referral_code, referred_by, balance, has_withdrawal_pin)
   VALUES (
     new.id,
     new.raw_user_meta_data->>'full_name',
@@ -76,6 +76,7 @@ BEGIN
     new.raw_user_meta_data->>'country',
     new.raw_user_meta_data->>'phone',
     new.raw_user_meta_data->>'referral_code',
+    new.raw_user_meta_data->>'referred_by',
     (new.raw_user_meta_data->>'balance')::numeric,
     (new.raw_user_meta_data->>'has_withdrawal_pin')::boolean
   );
@@ -211,4 +212,3 @@ VALUES
   ('pg3', 'PG3 Generator', 'Mega Power', '💡', 'from-blue-400 to-indigo-600', 100, 45, 10, true, '15%', 'Daily', '$100', '$5000', '4310'),
   ('pg4', 'PG4 Generator', 'Ultra Power', '🚀', 'from-purple-500 to-pink-600', 500, 60, 55, true, '20%', 'Daily', '$500', '$20000', '1250')
 ON CONFLICT(id) DO NOTHING;
-```
