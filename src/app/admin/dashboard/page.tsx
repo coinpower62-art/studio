@@ -432,8 +432,8 @@ function DashboardContent() {
     }
   };
 
-  const handleImageUpload = async (bucket: 'gennerator-image' | 'activity-image', id: string, file: File) => {
-    if (bucket === 'gennerator-image') {
+  const handleImageUpload = async (bucket: 'generator-image' | 'activity-image', id: string, file: File) => {
+    if (bucket === 'generator-image') {
         setUploading(`gen-${id}`);
     } else {
         setUploading(`act-${id}`);
@@ -453,9 +453,8 @@ function DashboardContent() {
     const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
     const publicUrl = data.publicUrl;
 
-    if (bucket === 'gennerator-image') {
-        const name = id.toUpperCase();
-        const { error } = await supabase.from('generators').upsert({ id: id, name: name, image_url: publicUrl }, { onConflict: 'id' });
+    if (bucket === 'generator-image') {
+        const { error } = await supabase.from('generators').update({ image_url: publicUrl }).eq('id', id);
         if (error) {
             toast({ title: 'Database Update Failed', description: error.message, variant: 'destructive' });
         } else {
@@ -1184,7 +1183,7 @@ function DashboardContent() {
                            </label>
                            <input type="file" id={`gen-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
                              const file = e.target.files?.[0];
-                             if (file) await handleImageUpload('gennerator-image', id, file);
+                             if (file) await handleImageUpload('generator-image', id, file);
                            }}/>
                         </div>
                       );
@@ -1199,7 +1198,7 @@ function DashboardContent() {
                            </label>
                            <input type="file" id={`gen-upload-${g.id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
                              const file = e.target.files?.[0];
-                             if (file) await handleImageUpload('gennerator-image', g.id, file);
+                             if (file) await handleImageUpload('generator-image', g.id, file);
                            }}/>
                         </div>
                       );
@@ -1459,3 +1458,4 @@ export default function AdminDashboard() {
   )
 }
     
+
