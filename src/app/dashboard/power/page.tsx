@@ -35,6 +35,7 @@ export type RentedGenerator = {
   roi: string;
   period: string;
   investors: string;
+  image_url?: string;
 };
 
 const CHART_PAIRS_P = [
@@ -360,22 +361,22 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
   // @ts-ignore
   const cardColor = colorMap[ug.color] || 'from-gray-400 to-gray-500';
 
-  const uploadedImageUrl = PlaceHolderImages.find(function(i) { return i.id === `gen-${ug.generator_id}`; })?.imageUrl;
+  const imageUrl = ug.image_url || PlaceHolderImages.find(function(i) { return i.id === `gen-${ug.generator_id}`; })?.imageUrl;
 
   return (
     <div className={`bg-white rounded-2xl border-2 shadow-sm overflow-hidden transition-all ${borderColor}`}>
       <div className={`bg-gradient-to-r ${isSuspended ? "from-gray-400 to-gray-500" : cardColor} p-4 flex items-center justify-between`}>
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/30 shadow-lg flex-shrink-0 bg-white/10">
-            {(uploadedImageUrl) ? (
+            {imageUrl ? (
               <img
-                src={uploadedImageUrl}
+                src={imageUrl}
                 alt={ug.name}
                 className={`w-full h-full object-cover ${isSuspended ? "grayscale" : ""}`}
                 onError={function(e) { const el = e.currentTarget; el.style.display = "none"; const fb = el.nextElementSibling as HTMLElement; if (fb) fb.style.display = "flex"; }}
               />
             ) : null}
-            <span className={`w-full h-full ${uploadedImageUrl ? "hidden" : "flex"} items-center justify-center text-2xl`}>{ug.icon}</span>
+            <span className={`w-full h-full ${imageUrl ? "hidden" : "flex"} items-center justify-center text-2xl`}>{ug.icon}</span>
           </div>
           <div>
             <p className="font-black text-white text-base">{ug.name}</p>
@@ -599,6 +600,7 @@ export default function Power() {
         roi: baseGen?.roi ?? '',
         period: baseGen?.period ?? '',
         investors: baseGen?.investors ?? '0',
+        image_url: baseGen?.image_url,
       }
     });
 
@@ -793,6 +795,3 @@ export default function Power() {
     </div>
   );
 }
-
-    
-
