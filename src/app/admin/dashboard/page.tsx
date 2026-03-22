@@ -46,7 +46,6 @@ type UserRecord = {
   referred_by: string | null;
   referral_count?: number;
   phone?: string;
-  created_at: string;
 };
 
 type Generator = {
@@ -508,8 +507,6 @@ function DashboardContent() {
   const teamworkImg = media.find(function(m) { return m.id === 'teamwork'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'activity-teamwork'; })?.imageUrl;
   const logoImg = media.find(function(m) { return m.id === 'app-logo'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'signup-logo'; })?.imageUrl;
 
-  const recentUsers = users.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
   const tabs: { id: Tab; label: string; icon: any; badge?: number; color: string }[] = [
     { id: "overview",     label: "Overview",    icon: BarChart3,       color: "from-blue-500 to-blue-600" },
     { id: "users",        label: "Users",       icon: Users,           color: "from-violet-500 to-purple-600", badge: users.length },
@@ -671,31 +668,13 @@ function DashboardContent() {
                 ); })}
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="bg-slate-800 rounded-2xl border border-slate-700 p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-white text-sm">Recent Users</h3>
-                    <button onClick={function() { return switchTab("users"); }} className="text-amber-400 text-xs flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></button>
-                  </div>
-                  {recentUsers.length === 0 ? <p className="text-slate-500 text-sm">No users yet</p> : (
-                    <div className="space-y-3">{recentUsers.slice(0, 5).map(function(u) {
-                      const initials = u.full_name?.split(" ").map(function(n) { return n[0]; }).join("").toUpperCase().slice(0, 2) || "??";
-                      return (
-                        <div key={u.id} className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8 flex-shrink-0"><AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-white text-xs font-bold">{initials}</AvatarFallback></Avatar>
-                          <div className="flex-1 min-w-0"><p className="text-white text-sm font-medium truncate">{u.full_name}</p><p className="text-slate-400 text-xs">@{u.username}</p></div>
-                          <p className="text-green-400 text-sm font-bold">${(u.balance || 0).toFixed(2)}</p>
-                        </div>
-                      );
-                    })}</div>
-                  )}
-                </div>
-                <div className="bg-slate-800 rounded-2xl border border-slate-700 p-5">
+                <div className="bg-slate-800 rounded-2xl border border-slate-700 p-5 lg:col-span-2">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-bold text-white text-sm">Pending Withdrawals</h3>
                     <button onClick={function() { return switchTab("withdrawals"); }} className="text-amber-400 text-xs flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></button>
                   </div>
                   <div className="space-y-3">
-                    {withdrawals.filter(function(w) { return w.status === "pending"; }).slice(0, 4).map(function(w) { return (
+                    {withdrawals.filter(function(w) { return w.status === "pending"; }).slice(0, 8).map(function(w) { return (
                       <div key={w.id} className="flex items-center justify-between gap-2">
                         <div className="min-w-0"><p className="text-white text-sm font-medium truncate">{w.full_name}</p><p className="text-slate-400 text-xs">{w.method.toUpperCase()} · @{w.username}</p></div>
                         <div className="flex items-center gap-2 flex-shrink-0">
