@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -8,7 +7,7 @@ import {
   Activity, Users, MessageSquare, TrendingUp, Star, Globe, Clock, ArrowUpRight, Shield, Award, BadgeCheck, Building2, CheckCircle2, Landmark, FileText, Crown, Loader, AlertCircle, LogOut
 } from "lucide-react";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -68,10 +67,11 @@ export default function ActivityPage() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [media, setMedia] = useState<any[]>([]);
 
-  const heroImg = PlaceHolderImages.find(function(i) { return i.id === 'activity-hero'; })?.imageUrl;
-  const teamWorkImg = PlaceHolderImages.find(function(i) { return i.id === 'activity-teamwork'; })?.imageUrl;
-  const ceoImg = PlaceHolderImages.find(function(i) { return i.id === 'ceo-portrait'; })?.imageUrl;
+  const heroImg = media.find(m => m.id === 'hero')?.url || PlaceHolderImages.find(i => i.id === 'activity-hero')?.imageUrl;
+  const teamWorkImg = media.find(m => m.id === 'teamwork')?.url || PlaceHolderImages.find(i => i.id === 'activity-teamwork')?.imageUrl;
+  const ceoImg = media.find(m => m.id === 'ceo-portrait')?.url || PlaceHolderImages.find(i => i.id === 'ceo-portrait')?.imageUrl;
   
   // For now, admin posts are static.
   const adminPosts: any[] = [];
@@ -101,6 +101,13 @@ export default function ActivityPage() {
         setProfile(null);
       } else {
         setProfile(profileData as Profile | null);
+      }
+
+      const { data: mediaData, error: mediaError } = await supabase.from('media').select('*');
+      if (mediaError) {
+          toast({ title: 'Error fetching images', description: mediaError.message, variant: 'destructive'});
+      } else {
+          setMedia(mediaData || []);
       }
       
       setIsLoading(false);
@@ -592,6 +599,3 @@ export default function ActivityPage() {
 }
 
     
-
-    
-
