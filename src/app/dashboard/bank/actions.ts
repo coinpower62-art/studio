@@ -49,7 +49,7 @@ export async function createDepositRequest(formData: {
 
   if (error) {
     console.error('Supabase deposit error:', error)
-    return { error: 'Could not submit deposit request.' }
+    return { error: `Database error: ${error.message}` }
   }
 
   revalidatePath('/dashboard/bank')
