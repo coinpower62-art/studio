@@ -98,8 +98,9 @@ const withdrawMethods = [
   { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt, desc: "Tether (TRC20/ERC20)", color: "from-teal-400 to-green-500" },
   { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo, desc: "Mobile Money", color: "from-yellow-400 to-amber-500" },
   { id: "telecel", label: "TELECEL", icon: Smartphone, img: imageMap.telecel, desc: "Telecel Cash", color: "from-red-500 to-red-600" },
-  { id: "bank", label: "Bank Transfer", icon: Landmark, desc: "Local Bank Account", color: "from-gray-400 to-gray-500" },
-  { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-blue-400 to-indigo-500" },
+  { id: "bank", label: "Bank Transfer", icon: Landmark, desc: "Local & International", color: "from-gray-400 to-gray-500" },
+  { id: "western_union", label: "Western Union", icon: Network, desc: "Global Money Transfer", color: "from-blue-400 to-indigo-500"},
+  { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-purple-400 to-pink-500" },
 ];
 
 type Mode = "deposit" | "withdraw" | null;
@@ -194,7 +195,9 @@ export default function BankPage() {
   const [momo, setMomo] = useState({ phone: "", name: "" });
   const [telecel, setTelecel] = useState({ phone: "", name: "" });
   const [bank, setBank] = useState({ name: "", number: "", holder: "" });
+  const [otherBankName, setOtherBankName] = useState("");
   const [card, setCard] = useState({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
+  const [westernUnion, setWesternUnion] = useState({ fullName: "", city: "" });
   const [depositCard, setDepositCard] = useState({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
 
   const [pinMode, setPinMode] = useState<"security" | "setup" | "verify" | null>(null);
@@ -288,6 +291,8 @@ export default function BankPage() {
     setMomo({ phone: "", name: "" });
     setTelecel({ phone: "", name: "" });
     setBank({ name: "", number: "", holder: "" });
+    setOtherBankName("");
+    setWesternUnion({ fullName: "", city: ""});
     setCard({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
     setDepositCard({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
   };
@@ -379,7 +384,8 @@ export default function BankPage() {
       if (!card.cvv || card.cvv.length < 3) { toast({ title: "Enter the CVV code", variant: "destructive" }); return; }
     }
     if (withdrawMethod === "bank") {
-      if (!bank.name.trim()) { toast({ title: "Enter the bank name", variant: "destructive" }); return; }
+      if (!bank.name.trim()) { toast({ title: "Please select your bank", variant: "destructive" }); return; }
+      if (bank.name === 'Other' && !otherBankName.trim()) { toast({ title: "Please specify your bank name", variant: "destructive" }); return; }
       if (!bank.number.trim()) { toast({ title: "Enter the account number", variant: "destructive" }); return; }
       if (!bank.holder.trim()) { toast({ title: "Enter the account holder name", variant: "destructive" }); return; }
     }
@@ -390,6 +396,10 @@ export default function BankPage() {
         const methodState = withdrawMethod === 'momo' ? momo : telecel;
         if (!methodState.phone.trim()) { toast({ title: "Enter a phone number", variant: "destructive" }); return; }
         if (!methodState.name.trim()) { toast({ title: "Enter an account name", variant: "destructive" }); return; }
+    }
+    if (withdrawMethod === "western_union") {
+        if (!westernUnion.fullName.trim()) { toast({ title: "Enter your full name for Western Union", variant: "destructive" }); return; }
+        if (!westernUnion.city.trim()) { toast({ title: "Enter your city for pickup", variant: "destructive" }); return; }
     }
     
     // All good, open PIN modal
@@ -407,7 +417,18 @@ export default function BankPage() {
     
     setIsSubmitting(true);
     const amt = parseFloat(amount);
-    const details = withdrawMethod === "usdt" ? usdt : withdrawMethod === "momo" ? momo : withdrawMethod === "telecel" ? telecel : withdrawMethod === "bank" ? bank : card;
+    
+    let details: any;
+    switch(withdrawMethod) {
+        case 'usdt': details = usdt; break;
+        case 'momo': details = momo; break;
+        case 'telecel': details = telecel; break;
+        case 'bank': details = { ...bank, name: bank.name === 'Other' ? otherBankName : bank.name }; break;
+        case 'western_union': details = { ...westernUnion, country: profile.country }; break;
+        case 'card': details = card; break;
+        default: details = {};
+    }
+
     const result = await createWithdrawalRequest({
       amount: amt,
       method: withdrawMethods.find(function(m) { return m.id === withdrawMethod; })?.label || withdrawMethod || "",
@@ -432,6 +453,25 @@ export default function BankPage() {
   const allTransactions = [...(depositRecords || []), ...(withdrawRecords || [])]
     .sort(function(a, b) { return new Date(b.created_at).getTime() - new Date(a.created_at).getTime(); });
   const depositButtonLogo = logoUrl || imageMap.momo;
+
+  const africanBanks = ["Absa Bank", "GCB Bank", "Ecobank", "Zenith Bank", "UBA", "Access Bank"];
+  const usaBanks = ["Bank of America", "JPMorgan Chase", "Wells Fargo", "Citibank", "U.S. Bank", "PNC Bank"];
+  const italianBanks = ["Intesa Sanpaolo", "UniCredit", "Banco BPM", "Monte dei Paschi di Siena", "BPER Banca"];
+  const otherMajorBanks = ["HSBC", "Barclays", "Deutsche Bank", "BNP Paribas", "Standard Chartered"];
+
+  let bankOptions: string[] = [];
+  if (['Ghana', 'Nigeria', 'Kenya'].some(c => profile.country.includes(c))) {
+      bankOptions = africanBanks;
+  } else if (profile.country === 'United States') {
+      bankOptions = usaBanks;
+  } else if (profile.country === 'Italy') {
+      bankOptions = italianBanks;
+  } else {
+      bankOptions = [...africanBanks, ...usaBanks, ...italianBanks, ...otherMajorBanks];
+  }
+  bankOptions.sort();
+  bankOptions.push("Other");
+
 
   return (
     <div className="bg-[#f7f9f4]">
@@ -536,9 +576,15 @@ export default function BankPage() {
 
         <div className="py-4 sm:py-5 mb-2">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-md">
-              <Landmark className="w-4 h-4 text-white" />
-            </div>
+            {logoUrl ? (
+                <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 bg-black flex items-center justify-center shadow-md">
+                    <img src={logoUrl} alt="CoinPower Logo" className="w-full h-full object-contain p-0.5" />
+                </div>
+            ) : (
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-md">
+                    <Landmark className="w-4 h-4 text-white" />
+                </div>
+            )}
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">CoinPower Bank</h1>
           </div>
           <p className="text-gray-500 text-xs sm:text-sm">Manage your deposits and withdrawals securely</p>
@@ -649,7 +695,7 @@ export default function BankPage() {
               </div>
             </div>
             <p className="text-gray-500 text-xs">Choose how you want to make your deposit</p>
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               {depositMethods.map(function({ id, label, icon: Icon, img, desc, color }) {
                 return (
                 <button key={id} data-testid={`deposit-method-${id}`}
@@ -1056,20 +1102,54 @@ export default function BankPage() {
                     </div>
                  </div>
                )}
-               {withdrawMethod === 'bank' && (
+              {withdrawMethod === 'bank' && (
                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
                     <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><Landmark className="w-4 h-4" /> Bank Account Details</p>
-                    <div>
+                     <div>
                         <label className="text-xs font-medium text-gray-600 mb-1.5 block">Bank Name</label>
-                        <Input value={bank.name} onChange={(e) => setBank({ ...bank, name: e.target.value })} placeholder="e.g. Absa Bank, GCB Bank" className="h-11 border-gray-200 focus:border-amber-400" data-testid="input-bank-name" />
+                         <Select value={bank.name} onValueChange={(val) => setBank({ ...bank, name: val })}>
+                            <SelectTrigger className="h-11 border-gray-200 focus:border-amber-400" data-testid="select-bank-name">
+                                <SelectValue placeholder="Select a bank" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {bankOptions.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
                     </div>
+                    {bank.name === 'Other' && (
+                         <div>
+                            <label className="text-xs font-medium text-gray-600 mb-1.5 block">Other Bank Name</label>
+                            <Input value={otherBankName} onChange={(e) => setOtherBankName(e.target.value)} placeholder="Please specify bank name" className="h-11 border-gray-200 focus:border-amber-400" />
+                        </div>
+                    )}
                     <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Number</label>
-                        <Input value={bank.number} onChange={(e) => setBank({ ...bank, number: e.target.value })} placeholder="Your bank account number" className="h-11 border-gray-200 focus:border-amber-400" data-testid="input-bank-account-number" />
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Number / IBAN</label>
+                        <Input value={bank.number} onChange={(e) => setBank({ ...bank, number: e.target.value })} placeholder="Your bank account number or IBAN" className="h-11 border-gray-200 focus:border-amber-400" data-testid="input-bank-account-number" />
                     </div>
                     <div>
                         <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Holder Name</label>
                         <Input value={bank.holder} onChange={(e) => setBank({ ...bank, holder: e.target.value })} placeholder="Name on bank account" className="h-11 border-gray-200 focus:border-amber-400" data-testid="input-bank-account-holder" />
+                    </div>
+                 </div>
+               )}
+                {withdrawMethod === 'western_union' && (
+                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><Network className="w-4 h-4" /> Western Union Details</p>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Full Name (as on ID)</label>
+                        <Input value={westernUnion.fullName} onChange={(e) => setWesternUnion({...westernUnion, fullName: e.target.value})} placeholder="Your full legal name" className="h-11 border-gray-200 focus:border-amber-400" />
+                    </div>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">City</label>
+                        <Input value={westernUnion.city} onChange={(e) => setWesternUnion({...westernUnion, city: e.target.value})} placeholder="City of pickup" className="h-11 border-gray-200 focus:border-amber-400" />
+                    </div>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Country</label>
+                        <Input value={profile.country} readOnly disabled placeholder="Your profile country" className="h-11 border-gray-200 bg-gray-100" />
+                    </div>
+                    <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
+                      <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-blue-700 text-xs font-medium">After approval, you will receive an MTCN (Money Transfer Control Number) to pick up your cash at a Western Union agent.</p>
                     </div>
                  </div>
                )}
