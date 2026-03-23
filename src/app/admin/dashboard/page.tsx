@@ -5,7 +5,6 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +25,17 @@ import {
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
-import { adminUpdateGeneratorImage, adminUpsertMedia } from "./actions";
+import {
+  adminGetAllData,
+  adminUpdateUserBalance,
+  adminDeleteUser,
+  adminCreateUser,
+  adminHandleDeposit,
+  adminHandleWithdrawal,
+  adminMutateGenerator,
+  adminUpdateGeneratorImage,
+  adminUpsertMedia
+} from "./actions";
 
 type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "generators" | "media" | "codes" | "settings" | "about";
 
@@ -161,7 +170,6 @@ function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const supabase = createClient();
 
   const [tab, setTab] = useState<Tab>("overview");
   const [search, setSearch] = useState("");
@@ -195,29 +203,21 @@ function DashboardContent() {
       setWithdrawalsLoading(true);
       setMediaLoading(true);
 
-      const { data: usersData, error: usersError } = await supabase.from('profiles').select('*');
-      if (usersError) toast({ title: 'Error fetching users', description: usersError.message, variant: 'destructive' });
-      else setUsers(usersData as UserRecord[]);
+      const result = await adminGetAllData();
+      if (result.error || !result.data) {
+        toast({ title: 'Error fetching admin data', description: result.error, variant: 'destructive' });
+      } else {
+        setUsers(result.data.users as UserRecord[]);
+        setGenerators(result.data.generators as Generator[]);
+        setDeposits(result.data.deposits as DepositRequest[]);
+        setWithdrawals(result.data.withdrawals as WithdrawalRecord[]);
+        setMedia(result.data.media as MediaAsset[]);
+      }
+
       setUsersLoading(false);
-
-      const { data: gensData, error: gensError } = await supabase.from('generators').select('*').order('price', { ascending: true });
-      if (gensError) toast({ title: 'Error fetching generators', description: gensError.message, variant: 'destructive' });
-      else setGenerators(gensData as Generator[]);
       setGensLoading(false);
-
-      const { data: depositsData, error: depositsError } = await supabase.from('deposit_requests').select('*').order('created_at', { ascending: false });
-      if (depositsError) toast({ title: 'Error fetching deposits', description: depositsError.message, variant: 'destructive' });
-      else setDeposits(depositsData as DepositRequest[]);
       setDepositsLoading(false);
-
-      const { data: withdrawalsData, error: withdrawalsError } = await supabase.from('withdrawal_requests').select('*').order('created_at', { ascending: false });
-      if (withdrawalsError) toast({ title: 'Error fetching withdrawals', description: withdrawalsError.message, variant: 'destructive' });
-      else setWithdrawals(withdrawalsData as WithdrawalRecord[]);
       setWithdrawalsLoading(false);
-
-      const { data: mediaData, error: mediaError } = await supabase.from('media').select('*');
-      if (mediaError) toast({ title: 'Error fetching media assets', description: mediaError.message, variant: 'destructive' });
-      else setMedia(mediaData as MediaAsset[]);
       setMediaLoading(false);
 
   }
@@ -271,9 +271,9 @@ function DashboardContent() {
   };
 
   const handleUpdateBalance = async (userId: string, newBalance: number) => {
-    const { error } = await supabase.from('profiles').update({ balance: newBalance }).eq('id', userId);
-    if(error) {
-        toast({ title: 'Error updating balance', description: error.message, variant: 'destructive' });
+    const result = await adminUpdateUserBalance(userId, newBalance);
+    if(result.error) {
+        toast({ title: 'Error updating balance', description: result.error, variant: 'destructive' });
     } else {
         toast({ title: 'Balance updated' });
         setUsers(function(prev) { return prev.map(function(u) { return u.id === userId ? {...u, balance: newBalance} : u; }); });
@@ -282,9 +282,9 @@ function DashboardContent() {
   }
 
   const handleDeleteUser = async (userId: string) => {
-    const { error } = await supabase.from('profiles').delete().eq('id', userId);
-    if(error) {
-        toast({ title: 'Error deleting user', description: error.message, variant: 'destructive' });
+    const result = await adminDeleteUser(userId);
+    if(result.error) {
+        toast({ title: 'Error deleting user', description: result.error, variant: 'destructive' });
     } else {
         toast({ title: 'User profile deleted. Note: Auth user record still exists.' });
         setUsers(function(prev) { return prev.filter(function(u) { return u.id !== userId; }); });
@@ -296,114 +296,81 @@ function DashboardContent() {
       full_name: createUserForm.full_name,
       username: createUserForm.username,
       email: createUserForm.email,
+      password: createUserForm.password,
       country: createUserForm.country,
       phone: createUserForm.phone,
       balance: parseFloat(createUserForm.balance) || 0,
       referral_code: `CP-${createUserForm.username.toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}`,
-      has_withdrawal_pin: false,
     };
-    const { data, error } = await supabase.from('profiles').insert(newUserProfile).select().single();
-    if (error) {
-        toast({ title: 'Error creating user', description: error.message, variant: 'destructive' });
+    const result = await adminCreateUser(newUserProfile);
+    if (result.error || !result.data) {
+        toast({ title: 'Error creating user', description: result.error, variant: 'destructive' });
     } else {
-      toast({ title: "User profile created successfully!", description: "Auth record not created; user cannot log in." });
-      setUsers(function(prev) { return [data as UserRecord, ...prev]; });
+      toast({ title: "User created successfully!", description: "An auth user and profile have been created." });
+      setUsers(function(prev) { return [result.data as UserRecord, ...prev]; });
       setShowCreateUser(false);
       setCreateUserForm({ full_name: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
     }
   }
 
-  const handleApproveDeposit = async (id: string) => {
-    const deposit = deposits.find(function(d) { return d.id === id; });
-    if (!deposit) return;
-
-    const { data: profile, error: profileError } = await supabase.from('profiles').select('balance').eq('id', deposit.user_id).single();
-    if (profileError || !profile) {
-      toast({ title: "Error fetching user profile", description: profileError?.message, variant: "destructive" });
-      return;
-    }
-
-    const { error: depositError } = await supabase.from('deposit_requests').update({ status: 'approved' }).eq('id', id);
-    if (depositError) {
-      toast({ title: "Error approving deposit", description: depositError.message, variant: "destructive" });
-      return;
-    }
-
-    const { error: balanceError } = await supabase.from('profiles').update({ balance: profile.balance + deposit.amount }).eq('id', deposit.user_id);
-    if (balanceError) {
-      // Rollback deposit status
-      await supabase.from('deposit_requests').update({ status: 'pending' }).eq('id', id);
-      toast({ title: "Error updating balance", description: balanceError.message, variant: "destructive" });
+  const handleApproveDeposit = async (id: string, userId: string, amount: number) => {
+    const result = await adminHandleDeposit(id, userId, amount, 'approve');
+    if (result.error) {
+      toast({ title: "Error approving deposit", description: result.error, variant: "destructive" });
     } else {
-      setDeposits(function(prev) { return prev.map(function(d) { return d.id === id ? {...d, status: 'approved'} : d; }); });
-      setUsers(function(prev) { return prev.map(function(u) { return u.id === deposit.user_id ? {...u, balance: u.balance + deposit.amount} : u; }); });
+      setDeposits(prev => prev.map(d => (d.id === id ? { ...d, status: 'approved' } : d)));
+      setUsers(prev => prev.map(u => (u.id === userId ? { ...u, balance: u.balance + amount } : u)));
       toast({ title: "Deposit approved! Balance updated." });
     }
   }
 
-  const handleRejectDeposit = async (id: string) => {
-    const { error } = await supabase.from('deposit_requests').update({ status: 'rejected' }).eq('id', id);
-    if (error) {
-      toast({ title: "Error rejecting deposit", description: error.message, variant: "destructive" });
+  const handleRejectDeposit = async (id: string, userId: string, amount: number) => {
+    const result = await adminHandleDeposit(id, userId, amount, 'reject');
+    if (result.error) {
+      toast({ title: "Error rejecting deposit", description: result.error, variant: "destructive" });
     } else {
-      setDeposits(function(prev) { return prev.map(function(d) { return d.id === id ? {...d, status: 'rejected'} : d; }); });
+      setDeposits(prev => prev.map(d => (d.id === id ? { ...d, status: 'rejected' } : d)));
       toast({ title: "Deposit rejected." });
     }
   }
 
   const handleApproveWithdrawal = async (id: string) => {
-    const { error } = await supabase.from('withdrawal_requests').update({ status: 'approved' }).eq('id', id);
-    if (error) {
-      toast({ title: "Error approving withdrawal", description: error.message, variant: "destructive" });
+    const result = await adminHandleWithdrawal(id, 'approve');
+    if (result.error) {
+      toast({ title: "Error approving withdrawal", description: result.error, variant: "destructive" });
     } else {
-      setWithdrawals(function(prev) { return prev.map(function(w) { return w.id === id ? {...w, status: 'approved'} : w; }); });
+      setWithdrawals(prev => prev.map(w => (w.id === id ? { ...w, status: 'approved' } : w)));
       toast({ title: "Withdrawal approved!" });
     }
   }
 
-  const handleRejectWithdrawal = async (id: string) => {
-    const withdrawal = withdrawals.find(function(w) { return w.id === id; });
-    if (!withdrawal) return;
-
-    const { data: profile, error: profileError } = await supabase.from('profiles').select('balance').eq('id', withdrawal.user_id).single();
-    if (profileError || !profile) {
-      toast({ title: "Error fetching user profile", description: profileError?.message, variant: "destructive" });
-      return;
-    }
-
-    const { error: withdrawalError } = await supabase.from('withdrawal_requests').update({ status: 'rejected' }).eq('id', id);
-    if (withdrawalError) {
-      toast({ title: "Error rejecting withdrawal", description: withdrawalError.message, variant: "destructive" });
-      return;
-    }
-
-    const { error: balanceError } = await supabase.from('profiles').update({ balance: profile.balance + withdrawal.amount }).eq('id', withdrawal.user_id);
-    if(balanceError) {
-      await supabase.from('withdrawal_requests').update({ status: 'pending' }).eq('id', id);
-      toast({ title: "Error refunding balance", description: balanceError.message, variant: "destructive" });
+  const handleRejectWithdrawal = async (id: string, userId: string, amount: number) => {
+    const result = await adminHandleWithdrawal(id, 'reject', userId, amount);
+    if(result.error) {
+      toast({ title: "Error rejecting withdrawal", description: result.error, variant: "destructive" });
     } else {
-      setWithdrawals(function(prev) { return prev.map(function(w) { return w.id === id ? {...w, status: 'rejected'} : w; }); });
-      setUsers(function(prev) { return prev.map(function(u) { return u.id === withdrawal.user_id ? {...u, balance: u.balance + withdrawal.amount} : u; }); });
+      setWithdrawals(prev => prev.map(w => (w.id === id ? { ...w, status: 'rejected' } : w)));
+      setUsers(prev => prev.map(u => (u.id === userId ? { ...u, balance: u.balance + amount } : u)));
       toast({ title: "Withdrawal rejected — balance refunded." });
     }
   }
 
   const handleDeleteWithdrawal = async (id: string) => {
-    const { error } = await supabase.from('withdrawal_requests').delete().eq('id', id);
-    if (error) {
-      toast({ title: "Error deleting record", description: error.message, variant: "destructive" });
+    const result = await adminHandleWithdrawal(id, 'delete');
+    if (result.error) {
+      toast({ title: "Error deleting record", description: result.error, variant: "destructive" });
     } else {
-      setWithdrawals(function(prev) { return prev.filter(function(w) { return w.id !== id; }); });
+      setWithdrawals(prev => prev.filter(w => w.id !== id));
       toast({ title: "Record deleted." });
     }
   }
 
   const handleCreateGenerator = async () => {
-    const { data, error } = await supabase.from('generators').insert([newGen]).select().single();
-    if(error) {
-      toast({ title: "Error creating generator", description: error.message, variant: "destructive" });
+    const result = await adminMutateGenerator('create', newGen);
+    if(result.error || !result.data) {
+      toast({ title: "Error creating generator", description: result.error, variant: "destructive" });
     } else {
-      setGenerators(function(prev) { return [data as Generator, ...prev]; });
+      setGenerators(prev => [result.data as Generator, ...prev]);
       toast({ title: "Generator created!" });
       setShowCreateGen(false);
       setNewGen({ ...BLANK_GEN });
@@ -412,12 +379,11 @@ function DashboardContent() {
 
   const handleUpdateGenerator = async () => {
     if (editingGen) {
-      const { id, ...updateData } = editingGen;
-      const { error } = await supabase.from('generators').update(updateData).eq('id', id);
-      if (error) {
-        toast({ title: "Error updating generator", description: error.message, variant: "destructive" });
+      const result = await adminMutateGenerator('update', editingGen);
+      if (result.error || !result.data) {
+        toast({ title: "Error updating generator", description: result.error, variant: "destructive" });
       } else {
-        setGenerators(function(prev) { return prev.map(function(g) { return g.id === editingGen.id ? editingGen : g; }); });
+        setGenerators(prev => prev.map(g => (g.id === result.data.id ? result.data as Generator : g)));
         toast({ title: "Generator updated!" });
         setEditingGen(null);
       }
@@ -425,71 +391,76 @@ function DashboardContent() {
   }
 
   const handleDeleteGenerator = async (id: string) => {
-    const { error } = await supabase.from('generators').delete().eq('id', id);
-    if (error) {
-      toast({ title: "Error deleting generator", description: error.message, variant: 'destructive' });
+    const result = await adminMutateGenerator('delete', { id });
+    if (result.error) {
+      toast({ title: "Error deleting generator", description: result.error, variant: 'destructive' });
     } else {
-      setGenerators(function(prev) { return prev.filter(function(g) { return g.id !== id; }); });
+      setGenerators(prev => prev.filter(g => g.id !== id));
       toast({ title: 'Generator deleted' });
     }
   };
+  
+  const handlePublishToggle = async (gen: Generator) => {
+    const updatedGen = {...gen, published: !gen.published};
+    const result = await adminMutateGenerator('update', updatedGen);
+    if (result.error || !result.data) {
+        toast({ title: 'Error updating status', variant: 'destructive', description: result.error });
+    } else {
+        setGenerators(gens => gens.map(g => (g.id === gen.id ? result.data as Generator : g)));
+        toast({ title: `Generator ${updatedGen.published ? 'published' : 'unpublished'}`});
+    }
+  }
 
   const handleImageUpload = async (type: 'generator' | 'activity', id: string, file: File) => {
-    const BUCKET_NAME = 'site_assets';
-    if (type === 'generator') {
-        setUploading(`gen-${id}`);
-    } else {
-        setUploading(`act-${id}`);
-    }
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${id}-${Date.now()}.${fileExt}`;
-    const folder = type === 'generator' ? 'generator-image' : 'activity-image';
-    const filePath = `${folder}/${fileName}`;
+      const BUCKET_NAME = 'site_assets';
+      if (type === 'generator') {
+          setUploading(`gen-${id}`);
+      } else {
+          setUploading(`act-${id}`);
+      }
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${id}-${Date.now()}.${fileExt}`;
+      const folder = type === 'generator' ? 'generator-image' : 'activity-image';
+      const filePath = `${folder}/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(filePath, file, { upsert: true });
+      // This requires client-side supabase with anon key, RLS for storage must be correct
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      const { error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(filePath, file, { upsert: true });
 
-    if (uploadError) {
-        toast({ title: 'Upload Failed', description: uploadError.message, variant: 'destructive' });
-        setUploading(null);
-        return;
-    }
+      if (uploadError) {
+          toast({ title: 'Upload Failed', description: uploadError.message, variant: 'destructive' });
+          setUploading(null);
+          return;
+      }
 
-    const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
-    const publicUrl = data.publicUrl;
+      const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
+      const publicUrl = data.publicUrl;
 
-    let result;
-    if (type === 'generator') {
-        result = await adminUpdateGeneratorImage(id, publicUrl);
-    } else { // type === 'activity'
-        result = await adminUpsertMedia(id, publicUrl);
-    }
+      let result;
+      if (type === 'generator') {
+          result = await adminUpdateGeneratorImage(id, publicUrl);
+      } else { // type === 'activity'
+          result = await adminUpsertMedia(id, publicUrl);
+      }
 
-    if (result.error) {
-        toast({ title: 'Database Update Failed', description: result.error, variant: 'destructive' });
-    } else {
-        await fetchData();
-        toast({ title: `Image updated for ${id}!` });
-    }
+      if (result.error) {
+          toast({ title: 'Database Update Failed', description: result.error, variant: 'destructive' });
+      } else {
+          await fetchData();
+          toast({ title: `Image updated for ${id}!` });
+      }
 
-    setUploading(null);
+      setUploading(null);
   };
 
   const handleSeedGenerators = async () => {
-    // Delete all existing generators
-    const { error: deleteError } = await supabase.from('generators').delete().filter('id', 'not.is', null);
-    if (deleteError) {
-      toast({ title: "Error clearing generators", description: deleteError.message, variant: 'destructive' });
-      return;
-    }
-
-    // Insert the default generators
-    const { data, error: insertError } = await supabase.from('generators').insert(DEFAULT_GENERATORS).select();
-
-    if (insertError) {
-      toast({ title: "Error seeding generators", description: insertError.message, variant: 'destructive' });
+    const result = await adminMutateGenerator('seed', DEFAULT_GENERATORS);
+    if (result.error || !result.data) {
+      toast({ title: "Error seeding generators", description: result.error, variant: 'destructive' });
     } else {
       toast({ title: "Success", description: "Default generators have been seeded." });
-      setGenerators(data as Generator[]);
+      setGenerators(result.data as Generator[]);
     }
   };
 
@@ -720,7 +691,7 @@ function DashboardContent() {
                     <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
                       <div>
                         <h2 className="text-white font-black text-lg">Create User Account</h2>
-                        <p className="text-slate-400 text-xs mt-0.5">Note: This creates a profile record but not an auth account.</p>
+                        <p className="text-slate-400 text-xs mt-0.5">This creates a new auth user and profile.</p>
                       </div>
                       <button onClick={function() { return setShowCreateUser(false); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700"><X className="w-4 h-4" /></button>
                     </div>
@@ -745,8 +716,8 @@ function DashboardContent() {
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Password *</label>
-                          <Input value={createUserForm.password} onChange={function(e) { return setCreateUserForm(function(f) { return ({ ...f, password: e.target.value }); }); }}
-                            placeholder="Not used for login" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                          <Input type="password" value={createUserForm.password} onChange={function(e) { return setCreateUserForm(function(f) { return ({ ...f, password: e.target.value }); }); }}
+                            placeholder="Min 6 characters" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
                         </div>
                         <div>
                           <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Starting Balance</label>
@@ -888,8 +859,8 @@ function DashboardContent() {
                       key={d.id}
                       d={d}
                       user={user}
-                      onApprove={function() { return handleApproveDeposit(d.id); }}
-                      onReject={function() { return handleRejectDeposit(d.id); }}
+                      onApprove={() => handleApproveDeposit(d.id, d.user_id, d.amount)}
+                      onReject={() => handleRejectDeposit(d.id, d.user_id, d.amount)}
                       approvePending={false}
                       rejectPending={false}
                     />
@@ -943,7 +914,7 @@ function DashboardContent() {
                               className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-green-900/30 text-green-400 border border-green-700 hover:bg-green-900/50 text-xs font-semibold disabled:opacity-50">
                               <CheckCircle className="w-3.5 h-3.5" /> Approve
                             </button>
-                            <button onClick={function() { return openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? The amount will be refunded to their balance.`, function() { return handleRejectWithdrawal(w.id); }); }}
+                            <button onClick={function() { return openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? The amount will be refunded to their balance.`, () => handleRejectWithdrawal(w.id, w.user_id, w.amount)); }}
                               data-testid={`button-reject-withdrawal-${w.id}`}
                               className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold disabled:opacity-50">
                               <XCircle className="w-3.5 h-3.5" /> Reject
@@ -955,7 +926,7 @@ function DashboardContent() {
                           <span className="flex items-center gap-1 text-red-400 text-xs font-semibold"><XCircle className="w-3.5 h-3.5" /> Rejected</span>
                         )}
                         <button
-                          onClick={function() { return openConfirm("Delete Withdrawal Record", `Remove the withdrawal record for $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? This cannot be undone.`, function() { return handleDeleteWithdrawal(w.id); }); }}
+                          onClick={function() { return openConfirm("Delete Withdrawal Record", `Remove the withdrawal record for $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? This cannot be undone.`, () => handleDeleteWithdrawal(w.id)); }}
                           data-testid={`button-delete-withdrawal-${w.id}`}
                           className="flex items-center justify-center w-8 h-8 rounded-xl bg-red-950/40 text-red-500 border border-red-800/50 hover:bg-red-900/50 hover:text-red-300 transition-colors flex-shrink-0"
                           title="Delete record"
@@ -1096,15 +1067,7 @@ function DashboardContent() {
                             <Pencil className="w-3 h-3" /> Edit
                           </button>
                           <button
-                            onClick={async function() {
-                                const updatedGen = {...g, published: !g.published};
-                                const { error } = await supabase.from('generators').update({ published: updatedGen.published }).eq('id', g.id);
-                                if (error) toast({ title: 'Error updating status', variant: 'destructive', description: error.message });
-                                else {
-                                    setGenerators(function(gens) { return gens.map(function(gen) { return gen.id === g.id ? updatedGen : gen; }); });
-                                    toast({ title: `Generator ${updatedGen.published ? 'published' : 'unpublished'}`});
-                                }
-                            }}
+                            onClick={() => handlePublishToggle(g)}
                             data-testid={`button-publish-gen-${g.id}`}
                             className={`flex-1 flex items-center justify-center gap-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all duration-200 ${g.published ? "bg-green-900/30 border-green-600 text-green-300 shadow-[0_0_8px_rgba(34,197,94,0.25)]" : "bg-slate-700/60 border-slate-600 text-slate-400 hover:border-slate-500"}`}
                           >
