@@ -1065,7 +1065,7 @@ export default function BankPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-800">{isDeposit ? 'Deposit' : 'Withdrawal'} Request</p>
-                        <p className="text-xs text-gray-400 truncate">{isDeposit ? (tx as DepositRecord).tx_id : (tx as WithdrawRecord).method} · {new Date(tx.created_at).toLocaleDateString()}</p>
+                        <p className="text-xs text-gray-400 truncate">{(isDeposit && tx.tx_id) ? tx.tx_id : (tx as WithdrawRecord).method} · {new Date(tx.created_at).toLocaleDateString()}</p>
                       </div>
                       <div className="text-right">
                         <p className={`text-sm font-bold ${isDeposit ? 'text-green-600' : 'text-gray-800'}`}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>
