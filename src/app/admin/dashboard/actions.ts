@@ -3,6 +3,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { revalidatePath } from 'next/cache'
 
 // This server action uses the service_role key to bypass RLS.
 // It is secure because the key is never exposed to the client,
@@ -251,6 +252,11 @@ export async function adminUpsertMedia(id: string, url: string) {
       console.error('Admin Upsert Media Error:', error);
       return { error: error.message }
     }
+    revalidatePath('/dashboard/about');
+    revalidatePath('/dashboard/activity');
+    revalidatePath('/dashboard/bank');
+    revalidatePath('/login');
+    revalidatePath('/signup');
     return { success: true }
   } catch (e: any) {
     console.error('Admin Action Exception:', e);
@@ -311,6 +317,8 @@ export async function adminUpdateGeneratorImage(id: string, imageUrl: string) {
             console.error('Admin Update Generator Image Error:', error);
             return { error: error.message };
         }
+        revalidatePath('/dashboard/market');
+        revalidatePath('/dashboard/power');
         return { success: true };
     } catch (e: any) {
         console.error('Admin Action Exception:', e);
