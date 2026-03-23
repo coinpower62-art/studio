@@ -276,8 +276,8 @@ function DashboardContent() {
         toast({ title: 'Error updating balance', description: result.error, variant: 'destructive' });
     } else {
         toast({ title: 'Balance updated' });
-        setUsers(function(prev) { return prev.map(function(u) { return u.id === userId ? {...u, balance: newBalance} : u; }); });
         setEditingUser(null);
+        await fetchData();
     }
   }
 
@@ -287,7 +287,7 @@ function DashboardContent() {
         toast({ title: 'Error deleting user', description: result.error, variant: 'destructive' });
     } else {
         toast({ title: 'User profile deleted. Note: Auth user record still exists.' });
-        setUsers(function(prev) { return prev.filter(function(u) { return u.id !== userId; }); });
+        await fetchData();
     }
   }
 
@@ -307,9 +307,9 @@ function DashboardContent() {
         toast({ title: 'Error creating user', description: result.error, variant: 'destructive' });
     } else {
       toast({ title: "User created successfully!", description: "An auth user and profile have been created." });
-      setUsers(function(prev) { return [result.data as UserRecord, ...prev]; });
       setShowCreateUser(false);
       setCreateUserForm({ full_name: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
+      await fetchData();
     }
   }
 
@@ -318,9 +318,8 @@ function DashboardContent() {
     if (result.error) {
       toast({ title: "Error approving deposit", description: result.error, variant: "destructive" });
     } else {
-      setDeposits(prev => prev.map(d => (d.id === id ? { ...d, status: 'approved' } : d)));
-      setUsers(prev => prev.map(u => (u.id === userId ? { ...u, balance: u.balance + amount } : u)));
       toast({ title: "Deposit approved! Balance updated." });
+      await fetchData();
     }
   }
 
@@ -329,8 +328,8 @@ function DashboardContent() {
     if (result.error) {
       toast({ title: "Error rejecting deposit", description: result.error, variant: "destructive" });
     } else {
-      setDeposits(prev => prev.map(d => (d.id === id ? { ...d, status: 'rejected' } : d)));
       toast({ title: "Deposit rejected." });
+      await fetchData();
     }
   }
 
@@ -339,8 +338,8 @@ function DashboardContent() {
     if (result.error) {
       toast({ title: "Error approving withdrawal", description: result.error, variant: "destructive" });
     } else {
-      setWithdrawals(prev => prev.map(w => (w.id === id ? { ...w, status: 'approved' } : w)));
       toast({ title: "Withdrawal approved!" });
+      await fetchData();
     }
   }
 
@@ -349,9 +348,8 @@ function DashboardContent() {
     if(result.error) {
       toast({ title: "Error rejecting withdrawal", description: result.error, variant: "destructive" });
     } else {
-      setWithdrawals(prev => prev.map(w => (w.id === id ? { ...w, status: 'rejected' } : w)));
-      setUsers(prev => prev.map(u => (u.id === userId ? { ...u, balance: u.balance + amount } : u)));
       toast({ title: "Withdrawal rejected — balance refunded." });
+      await fetchData();
     }
   }
 
@@ -360,8 +358,8 @@ function DashboardContent() {
     if (result.error) {
       toast({ title: "Error deleting record", description: result.error, variant: "destructive" });
     } else {
-      setWithdrawals(prev => prev.filter(w => w.id !== id));
       toast({ title: "Record deleted." });
+      await fetchData();
     }
   }
 
@@ -370,10 +368,10 @@ function DashboardContent() {
     if(result.error || !result.data) {
       toast({ title: "Error creating generator", description: result.error, variant: "destructive" });
     } else {
-      setGenerators(prev => [result.data as Generator, ...prev]);
       toast({ title: "Generator created!" });
       setShowCreateGen(false);
       setNewGen({ ...BLANK_GEN });
+      await fetchData();
     }
   }
 
@@ -383,9 +381,9 @@ function DashboardContent() {
       if (result.error || !result.data) {
         toast({ title: "Error updating generator", description: result.error, variant: "destructive" });
       } else {
-        setGenerators(prev => prev.map(g => (g.id === result.data.id ? result.data as Generator : g)));
         toast({ title: "Generator updated!" });
         setEditingGen(null);
+        await fetchData();
       }
     }
   }
@@ -395,8 +393,8 @@ function DashboardContent() {
     if (result.error) {
       toast({ title: "Error deleting generator", description: result.error, variant: 'destructive' });
     } else {
-      setGenerators(prev => prev.filter(g => g.id !== id));
       toast({ title: 'Generator deleted' });
+      await fetchData();
     }
   };
   
@@ -406,8 +404,8 @@ function DashboardContent() {
     if (result.error || !result.data) {
         toast({ title: 'Error updating status', variant: 'destructive', description: result.error });
     } else {
-        setGenerators(gens => gens.map(g => (g.id === gen.id ? result.data as Generator : g)));
         toast({ title: `Generator ${updatedGen.published ? 'published' : 'unpublished'}`});
+        await fetchData();
     }
   }
 
@@ -460,7 +458,7 @@ function DashboardContent() {
       toast({ title: "Error seeding generators", description: result.error, variant: 'destructive' });
     } else {
       toast({ title: "Success", description: "Default generators have been seeded." });
-      setGenerators(result.data as Generator[]);
+      await fetchData();
     }
   };
 
