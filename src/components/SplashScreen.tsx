@@ -1,27 +1,9 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 
-export function SplashScreen({ onDone }: { onDone: () => void }) {
+export function SplashScreen({ onDone, logoUrl }: { onDone: () => void; logoUrl: string | null }) {
   const [phase, setPhase] = useState<"in" | "hold" | "out">("in");
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchLogo = async () => {
-        const supabase = createClient();
-        const { data } = await supabase
-            .from('media')
-            .select('url')
-            .eq('id', 'app-logo')
-            .single();
-        
-        if (data?.url) {
-            setLogoUrl(data.url);
-        }
-    };
-    fetchLogo();
-  }, []);
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase("hold"), 400);
