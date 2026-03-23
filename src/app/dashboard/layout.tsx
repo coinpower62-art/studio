@@ -15,7 +15,6 @@ import {
   Loader,
   Store,
   History,
-  LifeBuoy,
   LayoutGrid,
   AlertCircle
 } from "lucide-react";
@@ -44,7 +43,6 @@ const navItems = [
     { href: "/dashboard/power", label: "Power", icon: Zap },
     { href: "/dashboard/activity", label: "Activity", icon: History },
     { href: "/dashboard/about", label: "About", icon: Info },
-    { href: "/dashboard/support", label: "Support", icon: LifeBuoy },
 ];
 
 function BottomNav() {
