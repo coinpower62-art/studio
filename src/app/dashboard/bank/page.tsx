@@ -364,21 +364,17 @@ export default function BankPage() {
       }
   }
 
-  const handleWithdrawalSubmit = async function() {
+  const handleWithdrawal = () => {
     if (!user || !profile) return;
     if (!amount || parseFloat(amount) <= 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
     if (!withdrawMethod) { toast({ title: "Select a payment method", variant: "destructive" }); return; }
     const amt = parseFloat(amount);
-    
+
     if (amt > profile.balance) {
       toast({ title: "Insufficient balance", description: `Your balance is $${profile.balance.toFixed(2)}`, variant: "destructive" });
       return;
     }
-    if (pinInput.length < 6) {
-        toast({ title: "PIN Required", description: `Please enter your 6-digit PIN to authorize this withdrawal.`, variant: "destructive" });
-        setPinMode('verify');
-        return;
-    }
+    
     if (withdrawMethod === "card") {
       const rawNum = card.number.replace(/\s/g, "");
       if (rawNum.length < 13 || !luhnCheck(rawNum)) { toast({ title: "Invalid card number", description: "Please check and enter a valid Visa or Mastercard number.", variant: "destructive" }); return; }
@@ -392,22 +388,46 @@ export default function BankPage() {
       if (!bank.number.trim()) { toast({ title: "Enter the account number", variant: "destructive" }); return; }
       if (!bank.holder.trim()) { toast({ title: "Enter the account holder name", variant: "destructive" }); return; }
     }
+     if (withdrawMethod === "usdt") {
+        if (!usdt.address.trim()) { toast({ title: "Enter a USDT address", variant: "destructive" }); return; }
+    }
+     if (withdrawMethod === "momo" || withdrawMethod === 'telecel') {
+        const methodState = withdrawMethod === 'momo' ? momo : telecel;
+        if (!methodState.phone.trim()) { toast({ title: "Enter a phone number", variant: "destructive" }); return; }
+        if (!methodState.name.trim()) { toast({ title: "Enter an account name", variant: "destructive" }); return; }
+    }
+    
+    // All good, open PIN modal
+    setPinInput("");
+    setPinError("");
+    setPinMode("verify");
+  };
+
+  const handleWithdrawalSubmit = async function() {
+    if (!user || !profile) return;
+    if (pinInput.length < 6) {
+        toast({ title: "PIN Required", description: `Please enter your 6-digit PIN to authorize this withdrawal.`, variant: "destructive" });
+        return;
+    }
     
     setIsSubmitting(true);
+    const amt = parseFloat(amount);
     const details = withdrawMethod === "usdt" ? usdt : withdrawMethod === "momo" ? momo : withdrawMethod === "telecel" ? telecel : withdrawMethod === "bank" ? bank : card;
     const result = await createWithdrawalRequest({
       amount: amt,
-      method: withdrawMethods.find(function(m) { return m.id === withdrawMethod; })?.label || withdrawMethod,
+      method: withdrawMethods.find(function(m) { return m.id === withdrawMethod; })?.label || withdrawMethod || "",
       details: details,
     });
     setIsSubmitting(false);
 
     if (result.error) {
        toast({ title: 'Withdrawal failed', description: result.error, variant: 'destructive' });
+       setPinMode(null);
     } else {
       setWithdrawSuccess(true);
       setLastTxId(result.txId || '');
       setProfile(function(p) { return p ? { ...p, balance: p.balance - amt } : null; });
+      setPinMode(null);
     }
   };
 
@@ -525,10 +545,10 @@ export default function BankPage() {
                   {pinError && <p className="text-red-500 text-xs font-medium mt-2">{pinError}</p>}
                 </div>
                 <Button data-testid="button-verify-pin"
-                  disabled={pinInput.length < 6}
+                  disabled={pinInput.length < 6 || isSubmitting}
                   onClick={handleWithdrawalSubmit}
                   className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-xl h-12 text-base shadow-md disabled:opacity-50">
-                  Authorize & Withdraw
+                  {isSubmitting ? "Processing..." : "Authorize & Withdraw"}
                 </Button>
               </div>
             )}
@@ -623,12 +643,10 @@ export default function BankPage() {
                   toast({ title: "Deposit required", description: "You must have at least one approved deposit before you can withdraw.", variant: "destructive" });
                   return;
                 }
-                openMode(null);
                 if (!profile.has_withdrawal_pin) {
                   setPinMode("security");
                 } else {
-                  setPinInput(""); setPinConfirm(""); setPinError("");
-                  setPinMode("verify");
+                  openMode("withdraw");
                 }
               }}
               className={`bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 transition-all ${
@@ -1088,10 +1106,10 @@ export default function BankPage() {
                     className="pl-7 h-11 border-gray-200 focus:border-amber-400 text-lg font-semibold" />
                 </div>
               </div>
-              <Button onClick={handleWithdrawalSubmit} data-testid="button-confirm-withdraw"
+              <Button onClick={handleWithdrawal} data-testid="button-confirm-withdraw"
                 disabled={isSubmitting}
                 className="w-full h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md">
-                {isSubmitting ? "Submitting request..." : `Withdraw $${amount || '0.00'}`}
+                {`Withdraw $${amount || '0.00'}`}
               </Button>
             </div>
             )}
@@ -1106,7 +1124,7 @@ export default function BankPage() {
             <h3 className="text-lg font-bold text-gray-900">Withdrawal Submitted!</h3>
             <p className="text-gray-500 text-sm">Your withdrawal request for <span className="font-semibold text-green-600">${amount}</span> has been submitted for processing.</p>
             {lastTxId && <p className="text-xs text-gray-400">TXN ID: {lastTxId}</p>}
-            <Button onClick={function() { return openMode(null); }} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl h-10 px-6">Done</Button>
+            <Button onClick={function() { openMode(null); }} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl h-10 px-6">Done</Button>
           </div>
         )}
 
