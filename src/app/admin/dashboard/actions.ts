@@ -252,11 +252,7 @@ export async function adminUpsertMedia(id: string, url: string) {
       console.error('Admin Upsert Media Error:', error);
       return { error: error.message }
     }
-    revalidatePath('/dashboard/about');
-    revalidatePath('/dashboard/activity');
-    revalidatePath('/dashboard/bank');
-    revalidatePath('/login');
-    revalidatePath('/signup');
+    revalidatePath('/', 'layout');
     return { success: true }
   } catch (e: any) {
     console.error('Admin Action Exception:', e);
@@ -317,13 +313,10 @@ export async function adminUpdateGeneratorImage(id: string, imageUrl: string) {
             console.error('Admin Update Generator Image Error:', error);
             return { error: error.message };
         }
-        revalidatePath('/dashboard/market');
-        revalidatePath('/dashboard/power');
+        revalidatePath('/', 'layout');
         return { success: true };
     } catch (e: any) {
         console.error('Admin Action Exception:', e);
         return { error: e.message };
     }
 }
-
-    
