@@ -68,7 +68,7 @@ export default async function DashboardPage() {
     <div className="space-y-5">
       <div>
         <h1 className="text-xl sm:text-2xl font-black text-gray-900">
-          Welcome, {profile?.full_name || profile?.username || 'User'}
+          Welcome, {profile?.username || profile?.full_name || 'User'}
         </h1>
         <p className="text-slate-500 text-sm">Here is your investment overview.</p>
       </div>
