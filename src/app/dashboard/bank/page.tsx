@@ -204,6 +204,7 @@ export default function BankPage() {
 
   const [depositRecords, setDepositRecords] = useState<DepositRecord[]>([]);
   const [withdrawRecords, setWithdrawRecords] = useState<WithdrawRecord[]>([]);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   const { display: countdown, expired } = useCountdown(mode === "deposit");
 
@@ -259,6 +260,15 @@ export default function BankPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch withdrawal history.' });
     } else {
       setWithdrawRecords(withdrawalsData as WithdrawRecord[]);
+    }
+
+    const { data: logoData } = await supabase
+        .from('media')
+        .select('url')
+        .eq('id', 'app-logo')
+        .single();
+    if (logoData?.url) {
+        setLogoUrl(logoData.url);
     }
     
     setLoading(false);
@@ -417,6 +427,7 @@ export default function BankPage() {
   const hasApprovedDeposit = (depositRecords || []).some(function(d) { return d.status === "approved"; });
   const allTransactions = [...(depositRecords || []), ...(withdrawRecords || [])]
     .sort(function(a, b) { return new Date(b.created_at).getTime() - new Date(a.created_at).getTime(); });
+  const depositButtonLogo = logoUrl || imageMap.momo;
 
   return (
     <div className="bg-[#f7f9f4]">
@@ -586,8 +597,8 @@ export default function BankPage() {
               onClick={function() { return openMode('deposit'); }}
               className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-amber-300 hover:bg-amber-50/50 transition-all"
             >
-              <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                <img src={imageMap.momo} alt="Deposit" className="w-full h-full object-cover" />
+              <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-black flex items-center justify-center">
+                <img src={depositButtonLogo} alt="Deposit" className="w-full h-full object-contain p-1" />
               </div>
               <div className="flex-1">
                 <p className="font-bold text-gray-800">Deposit Funds</p>
