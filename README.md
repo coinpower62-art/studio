@@ -166,7 +166,7 @@ CREATE POLICY "Users can create withdrawal requests." ON public.withdrawal_reque
 -- Rented Generators Table
 CREATE TABLE IF NOT EXISTS public.rented_generators (
   id uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   generator_id text REFERENCES public.generators(id) ON DELETE SET NULL,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   rented_at timestamp with time zone,

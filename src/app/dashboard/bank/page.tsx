@@ -61,8 +61,6 @@ type Profile = {
 type WithdrawRecord = {
   id: string;
   user_id: string;
-  username: string;
-  full_name: string;
   country: string;
   method: string;
   amount: number;
@@ -77,7 +75,6 @@ type DepositRecord = {
   id: string;
   amount: number;
   tx_id: string;
-  date: string;
   status: "pending" | "approved" | "rejected";
   created_at: string;
 };
