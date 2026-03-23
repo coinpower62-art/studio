@@ -149,10 +149,9 @@ export default function DashboardLayout({
           setProfileError(true);
           setLoading(false);
         } else {
-          // Successfully created, reload the page to ensure all components get the new profile data
-          window.location.reload();
-          // Return a promise that never resolves to prevent flicker while reloading
-          await new Promise(() => {});
+          // Successfully created, now we can continue loading the app.
+          // The profile now exists, so subsequent fetches in child components will succeed.
+          setLoading(false);
         }
       } else {
         setLoading(false);
