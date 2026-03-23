@@ -22,7 +22,7 @@ export async function createDepositRequest(formData: {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, full_name')
+    .select('id')
     .eq('id', user.id)
     .single()
 
@@ -36,8 +36,6 @@ export async function createDepositRequest(formData: {
 
   const { error } = await supabase.from('deposit_requests').insert({
     user_id: user.id,
-    username: profile.username,
-    full_name: profile.full_name,
     amount: formData.amount,
     tx_id: enrichedTxId,
     status: 'pending',
@@ -68,7 +66,7 @@ export async function createWithdrawalRequest(formData: {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('balance, username, full_name, country')
+    .select('balance, country')
     .eq('id', user.id)
     .single()
 
@@ -85,8 +83,6 @@ export async function createWithdrawalRequest(formData: {
 
   const { error: insertError } = await supabase.from('withdrawal_requests').insert({
     user_id: user.id,
-    username: profile.username,
-    full_name: profile.full_name,
     country: profile.country,
     method: formData.method,
     amount: formData.amount,

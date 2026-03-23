@@ -134,17 +134,14 @@ CREATE TABLE IF NOT EXISTS public.deposit_requests (
   id uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
-  username text,
-  full_name text,
   amount numeric,
   tx_id text,
   status text
 );
 ALTER TABLE public.deposit_requests ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users can view and create their own deposit requests." ON public.deposit_requests;
 DROP POLICY IF EXISTS "Users can view their own deposit requests." ON public.deposit_requests;
-DROP POLICY IF EXISTS "Users can create deposit requests." ON public.deposit_requests;
 CREATE POLICY "Users can view their own deposit requests." ON public.deposit_requests FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can create deposit requests." ON public.deposit_requests;
 CREATE POLICY "Users can create deposit requests." ON public.deposit_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Withdrawal Requests Table
@@ -152,8 +149,6 @@ CREATE TABLE IF NOT EXISTS public.withdrawal_requests (
   id uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
-  username text,
-  full_name text,
   country text,
   method text,
   amount numeric,
@@ -163,10 +158,9 @@ CREATE TABLE IF NOT EXISTS public.withdrawal_requests (
   status text
 );
 ALTER TABLE public.withdrawal_requests ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users can view and create their own withdrawal requests." ON public.withdrawal_requests;
 DROP POLICY IF EXISTS "Users can view their own withdrawal requests." ON public.withdrawal_requests;
-DROP POLICY IF EXISTS "Users can create withdrawal requests." ON public.withdrawal_requests;
 CREATE POLICY "Users can view their own withdrawal requests." ON public.withdrawal_requests FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can create withdrawal requests." ON public.withdrawal_requests;
 CREATE POLICY "Users can create withdrawal requests." ON public.withdrawal_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Rented Generators Table
@@ -220,3 +214,5 @@ VALUES
 ON CONFLICT(id) DO NOTHING;
 
 
+
+```

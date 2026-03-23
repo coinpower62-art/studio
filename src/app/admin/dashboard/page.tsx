@@ -31,7 +31,7 @@ import { adminUpdateGeneratorImage, adminUpsertMedia } from "./actions";
 type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "generators" | "media" | "codes" | "settings" | "about";
 
 type DepositRequest = {
-  id: string; user_id: string; username: string; full_name: string;
+  id: string; user_id: string;
   amount: number; tx_id: string; status: "pending" | "approved" | "rejected"; created_at: string;
 };
 
@@ -81,7 +81,7 @@ const DEFAULT_GENERATORS = [
 
 
 type WithdrawalRecord = {
-  id: string; user_id: string; username: string; full_name: string; country: string;
+  id: string; user_id: string; country: string;
   method: string; amount: number; net_amount: number; fee: number;
   details: string; status: "pending" | "approved" | "rejected"; created_at: string;
 };
@@ -91,8 +91,9 @@ type MediaAsset = {
     url: string;
 }
 
-function DepositRow({ d, onApprove, onReject, approvePending, rejectPending }: {
+function DepositRow({ d, user, onApprove, onReject, approvePending, rejectPending }: {
   d: DepositRequest;
+  user?: UserRecord;
   onApprove: () => void;
   onReject: () => void;
   approvePending: boolean;
@@ -122,8 +123,8 @@ function DepositRow({ d, onApprove, onReject, approvePending, rejectPending }: {
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-white font-semibold text-sm">{d.full_name}</p>
-              <span className="text-slate-400 text-xs">@{d.username}</span>
+              <p className="text-white font-semibold text-sm">{user?.full_name || 'Unknown User'}</p>
+              <span className="text-slate-400 text-xs">@{user?.username || '...'}</span>
               {isCard && <Badge className="text-[10px] border px-1.5 py-0 bg-blue-900/40 text-blue-300 border-blue-700">CARD</Badge>}
               <Badge className={`text-xs border px-1.5 py-0 ${d.status === "pending" ? "bg-yellow-900/40 text-yellow-400 border-yellow-700" : d.status === "approved" ? "bg-green-900/40 text-green-400 border-green-700" : "bg-red-900/40 text-red-400 border-red-700"}`}>{d.status}</Badge>
             </div>
@@ -674,15 +675,17 @@ function DashboardContent() {
                     <button onClick={function() { return switchTab("withdrawals"); }} className="text-amber-400 text-xs flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></button>
                   </div>
                   <div className="space-y-3">
-                    {withdrawals.filter(function(w) { return w.status === "pending"; }).slice(0, 8).map(function(w) { return (
+                    {withdrawals.filter(function(w) { return w.status === "pending"; }).slice(0, 8).map(function(w) {
+                      const user = users.find(u => u.id === w.user_id);
+                      return (
                       <div key={w.id} className="flex items-center justify-between gap-2">
-                        <div className="min-w-0"><p className="text-white text-sm font-medium truncate">{w.full_name}</p><p className="text-slate-400 text-xs">{w.method.toUpperCase()} · @{w.username}</p></div>
+                        <div className="min-w-0"><p className="text-white text-sm font-medium truncate">{user?.full_name || 'Unknown'}</p><p className="text-slate-400 text-xs">{w.method.toUpperCase()} · @{user?.username || '...'}</p></div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <span className="text-amber-400 text-sm font-bold">${w.amount.toFixed(2)}</span>
                           <Badge className="text-xs bg-yellow-900/40 text-yellow-400 border border-yellow-700 px-1.5">pending</Badge>
                         </div>
                       </div>
-                    ); })}
+                    )})}
                     {pendingWithdrawalsCount === 0 && <p className="text-slate-500 text-sm">No pending withdrawals</p>}
                   </div>
                 </div>
@@ -878,10 +881,13 @@ function DashboardContent() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {deposits.map(function(d) { return (
+                  {deposits.map(function(d) {
+                    const user = users.find(u => u.id === d.user_id);
+                    return (
                     <DepositRow
                       key={d.id}
                       d={d}
+                      user={user}
                       onApprove={function() { return handleApproveDeposit(d.id); }}
                       onReject={function() { return handleRejectDeposit(d.id); }}
                       approvePending={false}
@@ -908,6 +914,7 @@ function DashboardContent() {
               ) : (
               <div className="space-y-3">
                 {withdrawals.map(function(w) {
+                  const user = users.find(u => u.id === w.user_id);
                   const dateStr = new Date(w.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
                   const methodLabel = w.method === "momo" ? "MTN MOMO" : w.method === "tigo" ? "AirtelTigo" : w.method === "usdt" ? "USDT" : w.method === "card" ? "CARD" : w.method.toUpperCase();
                   const statusColor = w.status === "approved" ? "bg-green-900/40 text-green-400 border-green-700" : w.status === "rejected" ? "bg-red-900/40 text-red-400 border-red-700" : "bg-yellow-900/40 text-yellow-400 border-yellow-700";
@@ -919,10 +926,10 @@ function DashboardContent() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-white font-semibold text-sm">{w.full_name}</p>
+                          <p className="text-white font-semibold text-sm">{user?.full_name || 'Unknown'}</p>
                           <Badge className={`text-xs border px-1.5 py-0 ${statusColor}`}>{w.status}</Badge>
                         </div>
-                        <p className="text-slate-400 text-xs">@{w.username} · {methodLabel} · {w.country} · {dateStr}</p>
+                        <p className="text-slate-400 text-xs">@{user?.username || '...'} · {methodLabel} · {w.country} · {dateStr}</p>
                         <p className="text-slate-500 text-xs">Net: <span className="text-slate-300">${w.net_amount.toFixed(2)}</span> · Fee: ${w.fee.toFixed(2)}</p>
                       </div>
                     </div>
@@ -936,7 +943,7 @@ function DashboardContent() {
                               className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-green-900/30 text-green-400 border border-green-700 hover:bg-green-900/50 text-xs font-semibold disabled:opacity-50">
                               <CheckCircle className="w-3.5 h-3.5" /> Approve
                             </button>
-                            <button onClick={function() { return openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${w.full_name}? The amount will be refunded to their balance.`, function() { return handleRejectWithdrawal(w.id); }); }}
+                            <button onClick={function() { return openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? The amount will be refunded to their balance.`, function() { return handleRejectWithdrawal(w.id); }); }}
                               data-testid={`button-reject-withdrawal-${w.id}`}
                               className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold disabled:opacity-50">
                               <XCircle className="w-3.5 h-3.5" /> Reject
@@ -948,7 +955,7 @@ function DashboardContent() {
                           <span className="flex items-center gap-1 text-red-400 text-xs font-semibold"><XCircle className="w-3.5 h-3.5" /> Rejected</span>
                         )}
                         <button
-                          onClick={function() { return openConfirm("Delete Withdrawal Record", `Remove the withdrawal record for $${w.amount.toFixed(2)} from ${w.full_name}? This cannot be undone.`, function() { return handleDeleteWithdrawal(w.id); }); }}
+                          onClick={function() { return openConfirm("Delete Withdrawal Record", `Remove the withdrawal record for $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? This cannot be undone.`, function() { return handleDeleteWithdrawal(w.id); }); }}
                           data-testid={`button-delete-withdrawal-${w.id}`}
                           className="flex items-center justify-center w-8 h-8 rounded-xl bg-red-950/40 text-red-500 border border-red-800/50 hover:bg-red-900/50 hover:text-red-300 transition-colors flex-shrink-0"
                           title="Delete record"
