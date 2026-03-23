@@ -460,7 +460,7 @@ export default function BankPage() {
   const otherMajorBanks = ["HSBC", "Barclays", "Deutsche Bank", "BNP Paribas", "Standard Chartered"];
 
   let bankOptions: string[] = [];
-  if (['Ghana', 'Nigeria', 'Kenya'].some(c => profile.country.includes(c))) {
+  if (profile.country && ['Ghana', 'Nigeria', 'Kenya'].includes(profile.country)) {
       bankOptions = africanBanks;
   } else if (profile.country === 'United States') {
       bankOptions = usaBanks;
