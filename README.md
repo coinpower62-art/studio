@@ -143,7 +143,10 @@ CREATE TABLE IF NOT EXISTS public.deposit_requests (
 );
 ALTER TABLE public.deposit_requests ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can view and create their own deposit requests." ON public.deposit_requests;
-CREATE POLICY "Users can view and create their own deposit requests." ON public.deposit_requests FOR ALL USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can view their own deposit requests." ON public.deposit_requests;
+DROP POLICY IF EXISTS "Users can create deposit requests." ON public.deposit_requests;
+CREATE POLICY "Users can view their own deposit requests." ON public.deposit_requests FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create deposit requests." ON public.deposit_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Withdrawal Requests Table
 CREATE TABLE IF NOT EXISTS public.withdrawal_requests (
@@ -162,7 +165,10 @@ CREATE TABLE IF NOT EXISTS public.withdrawal_requests (
 );
 ALTER TABLE public.withdrawal_requests ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can view and create their own withdrawal requests." ON public.withdrawal_requests;
-CREATE POLICY "Users can view and create their own withdrawal requests." ON public.withdrawal_requests FOR ALL USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can view their own withdrawal requests." ON public.withdrawal_requests;
+DROP POLICY IF EXISTS "Users can create withdrawal requests." ON public.withdrawal_requests;
+CREATE POLICY "Users can view their own withdrawal requests." ON public.withdrawal_requests FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create withdrawal requests." ON public.withdrawal_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Rented Generators Table
 CREATE TABLE IF NOT EXISTS public.rented_generators (
@@ -214,4 +220,3 @@ VALUES
   ('pg4', 'PG4 Generator', 'Ultra Power', '🚀', 'from-purple-500 to-pink-600', 500, 60, 55, true, '20%', 'Daily', '$500', '$20000', '1250')
 ON CONFLICT(id) DO NOTHING;
 
-```
