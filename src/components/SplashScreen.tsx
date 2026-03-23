@@ -1,9 +1,27 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export function SplashScreen({ onDone }: { onDone: () => void }) {
   const [phase, setPhase] = useState<"in" | "hold" | "out">("in");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+        const supabase = createClient();
+        const { data } = await supabase
+            .from('media')
+            .select('url')
+            .eq('id', 'app-logo')
+            .single();
+        
+        if (data?.url) {
+            setLogoUrl(data.url);
+        }
+    };
+    fetchLogo();
+  }, []);
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase("hold"), 400);
@@ -11,6 +29,23 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
     const t3 = setTimeout(() => onDone(), 2900);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [onDone]);
+
+  const SvgLogo = () => (
+    <svg
+        width="64"
+        height="64"
+        viewBox="0 0 32 32"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="text-primary"
+    >
+        <circle cx="16" cy="16" r="14" fill="currentColor" />
+        <path
+            d="M19 12L14.5 19L17 19L13 26L17.5 18L15 18L19 12Z"
+            fill="#000"
+        />
+    </svg>
+  );
 
   return (
     <div
@@ -23,20 +58,11 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
         <div className="absolute -inset-2.5 rounded-full bg-radial-glow animate-pulse-glow" />
         <div className="w-[108px] h-[108px] rounded-[28px] border-[3px] border-amber-500/70 shadow-[0_0_40px_rgba(201,137,26,0.4),_0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden">
             <div className="w-full h-full bg-black flex items-center justify-center">
-                 <svg
-                    width="64"
-                    height="64"
-                    viewBox="0 0 32 32"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="text-primary"
-                >
-                    <circle cx="16" cy="16" r="14" fill="currentColor" />
-                    <path
-                        d="M19 12L14.5 19L17 19L13 26L17.5 18L15 18L19 12Z"
-                        fill="#000"
-                    />
-                </svg>
+                 {logoUrl ? (
+                    <img src={logoUrl} alt="CoinPower Logo" className="w-full h-full object-cover" />
+                ) : (
+                    <SvgLogo />
+                )}
             </div>
         </div>
       </div>
