@@ -94,7 +94,7 @@ export async function createWithdrawalRequest(formData: {
 
   if (insertError) {
     console.error('Supabase withdrawal insert error:', insertError)
-    return { error: 'Could not create withdrawal request.' }
+    return { error: `Could not create withdrawal request. DB Error: ${insertError.message}` }
   }
 
   const { error: updateError } = await supabase

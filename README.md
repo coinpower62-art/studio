@@ -154,7 +154,7 @@ CREATE TABLE IF NOT EXISTS public.withdrawal_requests (
   amount numeric,
   net_amount numeric,
   fee numeric,
-  details jsonb,
+  details text,
   status text
 );
 ALTER TABLE public.withdrawal_requests ENABLE ROW LEVEL SECURITY;
@@ -212,6 +212,7 @@ VALUES
   ('pg3', 'PG3 Generator', 'Mega Power', '💡', 'from-blue-400 to-indigo-600', 100, 45, 10, true, '15%', 'Daily', '$100', '$5000', '4310'),
   ('pg4', 'PG4 Generator', 'Ultra Power', '🚀', 'from-purple-500 to-pink-600', 500, 60, 55, true, '20%', 'Daily', '$500', '$20000', '1250')
 ON CONFLICT(id) DO NOTHING;
+
 
 
 
