@@ -98,11 +98,9 @@ export default function Market() {
           .maybeSingle();
       
       if (profileError) {
-          toast({ title: 'Error fetching profile', variant: 'destructive', description: profileError.message });
-          setProfile(null);
-      } else {
-          setProfile(profileData as Profile | null);
+          console.error("MarketPage: Profile fetch failed.");
       }
+      setProfile(profileData as Profile | null);
       
       const { data: rentedData, error: rentedError } = await supabase
           .from('rented_generators')
@@ -161,26 +159,7 @@ export default function Market() {
     }
   };
 
-  if (isLoading) return <MarketPageSkeleton />;
-  
-  if (!user || !profile) {
-      return (
-        <div className="pt-12 p-4 pb-20 max-w-4xl mx-auto text-center">
-            <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
-            <h2 className="mt-4 text-xl font-bold text-destructive-foreground">User Profile Not Found</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-                We could not load your user profile. This can happen if profile creation failed during signup.
-                Please try signing out and signing back in. If the problem persists, please contact support.
-            </p>
-            <form action={logout}>
-                <Button variant="destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                </Button>
-            </form>
-        </div>
-      )
-  }
+  if (isLoading || !profile) return <MarketPageSkeleton />;
 
   const now = Date.now();
   const activeRentedCounts = new Map<string, number>();

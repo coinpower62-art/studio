@@ -630,9 +630,6 @@ export default function Power() {
   if (isLoading) {
     return <PowerPageSkeleton />;
   }
-  if (!user) {
-    return null;
-  }
 
   const now = Date.now();
   const activeGenerators = rentedGenerators.filter(function(ug) { return ug && ug.expires_at && new Date(ug.expires_at).getTime() > now; });

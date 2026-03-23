@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -41,8 +42,8 @@ export async function signup(values: any) {
         phone: phone,
         referral_code: newUserReferralCode, // The new user's OWN code
         referred_by: referralCode || null, // The code of the user who referred them (can be empty/null)
-        balance: 1.00,
-        has_withdrawal_pin: false,
+        // balance: 1.00, // Balance is now set by the handle_new_user trigger
+        // has_withdrawal_pin: false,
       },
     },
   });

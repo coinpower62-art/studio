@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Settings,
   Bell,
@@ -16,7 +16,8 @@ import {
   Store,
   History,
   LifeBuoy,
-  LayoutGrid
+  LayoutGrid,
+  AlertCircle
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -104,18 +105,66 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [user, setUser] = React.useState<SupabaseUser | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [profileError, setProfileError] = React.useState(false);
 
   React.useEffect(() => {
-      const supabase = createClient();
-      const getUser = async () => {
-          const { data } = await supabase.auth.getUser();
-          setUser(data.user);
-          setLoading(false);
+    const supabase = createClient();
+    const checkUserAndProfile = async () => {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push('/login');
+        return;
       }
-      getUser();
-  }, []);
+      
+      setUser(user);
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+      
+      if (!profile) {
+        // Profile doesn't exist, create it ("self-heal")
+        const { error: createError } = await supabase.from('profiles').insert({
+          id: user.id,
+          full_name: user.user_metadata?.full_name,
+          username: user.user_metadata?.username,
+          email: user.email,
+          country: user.user_metadata?.country,
+          phone: user.user_metadata?.phone,
+          balance: 1.00, // Default starting balance
+          has_withdrawal_pin: false,
+          referral_code: user.user_metadata?.referral_code,
+          referred_by: user.user_metadata?.referred_by,
+        });
+
+        if (createError) {
+          console.error("Fatal error: Could not create user profile.", createError);
+          setProfileError(true);
+          setLoading(false);
+        } else {
+          // Successfully created, reload the page to ensure all components get the new profile data
+          window.location.reload();
+          // Return a promise that never resolves to prevent flicker while reloading
+          await new Promise(() => {});
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    if (!pathname.startsWith('/admin')) {
+      checkUserAndProfile();
+    } else {
+      setLoading(false);
+    }
+  }, [pathname, router]);
 
   const getInitials = () => {
     if (user?.user_metadata?.full_name) {
@@ -141,6 +190,25 @@ export default function DashboardLayout({
           <Loader className="h-8 w-8 animate-spin text-primary" />
         </div>
       );
+  }
+
+  if (profileError) {
+    return (
+       <div className="pt-12 p-4 pb-20 max-w-4xl mx-auto text-center flex flex-col items-center justify-center min-h-screen">
+          <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
+          <h2 className="mt-4 text-xl font-bold text-destructive-foreground">User Profile Not Found</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+              We could not load or create your user profile. This is a critical error.
+              Please try signing out and signing back in. If the problem persists, please contact support.
+          </p>
+          <form action={logout} className="mt-6">
+              <Button variant="destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+              </Button>
+          </form>
+      </div>
+    )
   }
 
   return (

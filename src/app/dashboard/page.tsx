@@ -7,8 +7,6 @@ import {
   ArrowUpFromLine,
   ChevronRight,
   Zap,
-  AlertCircle,
-  LogOut,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -41,25 +39,13 @@ export default async function DashboardPage() {
   ]);
 
   const { data: profile } = profileResult;
-
-  // If profile creation failed on signup, show an error and guide the user.
+  
+  // The layout will now handle the case where the profile is missing.
+  // We can assume the profile exists here. If not, the layout would have shown an error.
   if (!profile) {
-    return (
-      <div className="pt-12 p-4 pb-20 max-w-4xl mx-auto text-center">
-        <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
-        <h2 className="mt-4 text-xl font-bold text-destructive-foreground">User Profile Not Found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-            We could not load your user profile. This can happen if profile creation failed during signup.
-            Please try signing out and signing back in. If the problem persists, please contact support.
-        </p>
-        <form action={logout} className="mt-6">
-            <Button variant="destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-            </Button>
-        </form>
-      </div>
-    );
+    // This should theoretically not be reached if the layout's self-healing works.
+    // But as a fallback, we can redirect or show a minimal error.
+    return redirect('/login?message=Could not load user profile.');
   }
 
   const userCount = userCountResult.count ?? 0;

@@ -226,17 +226,12 @@ export default function BankPage() {
       .maybeSingle();
 
     if (profileError) {
-      toast({
-        variant: 'destructive',
-        title: 'Error loading profile',
-        description: profileError.message,
-      });
-      setProfile(null);
-    } else {
-      setProfile(profileData as Profile | null);
-      if (profileData) {
-        setDepositCountry(profileData.country || '');
-      }
+      // This case should be handled by the layout's self-healing now
+      console.error('BankPage: Profile fetch failed');
+    }
+    setProfile(profileData as Profile | null);
+    if (profileData) {
+      setDepositCountry(profileData.country || '');
     }
 
     const { data: depositsData, error: depositsError } = await supabase
@@ -431,26 +426,7 @@ export default function BankPage() {
     }
   };
 
-  if (loading) return <BankPageSkeleton />;
-  
-  if (!user || !profile) {
-      return (
-        <div className="pt-12 p-4 pb-20 max-w-4xl mx-auto text-center">
-            <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
-            <h2 className="mt-4 text-xl font-bold text-destructive-foreground">User Profile Not Found</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-                We could not load your user profile. This can happen if profile creation failed during signup.
-                Please try signing out and signing back in. If the problem persists, please contact support.
-            </p>
-            <form action={logout} className="mt-6">
-                <Button variant="destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                </Button>
-            </form>
-        </div>
-      )
-  }
+  if (loading || !profile) return <BankPageSkeleton />;
 
   const hasApprovedDeposit = (depositRecords || []).some(function(d) { return d.status === "approved"; });
   const allTransactions = [...(depositRecords || []), ...(withdrawRecords || [])]
@@ -1181,5 +1157,3 @@ export default function BankPage() {
     </div>
   );
 }
-
-    

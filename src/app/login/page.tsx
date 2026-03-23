@@ -1,3 +1,4 @@
+
 'use client';
 
 import { login } from './actions'
@@ -30,7 +31,7 @@ function LoginComponent() {
                 <Input
                 className="w-full pl-10"
                 name="email"
-                placeholder="Username or Email"
+                placeholder="Email address"
                 required
                 />
             </div>
