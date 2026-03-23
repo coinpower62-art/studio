@@ -63,12 +63,14 @@ export default async function DashboardPage() {
       .join('')
       .toUpperCase()
       .slice(0, 2) || '??';
+      
+  const displayName = profile?.full_name?.split(' ')[0] || profile?.username || 'User';
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-xl sm:text-2xl font-black text-gray-900">
-          Welcome, {profile?.username || profile?.full_name || 'User'}
+          Welcome, {displayName}
         </h1>
         <p className="text-slate-500 text-sm">Here is your investment overview.</p>
       </div>
