@@ -9,12 +9,26 @@ export async function signup(values: any) {
 
   const { email, password, fullName, username, country, phone, referralCode } = values;
 
-  // Generate a unique referral code for the new user.
-  const newUserReferralCode = `CP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+  // Check if username is already taken before attempting to sign up
+  const { data: existingProfile, error: profileError } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('username', username)
+    .single();
 
-  // The new user's profile information will be passed in the `options.data` property
-  // of the `signUp` method. This metadata will be used on the dashboard page to create
-  // the user's profile, making the process resilient to database trigger failures.
+  if (profileError && profileError.code !== 'PGRST116') { 
+    // PGRST116 means no rows were found, which is what we want.
+    // Any other error is a real database problem.
+    return { error: `Database error checking username: ${profileError.message}` };
+  }
+
+  if (existingProfile) {
+    return { error: 'This username is already taken. Please choose another.' };
+  }
+
+  // Generate a unique referral code for the new user.
+  const newUserReferralCode = `CP-${Math.random().toString(36).slice(2, 7)}${Date.now().toString(36).slice(-5)}`.toUpperCase();
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
