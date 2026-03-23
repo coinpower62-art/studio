@@ -32,7 +32,7 @@ type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "ge
 
 type DepositRequest = {
   id: string; user_id: string; username: string; full_name: string;
-  amount: number; tx_id: string; date: string; status: "pending" | "approved" | "rejected"; created_at: string;
+  amount: number; tx_id: string; status: "pending" | "approved" | "rejected"; created_at: string;
 };
 
 type UserRecord = {
@@ -127,7 +127,7 @@ function DepositRow({ d, onApprove, onReject, approvePending, rejectPending }: {
               {isCard && <Badge className="text-[10px] border px-1.5 py-0 bg-blue-900/40 text-blue-300 border-blue-700">CARD</Badge>}
               <Badge className={`text-xs border px-1.5 py-0 ${d.status === "pending" ? "bg-yellow-900/40 text-yellow-400 border-yellow-700" : d.status === "approved" ? "bg-green-900/40 text-green-400 border-green-700" : "bg-red-900/40 text-red-400 border-red-700"}`}>{d.status}</Badge>
             </div>
-            <p className="text-slate-400 text-xs">TX: {d.tx_id} · {d.date}</p>
+            <p className="text-slate-400 text-xs">TX: {d.tx_id} · {new Date(d.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">

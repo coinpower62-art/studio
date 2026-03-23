@@ -138,8 +138,7 @@ CREATE TABLE IF NOT EXISTS public.deposit_requests (
   full_name text,
   amount numeric,
   tx_id text,
-  status text,
-  date text
+  status text
 );
 ALTER TABLE public.deposit_requests ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can view and create their own deposit requests." ON public.deposit_requests;
@@ -219,4 +218,5 @@ VALUES
   ('pg3', 'PG3 Generator', 'Mega Power', '💡', 'from-blue-400 to-indigo-600', 100, 45, 10, true, '15%', 'Daily', '$100', '$5000', '4310'),
   ('pg4', 'PG4 Generator', 'Ultra Power', '🚀', 'from-purple-500 to-pink-600', 500, 60, 55, true, '20%', 'Daily', '$500', '$20000', '1250')
 ON CONFLICT(id) DO NOTHING;
+
 

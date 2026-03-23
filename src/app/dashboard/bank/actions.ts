@@ -34,9 +34,6 @@ export async function createDepositRequest(formData: {
     ? `[${formData.method}|${formData.country}] ${formData.cardDetails}`
     : `[${formData.method}|${formData.country}] ${formData.txId}`
 
-  const now = new Date();
-  const dateString = `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
-
   const { error } = await supabase.from('deposit_requests').insert({
     user_id: user.id,
     username: profile.username,
@@ -44,7 +41,6 @@ export async function createDepositRequest(formData: {
     amount: formData.amount,
     tx_id: enrichedTxId,
     status: 'pending',
-    date: dateString,
   })
 
   if (error) {
