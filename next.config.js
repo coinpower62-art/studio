@@ -2,7 +2,7 @@
 const nextConfig = {
   /* config options here */
   serverActions: {
-    bodySizeLimit: '4mb',
+    bodySizeLimit: '10mb',
   },
   typescript: {
     ignoreBuildErrors: true,
