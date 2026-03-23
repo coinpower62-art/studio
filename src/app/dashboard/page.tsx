@@ -7,11 +7,13 @@ import {
   ArrowUpFromLine,
   ChevronRight,
   Zap,
+  AlertCircle,
+  LogOut,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
-import { revalidatePath } from 'next/cache';
-import { rentGeneratorAction } from './market/actions';
+import { logout } from '@/app/login/actions';
+import { Button } from '@/components/ui/button';
 
 // The main page component
 export default async function DashboardPage() {
@@ -38,38 +40,26 @@ export default async function DashboardPage() {
     supabase.from('rented_generators').select('id, expires_at').eq('user_id', user.id),
   ]);
 
-  let { data: profile } = profileResult;
+  const { data: profile } = profileResult;
 
-  // Self-healing profile creation logic
+  // If profile creation failed on signup, show an error and guide the user.
   if (!profile) {
-    const { full_name, username, country, phone, referral_code, referred_by } = user.user_metadata;
-    
-    // Fallback logic in case the trigger fails. This should be consistent with the signup action.
-    const newUserReferralCode = referral_code || `CP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-
-    const { error: insertError } = await supabase.from('profiles').insert({
-        id: user.id,
-        email: user.email,
-        full_name: full_name || 'New User',
-        username: username || user.email?.split('@')[0] || 'newuser',
-        country: country || 'Unknown',
-        phone: phone,
-        referral_code: newUserReferralCode, // New user's own code
-        referred_by: referred_by || null, // Referrer's code
-        balance: 1.00, // The $1 sign-up bonus
-        has_withdrawal_pin: false,
-    });
-    
-    if (insertError) {
-        console.error("Fatal error creating profile:", insertError);
-        return redirect(`/login?message=Could not create your user profile. Please contact support.`);
-    }
-
-    // Automatically rent the free PG1 generator for new users.
-    await rentGeneratorAction('pg1');
-    
-    revalidatePath('/dashboard', 'layout');
-    redirect('/dashboard');
+    return (
+      <div className="pt-12 p-4 pb-20 max-w-4xl mx-auto text-center">
+        <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
+        <h2 className="mt-4 text-xl font-bold text-destructive-foreground">User Profile Not Found</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+            We could not load your user profile. This can happen if profile creation failed during signup.
+            Please try signing out and signing back in. If the problem persists, please contact support.
+        </p>
+        <form action={logout} className="mt-6">
+            <Button variant="destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+            </Button>
+        </form>
+      </div>
+    );
   }
 
   const userCount = userCountResult.count ?? 0;
