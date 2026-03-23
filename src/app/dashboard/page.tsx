@@ -57,7 +57,7 @@ export default async function DashboardPage() {
   const activeGeneratorCount = rentedGeneratorsResult.data?.filter(g => new Date(g.expires_at).getTime() > now).length ?? 0;
 
   const initials =
-    profile?.full_name
+    (profile?.full_name || user.email)
       ?.split(' ')
       .map(function(n) { return n[0]; })
       .join('')
@@ -68,7 +68,7 @@ export default async function DashboardPage() {
     <div className="space-y-5">
       <div>
         <h1 className="text-xl sm:text-2xl font-black text-gray-900">
-          Welcome, {profile?.full_name || 'User'}
+          Welcome, {profile?.full_name || profile?.username || 'User'}
         </h1>
         <p className="text-slate-500 text-sm">Here is your investment overview.</p>
       </div>
@@ -130,9 +130,9 @@ export default async function DashboardPage() {
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-gray-900 text-sm font-medium truncate">
-                {profile?.full_name}
+                {profile?.full_name || profile?.username || user.email}
               </p>
-              <p className="text-slate-500 text-xs">@{profile?.username}</p>
+              <p className="text-slate-500 text-xs">@{profile?.username || 'user'}</p>
             </div>
             <p className="text-green-500 text-lg font-bold">
               ${(profile?.balance ?? 0).toFixed(2)}

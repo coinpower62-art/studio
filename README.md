@@ -77,8 +77,8 @@ BEGIN
     new.raw_user_meta_data->>'phone',
     new.raw_user_meta_data->>'referral_code',
     new.raw_user_meta_data->>'referred_by',
-    (new.raw_user_meta_data->>'balance')::numeric,
-    (new.raw_user_meta_data->>'has_withdrawal_pin')::boolean
+    1.00, -- Always grant a $1.00 starting balance
+    false -- Always set has_withdrawal_pin to false on signup
   )
   ON CONFLICT (id) DO NOTHING;
   return new;
@@ -212,6 +212,7 @@ VALUES
   ('pg3', 'PG3 Generator', 'Mega Power', '💡', 'from-blue-400 to-indigo-600', 100, 45, 10, true, '15%', 'Daily', '$100', '$5000', '4310'),
   ('pg4', 'PG4 Generator', 'Ultra Power', '🚀', 'from-purple-500 to-pink-600', 500, 60, 55, true, '20%', 'Daily', '$500', '$20000', '1250')
 ON CONFLICT(id) DO NOTHING;
+
 
 
 
