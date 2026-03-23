@@ -45,7 +45,7 @@ export default async function DashboardPage() {
     const { full_name, username, country, phone, referral_code, referred_by } = user.user_metadata;
     
     // Fallback logic in case the trigger fails. This should be consistent with the signup action.
-    const newUserReferralCode = referral_code || `CP-${((username || 'USER').slice(0, 4)).toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}`;
+    const newUserReferralCode = referral_code || `CP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
 
     const { error: insertError } = await supabase.from('profiles').insert({
         id: user.id,

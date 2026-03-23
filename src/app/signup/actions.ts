@@ -10,7 +10,7 @@ export async function signup(values: any) {
   const { email, password, fullName, username, country, phone, referralCode } = values;
 
   // Generate a unique referral code for the new user.
-  const newUserReferralCode = `CP-${username.slice(0, 4).toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}`;
+  const newUserReferralCode = `CP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
 
   // The new user's profile information will be passed in the `options.data` property
   // of the `signUp` method. This metadata will be used on the dashboard page to create
