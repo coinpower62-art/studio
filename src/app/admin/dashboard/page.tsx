@@ -34,7 +34,8 @@ import {
   adminHandleWithdrawal,
   adminMutateGenerator,
   adminUpdateGeneratorImage,
-  adminUpsertMedia
+  adminUpsertMedia,
+  adminUploadFile
 } from "./actions";
 
 type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "generators" | "media" | "codes" | "settings" | "about";
@@ -410,46 +411,49 @@ function DashboardContent() {
   }
 
   const handleImageUpload = async (type: 'generator' | 'activity', id: string, file: File) => {
-      const BUCKET_NAME = 'site_assets';
-      if (type === 'generator') {
-          setUploading(`gen-${id}`);
-      } else {
-          setUploading(`act-${id}`);
+      const loadingId = type === 'generator' ? `gen-${id}` : `act-${id}`;
+      setUploading(loadingId);
+
+      try {
+        // Step 1: Define file path
+        const fileExt = file.name.split('.').pop();
+        const folder = type === 'generator' ? 'generator-image' : 'activity-image';
+        const filePath = `${folder}/${id}-${Date.now()}.${fileExt}`;
+
+        // Step 2: Read file as Data URL
+        const fileDataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        // Step 3: Call server action to upload
+        const uploadResult = await adminUploadFile(fileDataUrl, filePath);
+        if (uploadResult.error || !uploadResult.data) {
+          throw new Error(uploadResult.error || 'Unknown upload error');
+        }
+        const publicUrl = uploadResult.data.publicUrl;
+
+        // Step 4: Call server action to update database
+        const dbUpdateResult =
+          type === 'generator'
+            ? await adminUpdateGeneratorImage(id, publicUrl)
+            : await adminUpsertMedia(id, publicUrl);
+
+        if (dbUpdateResult.error) {
+          throw new Error(dbUpdateResult.error);
+        }
+
+        // Step 5: Success
+        await fetchData();
+        toast({ title: `Image updated for ${id}!` });
+
+      } catch (e: any) {
+        toast({ title: 'Upload Failed', description: e.message, variant: 'destructive' });
+      } finally {
+        setUploading(null);
       }
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${id}-${Date.now()}.${fileExt}`;
-      const folder = type === 'generator' ? 'generator-image' : 'activity-image';
-      const filePath = `${folder}/${fileName}`;
-
-      // This requires client-side supabase with anon key, RLS for storage must be correct
-      const { createClient } = await import('@/lib/supabase/client');
-      const supabase = createClient();
-      const { error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(filePath, file, { upsert: true });
-
-      if (uploadError) {
-          toast({ title: 'Upload Failed', description: uploadError.message, variant: 'destructive' });
-          setUploading(null);
-          return;
-      }
-
-      const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
-      const publicUrl = data.publicUrl;
-
-      let result;
-      if (type === 'generator') {
-          result = await adminUpdateGeneratorImage(id, publicUrl);
-      } else { // type === 'activity'
-          result = await adminUpsertMedia(id, publicUrl);
-      }
-
-      if (result.error) {
-          toast({ title: 'Database Update Failed', description: result.error, variant: 'destructive' });
-      } else {
-          await fetchData();
-          toast({ title: `Image updated for ${id}!` });
-      }
-
-      setUploading(null);
   };
 
   const handleSeedGenerators = async () => {
@@ -1405,4 +1409,5 @@ export default function AdminDashboard() {
     </Suspense>
   )
 }
+    
     

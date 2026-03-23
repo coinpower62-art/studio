@@ -258,6 +258,45 @@ export async function adminUpsertMedia(id: string, url: string) {
   }
 }
 
+export async function adminUploadFile(fileDataUrl: string, filePath: string) {
+  const cookieStore = cookies()
+  if (cookieStore.get('admin_logged_in')?.value !== 'true') {
+    return { error: 'Unauthorized: You must be an admin to perform this action.' }
+  }
+
+  try {
+    const supabaseAdmin = await getSupabaseAdminClient();
+    
+    const matches = fileDataUrl.match(/^data:(.+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return { error: 'Invalid file data URL format.' };
+    }
+    const contentType = matches[1];
+    const base64Data = matches[2];
+    const fileBuffer = Buffer.from(base64Data, 'base64');
+    
+    const BUCKET_NAME = 'site_assets';
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(BUCKET_NAME)
+      .upload(filePath, fileBuffer, {
+        contentType,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('Admin Storage Upload Error:', uploadError);
+      return { error: `Storage upload failed: ${uploadError.message}` };
+    }
+
+    const { data } = supabaseAdmin.storage.from(BUCKET_NAME).getPublicUrl(filePath);
+    
+    return { data: { publicUrl: data.publicUrl } };
+  } catch (e: any) {
+    console.error('Admin Upload File Exception:', e);
+    return { error: e.message };
+  }
+}
+
 export async function adminUpdateGeneratorImage(id: string, imageUrl: string) {
     const cookieStore = cookies()
     if (cookieStore.get('admin_logged_in')?.value !== 'true') {
@@ -278,3 +317,5 @@ export async function adminUpdateGeneratorImage(id: string, imageUrl: string) {
         return { error: e.message };
     }
 }
+
+    
