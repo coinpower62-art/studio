@@ -5,54 +5,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { User, Lock } from 'lucide-react'
 import Link from "next/link"
-import Image from 'next/image'
-import { PlaceHolderImages } from '@/lib/placeholder-images'
-import { useState, useEffect, Suspense } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation';
+import { LoginLogo } from '@/components/LoginLogo';
 
 function LoginComponent() {
   const searchParams = useSearchParams();
   const message = searchParams.get('message');
 
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const placeholderLogo = PlaceHolderImages.find((p) => p.id === 'signup-logo');
-
-  useEffect(() => {
-    const supabase = createClient();
-    const fetchLogo = async () => {
-      const { data, error } = await supabase
-        .from('media')
-        .select('url')
-        .eq('id', 'app-logo')
-        .single();
-      
-      if (data?.url) {
-        setLogoUrl(data.url);
-      } else {
-        setLogoUrl(placeholderLogo?.imageUrl || '');
-      }
-    };
-    fetchLogo();
-  }, [placeholderLogo]);
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm">
             <div className="text-center mb-8">
-               {logoUrl ? (
-                  <Image
-                    src={logoUrl}
-                    alt="CoinPower Logo"
-                    width={64}
-                    height={64}
-                    className="mx-auto mb-3 rounded-2xl object-cover shadow-2xl"
-                    data-ai-hint={placeholderLogo?.imageHint}
-                  />
-                ) : (
-                  <Skeleton className="mx-auto mb-3 h-16 w-16 rounded-2xl" />
-                )}
+               <LoginLogo />
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Coin<span className="text-primary">Power</span></h1>
               <p className="text-muted-foreground mt-1 text-sm font-medium">Sign in to access your dashboard</p>
             </div>

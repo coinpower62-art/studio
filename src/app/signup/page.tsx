@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,9 +21,7 @@ import {
 import { countries, LANGUAGES, PHONE_CODES } from '@/lib/data';
 import { TRANSLATIONS } from '@/lib/translations';
 import { signup } from "./actions";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { createClient } from "@/lib/supabase/client";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoginLogo } from "@/components/LoginLogo";
 
 type LangCode = typeof LANGUAGES[number]["code"];
 
@@ -280,43 +277,11 @@ function SignUpForm() {
       : "border-gray-200 focus:border-amber-400 focus-visible:ring-amber-200"}`;
   }
 
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const placeholderLogo = PlaceHolderImages.find((p) => p.id === 'signup-logo');
-
-  useEffect(() => {
-    const supabase = createClient();
-    const fetchLogo = async () => {
-        const { data, error } = await supabase
-        .from('media')
-        .select('url')
-        .eq('id', 'app-logo')
-        .single();
-        
-        if (data?.url) {
-          setLogoUrl(data.url);
-        } else {
-          setLogoUrl(placeholderLogo?.imageUrl || '');
-        }
-    };
-    fetchLogo();
-  }, [placeholderLogo]);
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8 sm:py-12">
       <div className="w-full max-w-lg">
         <div className="text-center mb-6">
-           {logoUrl ? (
-              <Image
-                src={logoUrl}
-                alt="CoinPower Logo"
-                width={64}
-                height={64}
-                className="mx-auto mb-3 rounded-2xl object-cover shadow-2xl"
-                data-ai-hint={placeholderLogo?.imageHint}
-              />
-            ) : (
-              <Skeleton className="mx-auto mb-3 h-16 w-16 rounded-2xl" />
-            )}
+           <LoginLogo />
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Coin<span className="text-primary">Power</span></h1>
           <p className="text-muted-foreground mt-1 text-sm font-medium">Digital Energy Mining Platform</p>
         </div>
