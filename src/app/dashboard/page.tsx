@@ -73,6 +73,8 @@ export default async function DashboardPage() {
   }
 
   const userCount = userCountResult.count ?? 0;
+  const FAKE_USER_BASE = 12040;
+  const displayedUserCount = FAKE_USER_BASE + userCount;
   const pendingWithdrawalsCount = withdrawalsResult.data?.filter(w => w.status === 'pending').length ?? 0;
   
   const now = new Date().getTime();
@@ -110,7 +112,7 @@ export default async function DashboardPage() {
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-3 shadow-lg">
             <Users className="w-4 h-4 text-white" />
           </div>
-          <p className="text-xl font-black text-gray-900">{String(userCount)}</p>
+          <p className="text-xl font-black text-gray-900">{String(displayedUserCount)}</p>
           <p className="text-gray-500 text-xs mt-0.5">Total Users</p>
         </div>
         
