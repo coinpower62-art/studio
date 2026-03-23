@@ -1185,6 +1185,38 @@ function DashboardContent() {
                       })}
                   </div>
               </div>
+               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Payment Method Icons</h3>
+                  <p className="text-sm text-slate-400">These icons appear on the Bank page for deposits and withdrawals.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                          { id: 'payment-usdt', name: 'USDT' },
+                          { id: 'payment-mtn-momo', name: 'MTN MOMO' },
+                          { id: 'payment-telecel', name: 'Telecel' },
+                          { id: 'payment-bank-transfer', name: 'Bank Transfer' },
+                          { id: 'payment-western-union', name: 'Western Union' },
+                          { id: 'payment-card', name: 'Card' },
+                      ].map(({ id, name }) => {
+                          const imageUrl = media.find(m => m.id === id)?.url || PlaceHolderImages.find(i => i.id === id)?.imageUrl;
+                          const isUploading = uploading === `act-${id}`;
+                          return (
+                              <div key={id} className="text-center">
+                                  <div className="w-full h-auto rounded-lg aspect-square object-contain bg-slate-700 p-2">
+                                      {imageUrl ? <img src={imageUrl} alt={name} className="w-full h-full object-contain" /> : <div className="w-full h-full bg-slate-600 rounded-md" />}
+                                  </div>
+                                  <p className="text-white text-sm font-semibold mt-2">{name}</p>
+                                  <label htmlFor={`act-upload-${id}`} className={`mt-1 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                      {isUploading ? 'Uploading...' : 'Upload new icon'}
+                                  </label>
+                                  <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) await handleImageUpload('activity', id, file);
+                                  }}/>
+                              </div>
+                          )
+                      })}
+                  </div>
+              </div>
               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
                   <h3 className="font-bold text-white">Activity Page Images</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

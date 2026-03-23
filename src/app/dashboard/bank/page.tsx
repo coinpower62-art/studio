@@ -79,30 +79,6 @@ type DepositRecord = {
   created_at: string;
 };
 
-const imageMap = {
-  momo: PlaceHolderImages.find(function(i) { return i.id === 'mtn-momo'; })?.imageUrl,
-  usdt: PlaceHolderImages.find(function(i) { return i.id === 'usdt'; })?.imageUrl,
-  card: PlaceHolderImages.find(function(i) { return i.id === 'visa-mastercard'; })?.imageUrl,
-  telecel: PlaceHolderImages.find(function(i) { return i.id === 'telecel'; })?.imageUrl,
-  tigo: PlaceHolderImages.find(function(i) { return i.id === 'tigo'; })?.imageUrl,
-};
-
-const depositMethods = [
-  { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo, desc: "Mobile Money", color: "from-yellow-400 to-amber-500" },
-  { id: "telecel", label: "TELECEL", icon: Smartphone, img: imageMap.telecel, desc: "Telecel Cash", color: "from-red-500 to-red-600" },
-  { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt, desc: "Tether (TRC20/ERC20)", color: "from-teal-400 to-green-500" },
-  { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-blue-400 to-indigo-500" },
-];
-
-const withdrawMethods = [
-  { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt, desc: "Tether (TRC20/ERC20)", color: "from-teal-400 to-green-500" },
-  { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo, desc: "Mobile Money", color: "from-yellow-400 to-amber-500" },
-  { id: "telecel", label: "TELECEL", icon: Smartphone, img: imageMap.telecel, desc: "Telecel Cash", color: "from-red-500 to-red-600" },
-  { id: "bank", label: "Bank Transfer", icon: Landmark, desc: "Local & International", color: "from-gray-400 to-gray-500" },
-  { id: "western_union", label: "Western Union", icon: Network, desc: "Global Money Transfer", color: "from-blue-400 to-indigo-500"},
-  { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-purple-400 to-pink-500" },
-];
-
 type Mode = "deposit" | "withdraw" | null;
 
 function useCountdown(active: boolean) {
@@ -209,6 +185,7 @@ export default function BankPage() {
   const [depositRecords, setDepositRecords] = useState<DepositRecord[]>([]);
   const [withdrawRecords, setWithdrawRecords] = useState<WithdrawRecord[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [media, setMedia] = useState<any[]>([]);
 
   const { display: countdown, expired } = useCountdown(mode === "deposit");
 
@@ -261,13 +238,15 @@ export default function BankPage() {
       setWithdrawRecords(withdrawalsData as WithdrawRecord[]);
     }
 
-    const { data: logoData } = await supabase
-        .from('media')
-        .select('url')
-        .eq('id', 'app-logo')
-        .single();
-    if (logoData?.url) {
-        setLogoUrl(logoData.url);
+    const { data: mediaData, error: mediaError } = await supabase.from('media').select('*');
+    if (mediaError) {
+      toast({ title: 'Error fetching media', description: mediaError.message, variant: 'destructive' });
+    } else if (mediaData) {
+      setMedia(mediaData);
+      const logo = mediaData.find(m => m.id === 'app-logo');
+      if (logo?.url) {
+        setLogoUrl(logo.url);
+      }
     }
     
     setLoading(false);
@@ -448,6 +427,31 @@ export default function BankPage() {
   };
 
   if (loading || !profile) return <BankPageSkeleton />;
+
+  const imageMap = {
+    usdt: media.find(m => m.id === 'payment-usdt')?.url || PlaceHolderImages.find(i => i.id === 'payment-usdt')?.imageUrl,
+    momo: media.find(m => m.id === 'payment-mtn-momo')?.url || PlaceHolderImages.find(i => i.id === 'payment-mtn-momo')?.imageUrl,
+    telecel: media.find(m => m.id === 'payment-telecel')?.url || PlaceHolderImages.find(i => i.id === 'payment-telecel')?.imageUrl,
+    bank: media.find(m => m.id === 'payment-bank-transfer')?.url || PlaceHolderImages.find(i => i.id === 'payment-bank-transfer')?.imageUrl,
+    western_union: media.find(m => m.id === 'payment-western-union')?.url || PlaceHolderImages.find(i => i.id === 'payment-western-union')?.imageUrl,
+    card: media.find(m => m.id === 'payment-card')?.url || PlaceHolderImages.find(i => i.id === 'payment-card')?.imageUrl,
+  };
+
+  const depositMethods = [
+    { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo, desc: "Mobile Money", color: "from-yellow-400 to-amber-500" },
+    { id: "telecel", label: "TELECEL", icon: Smartphone, img: imageMap.telecel, desc: "Telecel Cash", color: "from-red-500 to-red-600" },
+    { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt, desc: "Tether (TRC20/ERC20)", color: "from-teal-400 to-green-500" },
+    { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-blue-400 to-indigo-500" },
+  ];
+
+  const withdrawMethods = [
+    { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt, desc: "Tether (TRC20/ERC20)", color: "from-teal-400 to-green-500" },
+    { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo, desc: "Mobile Money", color: "from-yellow-400 to-amber-500" },
+    { id: "telecel", label: "TELECEL", icon: Smartphone, img: imageMap.telecel, desc: "Telecel Cash", color: "from-red-500 to-red-600" },
+    { id: "bank", label: "Bank Transfer", icon: Landmark, img: imageMap.bank, desc: "Local & International", color: "from-gray-400 to-gray-500" },
+    { id: "western_union", label: "Western Union", icon: Network, img: imageMap.western_union, desc: "Global Money Transfer", color: "from-blue-400 to-indigo-500"},
+    { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-purple-400 to-pink-500" },
+  ];
 
   const hasApprovedDeposit = (depositRecords || []).some(function(d) { return d.status === "approved"; });
   const allTransactions = [...(depositRecords || []), ...(withdrawRecords || [])]

@@ -95,6 +95,42 @@
       "description": "Photo of Sophie Müller.",
       "imageUrl": "https://picsum.photos/seed/leadersm/200/200",
       "imageHint": "woman professional"
+    },
+    {
+      "id": "payment-usdt",
+      "description": "Icon for USDT payment method.",
+      "imageUrl": "https://picsum.photos/seed/paymentusdt/100/100",
+      "imageHint": "USDT logo"
+    },
+    {
+      "id": "payment-mtn-momo",
+      "description": "Icon for MTN MOMO payment method.",
+      "imageUrl": "https://picsum.photos/seed/paymentmomo/100/100",
+      "imageHint": "MTN MOMO logo"
+    },
+    {
+      "id": "payment-telecel",
+      "description": "Icon for TELECEL payment method.",
+      "imageUrl": "https://picsum.photos/seed/paymenttelecel/100/100",
+      "imageHint": "TELECEL logo"
+    },
+    {
+      "id": "payment-bank-transfer",
+      "description": "Icon for Bank Transfer payment method.",
+      "imageUrl": "https://picsum.photos/seed/paymentbank/100/100",
+      "imageHint": "bank icon"
+    },
+    {
+      "id": "payment-western-union",
+      "description": "Icon for Western Union payment method.",
+      "imageUrl": "https://picsum.photos/seed/paymentwu/100/100",
+      "imageHint": "Western Union logo"
+    },
+    {
+      "id": "payment-card",
+      "description": "Icon for Card payment method.",
+      "imageUrl": "https://picsum.photos/seed/paymentcard/100/100",
+      "imageHint": "credit card"
     }
   ]
 }
