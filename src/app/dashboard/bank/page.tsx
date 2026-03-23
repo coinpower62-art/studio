@@ -97,7 +97,8 @@ const depositMethods = [
 const withdrawMethods = [
   { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt, desc: "Tether (TRC20/ERC20)", color: "from-teal-400 to-green-500" },
   { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo, desc: "Mobile Money", color: "from-yellow-400 to-amber-500" },
-  { id: "tigo", label: "TIGO", icon: Smartphone, img: imageMap.tigo, desc: "AirtelTigo Cash", color: "from-blue-600 to-red-600" },
+  { id: "telecel", label: "TELECEL", icon: Smartphone, img: imageMap.telecel, desc: "Telecel Cash", color: "from-red-500 to-red-600" },
+  { id: "bank", label: "Bank Transfer", icon: Landmark, desc: "Local Bank Account", color: "from-gray-400 to-gray-500" },
   { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-blue-400 to-indigo-500" },
 ];
 
@@ -189,10 +190,10 @@ export default function BankPage() {
   const [lastTxId, setLastTxId] = useState("");
   const [historyTab, setHistoryTab] = useState<"all" | "deposit" | "withdraw">("all");
 
-  const [usdt, setUsdt] = useState({ address: "", network: "TRC20", txId: "" });
-  const [momo, setMomo] = useState({ phone: "", name: "", txId: "" });
-  const [telecel, setTelecel] = useState({ phone: "", name: "", txId: "" });
-  const [tigo, setTigo] = useState({ phone: "", name: "", txId: "" });
+  const [usdt, setUsdt] = useState({ address: "", network: "TRC20" });
+  const [momo, setMomo] = useState({ phone: "", name: "" });
+  const [telecel, setTelecel] = useState({ phone: "", name: "" });
+  const [bank, setBank] = useState({ name: "", number: "", holder: "" });
   const [card, setCard] = useState({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
   const [depositCard, setDepositCard] = useState({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
 
@@ -288,8 +289,10 @@ export default function BankPage() {
     if (profile) setDepositCountry(profile.country || "");
     setDepositSuccess(false); setWithdrawSuccess(false);
     setWithdrawMethod(null); setLastTxId("");
-    setUsdt({ address: "", network: "TRC20", txId: "" });
-    setMomo({ phone: "", name: "", txId: "" });
+    setUsdt({ address: "", network: "TRC20" });
+    setMomo({ phone: "", name: "" });
+    setTelecel({ phone: "", name: "" });
+    setBank({ name: "", number: "", holder: "" });
     setCard({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
     setDepositCard({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
   };
@@ -384,9 +387,14 @@ export default function BankPage() {
       if (isCardExpired(card.expiry)) { toast({ title: "Card has expired", description: "This card's expiry date has passed. Please use a valid card.", variant: "destructive" }); return; }
       if (!card.cvv || card.cvv.length < 3) { toast({ title: "Enter the CVV code", variant: "destructive" }); return; }
     }
+    if (withdrawMethod === "bank") {
+      if (!bank.name.trim()) { toast({ title: "Enter the bank name", variant: "destructive" }); return; }
+      if (!bank.number.trim()) { toast({ title: "Enter the account number", variant: "destructive" }); return; }
+      if (!bank.holder.trim()) { toast({ title: "Enter the account holder name", variant: "destructive" }); return; }
+    }
     
     setIsSubmitting(true);
-    const details = withdrawMethod === "usdt" ? usdt : withdrawMethod === "momo" ? momo : withdrawMethod === "tigo" ? tigo : card;
+    const details = withdrawMethod === "usdt" ? usdt : withdrawMethod === "momo" ? momo : withdrawMethod === "telecel" ? telecel : withdrawMethod === "bank" ? bank : card;
     const result = await createWithdrawalRequest({
       amount: amt,
       method: withdrawMethods.find(function(m) { return m.id === withdrawMethod; })?.label || withdrawMethod,
@@ -995,7 +1003,7 @@ export default function BankPage() {
 
             <div>
               <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-3">Select Payment Method</h3>
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                 {withdrawMethods.map(function({ id, label, icon: Icon, img, desc, color }) {
                   return (
                   <button key={id} data-testid={`method-${id}`} onClick={function() { return setWithdrawMethod(id); }}
@@ -1011,7 +1019,66 @@ export default function BankPage() {
             </div>
 
             {withdrawMethod && (
-            <div className="space-y-3 pt-4 border-t border-gray-100">
+            <div className="space-y-4 pt-4 border-t border-gray-100">
+               {withdrawMethod === 'momo' && (
+                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><Smartphone className="w-4 h-4" /> MTN MoMo Details</p>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Phone Number</label>
+                        <Input value={momo.phone} onChange={(e) => setMomo({...momo, phone: e.target.value})} placeholder="Your MTN phone number" className="h-11 border-gray-200 focus:border-amber-400" />
+                    </div>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Name</label>
+                        <Input value={momo.name} onChange={(e) => setMomo({...momo, name: e.target.value})} placeholder="Name on MoMo account" className="h-11 border-gray-200 focus:border-amber-400" />
+                    </div>
+                 </div>
+               )}
+               {withdrawMethod === 'telecel' && (
+                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><Smartphone className="w-4 h-4" /> Telecel Cash Details</p>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Phone Number</label>
+                        <Input value={telecel.phone} onChange={(e) => setTelecel({...telecel, phone: e.target.value})} placeholder="Your Telecel phone number" className="h-11 border-gray-200 focus:border-amber-400" />
+                    </div>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Name</label>
+                        <Input value={telecel.name} onChange={(e) => setTelecel({...telecel, name: e.target.value})} placeholder="Name on Telecel account" className="h-11 border-gray-200 focus:border-amber-400" />
+                    </div>
+                 </div>
+               )}
+               {withdrawMethod === 'usdt' && (
+                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><Coins className="w-4 h-4" /> USDT Wallet</p>
+                     <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">USDT Wallet Address</label>
+                        <Input value={usdt.address} onChange={(e) => setUsdt({...usdt, address: e.target.value})} placeholder="Your TRC20 or ERC20 address" className="h-11 border-gray-200 focus:border-amber-400" />
+                    </div>
+                     <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Network</label>
+                         <Select value={usdt.network} onValueChange={(val) => setUsdt({...usdt, network: val})}>
+                            <SelectTrigger className="h-11 border-gray-200 focus:border-amber-400"><SelectValue /></SelectTrigger>
+                            <SelectContent><SelectItem value="TRC20">TRC20 (Tron)</SelectItem><SelectItem value="ERC20">ERC20 (Ethereum)</SelectItem></SelectContent>
+                        </Select>
+                    </div>
+                 </div>
+               )}
+               {withdrawMethod === 'bank' && (
+                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><Landmark className="w-4 h-4" /> Bank Account Details</p>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Bank Name</label>
+                        <Input value={bank.name} onChange={(e) => setBank({ ...bank, name: e.target.value })} placeholder="e.g. Absa Bank, GCB Bank" className="h-11 border-gray-200 focus:border-amber-400" data-testid="input-bank-name" />
+                    </div>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Number</label>
+                        <Input value={bank.number} onChange={(e) => setBank({ ...bank, number: e.target.value })} placeholder="Your bank account number" className="h-11 border-gray-200 focus:border-amber-400" data-testid="input-bank-account-number" />
+                    </div>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Holder Name</label>
+                        <Input value={bank.holder} onChange={(e) => setBank({ ...bank, holder: e.target.value })} placeholder="Name on bank account" className="h-11 border-gray-200 focus:border-amber-400" data-testid="input-bank-account-holder" />
+                    </div>
+                 </div>
+               )}
                <div>
                 <label className="text-xs font-medium text-gray-600 mb-1.5 block">Amount to Withdraw ($)</label>
                 <div className="relative">
