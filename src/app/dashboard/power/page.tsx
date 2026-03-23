@@ -367,7 +367,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
     <div className={`bg-white rounded-2xl border-2 shadow-sm overflow-hidden transition-all ${borderColor}`}>
       <div className={`bg-gradient-to-r ${isSuspended ? "from-gray-400 to-gray-500" : cardColor} p-4 flex items-center justify-between`}>
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/30 shadow-lg flex-shrink-0 bg-white/10">
+          <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/30 shadow-lg flex-shrink-0 bg-white">
             {imageUrl ? (
               <img
                 src={imageUrl}

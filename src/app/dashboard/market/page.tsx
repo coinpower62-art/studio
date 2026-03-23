@@ -266,7 +266,7 @@ export default function Market() {
                       </div>
                     </div>
 
-                    <div className="w-full h-52 sm:h-64 rounded-xl overflow-hidden shadow-inner bg-white/30">
+                    <div className="w-full h-52 sm:h-64 rounded-xl overflow-hidden shadow-inner bg-white">
                         <img
                           src={gen.image_url || PlaceHolderImages.find(i => i.id === 'gen-' + gen.id)?.imageUrl}
                           alt={gen.name}
