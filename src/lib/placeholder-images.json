@@ -71,6 +71,30 @@
       "description": "The CoinPower logo for the admin signin page.",
       "imageUrl": "https://picsum.photos/seed/adminlogo/80/80",
       "imageHint": "logo shield"
+    },
+    {
+      "id": "leader-ar",
+      "description": "Photo of Alessandro Rossi.",
+      "imageUrl": "https://picsum.photos/seed/leaderar/200/200",
+      "imageHint": "man portrait"
+    },
+    {
+      "id": "leader-mb",
+      "description": "Photo of Maria Bianchi.",
+      "imageUrl": "https://picsum.photos/seed/leadermb/200/200",
+      "imageHint": "woman portrait"
+    },
+    {
+      "id": "leader-jc",
+      "description": "Photo of James Carter.",
+      "imageUrl": "https://picsum.photos/seed/leaderjc/200/200",
+      "imageHint": "man professional"
+    },
+    {
+      "id": "leader-sm",
+      "description": "Photo of Sophie Müller.",
+      "imageUrl": "https://picsum.photos/seed/leadersm/200/200",
+      "imageHint": "woman professional"
     }
   ]
 }

@@ -1158,6 +1158,34 @@ function DashboardContent() {
                   </div>
               </div>
               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Leadership Team Images</h3>
+                  <p className="text-sm text-slate-400">These images appear on the About page.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                          { id: 'leader-ar', name: 'Alessandro Rossi' },
+                          { id: 'leader-mb', name: 'Maria Bianchi' },
+                          { id: 'leader-jc', name: 'James Carter' },
+                          { id: 'leader-sm', name: 'Sophie Müller' },
+                      ].map(({ id, name }) => {
+                          const imageUrl = media.find(m => m.id === id)?.url || PlaceHolderImages.find(i => i.id === id)?.imageUrl;
+                          const isUploading = uploading === `act-${id}`;
+                          return (
+                              <div key={id} className="text-center">
+                                  <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-square object-cover bg-slate-700" />
+                                  <p className="text-white text-sm font-semibold mt-2">{name}</p>
+                                  <label htmlFor={`act-upload-${id}`} className={`mt-1 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                      {isUploading ? 'Uploading...' : 'Upload new photo'}
+                                  </label>
+                                  <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) await handleImageUpload('activity', id, file);
+                                  }}/>
+                              </div>
+                          )
+                      })}
+                  </div>
+              </div>
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
                   <h3 className="font-bold text-white">Activity Page Images</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {['hero', 'teamwork'].map(function(id) {

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -8,12 +9,17 @@ import {
 import { SiTelegram } from "react-icons/si";
 import { Badge } from "@/components/ui/badge";
 import { countries as COUNTRIES_DATA } from "@/lib/data";
+import { useState, useEffect } from 'react';
+import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Skeleton } from "@/components/ui/skeleton";
 
 const team = [
-  { name: "Alessandro Rossi", role: "CEO & Founder", country: "Italy", avatar: "AR", color: "from-amber-400 to-amber-600" },
-  { name: "Maria Bianchi", role: "CTO", country: "Italy", avatar: "MB", color: "from-green-400 to-green-600" },
-  { name: "James Carter", role: "Head of Investments", country: "United States", avatar: "JC", color: "from-blue-400 to-blue-600" },
-  { name: "Sophie Müller", role: "Risk Manager", country: "Germany", avatar: "SM", color: "from-purple-400 to-purple-600" },
+  { id: 'leader-ar', name: "Alessandro Rossi", role: "CEO & Founder", country: "Italy", avatar: "AR", color: "from-amber-400 to-amber-600" },
+  { id: 'leader-mb', name: "Maria Bianchi", role: "CTO", country: "Italy", avatar: "MB", color: "from-green-400 to-green-600" },
+  { id: 'leader-jc', name: "James Carter", role: "Head of Investments", country: "United States", avatar: "JC", color: "from-blue-400 to-blue-600" },
+  { id: 'leader-sm', name: "Sophie Müller", role: "Risk Manager", country: "Germany", avatar: "SM", color: "from-purple-400 to-purple-600" },
 ];
 
 const milestones = [
@@ -48,8 +54,47 @@ const earningWays = [
   },
 ];
 
+function AboutPageSkeleton() {
+  return (
+    <div className="pb-20 min-h-screen">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6">
+        <Skeleton className="h-64 rounded-3xl my-4 sm:my-6" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-10">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
+        </div>
+        <Skeleton className="h-24 rounded-2xl mb-8 sm:mb-10" />
+         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 mb-8 sm:mb-12">
+           {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AboutPage() {
+  const [media, setMedia] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const supabase = createClient();
+    const fetchData = async () => {
+      const { data: mediaData, error: mediaError } = await supabase.from('media').select('*');
+      if (mediaError) {
+          toast({ title: 'Error fetching images', description: mediaError.message, variant: 'destructive'});
+      } else {
+          setMedia(mediaData || []);
+      }
+      setIsLoading(false);
+    }
+    fetchData();
+  }, [toast]);
+
   const COUNTRIES = COUNTRIES_DATA;
+  
+  if (isLoading) {
+    return <AboutPageSkeleton />;
+  }
 
   return (
     <div className="pb-20 min-h-screen">
@@ -184,19 +229,22 @@ export default function AboutPage() {
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1">Leadership Team</h2>
           <p className="text-gray-500 text-center text-xs sm:text-sm mb-5 sm:mb-8">Experienced professionals dedicated to your success</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {team.map(({ name, role, country, avatar, color }) => (
-              <div key={name} className="bg-white rounded-2xl p-4 sm:p-5 text-center shadow-sm border border-amber-100/60">
-                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-lg sm:text-xl mx-auto mb-3 shadow-md`}>
-                  {avatar}
+            {team.map(({ id, name, role, country, avatar, color }) => {
+              const imageUrl = media.find(m => m.id === id)?.url || PlaceHolderImages.find(i => i.id === id)?.imageUrl;
+              return (
+                <div key={name} className="bg-white rounded-2xl p-4 sm:p-5 text-center shadow-sm border border-amber-100/60">
+                  <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-lg sm:text-xl mx-auto mb-3 shadow-md overflow-hidden`}>
+                    {imageUrl ? <img src={imageUrl} alt={name} className="w-full h-full object-cover" /> : avatar}
+                  </div>
+                  <p className="font-bold text-gray-900 text-xs sm:text-sm">{name}</p>
+                  <p className="text-gray-500 text-xs mt-0.5">{role}</p>
+                  <div className="flex items-center justify-center gap-1 mt-1.5">
+                    <MapPin className="w-3 h-3 text-gray-400" />
+                    <span className="text-xs text-gray-400">{country}</span>
+                  </div>
                 </div>
-                <p className="font-bold text-gray-900 text-xs sm:text-sm">{name}</p>
-                <p className="text-gray-500 text-xs mt-0.5">{role}</p>
-                <div className="flex items-center justify-center gap-1 mt-1.5">
-                  <MapPin className="w-3 h-3 text-gray-400" />
-                  <span className="text-xs text-gray-400">{country}</span>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
