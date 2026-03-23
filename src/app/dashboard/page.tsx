@@ -64,7 +64,7 @@ export default async function DashboardPage() {
       .toUpperCase()
       .slice(0, 2) || '??';
       
-  const displayName = profile?.full_name?.split(' ')[0] || profile?.username || 'User';
+  const displayName = profile?.username || profile?.full_name?.split(' ')[0] || 'User';
 
   return (
     <div className="space-y-5">
