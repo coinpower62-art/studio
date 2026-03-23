@@ -496,6 +496,8 @@ function DashboardContent() {
   if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
   if (!admin) { router.push("/login"); return null; }
 
+  const FAKE_USER_BASE = 12040;
+  const displayedUserCount = FAKE_USER_BASE + users.length;
   const filteredUsers = users.filter(function(u) { return [u.full_name, u.username, u.email, u.country].some(function(f) { return f?.toLowerCase().includes(search.toLowerCase()); }); });
   const totalBalance = users.reduce(function(s, u) { return s + (u.balance || 0); }, 0);
   const pendingWithdrawalsCount = withdrawals.filter(function(w) { return w.status === "pending"; }).length;
@@ -509,7 +511,7 @@ function DashboardContent() {
 
   const tabs: { id: Tab; label: string; icon: any; badge?: number; color: string }[] = [
     { id: "overview",     label: "Overview",    icon: BarChart3,       color: "from-blue-500 to-blue-600" },
-    { id: "users",        label: "Users",       icon: Users,           color: "from-violet-500 to-purple-600", badge: users.length },
+    { id: "users",        label: "Users",       icon: Users,           color: "from-violet-500 to-purple-600", badge: displayedUserCount },
     { id: "deposits",     label: "Deposits",    icon: DollarSign,      color: "from-green-500 to-emerald-600", badge: pendingDepositsCount || undefined },
     { id: "withdrawals",  label: "Withdrawals", icon: ArrowUpFromLine, color: "from-amber-500 to-orange-500",  badge: pendingWithdrawalsCount || undefined },
     { id: "referrals",    label: "Referrals",   icon: Link2,           color: "from-pink-500 to-rose-600" },
@@ -655,7 +657,7 @@ function DashboardContent() {
               <div><h1 className="text-xl sm:text-2xl font-black text-white">Dashboard Overview</h1><p className="text-slate-400 text-sm">Welcome back, Administrator</p></div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                  { label: "Total Users", value: String(users.length), icon: Users, color: "from-blue-500 to-blue-600" },
+                  { label: "Total Users", value: displayedUserCount.toLocaleString(), icon: Users, color: "from-blue-500 to-blue-600" },
                   { label: "Total Balance", value: `$${totalBalance.toFixed(2)}`, icon: DollarSign, color: "from-green-500 to-green-600" },
                   { label: "Pending Withdrawals", value: String(pendingWithdrawalsCount), icon: ArrowUpFromLine, color: "from-amber-500 to-amber-600" },
                   { label: "Active Countries", value: "21", icon: Globe, color: "from-purple-500 to-purple-600" },
@@ -694,7 +696,7 @@ function DashboardContent() {
           {tab === "users" && (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div><h1 className="text-xl font-black text-white">User Accounts</h1><p className="text-slate-400 text-sm">{users.length} registered users</p></div>
+                <div><h1 className="text-xl font-black text-white">User Accounts</h1><p className="text-slate-400 text-sm">{displayedUserCount.toLocaleString()} registered users</p></div>
                 <div className="flex gap-2 w-full sm:w-auto">
                   <div className="relative flex-1 sm:w-60">
                     <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
