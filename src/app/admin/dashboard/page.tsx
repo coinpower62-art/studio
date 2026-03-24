@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
+import { createClient } from "@/lib/supabase/client";
 import {
   adminGetAllData,
   adminUpdateUserBalance,
@@ -35,7 +36,6 @@ import {
   adminMutateGenerator,
   adminUpdateGeneratorImage,
   adminUpsertMedia,
-  adminUploadFile
 } from "./actions";
 
 type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "generators" | "media" | "codes" | "settings" | "about";
@@ -419,21 +419,25 @@ function DashboardContent() {
         const fileExt = file.name.split('.').pop();
         const folder = type === 'generator' ? 'generator-image' : 'activity-image';
         const filePath = `${folder}/${id}-${Date.now()}.${fileExt}`;
+        const BUCKET_NAME = 'site_assets';
 
-        // Step 2: Read file as Data URL
-        const fileDataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+        // Step 2: Upload directly from client
+        const supabase = createClient();
+        const { error: uploadError } = await supabase.storage
+            .from(BUCKET_NAME)
+            .upload(filePath, file, { upsert: true });
 
-        // Step 3: Call server action to upload
-        const uploadResult = await adminUploadFile(fileDataUrl, filePath);
-        if (uploadResult.error || !uploadResult.data) {
-          throw new Error(uploadResult.error || 'Unknown upload error');
+        if (uploadError) {
+          throw new Error(`Storage upload failed: ${uploadError.message}`);
         }
-        const publicUrl = uploadResult.data.publicUrl;
+        
+        // Step 3: Get Public URL
+        const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
+        const publicUrl = urlData.publicUrl;
+
+        if (!publicUrl) {
+            throw new Error('Could not get public URL for the uploaded file.');
+        }
 
         // Step 4: Call server action to update database
         const dbUpdateResult =
