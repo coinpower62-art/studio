@@ -1210,7 +1210,7 @@ function DashboardContent() {
                   <p className="text-sm text-slate-400">These images appear on the About page.</p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {[
-                          { id: 'leader-ar', name: 'Alessandro Rossi' },
+                          { id: 'ceo-portrait', name: 'Alessandro Romano' },
                           { id: 'leader-mb', name: 'Maria Bianchi' },
                           { id: 'leader-jc', name: 'James Carter' },
                           { id: 'leader-sm', name: 'Sophie Müller' },
@@ -1576,4 +1576,6 @@ export default function AdminDashboard() {
   )
 }
     
+    
+
     

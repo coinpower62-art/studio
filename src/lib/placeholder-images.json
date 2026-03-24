@@ -16,7 +16,7 @@
       "id": "ceo-portrait",
       "description": "Portrait of the CEO, Alessandro Romano.",
       "imageUrl": "https://picsum.photos/seed/romanocEO/200/200",
-      "imageHint": "ceo portrait"
+      "imageHint": "professional portrait"
     },
     {
       "id": "gen-pg1",
@@ -71,12 +71,6 @@
       "description": "The CoinPower logo for the admin signin page.",
       "imageUrl": "https://picsum.photos/seed/adminlogo/80/80",
       "imageHint": "logo shield"
-    },
-    {
-      "id": "leader-ar",
-      "description": "Photo of Alessandro Romano.",
-      "imageUrl": "https://picsum.photos/seed/romanocEO/200/200",
-      "imageHint": "man portrait"
     },
     {
       "id": "leader-mb",
