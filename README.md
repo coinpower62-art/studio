@@ -213,9 +213,72 @@ VALUES
   ('pg4', 'PG4 Generator', 'Ultra Power', '🚀', 'from-purple-500 to-pink-600', 500, 60, 55, true, '20%', 'Daily', '$500', '$20000', '1250')
 ON CONFLICT(id) DO NOTHING;
 
+-- =================================================================
+-- 6. GIFT CODES TABLE
+-- Stores gift codes that can be redeemed for balance.
+-- =================================================================
+CREATE TABLE IF NOT EXISTS public.gift_codes (
+  id uuid NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+  code text UNIQUE NOT NULL,
+  amount numeric NOT NULL,
+  created_at timestamp with time zone DEFAULT now() NOT NULL,
+  note text,
+  is_redeemed boolean DEFAULT false NOT NULL,
+  redeemed_at timestamp with time zone,
+  redeemed_by_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL
+);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE public.gift_codes ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Admins can manage gift codes
+DROP POLICY IF EXISTS "Admins can manage gift codes." ON public.gift_codes;
+CREATE POLICY "Admins can manage gift codes."
+ON public.gift_codes FOR ALL
+USING (true)
+WITH CHECK (true);
+
+-- Policy: Users can view their own redeemed codes (optional, for history)
+DROP POLICY IF EXISTS "Users can view their own redeemed codes." ON public.gift_codes;
+CREATE POLICY "Users can view their own redeemed codes."
+ON public.gift_codes FOR SELECT
+USING (auth.uid() = redeemed_by_user_id);
 
 
+-- =================================================================
+-- 7. RPC FUNCTION FOR CODE REDEMPTION
+-- Atomically redeems a gift code and updates user balance.
+-- =================================================================
+CREATE OR REPLACE FUNCTION redeem_gift_code(user_id_in uuid, code_in text)
+RETURNS numeric AS $$
+DECLARE
+  code_record record;
+  redeemed_amount numeric;
+BEGIN
+  -- Find and lock the code row
+  SELECT * INTO code_record FROM public.gift_codes WHERE code = code_in FOR UPDATE;
 
+  -- Check if code exists and is not redeemed
+  IF NOT FOUND OR code_record.is_redeemed THEN
+    RETURN NULL; -- Or raise an exception
+  END IF;
 
+  -- Update the code record
+  UPDATE public.gift_codes
+  SET 
+    is_redeemed = true,
+    redeemed_at = now(),
+    redeemed_by_user_id = user_id_in
+  WHERE id = code_record.id;
 
+  -- Update the user's balance
+  UPDATE public.profiles
+  SET balance = balance + code_record.amount
+  WHERE id = user_id_in;
+  
+  redeemed_amount := code_record.amount;
 
+  RETURN redeemed_amount;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```

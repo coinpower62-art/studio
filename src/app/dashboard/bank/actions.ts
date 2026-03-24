@@ -135,3 +135,32 @@ export async function setWithdrawalPin() {
   revalidatePath('/dashboard/bank')
   return { success: true }
 }
+
+export async function redeemGiftCode(code: string) {
+  const supabase = createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'You must be logged in to redeem a code.' }
+  }
+
+  // Use a transaction to ensure atomicity
+  const { data, error } = await supabase.rpc('redeem_gift_code', {
+    user_id_in: user.id,
+    code_in: code,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+  
+  if (data) {
+     revalidatePath('/dashboard/bank');
+     revalidatePath('/dashboard');
+     return { success: true, amount: data };
+  }
+  
+  return { error: 'Invalid or already redeemed code.' };
+}

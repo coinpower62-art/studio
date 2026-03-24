@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, Suspense } from "react";
@@ -36,6 +35,8 @@ import {
   adminMutateGenerator,
   adminUpdateGeneratorImage,
   adminUpsertMedia,
+  adminCreateGiftCode,
+  adminDeleteGiftCode,
 } from "./actions";
 
 type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "generators" | "media" | "codes" | "settings" | "about";
@@ -66,6 +67,17 @@ type Generator = {
 };
 
 type NewGenerator = Omit<Generator, "id">;
+
+type GiftCode = {
+  id: string;
+  code: string;
+  amount: number;
+  note: string | null;
+  created_at: string;
+  is_redeemed: boolean;
+  redeemed_at: string | null;
+  redeemed_by_user_id: string | null;
+};
 
 const BLANK_GEN: NewGenerator = {
   name: "", subtitle: "", icon: "⚡", color: "from-amber-400 to-orange-500",
@@ -196,6 +208,9 @@ function DashboardContent() {
   const [mediaLoading, setMediaLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
 
+  const [bonusCodes, setBonusCodes] = useState<GiftCode[]>([]);
+  const [codesLoading, setCodesLoading] = useState(true);
+
 
   const fetchData = async () => {
       setUsersLoading(true);
@@ -203,6 +218,7 @@ function DashboardContent() {
       setDepositsLoading(true);
       setWithdrawalsLoading(true);
       setMediaLoading(true);
+      setCodesLoading(true);
 
       const result = await adminGetAllData();
       if (result.error || !result.data) {
@@ -213,6 +229,7 @@ function DashboardContent() {
         setDeposits(result.data.deposits as DepositRequest[]);
         setWithdrawals(result.data.withdrawals as WithdrawalRecord[]);
         setMedia(result.data.media as MediaAsset[]);
+        setBonusCodes(result.data.codes as GiftCode[]);
       }
 
       setUsersLoading(false);
@@ -220,7 +237,7 @@ function DashboardContent() {
       setDepositsLoading(false);
       setWithdrawalsLoading(false);
       setMediaLoading(false);
-
+      setCodesLoading(false);
   }
 
   useEffect(() => {
@@ -255,9 +272,8 @@ function DashboardContent() {
 
   const [newCodeAmount, setNewCodeAmount] = useState("");
   const [newCodeNote, setNewCodeNote] = useState("");
-  const [generatedCode, setGeneratedCode] = useState<any | null>(null);
+  const [generatedCode, setGeneratedCode] = useState<GiftCode | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
-  const [bonusCodes, setBonusCodes] = useState<any[]>([]);
 
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void }>({
     open: false, title: "", description: "", onConfirm: () => {},
@@ -470,6 +486,34 @@ function DashboardContent() {
     }
   };
 
+  const handleCreateGiftCode = async () => {
+    const amount = parseFloat(newCodeAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({ title: 'Invalid Amount', description: 'Please enter a positive number for the amount.', variant: 'destructive' });
+      return;
+    }
+
+    const result = await adminCreateGiftCode(amount, newCodeNote);
+    if (result.error || !result.data) {
+      toast({ title: 'Error creating code', description: result.error, variant: 'destructive' });
+    } else {
+      toast({ title: 'Gift code created!' });
+      setGeneratedCode(result.data);
+      setNewCodeAmount("");
+      setNewCodeNote("");
+      await fetchData(); // Refresh list
+    }
+  };
+
+  const handleDeleteGiftCode = async (codeId: string) => {
+    const result = await adminDeleteGiftCode(codeId);
+    if (result.error) {
+      toast({ title: 'Error deleting code', description: result.error, variant: 'destructive' });
+    } else {
+      toast({ title: 'Gift code deleted.' });
+      await fetchData();
+    }
+  };
 
   if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
   if (!admin) { router.push("/login"); return null; }
@@ -1250,7 +1294,65 @@ function DashboardContent() {
               <div><h1 className="text-xl font-black text-white">Gift Code Generator</h1><p className="text-slate-400 text-sm">Create bonus codes that add funds to a user's account</p></div>
                <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
                   <h3 className="font-bold text-white">Create New Code</h3>
-                   <p className="text-xs text-slate-400">This feature is not yet implemented.</p>
+                   <div className="grid sm:grid-cols-3 gap-3">
+                      <div>
+                          <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Amount ($)</label>
+                          <Input type="number" value={newCodeAmount} onChange={(e) => setNewCodeAmount(e.target.value)} placeholder="e.g. 10.00" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                      </div>
+                      <div className="sm:col-span-2">
+                          <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Note (Optional)</label>
+                          <Input value={newCodeNote} onChange={(e) => setNewCodeNote(e.target.value)} placeholder="e.g. For marketing campaign" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                      </div>
+                   </div>
+                   <Button onClick={handleCreateGiftCode} className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold gap-1.5"><Gift className="w-4 h-4" /> Generate Code</Button>
+               </div>
+               
+               {generatedCode && (
+                  <div className="p-4 bg-green-900/30 rounded-2xl border border-green-700 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-bold text-green-400">Code Generated Successfully!</h3>
+                          <p className="text-xs text-slate-400">Share this code with a user to add ${generatedCode.amount.toFixed(2)} to their balance.</p>
+                        </div>
+                        <button onClick={() => setGeneratedCode(null)} className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700"><X className="w-4 h-4" /></button>
+                      </div>
+                      <div className="flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-xl p-3">
+                        <span className="font-mono font-black text-xl text-amber-400 flex-1 text-center tracking-widest">{generatedCode.code}</span>
+                        <Button onClick={() => { copyText(generatedCode.code, 'Gift Code'); setCopiedCode(true); setTimeout(() => setCopiedCode(false), 2000); }} variant="outline" size="sm" className="h-9 border-slate-600 text-slate-300 hover:bg-slate-700 flex-shrink-0 gap-1.5">
+                          {copiedCode ? <CheckCircle className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />} {copiedCode ? 'Copied' : 'Copy'}
+                        </Button>
+                      </div>
+                  </div>
+               )}
+
+               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                 <h3 className="font-bold text-white">Existing Codes</h3>
+                 {codesLoading ? (
+                   <p className="text-slate-400 text-sm">Loading codes...</p>
+                 ) : bonusCodes.length === 0 ? (
+                   <p className="text-slate-500 text-sm text-center py-4">No gift codes created yet.</p>
+                 ) : (
+                   <div className="space-y-2">
+                    {bonusCodes.map(code => (
+                      <div key={code.id} className={`p-3 rounded-xl flex items-center justify-between gap-3 ${code.is_redeemed ? 'bg-slate-700/50' : 'bg-slate-700'}`}>
+                        <div>
+                           <div className="flex items-center gap-2">
+                             <p className={`font-mono font-bold text-sm ${code.is_redeemed ? 'text-slate-500 line-through' : 'text-amber-400'}`}>{code.code}</p>
+                             <Badge className={`text-xs border px-1.5 py-0 ${code.is_redeemed ? 'bg-red-900/40 text-red-400 border-red-700' : 'bg-green-900/40 text-green-400 border-green-700'}`}>
+                               {code.is_redeemed ? 'Redeemed' : 'Active'}
+                             </Badge>
+                           </div>
+                           <p className="text-slate-400 text-xs mt-0.5">${code.amount.toFixed(2)} {code.note ? `· ${code.note}` : ''}</p>
+                           <p className="text-slate-500 text-[10px] mt-0.5">Created: {new Date(code.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {!code.is_redeemed && <Button onClick={() => copyText(code.code, 'Gift Code')} variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-white"><Copy className="w-4 h-4" /></Button>}
+                           <Button onClick={() => openConfirm('Delete Code?', `Are you sure you want to delete code ${code.code}? This cannot be undone.`, () => handleDeleteGiftCode(code.id))} variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-900/30"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                   </div>
+                 )}
                </div>
             </div>
           )}

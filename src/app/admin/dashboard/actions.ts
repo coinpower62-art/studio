@@ -42,15 +42,17 @@ export async function adminGetAllData() {
         { data: deposits, error: depositsError },
         { data: withdrawals, error: withdrawalsError },
         { data: media, error: mediaError },
+        { data: codes, error: codesError },
     ] = await Promise.all([
         supabaseAdmin.from('profiles').select('*').order('created_at', { ascending: false }),
         supabaseAdmin.from('generators').select('*').order('price', { ascending: true }),
         supabaseAdmin.from('deposit_requests').select('*').order('created_at', { ascending: false }),
         supabaseAdmin.from('withdrawal_requests').select('*').order('created_at', { ascending: false }),
         supabaseAdmin.from('media').select('*'),
+        supabaseAdmin.from('gift_codes').select('*').order('created_at', { ascending: false }),
     ]);
 
-    const errors = [usersError, gensError, depositsError, withdrawalsError, mediaError].filter(Boolean)
+    const errors = [usersError, gensError, depositsError, withdrawalsError, mediaError, codesError].filter(Boolean)
     if (errors.length > 0) {
       // @ts-ignore
       return { error: errors.map(e => e.message).join(', ') }
@@ -63,6 +65,7 @@ export async function adminGetAllData() {
             deposits,
             withdrawals,
             media,
+            codes,
         }
     }
   } catch (e: any) {
@@ -278,6 +281,62 @@ export async function adminUpdateGeneratorImage(id: string, imageUrl: string) {
         return { success: true };
     } catch (e: any) {
         console.error('Admin Action Exception:', e);
+        return { error: e.message };
+    }
+}
+
+export async function adminCreateGiftCode(amount: number, note: string) {
+    const cookieStore = cookies()
+    if (cookieStore.get('admin_logged_in')?.value !== 'true') {
+        return { error: 'Unauthorized' }
+    }
+    
+    if (amount <= 0) {
+        return { error: 'Amount must be positive.' };
+    }
+
+    try {
+        const supabaseAdmin = await getSupabaseAdminClient();
+        
+        // Generate a unique code
+        let code, existingCode;
+        do {
+            code = `CPG-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+            ({ data: existingCode } = await supabaseAdmin.from('gift_codes').select('code').eq('code', code).single());
+        } while (existingCode);
+
+        const { data, error } = await supabaseAdmin.from('gift_codes').insert({
+            code,
+            amount,
+            note
+        }).select().single();
+
+        if (error) {
+            return { error: error.message };
+        }
+
+        return { data };
+
+    } catch (e: any) {
+        return { error: e.message };
+    }
+}
+
+export async function adminDeleteGiftCode(codeId: string) {
+    const cookieStore = cookies();
+    if (cookieStore.get('admin_logged_in')?.value !== 'true') {
+        return { error: 'Unauthorized' };
+    }
+
+    try {
+        const supabaseAdmin = await getSupabaseAdminClient();
+        const { error } = await supabaseAdmin.from('gift_codes').delete().eq('id', codeId);
+
+        if (error) {
+            return { error: error.message };
+        }
+        return { success: true };
+    } catch (e: any) {
         return { error: e.message };
     }
 }

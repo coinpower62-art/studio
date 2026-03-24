@@ -8,7 +8,7 @@ import {
   Landmark, ArrowDownToLine, ArrowUpFromLine, Wallet, Shield, Clock,
   CheckCircle, Copy, CreditCard, Smartphone, Coins, AlertCircle,
   PartyPopper, PhoneCall, Hash, Network, User, MapPin, CalendarDays,
-  Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X, LogOut
+  Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X, LogOut, Gift
 } from "lucide-react";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { countries as COUNTRIES_DATA } from "@/lib/data";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { createDepositRequest, createWithdrawalRequest, setWithdrawalPin } from "./actions";
+import { createDepositRequest, createWithdrawalRequest, setWithdrawalPin, redeemGiftCode } from "./actions";
 import { logout } from "@/app/login/actions";
 
 // Card validation helpers
@@ -188,6 +188,9 @@ export default function BankPage() {
   const [media, setMedia] = useState<any[]>([]);
 
   const { display: countdown, expired } = useCountdown(mode === "deposit");
+
+  const [giftCode, setGiftCode] = useState("");
+  const [isRedeeming, setIsRedeeming] = useState(false);
 
   const fetchData = useCallback(async function() {
     setLoading(true);
@@ -423,6 +426,24 @@ export default function BankPage() {
       setLastTxId(result.txId || '');
       setProfile(function(p) { return p ? { ...p, balance: p.balance - amt } : null; });
       setPinMode(null);
+    }
+  };
+
+  const handleRedeemCode = async () => {
+    if (!giftCode.trim()) {
+      toast({ title: "Enter a gift code", variant: "destructive" });
+      return;
+    }
+    setIsRedeeming(true);
+    const result = await redeemGiftCode(giftCode.trim().toUpperCase());
+    setIsRedeeming(false);
+
+    if (result.error) {
+      toast({ title: "Redemption Failed", description: result.error, variant: "destructive" });
+    } else {
+      toast({ title: "Success!", description: `You have redeemed $${result.amount?.toFixed(2)}. It has been added to your balance.` });
+      setGiftCode("");
+      fetchData(); // to refresh balance and history
     }
   };
 
@@ -1188,6 +1209,25 @@ export default function BankPage() {
           </div>
         )}
 
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 my-4">
+            <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-3 flex items-center gap-2"><Gift className="w-5 h-5 text-amber-500" /> Redeem Gift Code</h3>
+            <p className="text-sm text-gray-500 mb-3">Have a gift code? Enter it below to add funds to your account.</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+                <Input 
+                    value={giftCode} 
+                    onChange={(e) => setGiftCode(e.target.value)} 
+                    placeholder="Enter gift code (e.g. CPG-XXXXXX)"
+                    className="flex-1 h-11 border-gray-200 focus:border-amber-400 font-mono tracking-wider text-sm"
+                />
+                <Button 
+                    onClick={handleRedeemCode}
+                    disabled={isRedeeming}
+                    className="h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md"
+                >
+                    {isRedeeming ? "Redeeming..." : "Redeem Code"}
+                </Button>
+            </div>
+        </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 my-4">
           <div className="flex items-center justify-between mb-3">
