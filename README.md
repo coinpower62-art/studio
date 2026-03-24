@@ -1,8 +1,18 @@
-# 🚨 Critical: Correct Deployment Settings
+# 🚀 CoinPower Deployment Guide
 
-The build logs show that the deployment is failing because of an incorrect command. To fix this, you **must** use Cloudflare's standard Git-integrated deployment for Next.js projects.
+Congratulations on getting your CoinPower application running! This guide provides two primary methods for deploying your project to Cloudflare.
 
-**Do NOT use `npx wrangler deploy`**.
+---
+
+### Method 1: Cloudflare Pages with Git (Recommended)
+
+This is the simplest and most reliable method for deploying Next.js applications. It automates the entire build and deployment process whenever you push new code to your repository.
+
+#### 🚨 Critical: Correct Deployment Settings
+
+For this method to work, you **must** use Cloudflare's standard Git-integrated deployment for Next.js projects.
+
+**Do NOT use `npx wrangler deploy` with this method.**
 
 Follow these steps exactly in your Cloudflare Pages project settings:
 
@@ -11,13 +21,9 @@ Follow these steps exactly in your Cloudflare Pages project settings:
 3.  Ensure the **Framework preset** is set to `Next.js`.
 4.  The **Build command** must be `npm run build`.
 5.  The **Build output directory** must be `.next`.
-6.  **Most importantly: Leave the "Deployment command" field BLANK.**
+6.  **Most importantly: Leave the "Deployment command" field BLANK.** Cloudflare handles this automatically.
 
-Cloudflare will automatically handle the deployment correctly with these settings. Using `wrangler deploy` triggers a different, incompatible process that causes the build to fail.
-
----
-
-### Standard Deployment Guide
+#### Full Pages Deployment Guide
 
 1.  **Push your code** to a GitHub, GitLab, or Bitbucket repository.
 2.  **In the Cloudflare dashboard**, go to **Workers & Pages** > **Create application** > **Pages** > **Connect to Git**.
@@ -30,3 +36,28 @@ Cloudflare will automatically handle the deployment correctly with these setting
         -   `SUPABASE_SERVICE_ROLE_KEY`
     -   **Important**: For the admin panel to function correctly, set `SUPABASE_SERVICE_ROLE_KEY` as a **Secret** variable. The other two can be plain text.
 5.  **Deploy**: Click **Save and Deploy**. Your site will be built and deployed correctly.
+
+---
+
+### Method 2: Cloudflare Workers with `wrangler` (Advanced)
+
+This method deploys your application as a standalone Worker using the `wrangler` command-line tool. This is the method you have successfully used.
+
+1.  **Set up `wrangler.toml`**: Ensure the `wrangler.toml` file in your project root is configured with your Cloudflare `account_id`.
+2.  **Set Secrets**: Your Supabase keys must be set as secrets so the worker can access them. Run these commands in your terminal, replacing the placeholder values with your actual keys:
+    ```bash
+    npx wrangler secret put NEXT_PUBLIC_SUPABASE_URL
+    # Paste your URL when prompted and press Enter
+
+    npx wrangler secret put NEXT_PUBLIC_SUPABASE_ANON_KEY
+    # Paste your anon key when prompted and press Enter
+
+    npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+    # Paste your service role key when prompted and press Enter
+    ```
+3.  **Deploy**: Run the deployment script. This command will build your Next.js app and deploy it using the configuration in `wrangler.toml`.
+    ```bash
+    npm run deploy
+    ```
+
+Your application is now live! Congratulations again.

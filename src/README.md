@@ -282,22 +282,46 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-## Deployment
+## Deployment to Cloudflare
 
-### Deploying to Cloudflare Pages
+This project is configured for deployment to Cloudflare. You have two primary options:
 
-To deploy this project to Cloudflare Pages, follow these steps:
+### Option 1: Cloudflare Pages (Recommended)
+
+This is the easiest and most robust way to deploy a Next.js application.
 
 1.  **Push your code** to a GitHub, GitLab, or Bitbucket repository.
-2.  **In the Cloudflare dashboard**, navigate to **Workers & Pages** and click **Create application** > **Pages** > **Connect to Git**.
+2.  **In the Cloudflare dashboard**, navigate to **Workers & Pages** > **Create application** > **Pages** > **Connect to Git**.
 3.  **Select your repository** and begin the setup.
 4.  **Configure your build**:
-    -   **Framework preset**: Select `Next.js`. Cloudflare will automatically configure the build command and output directory.
+    -   **Framework preset**: Select `Next.js`. Cloudflare will automatically configure the build command (`npm run build`) and output directory (`.next`).
+    -   **Important**: Leave the "Deployment command" field **BLANK**.
 5.  **Set Environment Variables**:
     -   Go to your project's **Settings** > **Environment variables**.
     -   Add the following variables from your `.env.local` file:
         -   `NEXT_PUBLIC_SUPABASE_URL`
         -   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
         -   `SUPABASE_SERVICE_ROLE_KEY`
-    -   **Important**: For the admin panel to function correctly, set `SUPABASE_SERVICE_ROLE_KEY` as a **Secret** variable. The other two can be plain text.
+    -   **Note**: For the admin panel to function correctly, set `SUPABASE_SERVICE_ROLE_KEY` as a **Secret** variable. The other two can be plain text.
 6.  **Deploy**: Click **Save and Deploy**. Your site will be live in a few minutes.
+
+### Option 2: Cloudflare Workers (Advanced)
+
+This method uses the `wrangler` CLI to deploy directly to a Worker. This is the path you have successfully used.
+
+1.  **Set up `wrangler.toml`**: Ensure your `wrangler.toml` file is configured correctly for your account. `wrangler` may have created this for you.
+2.  **Set Secrets**: Your Supabase keys need to be set as secrets so the worker can access them. Run the following commands, replacing the placeholder values:
+    ```bash
+    npx wrangler secret put NEXT_PUBLIC_SUPABASE_URL
+    # Paste your URL when prompted
+    
+    npx wrangler secret put NEXT_PUBLIC_SUPABASE_ANON_KEY
+    # Paste your anon key when prompted
+    
+    npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+    # Paste your service role key when prompted
+    ```
+3.  **Deploy**: Run the deployment script from your `package.json`.
+    ```bash
+    npm run deploy
+    ```
