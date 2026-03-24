@@ -1187,6 +1187,24 @@ export default function BankPage() {
                     className="pl-7 h-11 border-gray-200 focus:border-amber-400 text-lg font-semibold" />
                 </div>
               </div>
+
+              {parseFloat(amount) > 0 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Withdrawal Amount</span>
+                    <span className="font-semibold text-gray-800">${parseFloat(amount).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Processing Fee (15%)</span>
+                    <span className="font-semibold text-red-600">-${(parseFloat(amount) * 0.15).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-gray-200">
+                    <span className="font-bold text-gray-800">You will receive</span>
+                    <span className="font-bold text-green-600">${(parseFloat(amount) * 0.85).toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+
               <Button onClick={handleWithdrawal} data-testid="button-confirm-withdraw"
                 disabled={isSubmitting}
                 className="w-full h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md">
