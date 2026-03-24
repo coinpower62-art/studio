@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useCallback, useEffect, Suspense } from "react";
@@ -466,7 +467,7 @@ function SignUpForm() {
                       <Input
                         {...field}
                         data-testid="input-referral-code"
-                        placeholder="Paste referral code here (e.g. CP-ABCD1234)"
+                        placeholder="Paste referral code here"
                         autoComplete="off"
                         onKeyDown={function(e) {
                           const allowed = ["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"];

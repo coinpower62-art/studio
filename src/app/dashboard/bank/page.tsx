@@ -1216,7 +1216,7 @@ export default function BankPage() {
                 <Input 
                     value={giftCode} 
                     onChange={(e) => setGiftCode(e.target.value)} 
-                    placeholder="Enter gift code (e.g. CPG-XXXXXX)"
+                    placeholder="Enter gift code"
                     className="flex-1 h-11 border-gray-200 focus:border-amber-400 font-mono tracking-wider text-sm"
                 />
                 <Button 
