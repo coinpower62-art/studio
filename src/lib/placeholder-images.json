@@ -14,8 +14,8 @@
     },
     {
       "id": "ceo-portrait",
-      "description": "Portrait of a company CEO.",
-      "imageUrl": "https://picsum.photos/seed/ceoportrait/200/200",
+      "description": "Portrait of the CEO, Alessandro Romano.",
+      "imageUrl": "https://picsum.photos/seed/romanocEO/200/200",
       "imageHint": "ceo portrait"
     },
     {
@@ -74,8 +74,8 @@
     },
     {
       "id": "leader-ar",
-      "description": "Photo of Alessandro Rossi.",
-      "imageUrl": "https://picsum.photos/seed/leaderar/200/200",
+      "description": "Photo of Alessandro Romano.",
+      "imageUrl": "https://picsum.photos/seed/romanocEO/200/200",
       "imageHint": "man portrait"
     },
     {
