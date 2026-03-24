@@ -281,4 +281,25 @@ BEGIN
   RETURN redeemed_amount;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-```
+
+## Deployment to Cloudflare Pages
+
+To deploy this project to Cloudflare Pages, follow these steps:
+
+1.  **Push your code** to a GitHub, GitLab, or Bitbucket repository.
+2.  **In the Cloudflare dashboard**, go to **Workers & Pages** > **Create application** > **Pages** > **Connect to Git**.
+3.  **Select your repository** and begin the setup.
+4.  **Configure your build settings**:
+    -   **Framework preset**: Select `Next.js`. Cloudflare will automatically apply the correct settings.
+    -   **Build command**: `npm run build`
+    -   **Build output directory**: `.next`
+5.  **Set Environment Variables**:
+    -   Go to your project's **Settings** > **Environment variables**.
+    -   Add the following variables from your `.env.local` file:
+        -   `NEXT_PUBLIC_SUPABASE_URL`
+        -   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+        -   `SUPABASE_SERVICE_ROLE_KEY`
+    -   **Important**: For the admin panel to function correctly, set `SUPABASE_SERVICE_ROLE_KEY` as a **Secret** variable. The other two can be plain text.
+6.  **Deploy**: Click **Save and Deploy**. Your site will be built and deployed.
+
+**Important**: Do not use the `npm run deploy` command or run `npx wrangler deploy` from your terminal. The Cloudflare Pages Git-based deployment is the correct and supported method for this project.
