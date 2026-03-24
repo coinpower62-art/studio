@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Activity, Users, MessageSquare, TrendingUp, Star, Globe, Clock, ArrowUpRight, Shield, Award, BadgeCheck, Building2, CheckCircle2, Landmark, FileText, Crown, Loader, AlertCircle, LogOut
 } from "lucide-react";
@@ -76,39 +76,48 @@ export default function ActivityPage() {
   // For now, admin posts are static.
   const adminPosts: any[] = [];
 
-  useEffect(function() {
+  const fetchData = useCallback(async () => {
     const supabase = createClient();
-    const fetchData = async function() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-      setUser(user);
+    setIsLoading(true);
 
-      const { data: profileData, error: profileError } = await supabase
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    if (authError || !authUser) {
+      toast({ title: "Authentication Error", description: "Could not get user session. Redirecting to login.", variant: "destructive" });
+      router.push('/login');
+      return;
+    }
+    setUser(authUser);
+
+    const [profileResult, mediaResult] = await Promise.all([
+      supabase
         .from('profiles')
         .select('balance, country, full_name, username')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      if (profileError) {
-        console.error("ActivityPage: Profile fetch failed.");
-      }
-      setProfile(profileData as Profile | null);
+        .eq('id', authUser.id)
+        .maybeSingle(),
+      supabase.from('media').select('*')
+    ]);
 
-      const { data: mediaData, error: mediaError } = await supabase.from('media').select('*');
-      if (mediaError) {
-          toast({ title: 'Error fetching images', description: mediaError.message, variant: 'destructive'});
-      } else {
-          setMedia(mediaData || []);
-      }
-      
-      setIsLoading(false);
-    };
-
-    fetchData();
+    const { data: profileData, error: profileError } = profileResult;
+    if (profileError) {
+      console.error("ActivityPage: Profile fetch failed.", profileError);
+      toast({ title: "Error Fetching Profile", description: profileError.message, variant: "destructive" });
+    }
+    setProfile(profileData as Profile | null);
+    
+    const { data: mediaData, error: mediaError } = mediaResult;
+    if (mediaError) {
+        console.error("ActivityPage: Media fetch failed.", mediaError);
+        toast({ title: 'Error fetching images', description: mediaError.message, variant: 'destructive'});
+    } else {
+        setMedia(mediaData || []);
+    }
+    
+    setIsLoading(false);
   }, [router, toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   if (isLoading || !profile) {
     return <ActivityPageSkeleton />;
