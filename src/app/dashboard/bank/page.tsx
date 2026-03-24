@@ -1178,6 +1178,70 @@ export default function BankPage() {
                     </div>
                  </div>
                )}
+               {withdrawMethod === 'card' && (
+                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><CreditCard className="w-4 h-4" /> Card Details</p>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Card Number</label>
+                        <Input
+                            value={card.number}
+                            inputMode="numeric"
+                            maxLength={19}
+                            placeholder="0000 0000 0000 0000"
+                            onChange={(e) => {
+                                const digits = e.target.value.replace(/\D/g, "").slice(0, 16);
+                                const formatted = digits.replace(/(.{4})/g, "$1 ").trim();
+                                setCard({ ...card, number: formatted });
+                            }}
+                            className="h-11 border-gray-200 focus:border-amber-400 font-mono text-base tracking-widest"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Cardholder Name</label>
+                        <Input
+                            value={card.holder}
+                            placeholder="Name as on card"
+                            onChange={(e) => setCard({ ...card, holder: e.target.value.toUpperCase() })}
+                            className="h-11 border-gray-200 focus:border-amber-400 text-sm font-semibold uppercase"
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-xs font-medium text-gray-600 mb-1.5 block">Expiry Date</label>
+                            <Input
+                                value={card.expiry}
+                                inputMode="numeric"
+                                placeholder="MM / YY"
+                                maxLength={5}
+                                onChange={(e) => {
+                                    const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+                                    const formatted = digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
+                                    setCard({ ...card, expiry: formatted });
+                                }}
+                                className="h-11 border-gray-200 focus:border-amber-400 font-mono text-sm text-center"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-gray-600 mb-1.5 block flex items-center gap-1">
+                                CVV / CVC
+                                <button type="button" onClick={() => setCard(c => ({ ...c, cvvVisible: !c.cvvVisible }))}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors">
+                                    <Shield className="w-3 h-3" />
+                                </button>
+                            </label>
+                            <Input
+                                value={card.cvv}
+                                type={card.cvvVisible ? "text" : "password"}
+                                inputMode="numeric"
+                                placeholder="•••"
+                                maxLength={4}
+                                onChange={(e) => setCard({ ...card, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                                className="h-11 border-gray-200 focus:border-amber-400 font-mono text-sm text-center tracking-widest"
+                            />
+                        </div>
+                    </div>
+                 </div>
+                )}
                <div>
                 <label className="text-xs font-medium text-gray-600 mb-1.5 block">Amount to Withdraw ($)</label>
                 <div className="relative">
