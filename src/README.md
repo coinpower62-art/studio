@@ -2,6 +2,24 @@
 
 This is a NextJS starter app built with Supabase and shadcn/ui.
 
+## 🚨 Troubleshooting: 'Internal Server Error'
+
+If your deployment builds successfully but you see an "Internal Server Error" on your live website, it almost always means you have not set your Supabase environment variables in your Cloudflare project settings.
+
+**To fix this, you must:**
+
+1.  Go to your Cloudflare dashboard and navigate to your project.
+2.  Go to **Settings** > **Environment variables**.
+3.  Under **Production environment variables**, click **Add variable**.
+4.  Add the following three variables from your `.env.local` file:
+    -   `NEXT_PUBLIC_SUPABASE_URL`
+    -   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+    -   `SUPABASE_SERVICE_ROLE_KEY`
+5.  **Crucially**: When adding `SUPABASE_SERVICE_ROLE_KEY`, you **must** click the "Encrypt" button to save it as a secure Secret.
+6.  After adding all three variables, **re-deploy your project**. This will resolve the error.
+
+---
+
 ## Getting Started
 
 Your Supabase credentials have been added to the `.env` file. To get started with your local development environment:
