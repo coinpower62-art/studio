@@ -5,7 +5,14 @@ import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 
 export async function signup(values: any) {
-  const supabase = createClient();
+  let supabase;
+  try {
+    supabase = createClient();
+  } catch (e: any) {
+    console.error("Supabase client creation failed:", e.message);
+    return { error: `A server configuration error occurred. Please ensure environment variables are set. Details: ${e.message}` };
+  }
+  
   const origin = headers().get('origin');
 
   const { email, password, fullName, username, country, phone, referralCode } = values;
