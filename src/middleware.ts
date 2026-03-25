@@ -12,7 +12,7 @@ export async function middleware(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Missing environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are required! Check your .env file and deployment secrets.")
+    throw new Error("CRITICAL ERROR: Your Supabase URL and Key are not configured. Go to your Cloudflare project 'Settings' > 'Variables' and add the NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY variables from your .env file. Then re-deploy.")
   }
 
   const supabase = createServerClient(
