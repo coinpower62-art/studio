@@ -249,25 +249,34 @@ function SignUpForm() {
     setIsSubmitting(true);
     form.clearErrors();
 
-    const dialCode = selectedPhoneCode.replace(/[^+\d]/g, "");
-    const fullPhone = dialCode + values.phone;
+    try {
+        const dialCode = selectedPhoneCode.replace(/[^+\d]/g, "");
+        const fullPhone = dialCode + values.phone;
 
-    const result = await signup({ ...values, phone: fullPhone, language: selectedLang });
+        const result = await signup({ ...values, phone: fullPhone, language: selectedLang });
 
-    if (result?.error) {
-      toast({
-        variant: "destructive",
-        title: "Registration failed",
-        description: result.error,
-      });
-      form.setError("root", { message: result.error });
-      setIsSubmitting(false);
-    } else {
-      toast({
-        title: "Account created! Welcome to CoinPower.",
-        description: "You have been credited $1.00.",
-      });
-      router.push("/dashboard");
+        if (result?.error) {
+          toast({
+            variant: "destructive",
+            title: "Registration failed",
+            description: result.error,
+          });
+          form.setError("root", { message: result.error });
+        } else {
+          toast({
+            title: "Account created! Welcome to CoinPower.",
+            description: "You have been credited $1.00. You will now be redirected.",
+          });
+          router.push("/dashboard");
+        }
+    } catch (e: any) {
+        toast({
+            variant: "destructive",
+            title: "An unexpected error occurred",
+            description: "Please try again later.",
+        });
+    } finally {
+        setIsSubmitting(false);
     }
   }
 
