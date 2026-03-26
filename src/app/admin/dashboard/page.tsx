@@ -39,6 +39,7 @@ import {
   adminDeleteGiftCode,
   adminResetUserPassword,
 } from "./actions";
+import { Switch } from "@/components/ui/switch";
 
 type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "generators" | "media" | "codes" | "settings" | "about";
 
@@ -1410,11 +1411,58 @@ function DashboardContent() {
 
           {/* ── SETTINGS ── */}
           {tab === "settings" && (
-            <div className="space-y-4">
-              <div><h1 className="text-xl font-black text-white">Site Settings</h1><p className="text-slate-400 text-sm">Manage global configurations</p></div>
-              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700">
-                <p className="text-slate-400 text-sm">Settings page is not yet implemented.</p>
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-xl font-black text-white">Site Settings</h1>
+                <p className="text-slate-400 text-sm">Manage global configurations for the application.</p>
               </div>
+
+              {/* Withdrawal Settings */}
+              <div className="p-5 bg-slate-800 rounded-2xl border border-slate-700">
+                <h3 className="font-bold text-white mb-1">Withdrawal Settings</h3>
+                <p className="text-slate-400 text-xs mb-4">Control withdrawal limits and fees.</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-slate-400 text-xs font-semibold">Minimum Withdrawal ($)</label>
+                    <Input type="number" defaultValue="10" className="mt-1 h-9 bg-slate-700 border-slate-600 text-white" />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-xs font-semibold">Withdrawal Fee (%)</label>
+                    <Input type="number" defaultValue="15" className="mt-1 h-9 bg-slate-700 border-slate-600 text-white" />
+                  </div>
+                  <div className="flex items-center justify-between bg-slate-700/50 p-3 rounded-lg">
+                    <span className="text-slate-300 text-sm font-medium">Enable Withdrawals</span>
+                    <Switch defaultChecked={true} />
+                  </div>
+                </div>
+              </div>
+
+              {/* General Site Information */}
+              <div className="p-5 bg-slate-800 rounded-2xl border border-slate-700">
+                <h3 className="font-bold text-white mb-1">General Information</h3>
+                <p className="text-slate-400 text-xs mb-4">Basic site details and contact info.</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-slate-400 text-xs font-semibold">Site Name</label>
+                    <Input defaultValue="CoinPower" className="mt-1 h-9 bg-slate-700 border-slate-600 text-white" />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-xs font-semibold">Support Email</label>
+                    <Input type="email" defaultValue="support@coinpower.com" className="mt-1 h-9 bg-slate-700 border-slate-600 text-white" />
+                  </div>
+                   <div>
+                    <label className="text-slate-400 text-xs font-semibold">Telegram Group Link</label>
+                    <Input defaultValue="https://t.me/coinpow_group" className="mt-1 h-9 bg-slate-700 border-slate-600 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                 <Button onClick={() => toast({ title: 'Settings Saved!', description: 'Your changes have been saved.' })} className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold">
+                   Save Changes
+                </Button>
+              </div>
+
             </div>
           )}
 
