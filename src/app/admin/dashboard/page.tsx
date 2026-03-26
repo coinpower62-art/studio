@@ -20,7 +20,7 @@ import {
   Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
   Pencil, ImagePlus, Activity,
   Info, Building2, Phone, Mail, MapPin, Percent, Clock3,
-  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound
+  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
@@ -838,11 +838,7 @@ function DashboardContent() {
                             <Avatar className="w-10 h-10 flex-shrink-0"><AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-white text-xs font-bold">{initials}</AvatarFallback></Avatar>
                             <div className="min-w-0">
                                 <p className="text-white font-bold text-sm truncate">{nameForDisplay}</p>
-                                {(u.username || u.country) &&
-                                    <p className="text-slate-400 text-xs">
-                                      {[u.username ? `@${u.username}` : null, u.country].filter(Boolean).join(' · ')}
-                                    </p>
-                                }
+                                <p className="text-slate-400 text-xs truncate">{u.email}</p>
                             </div>
                           </div>
                           <p className="text-green-400 font-black text-base flex-shrink-0">${(u.balance || 0).toFixed(2)}</p>
@@ -890,28 +886,29 @@ function DashboardContent() {
                         ) : null}
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-                          <div className="bg-slate-700/50 rounded-xl px-3 py-2">
-                            <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide mb-0.5">User ID</p>
-                            <div className="flex items-center gap-1.5">
-                              <p className="text-slate-200 text-xs font-mono truncate">{u.id}</p>
-                              <button onClick={function() { return copyText(u.id, "User ID"); }} className="text-slate-500 hover:text-amber-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>
+                            <div className="bg-slate-700/50 rounded-xl px-3 py-2">
+                                <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><UserIcon className="w-3 h-3" /> Full Name</p>
+                                <p className="text-slate-200 text-xs truncate">{u.full_name || '—'}</p>
                             </div>
-                          </div>
-                          <div className="bg-slate-700/50 rounded-xl px-3 py-2">
-                            <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Referral Code</p>
-                            <div className="flex items-center gap-1.5">
-                              <p className="text-amber-400 text-xs font-bold font-mono">{u.referral_code || "—"}</p>
-                              {u.referral_code && <button onClick={function() { return copyText(u.referral_code!, "Referral code"); }} className="text-slate-500 hover:text-amber-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>}
+                            <div className="bg-slate-700/50 rounded-xl px-3 py-2">
+                                <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1">@ Username</p>
+                                <p className="text-slate-200 text-xs truncate">{u.username || '—'}</p>
                             </div>
-                          </div>
-                          <div className="bg-slate-700/50 rounded-xl px-3 py-2">
-                            <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Email</p>
-                            <p className="text-slate-200 text-xs truncate">{u.email}</p>
-                          </div>
-                           <div className="bg-slate-700/50 rounded-xl px-3 py-2">
-                            <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Phone</p>
-                            <p className="text-slate-200 text-xs truncate">{u.phone || 'Not provided'}</p>
-                          </div>
+                            <div className="bg-slate-700/50 rounded-xl px-3 py-2">
+                                <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Phone className="w-3 h-3" /> Phone</p>
+                                <p className="text-slate-200 text-xs truncate">{u.phone || '—'}</p>
+                            </div>
+                            <div className="bg-slate-700/50 rounded-xl px-3 py-2">
+                                <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><MapPin className="w-3 h-3"/> Country</p>
+                                <p className="text-slate-200 text-xs truncate">{u.country || '—'}</p>
+                            </div>
+                            <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
+                                <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Link2 className="w-3 h-3"/> Referral Code</p>
+                                <div className="flex items-center gap-1.5">
+                                <p className="text-amber-400 text-xs font-mono font-bold">{u.referral_code || '—'}</p>
+                                {u.referral_code && <button onClick={() => copyText(u.referral_code!, "Referral code")} className="text-slate-500 hover:text-amber-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>}
+                                </div>
+                            </div>
                         </div>
 
                         <div className="flex flex-wrap gap-2">

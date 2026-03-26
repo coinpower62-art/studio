@@ -44,7 +44,7 @@ export async function adminGetAllData() {
         { data: media, error: mediaError },
         { data: codes, error: codesError },
     ] = await Promise.all([
-        supabaseAdmin.from('profiles').select('*').order('created_at', { ascending: false }),
+        supabaseAdmin.from('profiles').select('id, created_at, username, full_name, email, country, phone, balance, referral_code, referred_by, has_withdrawal_pin').order('created_at', { ascending: false }),
         supabaseAdmin.from('generators').select('*').order('price', { ascending: true }),
         supabaseAdmin.from('deposit_requests').select('*').order('created_at', { ascending: false }),
         supabaseAdmin.from('withdrawal_requests').select('*').order('created_at', { ascending: false }),
