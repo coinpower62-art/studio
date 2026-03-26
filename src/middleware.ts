@@ -1,4 +1,6 @@
 
+export const runtime = 'edge';
+
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
@@ -28,12 +30,22 @@ export async function middleware(request: NextRequest) {
         set(name: string, value: string, options: CookieOptions) {
           // If the cookie is set, update the request's cookies.
           request.cookies.set({ name, value, ...options })
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
           // Also update the response's cookies.
           response.cookies.set({ name, value, ...options })
         },
         remove(name: string, options: CookieOptions) {
           // If the cookie is removed, update the request's cookies.
           request.cookies.set({ name, value: '', ...options })
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
           // Also update the response's cookies.
           response.cookies.set({ name, value: '', ...options })
         },
