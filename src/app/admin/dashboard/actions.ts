@@ -212,13 +212,17 @@ export async function adminCreateUser(userData: any) {
             username: userData.username,
             country: userData.country,
             phone: userData.phone,
-            balance: userData.balance,
             referral_code: userData.referral_code,
-            has_withdrawal_pin: false
         }
     })
     
     if (error) return { error: error.message }
+    
+    const startingBalance = parseFloat(userData.balance) || 1.00;
+    if (startingBalance !== 1.00) {
+        await supabaseAdmin.from('profiles').update({ balance: startingBalance }).eq('id', data.user.id);
+    }
+
     // We need to fetch the profile that was created by the trigger
     const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select().eq('id', data.user.id).single();
     if(profileError) return { error: profileError.message }

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, Suspense } from "react";
@@ -829,8 +828,8 @@ function DashboardContent() {
               ) : (
                 <div className="space-y-3">
                   {filteredUsers.map(function(u) {
-                    const nameForDisplay = u.full_name || u.username || "Unknown User";
-                    const initials = (u.full_name || u.username)?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "??";
+                    const nameForDisplay = u.full_name || u.username || u.email.split('@')[0] || 'Unknown User';
+                    const initials = (u.full_name || u.username || u.email)?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "??";
                     const isShowingPass = showPassFor === u.id;
                     return (
                       <div key={u.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
@@ -911,7 +910,7 @@ function DashboardContent() {
                           </div>
                            <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                             <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Phone</p>
-                            <p className="text-slate-200 text-xs truncate">{u.phone || '—'}</p>
+                            <p className="text-slate-200 text-xs truncate">{u.phone || 'Not provided'}</p>
                           </div>
                         </div>
 
@@ -1630,9 +1629,3 @@ export default function AdminDashboard() {
     </Suspense>
   )
 }
-    
-    
-
-    
-
-    
