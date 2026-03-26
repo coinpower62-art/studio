@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, Suspense } from "react";
@@ -48,15 +49,15 @@ type DepositRequest = {
 
 type UserRecord = {
   id: string;
-  full_name: string;
-  username: string;
+  full_name: string | null;
+  username: string | null;
   email: string;
-  country: string;
+  country: string | null;
   balance: number;
   referral_code: string | null;
   referred_by: string | null;
   referral_count?: number;
-  phone?: string;
+  phone?: string | null;
 };
 
 type Generator = {
@@ -866,10 +867,8 @@ function DashboardContent() {
                             <p className="text-slate-200 text-xs truncate">{u.email}</p>
                           </div>
                           <div className="bg-slate-700/50 rounded-xl px-3 py-2">
-                            <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Password</p>
-                            <div className="flex items-center gap-1.5">
-                              <p className="text-slate-200 text-xs font-mono flex-1 truncate">{"••••••••"}</p>
-                            </div>
+                            <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Phone</p>
+                            <p className="text-slate-200 text-xs truncate">{u.phone || '—'}</p>
                           </div>
                         </div>
 
@@ -1584,6 +1583,8 @@ export default function AdminDashboard() {
   )
 }
     
+    
+
     
 
     
