@@ -5,6 +5,7 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { SplashProvider } from '@/components/SplashProvider';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
   title: 'CoinPower',
@@ -30,6 +31,7 @@ export default function RootLayout({
             <Toaster />
           </SplashProvider>
         </TooltipProvider>
+        <Analytics />
       </body>
     </html>
   );
