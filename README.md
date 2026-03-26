@@ -262,7 +262,7 @@ DECLARE
   redeemed_amount numeric;
 BEGIN
   -- Find and lock the code row
-  SELECT * INTO code_record FROM public.gift_codes WHERE code = code_in FOR UPDATE;
+  SELECT * INTO public.gift_codes WHERE code = code_in FOR UPDATE;
 
   -- Check if code exists and is not redeemed
   IF NOT FOUND OR code_record.is_redeemed THEN
@@ -289,3 +289,4 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
     
+```
