@@ -60,6 +60,12 @@ ON public.profiles FOR UPDATE
 USING (auth.uid() = id)
 WITH CHECK (auth.uid() = id);
 
+-- Policy: Allow users to create their own profile.
+DROP POLICY IF EXISTS "Users can create their own profile." ON public.profiles;
+CREATE POLICY "Users can create their own profile."
+ON public.profiles FOR INSERT
+WITH CHECK (auth.uid() = id);
+
 -- =================================================================
 -- 2. AUTOMATIC PROFILE CREATION
 -- This function and trigger automatically create a profile for new users.
@@ -281,4 +287,5 @@ BEGIN
   RETURN redeemed_amount;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-```
+
+    
