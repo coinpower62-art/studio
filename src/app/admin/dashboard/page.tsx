@@ -21,7 +21,7 @@ import {
   Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
   Pencil, ImagePlus, Activity,
   Info, Building2, Phone, Mail, MapPin, Percent, Clock3,
-  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap
+  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
@@ -38,6 +38,7 @@ import {
   adminUpsertMedia,
   adminCreateGiftCode,
   adminDeleteGiftCode,
+  adminResetUserPassword,
 } from "./actions";
 
 type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "generators" | "media" | "codes" | "settings" | "about";
@@ -262,6 +263,8 @@ function DashboardContent() {
   };
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
   const [newBalance, setNewBalance] = useState("");
+  const [editingPassword, setEditingPassword] = useState<UserRecord | null>(null);
+  const [newPassword, setNewPassword] = useState("");
   const [showPassFor, setShowPassFor] = useState<string | null>(null);
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [createUserForm, setCreateUserForm] = useState({ full_name: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
@@ -298,6 +301,21 @@ function DashboardContent() {
         await fetchData();
     }
   }
+
+  const handleResetPassword = async (userId: string, newPass: string) => {
+    if (!newPass || newPass.length < 6) {
+        toast({ title: 'Invalid Password', description: 'Password must be at least 6 characters long.', variant: 'destructive' });
+        return;
+    }
+    const result = await adminResetUserPassword(userId, newPass);
+    if(result.error) {
+        toast({ title: 'Error resetting password', description: result.error, variant: 'destructive' });
+    } else {
+        toast({ title: 'Password has been reset successfully!' });
+        setEditingPassword(null);
+        setNewPassword('');
+    }
+}
 
   const handleDeleteUser = async (userId: string) => {
     const result = await adminDeleteUser(userId);
@@ -833,7 +851,7 @@ function DashboardContent() {
 
                          {editingUser?.id === u.id ? (
                           <div className="mb-3 p-3 rounded-lg bg-slate-700/50 border border-slate-600">
-                              <p className="text-slate-300 text-xs font-semibold mb-2">Edit Balance for {u.full_name}</p>
+                              <p className="text-slate-300 text-xs font-semibold mb-2">Edit Balance for {nameForDisplay}</p>
                               <div className="flex gap-2">
                                 <Input
                                   type="number"
@@ -845,6 +863,31 @@ function DashboardContent() {
                                 <Button size="sm" variant="ghost" onClick={function() { return setEditingUser(null); }} className="h-8 text-slate-400 hover:bg-slate-600 hover:text-white">Cancel</Button>
                               </div>
                           </div>
+                        ) : null}
+
+                        {editingPassword?.id === u.id ? (
+                            <div className="mb-3 p-3 rounded-lg bg-slate-700/50 border border-slate-600">
+                                <p className="text-slate-300 text-xs font-semibold mb-2">Reset Password for {nameForDisplay}</p>
+                                <div className="flex gap-2">
+                                    <div className="relative flex-1">
+                                        <Input
+                                            type={isShowingPass ? "text" : "password"}
+                                            value={newPassword}
+                                            onChange={(e) => setNewPassword(e.target.value)}
+                                            placeholder="New password (min 6 chars)"
+                                            className="h-8 bg-slate-600 border-slate-500 text-white text-sm pr-8"
+                                        />
+                                        <button
+                                            onClick={() => setShowPassFor(isShowingPass ? null : u.id)}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                                        >
+                                            {isShowingPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                        </button>
+                                    </div>
+                                    <Button size="sm" onClick={() => handleResetPassword(u.id, newPassword)} className="h-8 bg-green-600 hover:bg-green-500 text-white">Save</Button>
+                                    <Button size="sm" variant="ghost" onClick={() => setEditingPassword(null)} className="h-8 text-slate-400 hover:bg-slate-600 hover:text-white">Cancel</Button>
+                                </div>
+                            </div>
                         ) : null}
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
@@ -866,7 +909,7 @@ function DashboardContent() {
                             <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Email</p>
                             <p className="text-slate-200 text-xs truncate">{u.email}</p>
                           </div>
-                          <div className="bg-slate-700/50 rounded-xl px-3 py-2">
+                           <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                             <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Phone</p>
                             <p className="text-slate-200 text-xs truncate">{u.phone || '—'}</p>
                           </div>
@@ -878,7 +921,12 @@ function DashboardContent() {
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-900/30 text-blue-400 border border-blue-800 hover:bg-blue-900/50 text-xs font-semibold">
                             <Edit3 className="w-3 h-3" /> Edit Balance
                           </button>
-                          <button onClick={function() { return openConfirm("Delete User Account", `You are about to permanently delete "${u.full_name || u.username || u.email}". Their profile and all data will be erased. This CANNOT be undone.`,function() { return handleDeleteUser(u.id); }); }}
+                           <button onClick={() => { setEditingPassword(u); setNewPassword(''); setEditingUser(null); }}
+                                data-testid={`button-reset-password-${u.id}`}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-900/30 text-orange-400 border border-orange-800 hover:bg-orange-900/50 text-xs font-semibold">
+                                <KeyRound className="w-3 h-3" /> Reset Password
+                           </button>
+                          <button onClick={function() { return openConfirm("Delete User Account", `You are about to permanently delete "${nameForDisplay}". Their profile and all data will be erased. This CANNOT be undone.`,function() { return handleDeleteUser(u.id); }); }}
                             data-testid={`button-delete-user-${u.id}`}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-800 hover:bg-red-900/50 text-xs font-semibold">
                             <Trash2 className="w-3 h-3" /> Delete

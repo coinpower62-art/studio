@@ -154,6 +154,31 @@ export async function adminUpdateUserBalance(userId: string, newBalance: number)
   }
 }
 
+export async function adminResetUserPassword(userId: string, newPassword: string) {
+    const cookieStore = cookies()
+    if (cookieStore.get('admin_logged_in')?.value !== 'true') {
+        return { error: 'Unauthorized' }
+    }
+    if (!newPassword || newPassword.length < 6) {
+        return { error: 'Password must be at least 6 characters.' }
+    }
+    try {
+        const supabaseAdmin = await getSupabaseAdminClient()
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+            password: newPassword
+        })
+        if (error) {
+            if (error.message.includes("Password not long enough")) {
+                return { error: "Password is too short. It must be at least 6 characters." }
+            }
+            return { error: error.message }
+        }
+        return { success: true }
+    } catch (e: any) {
+        return { error: e.message }
+    }
+}
+
 export async function adminDeleteUser(userId: string) {
   // Note: This only deletes the profile, not the auth.users record.
   const cookieStore = cookies()
