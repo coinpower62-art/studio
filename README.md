@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   email text UNIQUE,
   country text,
   phone text,
-  balance numeric(10, 2) DEFAULT 0.00,
+  balance numeric(10, 2) DEFAULT 1.00,
   referral_code text UNIQUE,
   referred_by text,
   has_withdrawal_pin boolean DEFAULT false NOT NULL
@@ -289,4 +289,5 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
     
-```
+
+    
