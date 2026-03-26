@@ -1,4 +1,3 @@
-
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
@@ -63,6 +62,10 @@ export async function middleware(request: NextRequest) {
 
   // If user is not logged in and is trying to access a protected route, redirect to login
   if (!user && isProtectedRoute) {
+    // prevent redirect loop
+    if (request.nextUrl.pathname.startsWith('/login')) {
+        return response;
+    }
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
