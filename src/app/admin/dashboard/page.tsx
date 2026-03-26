@@ -810,14 +810,22 @@ function DashboardContent() {
               ) : (
                 <div className="space-y-3">
                   {filteredUsers.map(function(u) {
-                    const initials = u.full_name?.split(" ").map(function(n) { return n[0]; }).join("").toUpperCase().slice(0, 2) || "??";
+                    const nameForDisplay = u.full_name || u.username || "Unknown User";
+                    const initials = (u.full_name || u.username)?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "??";
                     const isShowingPass = showPassFor === u.id;
                     return (
                       <div key={u.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
                         <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex items-center gap-3 min-w-0">
                             <Avatar className="w-10 h-10 flex-shrink-0"><AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-white text-xs font-bold">{initials}</AvatarFallback></Avatar>
-                            <div className="min-w-0"><p className="text-white font-bold text-sm">{u.full_name}</p><p className="text-slate-400 text-xs">@{u.username} · {u.country}</p></div>
+                            <div className="min-w-0">
+                                <p className="text-white font-bold text-sm truncate">{nameForDisplay}</p>
+                                {(u.username || u.country) &&
+                                    <p className="text-slate-400 text-xs">
+                                      {[u.username ? `@${u.username}` : null, u.country].filter(Boolean).join(' · ')}
+                                    </p>
+                                }
+                            </div>
                           </div>
                           <p className="text-green-400 font-black text-base flex-shrink-0">${(u.balance || 0).toFixed(2)}</p>
                         </div>
@@ -871,7 +879,7 @@ function DashboardContent() {
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-900/30 text-blue-400 border border-blue-800 hover:bg-blue-900/50 text-xs font-semibold">
                             <Edit3 className="w-3 h-3" /> Edit Balance
                           </button>
-                          <button onClick={function() { return openConfirm("Delete User Account", `You are about to permanently delete "${u.full_name}" (@${u.username}). Their profile and all data will be erased. This CANNOT be undone.`,function() { return handleDeleteUser(u.id); }); }}
+                          <button onClick={function() { return openConfirm("Delete User Account", `You are about to permanently delete "${u.full_name || u.username || u.email}". Their profile and all data will be erased. This CANNOT be undone.`,function() { return handleDeleteUser(u.id); }); }}
                             data-testid={`button-delete-user-${u.id}`}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-800 hover:bg-red-900/50 text-xs font-semibold">
                             <Trash2 className="w-3 h-3" /> Delete
