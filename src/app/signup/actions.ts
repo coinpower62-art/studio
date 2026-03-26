@@ -42,8 +42,6 @@ export async function signup(values: any) {
         phone: phone,
         referral_code: newUserReferralCode, // The new user's OWN code
         referred_by: referralCode || null, // The code of the user who referred them (can be empty/null)
-        // balance: 1.00, // Balance is now set by the handle_new_user trigger
-        // has_withdrawal_pin: false,
       },
     },
   });
@@ -53,7 +51,7 @@ export async function signup(values: any) {
         return { error: 'A user with this email address already exists.' };
     }
     // This error is often caused by a failing database trigger or RLS policy.
-    return { error: `Registration failed: ${error.message}` };
+    return { error: error.message };
   }
 
   return { error: null };
