@@ -10,8 +10,7 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
-import { logout } from '@/app/login/actions';
-import { Button } from '@/components/ui/button';
+import { ReferralLink } from '@/components/ReferralLink';
 
 // The main page component
 export default async function DashboardPage() {
@@ -112,6 +111,8 @@ export default async function DashboardPage() {
           <p className="text-gray-500 text-xs mt-0.5">Active Generators</p>
         </div>
       </div>
+
+      <ReferralLink referralCode={profile?.referral_code ?? null} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
