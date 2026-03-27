@@ -37,16 +37,7 @@ export async function adminGetAllData() {
   }
 
   if (!isServiceRoleKeyAvailable) {
-      return { 
-          data: {
-              users: [],
-              generators: [],
-              deposits: [],
-              withdrawals: [],
-              media: [],
-              codes: [],
-          }
-      }
+      return { error: ADMIN_DISABLED_ERROR.error };
   }
 
   try {

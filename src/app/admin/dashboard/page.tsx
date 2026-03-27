@@ -893,7 +893,7 @@ function DashboardContent() {
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1">@ Username</p>
-                                <p className="text-slate-200 text-xs truncate">{u.username || '—'}</p>
+                                <p className="text-slate-200 text-xs truncate">{u.username || u.email.split('@')[0] || '—'}</p>
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Phone className="w-3 h-3" /> Phone</p>
