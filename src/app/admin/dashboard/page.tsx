@@ -833,6 +833,7 @@ function DashboardContent() {
                     const nameForDisplay = u.full_name || u.username || u.email.split('@')[0] || 'Unknown User';
                     const initials = (u.full_name || u.username || u.email)?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "??";
                     const isShowingPass = showPassFor === u.id;
+                    const referralLink = u.referral_code ? `https://coinpower-app.vercel.app/signup?ref=${u.referral_code}` : null;
                     return (
                       <div key={u.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
                         <div className="flex items-start justify-between gap-3 mb-3">
@@ -919,6 +920,15 @@ function DashboardContent() {
                                 <div className="flex items-center gap-1.5">
                                 <p className="text-amber-400 text-xs font-mono font-bold">{u.referral_code || '—'}</p>
                                 {u.referral_code && <button onClick={() => copyText(u.referral_code!, "Referral code")} className="text-slate-500 hover:text-amber-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>}
+                                </div>
+                            </div>
+                            <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
+                                <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><ExternalLink className="w-3 h-3"/> Referral Link</p>
+                                <div className="flex items-center gap-1.5">
+                                    <a href={referralLink || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs font-mono truncate">
+                                        {referralLink || '—'}
+                                    </a>
+                                    {referralLink && <button onClick={() => copyText(referralLink, "Referral link")} className="text-slate-500 hover:text-blue-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>}
                                 </div>
                             </div>
                         </div>
