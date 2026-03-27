@@ -17,23 +17,6 @@ export async function signup(values: any) {
 
   const { email, password, fullName, username, country, phone, referralCode } = values;
 
-  // Check if username is already taken before attempting to sign up
-  const { data: existingProfile, error: profileError } = await supabase
-    .from('profiles')
-    .select('username')
-    .eq('username', username)
-    .single();
-
-  if (profileError && profileError.code !== 'PGRST116') { 
-    // PGRST116 means no rows were found, which is what we want.
-    // Any other error is a real database problem.
-    return { error: `Database error checking username: ${profileError.message}` };
-  }
-
-  if (existingProfile) {
-    return { error: 'This username is already taken. Please choose another.' };
-  }
-
   // Generate a unique referral code for the new user.
   const newUserReferralCode = `CP-${Math.random().toString(36).slice(2, 7)}${Date.now().toString(36).slice(-5)}`.toUpperCase();
 
@@ -57,7 +40,22 @@ export async function signup(values: any) {
     if (error.message.includes('User already registered')) {
         return { error: 'A user with this email address already exists.' };
     }
-    // This error is often caused by a failing database trigger or RLS policy.
+    // This is a common error when the trigger that creates the profile fails due to a unique constraint.
+    if (error.message.includes('duplicate key value violates unique constraint')) {
+        if (error.message.includes('profiles_username_key')) {
+            return { error: 'This username is already taken. Please choose another.' };
+        }
+        if (error.message.includes('profiles_email_key')) {
+            return { error: 'This email address is already in use by another profile.' };
+        }
+        return { error: 'This username or email is already taken.' };
+    }
+    
+    // Provide a more user-friendly message for generic database errors during signup
+    if (error.message.includes('Database error saving new user')) {
+      return { error: 'A problem occurred while creating your profile. This could be due to a username or email that is already taken.' };
+    }
+    
     return { error: error.message };
   }
 
