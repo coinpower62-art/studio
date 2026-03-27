@@ -39,9 +39,20 @@ export async function signup(values: any) {
   });
 
   if (error) {
-    // Return the raw error message from Supabase for debugging.
-    // This will give us the exact reason for the failure.
-    return { error: `Registration failed. Reason: ${error.message}` };
+    if (error.message.includes("Username") && error.message.includes("is already taken")) {
+        return { error: `Username "${username}" is already taken. Please choose another one.` };
+    }
+    if (error.message.includes("duplicate key value violates unique constraint")) {
+       if (error.message.includes("profiles_username_key")) {
+         return { error: `Username "${username}" is already taken. Please choose another.` };
+       }
+       if (error.message.includes("profiles_email_key")) {
+         return { error: `A user with this email already exists. Please sign in.` };
+       }
+       return { error: "A user with this email or username already exists." };
+    }
+    // For other database-related issues coming from the trigger
+    return { error: `Registration failed. Please try again. Reason: ${error.message}` };
   }
 
   return { error: null };

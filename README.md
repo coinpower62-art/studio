@@ -124,22 +124,30 @@ BEGIN
     split_part(new.email, '@', 1)
   );
 
-  -- Step 2: Loop to ensure the username is unique, appending a random suffix if needed.
-  LOOP
-    SELECT EXISTS (SELECT 1 FROM public.profiles WHERE username = resolved_username) INTO is_username_taken;
-    
-    IF NOT is_username_taken THEN
-      EXIT; -- Username is unique, exit the loop.
-    END IF;
-    
-    -- If username is taken, append a random suffix and try again.
-    attempts := attempts + 1;
-    IF attempts >= max_attempts THEN
-      RAISE EXCEPTION 'Could not generate a unique username for % after % attempts.', new.email, max_attempts;
-    END IF;
-    
-    resolved_username := COALESCE(NULLIF(TRIM(new.raw_user_meta_data->>'username'), ''), split_part(new.email, '@', 1)) || '-' || lower(substr(encode(gen_random_bytes(2), 'hex'), 1, 4));
-  END LOOP;
+  -- Step 2: Check if username is taken and handle it.
+  -- If the user *chose* a username and it's taken, raise a specific error.
+  IF new.raw_user_meta_data->>'username' IS NOT NULL THEN
+      SELECT EXISTS (SELECT 1 FROM public.profiles WHERE username = resolved_username) INTO is_username_taken;
+      IF is_username_taken THEN
+          RAISE EXCEPTION 'Username "%" is already taken.', resolved_username;
+      END IF;
+  -- If no username was chosen, generate one from email and ensure it's unique.
+  ELSE
+      LOOP
+        SELECT EXISTS (SELECT 1 FROM public.profiles WHERE username = resolved_username) INTO is_username_taken;
+        IF NOT is_username_taken THEN
+          EXIT; -- Username is unique, exit the loop.
+        END IF;
+        
+        -- If username is taken, append a random suffix and try again.
+        attempts := attempts + 1;
+        IF attempts >= max_attempts THEN
+          RAISE EXCEPTION 'Could not generate a unique username for % after % attempts.', new.email, max_attempts;
+        END IF;
+        
+        resolved_username := split_part(new.email, '@', 1) || '-' || lower(substr(encode(gen_random_bytes(2), 'hex'), 1, 4));
+      END LOOP;
+  END IF;
   
   -- Step 3: Loop to generate a truly unique referral code.
   attempts := 0; -- Reset counter
