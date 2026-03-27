@@ -4,22 +4,46 @@ This guide provides instructions for deploying your CoinPower application to Ver
 
 ---
 
-## 🚨 Critical: Setting Environment Variables in Vercel
+## 🚨 Critical: Connecting Supabase to Vercel
 
-For your app to connect to the Supabase database and function correctly, you **must** configure your environment variables in the Vercel dashboard.
+For your live app on Vercel to function correctly, you **must** copy your Supabase keys into your Vercel project settings. This allows your Vercel deployment to connect to your Supabase database.
 
-1.  In your Vercel project, go to the **Settings** tab.
-2.  Click on **Environment Variables** in the left-hand menu.
-3.  Add the following three variables:
-    -   `NEXT_PUBLIC_SUPABASE_URL` (Paste your Supabase URL)
-    -   `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Paste your Supabase Anon Key)
-    -   `SUPABASE_SERVICE_ROLE_KEY` (Paste your Supabase Service Role Key. **Important:** Mark this as a "Secret" when adding it.)
+### Step-by-Step Instructions:
 
-**Why the difference?**
--   `NEXT_PUBLIC_` variables are needed by the browser (client-side) and are safe to be public.
--   `SUPABASE_SERVICE_ROLE_KEY` is a powerful secret for your server-side code (like the Admin Panel) and must be kept secure.
+1.  **Log in to Vercel** and go to your CoinPower project dashboard.
+2.  Go to the **Settings** tab and click on **Environment Variables** in the side menu.
+3.  You will need to add three variables. For each one, enter the **Name** and **Value** exactly as shown below, then click **Add**.
 
-After adding these variables, **re-deploy your project** from the Vercel dashboard to apply the changes.
+    ---
+
+    #### Variable 1: Supabase URL
+    -   **Name**: `NEXT_PUBLIC_SUPABASE_URL`
+    -   **Value**: `https://ifdhcwsigjankvidokko.supabase.co`
+    -   *Leave all checkboxes unchecked.*
+
+    ---
+
+    #### Variable 2: Public / Anon Key
+    -   **Name**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+    -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTc0NzcsImV4cCI6MjA4OTMzMzQ3N30.i9A0x-i9xS0sYt_M4S_jXlJqK0cZ8eX3pW7bN6eD2fM`
+    -   *Leave all checkboxes unchecked.*
+
+    ---
+
+    #### Variable 3: Secret Service Role Key
+    -   **Name**: `SUPABASE_SERVICE_ROLE_KEY`
+    -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzc1NzQ3NywiZXhwIjoyMDg5MzMzNDc3fQ.WYLx7zUkc0pl_02HpM1ULXTNKi_AWeXjD8EEYBbKrJc`
+    -   **Important:** You must select the **"Secret"** type for this variable in Vercel to keep it secure.
+
+    ---
+
+4.  **Re-deploy Your Project.** After adding all three variables, go to the **Deployments** tab in Vercel. Find the latest deployment, click the "..." menu, and choose **Redeploy**. This will apply the new environment variables.
+
+**Why is this necessary?**
+- Your **public** keys (`NEXT_PUBLIC_...`) are used by the browser to fetch data securely.
+- Your **secret** key (`SUPABASE_SERVICE_ROLE_KEY`) is used by the server-side part of your app (the Admin Panel) to perform administrative tasks. It must be kept secret.
+
+By following these steps, your Vercel app will be able to communicate with your Supabase database, and all features, including the Admin Panel, will work correctly.
 
 ---
 

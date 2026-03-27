@@ -8,19 +8,19 @@ If your deployment builds successfully but you see an "Internal Server Error," o
 
 **To fix this, you must:**
 
-1.  Go to your hosting provider's dashboard and navigate to your project.
+1.  Go to your hosting provider's dashboard (e.g., Vercel) and navigate to your project.
 2.  Find the **Environment Variables** settings.
-3.  Add the following three variables:
+3.  Add the following three variables with their correct values from your Supabase project:
     -   `NEXT_PUBLIC_SUPABASE_URL`
     -   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
     -   `SUPABASE_SERVICE_ROLE_KEY` (ensure this is saved as a "secret" or "encrypted" variable).
-4.  After adding all three variables, **re-deploy your project**.
+4.  After adding all three variables, **re-deploy your project**. A simple re-deploy (not a new commit) is usually available in your hosting provider's dashboard and is the fastest way to apply the changes.
 
 ---
 
 ## Getting Started
 
-Your Supabase credentials have been added to the `.env` file. To get started with your local development environment:
+Your Supabase credentials have been added to the `.env` file for local development. To get started:
 
 1.  **Create a `.env.local` file** by making a copy of the `.env` file. This file will not be committed to git and will load the environment variables for your local development.
 
