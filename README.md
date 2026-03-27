@@ -25,7 +25,7 @@ For your live app on Vercel to function correctly, you **must** copy your Supaba
 
     #### Variable 2: Public / Anon Key
     -   **Name**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-    -   **Value**: `sb_publishable_nNudOjnqaU7Vp-avsKjGbA_GYNk8h7r`
+    -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTc0NzcsImV4cCI6MjA4OTMzMzQ3N30.Z-H5YqGo_L0Q0mJ_N23tV11Jb6W32aA2yS3R2zDAbJI`
     -   *Leave all checkboxes unchecked.*
 
     ---
@@ -111,27 +111,60 @@ WITH CHECK (auth.uid() = id);
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
-  generated_username TEXT;
+  resolved_username TEXT;
+  is_username_taken BOOLEAN;
   generated_referral_code TEXT;
+  max_attempts INT := 5;
+  attempts INT := 0;
 BEGIN
-  -- Use the provided username, or generate one from the email if it's missing (with random suffix)
-  generated_username := COALESCE(
-    NULLIF(new.raw_user_meta_data->>'username', ''),
-    split_part(new.email, '@', 1) || '-' || substr(encode(gen_random_bytes(3), 'hex'), 0, 4)
+  -- Start with the user's chosen username, or generate one from the email.
+  resolved_username := COALESCE(
+    NULLIF(TRIM(new.raw_user_meta_data->>'username'), ''),
+    split_part(new.email, '@', 1)
   );
 
-  -- Use the referral code from signup, or generate a new robust one if it's missing.
-  generated_referral_code := COALESCE(
-    NULLIF(new.raw_user_meta_data->>'referral_code', ''),
-    'CP-' || upper(substr(encode(gen_random_bytes(6), 'hex'), 0, 10))
-  );
+  -- Check if the username is taken.
+  SELECT EXISTS (SELECT 1 FROM public.profiles WHERE username = resolved_username) INTO is_username_taken;
 
-  -- Create the profile with fallback default values
+  -- If the user provided a username and it's taken, we must fail.
+  -- We cannot create a different username than the one they chose.
+  IF NULLIF(TRIM(new.raw_user_meta_data->>'username'), '') IS NOT NULL AND is_username_taken THEN
+      RAISE EXCEPTION 'Username "%" is already taken.', resolved_username;
+  END IF;
+  
+  -- If the username was generated from email and is taken, append random chars until unique.
+  IF NULLIF(TRIM(new.raw_user_meta_data->>'username'), '') IS NULL AND is_username_taken THEN
+    LOOP
+      attempts := attempts + 1;
+      resolved_username := split_part(new.email, '@', 1) || '-' || substr(encode(gen_random_bytes(2), 'hex'), 0, 4);
+      SELECT EXISTS (SELECT 1 FROM public.profiles WHERE username = resolved_username) INTO is_username_taken;
+      
+      EXIT WHEN NOT is_username_taken; -- Exit if we found a unique username
+
+      IF attempts >= max_attempts THEN
+          RAISE EXCEPTION 'Could not generate a unique username for email % after % attempts.', new.email, max_attempts;
+      END IF;
+    END LOOP;
+  END IF;
+  
+  -- Generate a unique referral code.
+  attempts := 0;
+  LOOP
+    attempts := attempts + 1;
+    generated_referral_code := 'CP-' || upper(substr(encode(gen_random_bytes(6), 'hex'), 0, 10));
+    EXIT WHEN NOT EXISTS (SELECT 1 FROM public.profiles WHERE referral_code = generated_referral_code);
+    
+    IF attempts >= max_attempts THEN
+        RAISE EXCEPTION 'Could not generate a unique referral code for email %', new.email;
+    END IF;
+  END LOOP;
+
+  -- Create the profile
   INSERT INTO public.profiles (id, full_name, username, email, country, phone, referral_code, referred_by, balance, has_withdrawal_pin)
   VALUES (
     new.id,
-    COALESCE(NULLIF(new.raw_user_meta_data->>'full_name', ''), generated_username),
-    generated_username,
+    COALESCE(NULLIF(new.raw_user_meta_data->>'full_name', ''), resolved_username),
+    resolved_username,
     new.email,
     COALESCE(NULLIF(new.raw_user_meta_data->>'country', ''), 'Ghana'),
     COALESCE(NULLIF(new.raw_user_meta_data->>'phone', ''), 'Not provided'),
@@ -139,8 +172,7 @@ BEGIN
     new.raw_user_meta_data->>'referred_by',
     1.00,
     false
-  )
-  ON CONFLICT (id) DO NOTHING;
+  );
   
   RETURN new;
 END;
@@ -363,3 +395,5 @@ BEGIN
   RETURN redeemed_amount;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+```
