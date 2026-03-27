@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -39,20 +40,16 @@ export async function signup(values: any) {
   });
 
   if (error) {
-    if (error.message.includes("Username") && error.message.includes("is already taken")) {
+    // Check for a duplicate username error specifically from our trigger
+    if (error.message.includes("is already taken")) {
+        return { error: error.message };
+    }
+    // Check for the generic unique violation from the database on the username column
+    if (error.message.includes('duplicate key value violates unique constraint "profiles_username_key"')) {
         return { error: `Username "${username}" is already taken. Please choose another one.` };
     }
-    if (error.message.includes("duplicate key value violates unique constraint")) {
-       if (error.message.includes("profiles_username_key")) {
-         return { error: `Username "${username}" is already taken. Please choose another.` };
-       }
-       if (error.message.includes("profiles_email_key")) {
-         return { error: `A user with this email already exists. Please sign in.` };
-       }
-       return { error: "A user with this email or username already exists." };
-    }
-    // For other database-related issues coming from the trigger
-    return { error: `Registration failed. Please try again. Reason: ${error.message}` };
+    // For all other errors, show the raw message for debugging.
+    return { error: `Registration failed. Reason: ${error.message}` };
   }
 
   return { error: null };
