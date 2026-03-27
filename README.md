@@ -1,57 +1,38 @@
-# 🚀 CoinPower Deployment Guide
+# 🚀 CoinPower Deployment Guide for Vercel
 
-This guide provides clear instructions for deploying your CoinPower application to Cloudflare. The key to a successful deployment is correctly configuring your environment variables. 
+This guide provides instructions for deploying your CoinPower application to Vercel, the recommended hosting platform for this Next.js project.
 
 ---
 
-## 🚨 Critical: Setting Environment Variables in Cloudflare
+## 🚨 Critical: Setting Environment Variables in Vercel
 
-For your app to connect to the Supabase database, you **must** configure your environment variables in the Cloudflare dashboard. Forgetting this step is the most common cause of errors on a live site.
+For your app to connect to the Supabase database and function correctly, you **must** configure your environment variables in the Vercel dashboard.
 
-**This applies to both Cloudflare Pages and Cloudflare Workers deployments.**
-
-1.  In your Cloudflare project, go to **Settings** > **Variables**.
-2.  Under **Environment Variables**, click **Add variable**. Add the following two variables as plain text:
-    -   `NEXT_PUBLIC_SUPABASE_URL`
-    -   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-3.  Under **Encrypted Environment Variables**, click **Add variable**. Add your service key as a secret:
-    -   `SUPABASE_SERVICE_ROLE_KEY` (Click the "Encrypt" button to save it securely)
+1.  In your Vercel project, go to the **Settings** tab.
+2.  Click on **Environment Variables** in the left-hand menu.
+3.  Add the following three variables:
+    -   `NEXT_PUBLIC_SUPABASE_URL` (Paste your Supabase URL)
+    -   `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Paste your Supabase Anon Key)
+    -   `SUPABASE_SERVICE_ROLE_KEY` (Paste your Supabase Service Role Key. **Important:** Mark this as a "Secret" when adding it.)
 
 **Why the difference?**
--   `NEXT_PUBLIC_` variables are needed by the browser (client-side code) to show things like your logo. They must be plain text variables.
--   `SUPABASE_SERVICE_ROLE_KEY` is a powerful secret for your server only. It must be encrypted.
+-   `NEXT_PUBLIC_` variables are needed by the browser (client-side) and are safe to be public.
+-   `SUPABASE_SERVICE_ROLE_KEY` is a powerful secret for your server-side code (like the Admin Panel) and must be kept secure.
 
-After adding these three variables, **re-deploy your project** to apply the changes.
+After adding these variables, **re-deploy your project** from the Vercel dashboard to apply the changes.
 
 ---
 
-### Deployment Method 1: Cloudflare Pages
+### Deployment on Vercel
 
-This is the recommended method for most Next.js projects.
+Vercel makes deployment simple.
 
-1.  **Connect to Git**: In the Cloudflare dashboard, go to **Workers & Pages** > **Create application** > **Pages** > **Connect to Git**.
-2.  **Configure Build**:
-    -   Select `Next.js` as the **Framework preset**.
-    -   **Build command**: `npm run build`
-    -   **Build output directory**: `.next`
-    -   **Important**: Leave the "Deployment command" field **blank**.
+1.  **Import Project**: Import your GitHub repository into Vercel.
+2.  **Configure Project**: Vercel will automatically detect that this is a Next.js project. The default settings are correct.
 3.  **Add Environment Variables**: Follow the critical instructions at the top of this guide.
-4.  **Deploy**: Click **Save and Deploy**.
+4.  **Deploy**: Click the **Deploy** button.
 
 ---
-
-### Deployment Method 2: Cloudflare Workers (Advanced)
-
-This method uses the `wrangler` command-line tool. This is the method you have successfully used.
-
-1.  **Configure `wrangler.toml`**: Make sure your `wrangler.toml` file is configured for your account.
-2.  **Add Environment Variables**: Follow the critical instructions at the top of this guide using the Cloudflare dashboard. Using the dashboard is recommended over the CLI for this step to ensure you correctly distinguish between plain text variables and secrets.
-3.  **Deploy**: Run the deployment script from your `package.json`.
-    ```bash
-    npm run dev
-    ```
-
-Your app should now be running on [http://localhost:9002](http://localhost:9002).
 
 ## Supabase Database Setup
 

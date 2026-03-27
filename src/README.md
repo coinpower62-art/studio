@@ -1,22 +1,20 @@
-# Firebase Studio
+# CoinPower Project
 
-This is a NextJS starter app built with Supabase and shadcn/ui.
+This is a Next.js starter app built with Supabase and shadcn/ui.
 
 ## 🚨 Troubleshooting: 'Internal Server Error' or Missing Content
 
-If your deployment builds successfully but you see an "Internal Server Error," or if content like logos and images are missing on your live website, it almost always means you have not correctly set your Supabase environment variables in your Cloudflare project settings.
+If your deployment builds successfully but you see an "Internal Server Error," or if content like logos and images are missing on your live website, it almost always means you have not correctly set your Supabase environment variables in your hosting provider's project settings (e.g., Vercel).
 
 **To fix this, you must:**
 
-1.  Go to your Cloudflare dashboard and navigate to your project.
-2.  Go to **Settings** > **Environment variables**.
-3.  Under **Production environment variables**, click **Add variable**.
-4.  Add the following two variables as plain text:
+1.  Go to your hosting provider's dashboard and navigate to your project.
+2.  Find the **Environment Variables** settings.
+3.  Add the following three variables:
     -   `NEXT_PUBLIC_SUPABASE_URL`
     -   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-5.  Add your service key as an encrypted secret:
-    -   `SUPABASE_SERVICE_ROLE_KEY` (Click the **Encrypt** button to save it securely).
-6.  After adding all three variables, **re-deploy your project**. This will resolve the error.
+    -   `SUPABASE_SERVICE_ROLE_KEY` (ensure this is saved as a "secret" or "encrypted" variable).
+4.  After adding all three variables, **re-deploy your project**.
 
 ---
 
