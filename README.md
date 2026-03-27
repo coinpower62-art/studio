@@ -25,7 +25,7 @@ For your live app on Vercel to function correctly, you **must** copy your Supaba
 
     #### Variable 2: Public / Anon Key
     -   **Name**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-    -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTc0NzcsImV4cCI6MjA4OTMzMzQ3N30.i9A0x-i9xS0sYt_M4S_jXlJqK0cZ8eX3pW7bN6eD2fM`
+    -   **Value**: `sb_publishable_nNudOjnqaU7Vp-avsKjGbA_GYNk8h7r`
     -   *Leave all checkboxes unchecked.*
 
     ---
@@ -363,6 +363,3 @@ BEGIN
   RETURN redeemed_amount;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
-
-```
