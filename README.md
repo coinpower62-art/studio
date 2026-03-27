@@ -107,36 +107,80 @@ WITH CHECK (auth.uid() = id);
 -- =================================================================
 -- 2. AUTOMATIC PROFILE CREATION (FIXED)
 -- This function and trigger automatically create a profile for new users.
--- This version is simplified to be more robust and prevent registration errors.
+-- This version is robust and handles uniqueness constraints internally.
 -- =================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  resolved_username TEXT;
+  is_username_taken BOOLEAN;
+  generated_referral_code TEXT;
+  attempts INT := 0;
+  max_attempts INT := 5;
 BEGIN
-  -- This simplified function attempts to insert the user profile directly.
-  -- It relies on the database's built-in UNIQUE constraints to handle errors
-  -- like duplicate usernames, which are then passed back to the application.
+  -- Step 1: Resolve the initial username from metadata or generate from email.
+  resolved_username := COALESCE(
+    NULLIF(TRIM(new.raw_user_meta_data->>'username'), ''),
+    split_part(new.email, '@', 1)
+  );
+
+  -- Step 2: Loop to ensure the username is unique, appending a random suffix if needed.
+  LOOP
+    SELECT EXISTS (SELECT 1 FROM public.profiles WHERE username = resolved_username) INTO is_username_taken;
+    
+    IF NOT is_username_taken THEN
+      EXIT; -- Username is unique, exit the loop.
+    END IF;
+    
+    -- If username is taken, append a random suffix and try again.
+    attempts := attempts + 1;
+    IF attempts >= max_attempts THEN
+      RAISE EXCEPTION 'Could not generate a unique username for % after % attempts.', new.email, max_attempts;
+    END IF;
+    
+    resolved_username := COALESCE(NULLIF(TRIM(new.raw_user_meta_data->>'username'), ''), split_part(new.email, '@', 1)) || '-' || lower(substr(encode(gen_random_bytes(2), 'hex'), 1, 4));
+  END LOOP;
+  
+  -- Step 3: Loop to generate a truly unique referral code.
+  attempts := 0; -- Reset counter
+  LOOP
+    generated_referral_code := 'CP-' || upper(substr(encode(gen_random_bytes(6), 'hex'), 1, 10));
+    
+    IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE referral_code = generated_referral_code) THEN
+      EXIT; -- Referral code is unique, exit the loop.
+    END IF;
+    
+    attempts := attempts + 1;
+    IF attempts >= max_attempts THEN
+      RAISE EXCEPTION 'Could not generate a unique referral code.';
+    END IF;
+  END LOOP;
+
+  -- Step 4: Insert the new profile record. This is now guaranteed to succeed.
   INSERT INTO public.profiles (id, full_name, username, email, country, phone, referral_code, referred_by, balance)
   VALUES (
     new.id,
-    new.raw_user_meta_data->>'full_name',
-    new.raw_user_meta_data->>'username',
+    COALESCE(new.raw_user_meta_data->>'full_name', resolved_username),
+    resolved_username,
     new.email,
     new.raw_user_meta_data->>'country',
     new.raw_user_meta_data->>'phone',
-    'CP-' || upper(substr(encode(gen_random_bytes(6), 'hex'), 0, 10)), -- Simplified referral generation
+    generated_referral_code,
     new.raw_user_meta_data->>'referred_by',
     1.00
   );
+  
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
--- Recreate the trigger to ensure it uses the updated function
+-- Recreate the trigger to ensure it uses the updated function.
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
 
 -- =================================================================
 -- 3. APP-SPECIFIC TABLES
