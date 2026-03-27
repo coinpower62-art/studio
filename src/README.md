@@ -231,11 +231,11 @@ CREATE POLICY "Public read access for site assets"
 ON storage.objects FOR SELECT
 USING ( bucket_id = 'site_assets' );
 
--- Policy: Allow authenticated users to upload files
+-- Policy: Allow anonymous uploads to the site_assets bucket for admin use
 DROP POLICY IF EXISTS "Authenticated users can upload assets" ON storage.objects;
-CREATE POLICY "Authenticated users can upload assets"
+DROP POLICY IF EXISTS "Allow anonymous uploads to site_assets" ON storage.objects;
+CREATE POLICY "Allow anonymous uploads to site_assets"
 ON storage.objects FOR INSERT
-TO authenticated
 WITH CHECK ( bucket_id = 'site_assets' );
 
 -- =================================================================
