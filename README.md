@@ -99,24 +99,45 @@ WITH CHECK (auth.uid() = id);
 -- =================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  generated_username TEXT;
+  generated_referral_code TEXT;
 BEGIN
+  -- Use the provided username, or generate one from the email if it's missing
+  generated_username := COALESCE(
+    NULLIF(new.raw_user_meta_data->>'username', ''),
+    split_part(new.email, '@', 1)
+  );
+
+  -- Generate a referral code if one isn't provided
+  generated_referral_code := COALESCE(
+    NULLIF(new.raw_user_meta_data->>'referral_code', ''),
+    'CP-' || upper(substr(md5(random()::text), 0, 10))
+  );
+
+  -- Create the profile with fallback default values
   INSERT INTO public.profiles (id, full_name, username, email, country, phone, referral_code, referred_by, balance, has_withdrawal_pin)
   VALUES (
     new.id,
-    new.raw_user_meta_data->>'full_name',
-    new.raw_user_meta_data->>'username',
+    -- If full_name is missing, use the username as a fallback
+    COALESCE(NULLIF(new.raw_user_meta_data->>'full_name', ''), generated_username),
+    generated_username,
     new.email,
-    new.raw_user_meta_data->>'country',
-    new.raw_user_meta_data->>'phone',
-    new.raw_user_meta_data->>'referral_code',
+    -- If country is missing, default to 'Ghana'
+    COALESCE(NULLIF(new.raw_user_meta_data->>'country', ''), 'Ghana'),
+    -- If phone is missing, use a placeholder
+    COALESCE(NULLIF(new.raw_user_meta_data->>'phone', ''), 'Not provided'),
+    generated_referral_code,
     new.raw_user_meta_data->>'referred_by',
-    1.00, -- Always grant a $1.00 starting balance
-    false -- Always set has_withdrawal_pin to false on signup
+    1.00,
+    false
   )
   ON CONFLICT (id) DO NOTHING;
-  return new;
+  
+  RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
 
 -- Create the trigger
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
