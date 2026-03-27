@@ -20,7 +20,7 @@ import {
   Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
   Pencil, ImagePlus, Activity,
   Info, Building2, Phone, Mail, MapPin, Percent, Clock3,
-  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon
+  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
@@ -59,6 +59,7 @@ type UserRecord = {
   referred_by: string | null;
   referral_count?: number;
   phone?: string | null;
+  has_withdrawal_pin?: boolean;
 };
 
 type Generator = {
@@ -893,7 +894,7 @@ function DashboardContent() {
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1">@ Username</p>
-                                <p className="text-slate-200 text-xs truncate">{u.username || u.email.split('@')[0] || '—'}</p>
+                                <p className="text-slate-200 text-xs truncate">{u.username || u.email?.split('@')[0] || '—'}</p>
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Phone className="w-3 h-3" /> Phone</p>
@@ -902,6 +903,16 @@ function DashboardContent() {
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><MapPin className="w-3 h-3"/> Country</p>
                                 <p className="text-slate-200 text-xs truncate">{u.country || '—'}</p>
+                            </div>
+                            <div className="bg-slate-700/50 rounded-xl px-3 py-2">
+                                <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Lock className="w-3 h-3" /> Password</p>
+                                <p className="text-slate-200 text-xs truncate font-mono">{"*".repeat(10)}</p>
+                            </div>
+                            <div className="bg-slate-700/50 rounded-xl px-3 py-2">
+                                <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><KeyRound className="w-3 h-3"/> PIN Set</p>
+                                <p className={`text-xs font-bold ${u.has_withdrawal_pin ? "text-green-400" : "text-red-400"}`}>
+                                {u.has_withdrawal_pin ? "Yes" : "No"}
+                                </p>
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Link2 className="w-3 h-3"/> Referral Code</p>
