@@ -17,7 +17,6 @@ export async function signup(values: any) {
 
   const { email, password, fullName, username, country, phone, referralCode } = values;
 
-  // Generate a unique referral code for the new user.
   const newUserReferralCode = `CP-${Math.random().toString(36).slice(2, 7)}${Date.now().toString(36).slice(-5)}`.toUpperCase();
 
   const { data, error } = await supabase.auth.signUp({
@@ -30,33 +29,28 @@ export async function signup(values: any) {
         username: username,
         country: country,
         phone: phone,
-        referral_code: newUserReferralCode, // The new user's OWN code
-        referred_by: referralCode || null, // The code of the user who referred them (can be empty/null)
+        referral_code: newUserReferralCode, 
+        referred_by: referralCode || null, 
       },
     },
   });
 
   if (error) {
+    console.error("Signup Error:", error.message);
     if (error.message.includes('User already registered')) {
-        return { error: 'A user with this email address already exists.' };
+        return { error: 'A user with this email address already exists. Please sign in.' };
     }
-    // This is a common error when the trigger that creates the profile fails due to a unique constraint.
-    if (error.message.includes('duplicate key value violates unique constraint')) {
-        if (error.message.includes('profiles_username_key')) {
-            return { error: 'This username is already taken. Please choose another.' };
-        }
-        if (error.message.includes('profiles_email_key')) {
-            return { error: 'This email address is already in use by another profile.' };
-        }
-        return { error: 'This username or email is already taken.' };
+    if (error.message.includes('duplicate key value violates unique constraint "profiles_username_key"')) {
+        return { error: 'This username is already taken. Please choose another one.' };
     }
-    
-    // Provide a more user-friendly message for generic database errors during signup
+    if (error.message.includes('duplicate key value violates unique constraint "profiles_email_key"')) {
+        return { error: 'This email address is already in use by another profile.' };
+    }
     if (error.message.includes('Database error saving new user')) {
-      return { error: 'A problem occurred while creating your profile. This could be due to a username or email that is already taken.' };
+      return { error: 'A problem occurred while creating your profile. This could be due to a username or email that is already in use.' };
     }
-    
-    return { error: error.message };
+    // Fallback for the "Invalid API key" or other generic errors
+    return { error: 'Registration failed. This may be due to a server issue or an invalid username/email. Please try again.' };
   }
 
   return { error: null };

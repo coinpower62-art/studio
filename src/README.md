@@ -42,6 +42,12 @@ Run the following SQL in your Supabase SQL Editor to set up the necessary tables
 
 ```sql
 -- =================================================================
+-- 0. ENABLE EXTENSIONS (IMPORTANT)
+-- Enable pgcrypto to ensure random code generation functions are available.
+-- =================================================================
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- =================================================================
 -- 1. PROFILES TABLE (FOR USERS)
 -- Stores public-facing user data and links to Supabase Auth.
 -- =================================================================
@@ -86,29 +92,26 @@ DECLARE
   generated_username TEXT;
   generated_referral_code TEXT;
 BEGIN
-  -- Use the provided username, or generate one from the email if it's missing
+  -- Use the provided username, or generate one from the email if it's missing (with random suffix)
   generated_username := COALESCE(
     NULLIF(new.raw_user_meta_data->>'username', ''),
-    split_part(new.email, '@', 1)
+    split_part(new.email, '@', 1) || '-' || substr(encode(gen_random_bytes(3), 'hex'), 0, 4)
   );
 
-  -- Generate a referral code if one isn't provided
+  -- Use the referral code from signup, or generate a new robust one if it's missing.
   generated_referral_code := COALESCE(
     NULLIF(new.raw_user_meta_data->>'referral_code', ''),
-    'CP-' || upper(substr(md5(random()::text), 0, 10))
+    'CP-' || upper(substr(encode(gen_random_bytes(6), 'hex'), 0, 10))
   );
 
   -- Create the profile with fallback default values
   INSERT INTO public.profiles (id, full_name, username, email, country, phone, referral_code, referred_by, balance, has_withdrawal_pin)
   VALUES (
     new.id,
-    -- If full_name is missing, use the username as a fallback
     COALESCE(NULLIF(new.raw_user_meta_data->>'full_name', ''), generated_username),
     generated_username,
     new.email,
-    -- If country is missing, default to 'Ghana'
     COALESCE(NULLIF(new.raw_user_meta_data->>'country', ''), 'Ghana'),
-    -- If phone is missing, use a placeholder
     COALESCE(NULLIF(new.raw_user_meta_data->>'phone', ''), 'Not provided'),
     generated_referral_code,
     new.raw_user_meta_data->>'referred_by',
