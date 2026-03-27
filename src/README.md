@@ -83,85 +83,39 @@ USING (auth.uid() = id)
 WITH CHECK (auth.uid() = id);
 
 -- =================================================================
--- 2. AUTOMATIC PROFILE CREATION
+-- 2. AUTOMATIC PROFILE CREATION (FIXED)
 -- This function and trigger automatically create a profile for new users.
+-- This version is simplified to be more robust and prevent registration errors.
 -- =================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
-DECLARE
-  resolved_username TEXT;
-  is_username_taken BOOLEAN;
-  generated_referral_code TEXT;
-  max_attempts INT := 5;
-  attempts INT := 0;
 BEGIN
-  -- Start with the user's chosen username, or generate one from the email.
-  resolved_username := COALESCE(
-    NULLIF(TRIM(new.raw_user_meta_data->>'username'), ''),
-    split_part(new.email, '@', 1)
-  );
-
-  -- Check if the username is taken.
-  SELECT EXISTS (SELECT 1 FROM public.profiles WHERE username = resolved_username) INTO is_username_taken;
-
-  -- If the user provided a username and it's taken, we must fail.
-  -- We cannot create a different username than the one they chose.
-  IF NULLIF(TRIM(new.raw_user_meta_data->>'username'), '') IS NOT NULL AND is_username_taken THEN
-      RAISE EXCEPTION 'Username "%" is already taken.', resolved_username;
-  END IF;
-  
-  -- If the username was generated from email and is taken, append random chars until unique.
-  IF NULLIF(TRIM(new.raw_user_meta_data->>'username'), '') IS NULL AND is_username_taken THEN
-    LOOP
-      attempts := attempts + 1;
-      resolved_username := split_part(new.email, '@', 1) || '-' || substr(encode(gen_random_bytes(2), 'hex'), 0, 4);
-      SELECT EXISTS (SELECT 1 FROM public.profiles WHERE username = resolved_username) INTO is_username_taken;
-      
-      EXIT WHEN NOT is_username_taken; -- Exit if we found a unique username
-
-      IF attempts >= max_attempts THEN
-          RAISE EXCEPTION 'Could not generate a unique username for email % after % attempts.', new.email, max_attempts;
-      END IF;
-    END LOOP;
-  END IF;
-  
-  -- Generate a unique referral code.
-  attempts := 0;
-  LOOP
-    attempts := attempts + 1;
-    generated_referral_code := 'CP-' || upper(substr(encode(gen_random_bytes(6), 'hex'), 0, 10));
-    EXIT WHEN NOT EXISTS (SELECT 1 FROM public.profiles WHERE referral_code = generated_referral_code);
-    
-    IF attempts >= max_attempts THEN
-        RAISE EXCEPTION 'Could not generate a unique referral code for email %', new.email;
-    END IF;
-  END LOOP;
-
-  -- Create the profile
-  INSERT INTO public.profiles (id, full_name, username, email, country, phone, referral_code, referred_by, balance, has_withdrawal_pin)
+  -- This simplified function attempts to insert the user profile directly.
+  -- It relies on the database's built-in UNIQUE constraints to handle errors
+  -- like duplicate usernames, which are then passed back to the application.
+  INSERT INTO public.profiles (id, full_name, username, email, country, phone, referral_code, referred_by, balance)
   VALUES (
     new.id,
-    COALESCE(NULLIF(new.raw_user_meta_data->>'full_name', ''), resolved_username),
-    resolved_username,
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'username',
     new.email,
-    COALESCE(NULLIF(new.raw_user_meta_data->>'country', ''), 'Ghana'),
-    COALESCE(NULLIF(new.raw_user_meta_data->>'phone', ''), 'Not provided'),
-    generated_referral_code,
+    new.raw_user_meta_data->>'country',
+    new.raw_user_meta_data->>'phone',
+    'CP-' || upper(substr(encode(gen_random_bytes(6), 'hex'), 0, 10)), -- Simplified referral generation
     new.raw_user_meta_data->>'referred_by',
-    1.00,
-    false
+    1.00
   );
-  
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
--- Create the trigger
+-- Recreate the trigger to ensure it uses the updated function
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
 
 -- =================================================================
 -- 3. APP-SPECIFIC TABLES
@@ -375,3 +329,4 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
     
+```

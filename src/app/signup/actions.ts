@@ -39,10 +39,8 @@ export async function signup(values: any) {
   });
 
   if (error) {
-    if (error.message.includes('is already taken')) {
-        return { error: `Registration failed. ${error.message}` };
-    }
-    // Return the specific error from Supabase for debugging instead of a generic message.
+    // Return the raw error message from Supabase for debugging.
+    // This will give us the exact reason for the failure.
     return { error: `Registration failed. Reason: ${error.message}` };
   }
 
