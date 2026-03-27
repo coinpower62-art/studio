@@ -1,6 +1,6 @@
 # 🚀 CoinPower Deployment Guide
 
-This guide provides clear instructions for deploying your CoinPower application to Cloudflare. The key to a successful deployment is correctly configuring your environment variables.
+This guide provides clear instructions for deploying your CoinPower application to Cloudflare. The key to a successful deployment is correctly configuring your environment variables. 
 
 ---
 
