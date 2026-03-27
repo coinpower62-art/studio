@@ -241,19 +241,39 @@ TO authenticated
 WITH CHECK ( bucket_id = 'site_assets' );
 
 -- =================================================================
--- 5. DEFAULT DATA (OPTIONAL)
+-- 5. DEFAULT GENERATOR DATA (OPTIONAL)
 -- Seeds the database with the default power generators.
 -- =================================================================
-INSERT INTO public.generators (id, name, subtitle, icon, color, price, expire_days, daily_income, published, roi, period, min_invest, max_invest, investors)
+INSERT INTO public.generators (id, name, subtitle, icon, color, price, expire_days, daily_income, published, roi, period, min_invest, max_invest, investors, image_url)
 VALUES
-  ('pg1', 'PG1 Generator', 'Basic Power', '⚡', 'from-amber-400 to-orange-500', 0, 2, 0.5, true, '10%', 'Daily', '$0', '$0', '12050'),
-  ('pg2', 'PG2 Generator', 'Standard Power', '🔋', 'from-green-400 to-emerald-600', 25, 30, 2.5, true, '12%', 'Daily', '$25', '$1000', '8520'),
-  ('pg3', 'PG3 Generator', 'Mega Power', '💡', 'from-blue-400 to-indigo-600', 100, 45, 10, true, '15%', 'Daily', '$100', '$5000', '4310'),
-  ('pg4', 'PG4 Generator', 'Ultra Power', '🚀', 'from-purple-500 to-pink-600', 500, 60, 55, true, '20%', 'Daily', '$500', '$20000', '1250')
+  ('pg1', 'PG1 Generator', 'Basic Power', '⚡', 'from-amber-400 to-orange-500', 0, 2, 0.5, true, '10%', 'Daily', '$0', '$0', '12050', 'https://picsum.photos/seed/genpg1/300/300'),
+  ('pg2', 'PG2 Generator', 'Standard Power', '🔋', 'from-green-400 to-emerald-600', 25, 30, 2.5, true, '12%', 'Daily', '$25', '$1000', '8520', 'https://picsum.photos/seed/genpg2/300/300'),
+  ('pg3', 'PG3 Generator', 'Mega Power', '💡', 'from-blue-400 to-indigo-600', 100, 45, 10, true, '15%', 'Daily', '$100', '$5000', '4310', 'https://picsum.photos/seed/genpg3/300/300'),
+  ('pg4', 'PG4 Generator', 'Ultra Power', '🚀', 'from-purple-500 to-pink-600', 500, 60, 55, true, '20%', 'Daily', '$500', '$20000', '1250', 'https://picsum.photos/seed/genpg4/300/300')
 ON CONFLICT(id) DO NOTHING;
 
 -- =================================================================
--- 6. GIFT CODES TABLE
+-- 6. DEFAULT MEDIA DATA (OPTIONAL)
+-- Seeds the media table with default placeholder images.
+-- =================================================================
+INSERT INTO public.media (id, url) VALUES
+  ('activity-hero', 'https://picsum.photos/seed/activityhero/1200/400'),
+  ('activity-teamwork', 'https://picsum.photos/seed/activityteam/600/400'),
+  ('ceo-portrait', 'https://picsum.photos/seed/romanocEO/200/200'),
+  ('app-logo', 'https://picsum.photos/seed/coinpowerlogo/64/64'),
+  ('leader-mb', 'https://picsum.photos/seed/leadermb/200/200'),
+  ('leader-jc', 'https://picsum.photos/seed/leaderjc/200/200'),
+  ('leader-sm', 'https://picsum.photos/seed/leadersm/200/200'),
+  ('payment-usdt', 'https://picsum.photos/seed/paymentusdt/100/100'),
+  ('payment-mtn-momo', 'https://picsum.photos/seed/paymentmomo/100/100'),
+  ('payment-telecel', 'https://picsum.photos/seed/paymenttelecel/100/100'),
+  ('payment-bank-transfer', 'https://picsum.photos/seed/paymentbank/100/100'),
+  ('payment-western-union', 'https://picsum.photos/seed/paymentwu/100/100'),
+  ('payment-card', 'https://picsum.photos/seed/paymentcard/100/100')
+ON CONFLICT(id) DO NOTHING;
+
+-- =================================================================
+-- 7. GIFT CODES TABLE
 -- Stores gift codes that can be redeemed for balance.
 -- =================================================================
 CREATE TABLE IF NOT EXISTS public.gift_codes (
@@ -285,7 +305,7 @@ USING (auth.uid() = redeemed_by_user_id);
 
 
 -- =================================================================
--- 7. RPC FUNCTION FOR CODE REDEMPTION
+-- 8. RPC FUNCTION FOR CODE REDEMPTION
 -- Atomically redeems a gift code and updates user balance.
 -- =================================================================
 CREATE OR REPLACE FUNCTION redeem_gift_code(user_id_in uuid, code_in text)
