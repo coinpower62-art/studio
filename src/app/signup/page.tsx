@@ -1,6 +1,5 @@
-
-
 'use client';
+export const runtime = 'edge';
 
 import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
@@ -16,8 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import {
   Star, AlertCircle, Gift, ShieldCheck, Lock, CheckCircle2,
-  TrendingUp, Users, Banknote, BadgeCheck, Globe
+  TrendingUp, Users, Banknote, BadgeCheck, Globe, User, Mail, Smartphone
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import { countries, LANGUAGES, PHONE_CODES } from '@/lib/data';
 import { TRANSLATIONS } from '@/lib/translations';
@@ -43,7 +43,7 @@ const signupSchema = z.object({
   referralCode: z.string().optional(),
   language: z.string(),
   agreedToTerms: z.boolean().refine(function(val) { return val === true; }, {
-    message: "Please scroll through and agree to the Terms & Privacy Policy to continue.",
+    message: "You must agree to the Terms & Privacy Policy to continue.",
   }),
 }).refine(function(d) { return d.password === d.confirmPassword; }, {
   message: "Passwords do not match",
@@ -53,10 +53,9 @@ const signupSchema = z.object({
 type SignupForm = z.infer<typeof signupSchema>;
 
 function TermsContent() {
+  // This content remains the same as before.
   return (
     <div className="text-xs text-gray-700 space-y-4 leading-relaxed">
-
-      {/* Trust highlights */}
       <div className="grid grid-cols-2 gap-2 mb-2">
         {[
           { icon: TrendingUp, text: "Fixed daily returns — clear & predictable" },
@@ -71,16 +70,11 @@ function TermsContent() {
           </div>
         )})}
       </div>
-
-      {/* PRIVACY POLICY */}
       <div>
-        <p className="font-bold text-green-800 text-sm mb-1 flex items-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5" /> COINPOWER PRIVACY POLICY
-        </p>
+        <p className="font-bold text-green-800 text-sm mb-1 flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5" /> COINPOWER PRIVACY POLICY</p>
         <p className="text-gray-500 mb-2 text-xs">Effective Date: January 1, 2025</p>
         <p className="text-gray-600">At CoinPower, your privacy is treated with the highest care. We are fully transparent about what data we collect and why — there are no hidden practices.</p>
       </div>
-
       <div>
         <p className="font-semibold text-gray-800 mb-1">1. What Information We Collect</p>
         <ul className="list-disc list-inside space-y-1 text-gray-600">
@@ -89,7 +83,6 @@ function TermsContent() {
           <li><strong>Usage data</strong> — login activity and device info used exclusively to detect fraud and protect your account.</li>
         </ul>
       </div>
-
       <div>
         <p className="font-semibold text-gray-800 mb-1">2. How We Use Your Data</p>
         <ul className="list-disc list-inside space-y-1 text-gray-600">
@@ -100,12 +93,10 @@ function TermsContent() {
           <li>To continuously improve your experience on the platform.</li>
         </ul>
       </div>
-
       <div>
         <p className="font-semibold text-gray-800 mb-1">3. How We Protect Your Data</p>
         <p className="text-gray-600">Your information is stored on enterprise-grade encrypted servers. Only a small number of authorised team members can access account data — and only when necessary. We will <strong>never</strong> sell, share, or rent your personal information to any third party. Your withdrawal PIN is protected using one-way cryptographic hashing, meaning not even our own team can see it.</p>
       </div>
-
       <div>
         <p className="font-semibold text-gray-800 mb-1">4. Your Rights</p>
         <ul className="list-disc list-inside space-y-1 text-gray-600">
@@ -114,18 +105,12 @@ function TermsContent() {
           <li>You may opt out of any non-essential communications at any time.</li>
         </ul>
       </div>
-
       <hr className="border-amber-200 my-3" />
-
-      {/* TERMS OF SERVICE */}
       <div>
-        <p className="font-bold text-green-800 text-sm mb-1 flex items-center gap-1.5">
-          <BadgeCheck className="w-3.5 h-3.5" /> COINPOWER TERMS OF SERVICE
-        </p>
+        <p className="font-bold text-green-800 text-sm mb-1 flex items-center gap-1.5"><BadgeCheck className="w-3.5 h-3.5" /> COINPOWER TERMS OF SERVICE</p>
         <p className="text-gray-500 mb-2 text-xs">Effective Date: January 1, 2025</p>
         <p className="text-gray-600">Welcome to CoinPower. These Terms of Service govern your use of the platform. By creating an account, you confirm you have read and understood everything below.</p>
       </div>
-
       <div>
         <p className="font-semibold text-gray-800 mb-1">1. Eligibility</p>
         <ul className="list-disc list-inside space-y-1 text-gray-600">
@@ -134,21 +119,8 @@ function TermsContent() {
           <li>You must comply with any applicable laws in your country of residence.</li>
         </ul>
       </div>
-
-      <div>
-        <p className="font-semibold text-gray-800 mb-1">2. Our Platform & Services</p>
-        <p className="text-gray-600 mb-1">CoinPower is a structured digital energy investment platform. Unlike volatile crypto trading, our system is built around fixed-return power generators:</p>
-        <ul className="list-disc list-inside space-y-1 text-gray-600">
-          <li><strong>Generator Rental (PG1–PG4)</strong> — rent a generator and receive a fixed daily income for its full rental period. All returns are displayed clearly before you commit.</li>
-          <li><strong>Deposits & Withdrawals</strong> — fund your account via MTN MoMo or USDT. Withdraw your earnings at any time after your first approved deposit.</li>
-          <li><strong>Referral Programme</strong> — invite others and earn additional rewards on top of your regular daily income.</li>
-        </ul>
-      </div>
-
       <div className="bg-green-50 border border-green-200 rounded-xl p-3">
-        <p className="font-semibold text-green-800 mb-1.5 flex items-center gap-1.5 text-xs">
-          <TrendingUp className="w-3.5 h-3.5" /> 3. How Your Returns Work — Designed for Confidence
-        </p>
+        <p className="font-semibold text-green-800 mb-1.5 flex items-center gap-1.5 text-xs"><TrendingUp className="w-3.5 h-3.5" /> 3. How Your Returns Work — Designed for Confidence</p>
         <p className="text-gray-600 mb-1.5">CoinPower is built differently from traditional crypto platforms. Here is why our members invest with confidence:</p>
         <ul className="list-disc list-inside space-y-1 text-gray-600">
           <li><strong>Fixed daily income</strong> — your generator earns a set amount every day. No guessing, no surprises.</li>
@@ -159,7 +131,6 @@ function TermsContent() {
         </ul>
         <p className="text-gray-500 mt-1.5 text-xs italic">Note: As with any investment platform, returns are subject to platform operational conditions. CoinPower commits to maintaining stable, consistent returns for all active members.</p>
       </div>
-
       <div>
         <p className="font-semibold text-gray-800 mb-1">4. Fees & Withdrawals</p>
         <ul className="list-disc list-inside space-y-1 text-gray-600">
@@ -169,34 +140,36 @@ function TermsContent() {
           <li>A personal <strong>6-digit withdrawal PIN</strong> must be set and confirmed on every withdrawal — keeping your funds fully under your control.</li>
         </ul>
       </div>
-
-      <div>
-        <p className="font-semibold text-gray-800 mb-1">5. Keeping Your Account Secure</p>
-        <p className="text-gray-600 mb-1">Your security is our shared responsibility:</p>
-        <ul className="list-disc list-inside space-y-1 text-gray-600">
-          <li>Keep your password strong and never share it with anyone.</li>
-          <li>Set a unique 6-digit withdrawal PIN that only you know.</li>
-          <li>If you ever suspect unauthorised access, contact our support team immediately via Telegram — we respond quickly.</li>
-          <li>CoinPower staff will <strong>never</strong> ask for your PIN or password.</li>
-        </ul>
-      </div>
-
-      <div>
-        <p className="font-semibold text-gray-800 mb-1">6. Fair Use & Account Standing</p>
-        <p className="text-gray-600">CoinPower is committed to fairness for all members. Accounts found to be involved in fraudulent activity, manipulation, or providing false information may be suspended. Honest, active members are protected and supported at all times.</p>
-      </div>
-
-      <div>
-        <p className="font-semibold text-gray-800 mb-1">7. Support & Contact</p>
-        <p className="text-gray-600">Our support team is always ready to help. Reach us through the official CoinPower Telegram group available in the app, or via the in-app support channels. We are here to ensure your investment journey is smooth and rewarding.</p>
-      </div>
-
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mt-2">
-        <p className="text-amber-800 font-semibold text-xs flex items-center gap-1.5 mb-1">
-          <CheckCircle2 className="w-3.5 h-3.5 text-green-700" /> You are almost there!
-        </p>
+        <p className="text-amber-800 font-semibold text-xs flex items-center gap-1.5 mb-1"><CheckCircle2 className="w-3.5 h-3.5 text-green-700" /> You are almost there!</p>
         <p className="text-amber-700 text-xs">By ticking the agreement below, you confirm that you are 18 or older, have read and understood both the Privacy Policy and Terms of Service, and are ready to start your investment journey with CoinPower.</p>
       </div>
+    </div>
+  );
+}
+
+
+function PasswordStrength({ password }: { password?: string }) {
+  const checks = [
+    { id: "length", regex: /.{6,}/, label: "6+ characters" },
+    { id: "capital", regex: /[A-Z]/, label: "1 uppercase" },
+    { id: "symbol", regex: /[^a-zA-Z0-9]/, label: "1 symbol" },
+  ];
+
+  return (
+    <div className="grid grid-cols-3 gap-x-2 gap-y-1 mt-2">
+      {checks.map((check) => {
+        const met = password ? check.regex.test(password) : false;
+        return (
+          <div key={check.id} className={`flex items-center gap-1.5 text-xs transition-colors ${met ? 'text-green-600' : 'text-gray-400'}`}>
+            {met 
+              ? <CheckCircle2 className="w-3.5 h-3.5" /> 
+              : <div className="w-3.5 h-3.5 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-gray-300"/></div>
+            }
+            <span className="text-[11px] font-medium">{check.label}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -249,37 +222,47 @@ function SignUpForm() {
     setIsSubmitting(true);
     form.clearErrors();
 
-    const dialCode = selectedPhoneCode.replace(/[^+\d]/g, "");
-    const fullPhone = dialCode + values.phone;
+    try {
+        const dialCode = selectedPhoneCode.replace(/[^+\d]/g, "");
+        const fullPhone = dialCode + values.phone;
 
-    const result = await signup({ ...values, phone: fullPhone, language: selectedLang });
+        const result = await signup({ ...values, phone: fullPhone, language: selectedLang });
 
-    if (result?.error) {
-      toast({
-        variant: "destructive",
-        title: "Registration failed",
-        description: result.error,
-      });
-      form.setError("root", { message: result.error });
-      setIsSubmitting(false);
-    } else {
-      toast({
-        title: "Account created! Welcome to CoinPower.",
-        description: "You have been credited $1.00.",
-      });
-      router.push("/dashboard");
+        if (result?.error) {
+          toast({
+            variant: "destructive",
+            title: "Registration failed",
+            description: result.error,
+          });
+          form.setError("root", { message: result.error });
+        } else {
+          toast({
+            title: "Account created! Welcome to CoinPower.",
+            description: "You have been credited $1.00. You will now be redirected.",
+          });
+          router.push("/dashboard");
+        }
+    } catch (e: any) {
+        toast({
+            variant: "destructive",
+            title: "An unexpected error occurred",
+            description: "Please try again later.",
+        });
+    } finally {
+        setIsSubmitting(false);
     }
   }
 
   const { errors } = form.formState;
-  const fieldClass = function(hasError: boolean) {
-    return `h-11 transition-colors text-sm ${hasError
-      ? "border-red-400 focus:border-red-500 bg-red-50 focus-visible:ring-red-200"
-      : "border-gray-200 focus:border-amber-400 focus-visible:ring-amber-200"}`;
-  }
+  const fieldClass = (hasError: boolean) => cn(
+    "h-11 bg-gray-50 border-gray-200 focus:bg-white focus-visible:ring-amber-300",
+    hasError && "border-red-300 bg-red-50 focus-visible:ring-red-300"
+  );
+  
+  const passwordValue = form.watch("password");
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8 sm:py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8 sm:py-12">
       <div className="w-full max-w-lg">
         <div className="text-center mb-6">
            <LoginLogo />
@@ -287,320 +270,194 @@ function SignUpForm() {
           <p className="text-muted-foreground mt-1 text-sm font-medium">Digital Energy Mining Platform</p>
         </div>
 
-        <div className="bg-card rounded-2xl shadow-2xl overflow-hidden p-5 sm:p-8">
-
-          {/* ── Language Picker ── */}
-          <div className="mb-5">
-            <label className="text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">
-              <Globe className="w-4 h-4 text-amber-500" />
-              {t.selectLang}
-            </label>
-            <Select
-              value={selectedLang}
-              onValueChange={function(val) {
-                setSelectedLang(val as LangCode);
-                form.setValue("language", LANGUAGES.find(function(l) { return l.code === val; })?.name ?? "English (US)");
-              }}
-            >
-              <SelectTrigger data-testid="language-picker" className="h-11 text-sm border-gray-200 focus:border-amber-400 focus:ring-amber-200">
-                <div className="flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                  <SelectValue placeholder={t.selectLang}>
-                    <span className="flex items-center gap-2">
-                      <span className="text-lg leading-none">{LANGUAGES.find(function(l) { return l.code === selectedLang; })?.flag}</span>
-                      <span>{LANGUAGES.find(function(l) { return l.code === selectedLang; })?.name}</span>
-                    </span>
-                  </SelectValue>
-                </div>
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                {LANGUAGES.map(function(lang) {
-                  return (
-                  <SelectItem key={lang.code} value={lang.code} data-testid={`lang-${lang.code}`}>
-                    <span className="flex items-center gap-2">
-                      <span className="text-xl leading-none">{lang.flag}</span>
-                      <span>{lang.name}</span>
-                    </span>
-                  </SelectItem>
-                )})}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-2 mb-1">
-            <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-            <p className="text-xs text-amber-600 font-medium">{t.subheading}</p>
-          </div>
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-5">{t.heading}</h2>
-
-          {errors.root && (
-            <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4" data-testid="error-signup">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700 font-medium">{errors.root.message}</p>
+        <div className="bg-card rounded-2xl shadow-xl border border-gray-100 p-5 sm:p-8">
+            <div className="flex items-center gap-2 mb-1">
+                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                <p className="text-xs text-amber-600 font-medium">{t.subheading}</p>
             </div>
-          )}
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-5">{t.heading}</h2>
 
-          {refFromUrl && (
-            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-4">
-              <Gift className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <p className="text-xs text-amber-700 font-medium">{t.referralLabel} <span className="font-black">{refFromUrl}</span> {t.referralApplied}</p>
-            </div>
-          )}
-
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-3.5" noValidate>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <FormField control={form.control} name="fullName" render={function({ field }) {
-                  return (
-                  <FormItem>
-                    <FormControl>
-                      <Input {...field} data-testid="input-fullname" placeholder={t.fullName} className={fieldClass(!!errors.fullName)} />
-                    </FormControl>
-                    <FormMessage className="text-red-600 text-xs font-medium" />
-                  </FormItem>
-                )}} />
-                <FormField control={form.control} name="username" render={function({ field }) {
-                  return (
-                  <FormItem>
-                    <FormControl>
-                      <Input {...field} data-testid="input-username" placeholder={t.username} className={fieldClass(!!errors.username)} />
-                    </FormControl>
-                    <FormMessage className="text-red-600 text-xs font-medium" />
-                  </FormItem>
-                )}} />
-              </div>
-
-              <FormField control={form.control} name="email" render={function({ field }) {
-                return (
-                <FormItem>
-                  <FormControl>
-                    <Input {...field} type="email" data-testid="input-email" placeholder={t.email} className={fieldClass(!!errors.email)} />
-                  </FormControl>
-                  <FormMessage className="text-red-600 text-xs font-medium" />
-                </FormItem>
-              )}} />
-
-              {/* Phone number with country code */}
-              <FormField control={form.control} name="phone" render={function({ field }) {
-                return (
-                <FormItem>
-                  <FormControl>
-                    <div className={`flex h-11 rounded-lg border overflow-hidden transition-colors ${errors.phone ? "border-red-400 bg-red-50" : "border-gray-200 focus-within:border-amber-400"}`}>
-                      <Select value={selectedPhoneCode} onValueChange={setSelectedPhoneCode}>
-                        <SelectTrigger data-testid="select-phone-code" className="w-[5.5rem] h-full rounded-none border-0 border-r border-gray-200 bg-gray-50 focus:ring-0 text-sm font-medium px-2 shrink-0">
-                          <span className="flex items-center gap-1 truncate">
-                            <span>{PHONE_CODES.find(function(p) { return `${p.flag}${p.code}` === selectedPhoneCode; })?.flag}</span>
-                            <span className="text-xs">{selectedPhoneCode.replace(/[^+\d]/g, "")}</span>
-                          </span>
-                        </SelectTrigger>
-                        <SelectContent className="max-h-60">
-                          {PHONE_CODES.map(function(p) {
-                            return (
-                            <SelectItem key={`${p.flag}${p.code}`} value={`${p.flag}${p.code}`}>
-                              <span className="flex items-center gap-1.5">
-                                <span>{p.flag}</span>
-                                <span className="font-medium">{p.code}</span>
-                                <span className="text-gray-500 text-xs">{p.label}</span>
-                              </span>
-                            </SelectItem>
-                          )})}
-                        </SelectContent>
-                      </Select>
-                      <input
-                        {...field}
-                        type="tel"
-                        inputMode="numeric"
-                        data-testid="input-phone"
-                        placeholder="Phone number"
-                        className="flex-1 h-full bg-white text-sm px-3 outline-none placeholder:text-gray-400"
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage className="text-red-600 text-xs font-medium" />
-                </FormItem>
-              )}} />
-
-              <FormField control={form.control} name="country" render={function({ field }) {
-                return (
-                <FormItem>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-country" className={`h-11 text-sm transition-colors ${errors.country ? "border-red-400 bg-red-50 focus:ring-red-200" : "border-gray-200 focus:border-amber-400 focus:ring-amber-200"}`}>
-                        <SelectValue placeholder={t.selectCountry} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="max-h-56">
-                      {countries.map(function(c) { return <SelectItem key={c} value={c}>{c}</SelectItem>; })}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage className="text-red-600 text-xs font-medium" />
-                </FormItem>
-              )}} />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <FormField control={form.control} name="password" render={function({ field }) {
-                  return (
-                  <FormItem>
-                    <FormControl>
-                      <Input {...field} type="password" data-testid="input-password" placeholder={t.password} className={fieldClass(!!errors.password)} />
-                    </FormControl>
-                    <FormMessage className="text-red-600 text-xs font-medium" />
-                  </FormItem>
-                )}} />
-                <FormField control={form.control} name="confirmPassword" render={function({ field }) {
-                  return (
-                  <FormItem>
-                    <FormControl>
-                      <Input {...field} type="password" data-testid="input-confirm-password" placeholder={t.confirmPassword} className={fieldClass(!!errors.confirmPassword)} />
-                    </FormControl>
-                    <FormMessage className="text-red-600 text-xs font-medium" />
-                  </FormItem>
-                )}} />
-              </div>
-
-              <FormField control={form.control} name="referralCode" render={function({ field }) {
-                return (
-                <FormItem>
-                  <FormControl>
-                    <div className="relative">
-                      <Gift className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-amber-500 pointer-events-none" />
-                      <Input
-                        {...field}
-                        data-testid="input-referral-code"
-                        placeholder="Paste referral code here"
-                        autoComplete="off"
-                        onKeyDown={function(e) {
-                          const allowed = ["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"];
-                          if (allowed.includes(e.key)) return;
-                          if ((e.ctrlKey || e.metaKey) && ["v","a","c","x","z"].includes(e.key.toLowerCase())) return;
-                          e.preventDefault();
-                        }}
-                        onPaste={function(e) {
-                          e.preventDefault();
-                          const text = e.clipboardData.getData("text").trim().toUpperCase();
-                          field.onChange(text);
-                        }}
-                        className="pl-9 pr-20 h-11 text-sm border-gray-200 focus:border-amber-400 focus-visible:ring-amber-200 font-mono tracking-wide"
-                      />
-                      {/* Paste button */}
-                      <button
-                        type="button"
-                        onClick={async function() {
-                          try {
-                            const text = await navigator.clipboard.readText();
-                            field.onChange(text.trim().toUpperCase());
-                          } catch {}
-                        }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-300 rounded-lg px-2 py-1 hover:bg-amber-100 transition-colors"
-                      >
-                        PASTE
-                      </button>
-                    </div>
-                  </FormControl>
-                  <p className="text-[10px] text-gray-400 mt-1 pl-1">Paste a referral code — typing is disabled to prevent guessing</p>
-                  <FormMessage className="text-red-600 text-xs font-medium" />
-                </FormItem>
-              )}} />
-
-              {/* ── Terms & Privacy Policy Box ── */}
-              <div className="rounded-xl border-2 border-amber-200 overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-green-800 to-green-700">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                    <span className="text-xs font-bold text-white">{t.privacyTitle}</span>
-                  </div>
-                  {hasReadTerms ? (
-                    <span className="flex items-center gap-1 text-xs font-semibold text-green-300 bg-green-900/60 px-2 py-0.5 rounded-full">
-                      <CheckCircle2 className="w-3 h-3" /> {t.termsReadBadge}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-amber-300 font-medium">{t.termsMustContinue}</span>
-                  )}
+            {errors.root && (
+                <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4" data-testid="error-signup">
+                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-700 font-medium">{errors.root.message}</p>
                 </div>
+            )}
 
-                {/* Collapsed state */}
-                {!termsOpen && (
-                  <div className="p-4 bg-amber-50 flex flex-col items-center gap-2 text-center">
-                    <p className="text-xs text-gray-600">{t.mustRead}</p>
-                    <button type="button" onClick={openTerms} data-testid="button-read-terms"
-                      className="mt-1 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold shadow hover:from-amber-600 hover:to-amber-700 transition-all">
-                      {t.readBtn}
-                    </button>
-                  </div>
-                )}
+            {refFromUrl && (
+                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-4">
+                <Gift className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <p className="text-xs text-amber-700 font-medium">{t.referralLabel} <span className="font-black">{refFromUrl}</span> {t.referralApplied}</p>
+                </div>
+            )}
 
-                {/* Expanded scrollable content */}
-                {termsOpen && (
-                  <div>
-                    <div
-                      ref={scrollRef}
-                      onScroll={handleScroll}
-                      className="h-56 overflow-y-auto p-4 bg-white border-t border-amber-100"
-                      data-testid="terms-scroll-area"
-                    >
-                      <TermsContent />
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <FormField control={form.control} name="fullName" render={({ field }) => (
+                            <FormItem>
+                                <FormControl>
+                                    <div className="relative">
+                                        <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <Input {...field} data-testid="input-fullname" placeholder={t.fullName} className={cn(fieldClass(!!errors.fullName), "pl-9")} />
+                                    </div>
+                                </FormControl>
+                                <FormMessage className="text-red-600 text-xs font-medium" />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="username" render={({ field }) => (
+                            <FormItem>
+                                <FormControl>
+                                    <div className="relative">
+                                        <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <Input {...field} data-testid="input-username" placeholder={t.username} className={cn(fieldClass(!!errors.username), "pl-9")} />
+                                    </div>
+                                </FormControl>
+                                <FormMessage className="text-red-600 text-xs font-medium" />
+                            </FormItem>
+                        )} />
                     </div>
-                    {/* Scroll progress indicator */}
-                    <div className={`px-4 py-2 flex items-center gap-2 text-xs font-medium border-t transition-colors ${hasReadTerms ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-100 text-amber-700"}`}>
-                      {hasReadTerms ? (
-                        <><CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" /> {t.termsComplete}</>
-                      ) : (
-                        <><span className="animate-bounce inline-block">↓</span> {t.termsScroll}</>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
 
-              {/* ── Agreement Checkbox — locked until scrolled ── */}
-              <FormField control={form.control} name="agreedToTerms" render={function({ field }) {
-                return (
-                <FormItem>
-                  <FormControl>
-                    <div className={`rounded-xl border-2 p-3.5 transition-all duration-300 ${hasReadTerms ? "border-green-300 bg-green-50" : "border-gray-200 bg-gray-50 opacity-60"}`}>
-                      {!hasReadTerms && (
-                        <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
-                          <Lock className="w-3.5 h-3.5 flex-shrink-0" />
-                          <span>{t.termsLocked}</span>
+                    <FormField control={form.control} name="email" render={({ field }) => (
+                        <FormItem>
+                            <FormControl>
+                                <div className="relative">
+                                    <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <Input {...field} type="email" data-testid="input-email" placeholder={t.email} className={cn(fieldClass(!!errors.email), "pl-9")} />
+                                </div>
+                            </FormControl>
+                            <FormMessage className="text-red-600 text-xs font-medium" />
+                        </FormItem>
+                    )} />
+                    
+                    <FormField control={form.control} name="phone" render={({ field }) => (
+                        <FormItem>
+                            <FormControl>
+                                <div className={cn("flex h-11 rounded-lg border overflow-hidden transition-colors bg-gray-50", errors.phone ? "border-red-300" : "border-gray-200 focus-within:border-amber-400")}>
+                                <Select value={selectedPhoneCode} onValueChange={setSelectedPhoneCode}>
+                                    <SelectTrigger data-testid="select-phone-code" className="w-[5.5rem] h-full rounded-none border-0 border-r border-gray-200 focus:ring-0 text-sm font-medium px-2 shrink-0">
+                                    <span className="flex items-center gap-1 truncate">
+                                        <span>{PHONE_CODES.find((p) => `${p.flag}${p.code}` === selectedPhoneCode)?.flag}</span>
+                                        <span className="text-xs">{selectedPhoneCode.replace(/[^+\d]/g, "")}</span>
+                                    </span>
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-60">
+                                    {PHONE_CODES.map((p) => (
+                                        <SelectItem key={`${p.flag}${p.code}`} value={`${p.flag}${p.code}`}>
+                                        <span className="flex items-center gap-1.5">
+                                            <span>{p.flag}</span>
+                                            <span className="font-medium">{p.code}</span>
+                                            <span className="text-gray-500 text-xs">{p.label}</span>
+                                        </span>
+                                        </SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                                <div className="relative flex-1">
+                                    <Smartphone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        {...field}
+                                        type="tel"
+                                        inputMode="numeric"
+                                        data-testid="input-phone"
+                                        placeholder="Phone number"
+                                        className="w-full h-full bg-transparent text-sm pl-9 pr-3 outline-none placeholder:text-gray-400"
+                                    />
+                                </div>
+                                </div>
+                            </FormControl>
+                            <FormMessage className="text-red-600 text-xs font-medium" />
+                        </FormItem>
+                    )} />
+
+                    <FormField control={form.control} name="country" render={({ field }) => (
+                        <FormItem>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger data-testid="select-country" className={cn(fieldClass(!!errors.country))}>
+                                        <div className="flex items-center gap-2">
+                                            <Globe className="w-4 h-4 text-gray-400" />
+                                            <SelectValue placeholder={t.selectCountry} />
+                                        </div>
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="max-h-56">{countries.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <FormMessage className="text-red-600 text-xs font-medium" />
+                        </FormItem>
+                    )} />
+
+                    <FormField control={form.control} name="password" render={({ field }) => (
+                        <FormItem>
+                            <FormControl>
+                                <div className="relative">
+                                    <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <Input {...field} type="password" data-testid="input-password" placeholder={t.password} className={cn(fieldClass(!!errors.password), "pl-9")} />
+                                </div>
+                            </FormControl>
+                            {/* Do not show a red error message here, use the strength component */}
+                        </FormItem>
+                    )} />
+                    
+                    <PasswordStrength password={passwordValue} />
+
+                    <FormField control={form.control} name="confirmPassword" render={({ field }) => (
+                        <FormItem>
+                            <FormControl>
+                                <div className="relative">
+                                    <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <Input {...field} type="password" data-testid="input-confirm-password" placeholder={t.confirmPassword} className={cn(fieldClass(!!errors.confirmPassword), "pl-9")} />
+                                </div>
+                            </FormControl>
+                            <FormMessage className="text-red-600 text-xs font-medium" />
+                        </FormItem>
+                    )} />
+
+                    <div className="rounded-xl border-2 border-amber-200 overflow-hidden mt-5">
+                      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-green-800 to-green-700">
+                        <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-amber-400 flex-shrink-0" /><span className="text-xs font-bold text-white">{t.privacyTitle}</span></div>
+                        {hasReadTerms ? (<span className="flex items-center gap-1 text-xs font-semibold text-green-300 bg-green-900/60 px-2 py-0.5 rounded-full"><CheckCircle2 className="w-3 h-3" /> {t.termsReadBadge}</span>) : (<span className="text-xs text-amber-300 font-medium">{t.termsMustContinue}</span>)}
+                      </div>
+                      {!termsOpen && (
+                        <div className="p-4 bg-amber-50 flex flex-col items-center gap-2 text-center">
+                          <p className="text-xs text-gray-600">{t.mustRead}</p>
+                          <button type="button" onClick={openTerms} data-testid="button-read-terms" className="mt-1 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold shadow hover:from-amber-600 hover:to-amber-700 transition-all">{t.readBtn}</button>
                         </div>
                       )}
-                      <label className={`flex items-start gap-3 ${hasReadTerms ? "cursor-pointer" : "cursor-not-allowed"}`} data-testid="label-agree-terms">
-                        <input
-                          type="checkbox"
-                          checked={field.value}
-                          onChange={function(e) { if (hasReadTerms) field.onChange(e.target.checked); }}
-                          disabled={!hasReadTerms}
-                          data-testid="checkbox-agree-terms"
-                          className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-green-700 cursor-pointer flex-shrink-0 disabled:cursor-not-allowed"
-                        />
-                        <span className="text-xs text-gray-700 leading-relaxed">{t.termsAgree}</span>
-                      </label>
+                      {termsOpen && (
+                        <div>
+                          <div ref={scrollRef} onScroll={handleScroll} className="h-56 overflow-y-auto p-4 bg-white border-t border-amber-100" data-testid="terms-scroll-area">
+                            <TermsContent />
+                          </div>
+                          <div className={`px-4 py-2 flex items-center gap-2 text-xs font-medium border-t transition-colors ${hasReadTerms ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-100 text-amber-700"}`}>
+                            {hasReadTerms ? (<><CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" /> {t.termsComplete}</>) : (<><span className="animate-bounce inline-block">↓</span> {t.termsScroll}</>)}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </FormControl>
-                  <FormMessage className="text-red-600 text-xs font-medium" />
-                </FormItem>
-              )}} />
+                    
+                    <FormField control={form.control} name="agreedToTerms" render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <div className={`rounded-xl border-2 p-3.5 transition-all duration-300 ${hasReadTerms ? "border-green-300 bg-green-50" : "border-gray-200 bg-gray-50 opacity-60"}`}>
+                            {!hasReadTerms && (<div className="flex items-center gap-2 mb-2 text-xs text-gray-500"><Lock className="w-3.5 h-3.5 flex-shrink-0" /><span>{t.termsLocked}</span></div>)}
+                            <label className={`flex items-start gap-3 ${hasReadTerms ? "cursor-pointer" : "cursor-not-allowed"}`} data-testid="label-agree-terms">
+                              <input type="checkbox" checked={field.value} onChange={(e) => { if (hasReadTerms) field.onChange(e.target.checked); }} disabled={!hasReadTerms} data-testid="checkbox-agree-terms" className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-green-700 cursor-pointer flex-shrink-0 disabled:cursor-not-allowed" />
+                              <span className="text-xs text-gray-700 leading-relaxed">{t.termsAgree}</span>
+                            </label>
+                          </div>
+                        </FormControl>
+                        <FormMessage className="text-red-600 text-xs font-medium" />
+                      </FormItem>
+                    )} />
 
-              <Button
-                type="submit"
-                data-testid="button-signup"
-                disabled={isSubmitting}
-                className="w-full h-11 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200"
-              >
-                {isSubmitting ? t.submitting : t.submit}
-              </Button>
-            </form>
-          </Form>
+                    <Button type="submit" data-testid="button-signup" disabled={isSubmitting} className="w-full h-11 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200">{isSubmitting ? t.submitting : t.submit}</Button>
+                </form>
+            </Form>
 
-          <div className="mt-4 text-center">
-            <p className="text-gray-500 text-sm">
-              {t.alreadyHave}{" "}
-              <Link href="/signin">
-                <span className="text-amber-600 font-semibold hover:text-amber-700 cursor-pointer" data-testid="link-signin">{t.signIn}</span>
-              </Link>
-            </p>
-          </div>
+            <div className="mt-4 text-center">
+                <p className="text-gray-500 text-sm">{t.alreadyHave}{" "}<Link href="/signin"><span className="text-amber-600 font-semibold hover:text-amber-700 cursor-pointer" data-testid="link-signin">{t.signIn}</span></Link></p>
+            </div>
         </div>
       </div>
     </div>

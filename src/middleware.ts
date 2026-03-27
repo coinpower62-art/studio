@@ -1,3 +1,4 @@
+
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
@@ -12,7 +13,8 @@ export async function middleware(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Missing environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are required! Check your .env file and deployment secrets.")
+    const errorMessage = "CRITICAL ERROR: Your Supabase URL and Key are not configured in your Cloudflare project settings. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY as environment variables.";
+    return NextResponse.redirect(new URL(`/login?message=${encodeURIComponent(errorMessage)}`, request.url));
   }
 
   const supabase = createServerClient(
@@ -24,16 +26,22 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          // If the cookie is set, update the request's cookies.
-          request.cookies.set({ name, value, ...options })
-          // Also update the response's cookies.
-          response.cookies.set({ name, value, ...options })
+          try {
+            response.cookies.set({ name, value, ...options })
+          } catch (error) {
+            // The `set` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
         },
         remove(name: string, options: CookieOptions) {
-          // If the cookie is removed, update the request's cookies.
-          request.cookies.set({ name, value: '', ...options })
-          // Also update the response's cookies.
-          response.cookies.set({ name, value: '', ...options })
+          try {
+            response.cookies.set({ name, value: '', ...options })
+          } catch (error) {
+            // The `delete` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
         },
       },
     }
@@ -51,6 +59,10 @@ export async function middleware(request: NextRequest) {
 
   // If user is not logged in and is trying to access a protected route, redirect to login
   if (!user && isProtectedRoute) {
+    // prevent redirect loop if somehow on login page
+    if (request.nextUrl.pathname.startsWith('/login')) {
+        return response;
+    }
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

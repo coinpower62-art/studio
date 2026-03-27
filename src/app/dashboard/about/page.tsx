@@ -1,6 +1,5 @@
-
-
 'use client';
+export const runtime = 'edge';
 
 import {
   Shield, Globe, TrendingUp, Users, Award, CheckCircle, MapPin,
@@ -319,5 +318,3 @@ export default function AboutPage() {
     </div>
   );
 }
-
-    
