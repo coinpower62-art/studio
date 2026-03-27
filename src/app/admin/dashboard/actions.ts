@@ -5,6 +5,9 @@ import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 
+const ADMIN_DISABLED_ERROR = { error: 'Admin actions are disabled in this hosting environment.' };
+const isServiceRoleKeyAvailable = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 // This server action uses the service_role key to bypass RLS.
 // It is secure because the key is never exposed to the client,
 // and we check for the admin cookie before performing any action.
@@ -31,6 +34,19 @@ export async function adminGetAllData() {
   const cookieStore = cookies()
   if (cookieStore.get('admin_logged_in')?.value !== 'true') {
     return { error: 'Unauthorized: You must be an admin to perform this action.' }
+  }
+
+  if (!isServiceRoleKeyAvailable) {
+      return { 
+          data: {
+              users: [],
+              generators: [],
+              deposits: [],
+              withdrawals: [],
+              media: [],
+              codes: [],
+          }
+      }
   }
 
   try {
@@ -79,6 +95,7 @@ export async function adminHandleDeposit(depositId: string, userId: string, amou
     if (cookieStore.get('admin_logged_in')?.value !== 'true') {
         return { error: 'Unauthorized' }
     }
+    if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
     
     try {
         const supabaseAdmin = await getSupabaseAdminClient()
@@ -109,6 +126,7 @@ export async function adminHandleWithdrawal(withdrawalId: string, action: 'appro
     if (cookieStore.get('admin_logged_in')?.value !== 'true') {
         return { error: 'Unauthorized' };
     }
+    if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
 
     try {
         const supabaseAdmin = await getSupabaseAdminClient();
@@ -144,6 +162,7 @@ export async function adminUpdateUserBalance(userId: string, newBalance: number)
   if (cookieStore.get('admin_logged_in')?.value !== 'true') {
     return { error: 'Unauthorized' }
   }
+  if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
   try {
     const supabaseAdmin = await getSupabaseAdminClient()
     const { error } = await supabaseAdmin.from('profiles').update({ balance: newBalance }).eq('id', userId)
@@ -159,6 +178,7 @@ export async function adminResetUserPassword(userId: string, newPassword: string
     if (cookieStore.get('admin_logged_in')?.value !== 'true') {
         return { error: 'Unauthorized' }
     }
+    if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
     if (!newPassword || newPassword.length < 6) {
         return { error: 'Password must be at least 6 characters.' }
     }
@@ -185,6 +205,7 @@ export async function adminDeleteUser(userId: string) {
   if (cookieStore.get('admin_logged_in')?.value !== 'true') {
     return { error: 'Unauthorized' }
   }
+  if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
   try {
     const supabaseAdmin = await getSupabaseAdminClient()
     const { error } = await supabaseAdmin.from('profiles').delete().eq('id', userId)
@@ -200,6 +221,7 @@ export async function adminCreateUser(userData: any) {
   if (cookieStore.get('admin_logged_in')?.value !== 'true') {
     return { error: 'Unauthorized' }
   }
+  if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
   try {
     const supabaseAdmin = await getSupabaseAdminClient()
     // This action creates an auth.user record, which then triggers the profile creation.
@@ -238,6 +260,7 @@ export async function adminMutateGenerator(action: 'create' | 'update' | 'delete
     if (cookieStore.get('admin_logged_in')?.value !== 'true') {
         return { error: 'Unauthorized' };
     }
+    if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
 
     try {
         const supabaseAdmin = await getSupabaseAdminClient();
@@ -275,6 +298,7 @@ export async function adminUpsertMedia(id: string, url: string) {
   if (cookieStore.get('admin_logged_in')?.value !== 'true') {
     return { error: 'Unauthorized: You must be an admin to perform this action.' }
   }
+  if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
 
   try {
     const supabaseAdmin = await getSupabaseAdminClient()
@@ -297,6 +321,7 @@ export async function adminUpdateGeneratorImage(id: string, imageUrl: string) {
     if (cookieStore.get('admin_logged_in')?.value !== 'true') {
         return { error: 'Unauthorized: You must be an admin to perform this action.' }
     }
+    if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
 
     try {
         const supabaseAdmin = await getSupabaseAdminClient();
@@ -319,6 +344,7 @@ export async function adminCreateGiftCode(amount: number, note: string) {
     if (cookieStore.get('admin_logged_in')?.value !== 'true') {
         return { error: 'Unauthorized' }
     }
+    if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
     
     if (amount <= 0) {
         return { error: 'Amount must be positive.' };
@@ -356,6 +382,7 @@ export async function adminDeleteGiftCode(codeId: string) {
     if (cookieStore.get('admin_logged_in')?.value !== 'true') {
         return { error: 'Unauthorized' };
     }
+    if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
 
     try {
         const supabaseAdmin = await getSupabaseAdminClient();
