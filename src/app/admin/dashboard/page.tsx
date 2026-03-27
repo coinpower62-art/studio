@@ -1284,7 +1284,7 @@ function DashboardContent() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {[
                           { id: 'ceo-portrait', name: 'Alessandro Romano' },
-                          { id: 'leader-mb', name: 'Maria Bianchi' },
+                          { id: 'leader-tn', name: 'Themba Nkosi' },
                           { id: 'leader-jc', name: 'James Carter' },
                           { id: 'leader-sm', name: 'Sophie Müller' },
                       ].map(({ id, name }) => {

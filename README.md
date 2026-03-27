@@ -281,7 +281,7 @@ INSERT INTO public.media (id, url) VALUES
   ('activity-teamwork', 'https://picsum.photos/seed/activityteam/600/400'),
   ('ceo-portrait', 'https://picsum.photos/seed/romanocEO/200/200'),
   ('app-logo', 'https://picsum.photos/seed/coinpowerlogo/64/64'),
-  ('leader-mb', 'https://picsum.photos/seed/leadermb/200/200'),
+  ('leader-tn', 'https://picsum.photos/seed/leadertn/200/200'),
   ('leader-jc', 'https://picsum.photos/seed/leaderjc/200/200'),
   ('leader-sm', 'https://picsum.photos/seed/leadersm/200/200'),
   ('payment-usdt', 'https://picsum.photos/seed/paymentusdt/100/100'),

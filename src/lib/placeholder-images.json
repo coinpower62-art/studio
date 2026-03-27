@@ -73,10 +73,10 @@
       "imageHint": "logo shield"
     },
     {
-      "id": "leader-mb",
-      "description": "Photo of Maria Bianchi.",
-      "imageUrl": "https://picsum.photos/seed/leadermb/200/200",
-      "imageHint": "woman portrait"
+      "id": "leader-tn",
+      "description": "Photo of Themba Nkosi.",
+      "imageUrl": "https://picsum.photos/seed/leadertn/200/200",
+      "imageHint": "man portrait"
     },
     {
       "id": "leader-jc",

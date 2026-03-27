@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const team = [
   { id: 'ceo-portrait', name: "Alessandro Romano", role: "CEO & Founder", country: "Italy", avatar: "AR", color: "from-amber-400 to-amber-600" },
-  { id: 'leader-mb', name: "Maria Bianchi", role: "CTO", country: "Italy", avatar: "MB", color: "from-green-400 to-green-600" },
+  { id: 'leader-tn', name: "Themba Nkosi", role: "CTO", country: "South Africa", avatar: "TN", color: "from-green-400 to-green-600" },
   { id: 'leader-jc', name: "James Carter", role: "Head of Investments", country: "United States", avatar: "JC", color: "from-blue-400 to-blue-600" },
   { id: 'leader-sm', name: "Sophie Müller", role: "Risk Manager", country: "Germany", avatar: "SM", color: "from-purple-400 to-purple-600" },
 ];
