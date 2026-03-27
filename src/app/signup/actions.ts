@@ -17,8 +17,6 @@ export async function signup(values: any) {
 
   const { email, password, fullName, username, country, phone, referralCode } = values;
 
-  const newUserReferralCode = `CP-${Math.random().toString(36).slice(2, 7)}${Date.now().toString(36).slice(-5)}`.toUpperCase();
-
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -29,7 +27,6 @@ export async function signup(values: any) {
         username: username,
         country: country,
         phone: phone,
-        referral_code: newUserReferralCode, 
         referred_by: referralCode || null, 
       },
     },
@@ -46,10 +43,13 @@ export async function signup(values: any) {
     if (error.message.includes('duplicate key value violates unique constraint "profiles_email_key"')) {
         return { error: 'This email address is already in use by another profile.' };
     }
+    if (error.message.includes('duplicate key value violates unique constraint "profiles_referral_code_key"')) {
+        return { error: 'A server error occurred while generating your referral code. Please try again.' };
+    }
     if (error.message.includes('Database error saving new user')) {
       return { error: 'A problem occurred while creating your profile. This could be due to a username or email that is already in use.' };
     }
-    // Fallback for the "Invalid API key" or other generic errors
+    // Fallback for other generic errors
     return { error: 'Registration failed. This may be due to a server issue or an invalid username/email. Please try again.' };
   }
 
