@@ -37,7 +37,7 @@ export async function login(formData: FormData) {
   if (error) {
     let message = 'Could not authenticate user.';
     if (error.message.includes("Invalid login credentials")) {
-        message = "Account does not exist. Please Sign Up to continue.";
+        message = "Wrong username or password. Please try again or create a new account.";
     } else {
         message = error.message;
     }
