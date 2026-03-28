@@ -4,7 +4,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { randomBytes } from 'crypto';
 
 export async function signup(values: any) {
   const supabase = createClient();
@@ -50,9 +49,10 @@ export async function signup(values: any) {
     const MAX_ATTEMPTS = 5;
 
     while (!isCodeUnique && attempts < MAX_ATTEMPTS) {
-      // Use crypto for a more robust random code, reducing the chance of collisions.
-      const randomPart = randomBytes(5).toString('hex').toUpperCase(); // 10 hex characters
+      // Use Math.random() which is available in all JS environments, including Edge.
+      const randomPart = Math.random().toString(36).substring(2, 12).toUpperCase();
       generatedReferralCode = 'CP-' + randomPart;
+      
       const { data: existingCode } = await supabase.from('profiles').select('referral_code').eq('referral_code', generatedReferralCode).single();
       if (!existingCode) {
         isCodeUnique = true;
