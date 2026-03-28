@@ -9,6 +9,12 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 export const metadata: Metadata = {
   title: 'CoinPower',
   description: 'Your powerhouse for crypto investment.',
+  manifest: '/manifest.json',
+  themeColor: '#D4AF37',
+  icons: {
+    icon: '/icon-192x192.png',
+    apple: '/icon-192x192.png',
+  },
 };
 
 export default function RootLayout({
