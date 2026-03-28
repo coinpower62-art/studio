@@ -88,6 +88,9 @@ export async function signup(values: any) {
     // If any step after signup fails, we must clean up the created auth user.
     await supabase.auth.admin.deleteUser(signupData.user.id);
 
+    if (error.message.includes('profiles_pkey')) {
+        return { error: 'This account already exists. Please try signing in or use a different email to create a new account.' };
+    }
     if (error.message.includes('duplicate key value violates unique constraint "profiles_username_key"')) {
         return { error: `Username "${username}" is already taken. Please choose a different one.` };
     }
