@@ -29,7 +29,7 @@ export async function signup(values: any) {
   if (error) {
     // This is the definitive error handler. It checks for the specific technical
     // error for a duplicate username and translates it into a user-friendly message.
-    if (error.message.includes('duplicate key value violates unique constraint "profiles_username_key"')) {
+    if (error.message.includes('duplicate key value violates unique constraint "profiles_username_key"') || error.message.includes('Username') && error.message.includes('already taken')) {
       return { error: `Username "${username}" is already taken. Please choose a different one.` };
     }
     
@@ -51,9 +51,11 @@ export async function signup(values: any) {
     if (profileError || !profile) {
       // This is a last-resort error if the trigger fails for an unknown reason.
       console.error("Profile creation check failed:", profileError);
-      return { error: 'Authentication successful, but profile creation failed. Please check the database trigger `handle_new_user` and contact support.' };
+      return { error: 'Authentication successful, but profile creation failed. This is a critical error. Please contact support.' };
     }
   }
 
   return { error: null };
 }
+
+    

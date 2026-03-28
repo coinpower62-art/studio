@@ -107,7 +107,7 @@ WITH CHECK (auth.uid() = id);
 -- =================================================================
 -- 2. AUTOMATIC PROFILE CREATION (DEFINITIVE FIX)
 -- This function and trigger automatically create a profile for new users.
--- This version is robust and handles all uniqueness constraints internally.
+-- This version is robust and handles uniqueness constraints internally.
 -- =================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
@@ -399,5 +399,7 @@ BEGIN
   RETURN redeemed_amount;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+    
 
     
