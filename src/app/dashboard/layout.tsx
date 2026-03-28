@@ -35,6 +35,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { logout } from '@/app/login/actions';
 import TickerTape from "@/components/TickerTape";
+import InstallBanner from "@/components/InstallBanner";
 
 const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -283,6 +284,7 @@ export default function DashboardLayout({
             </main>
 
             <BottomNav />
+            <InstallBanner />
         </div>
     </div>
   );
