@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    const errorMessage = "CRITICAL ERROR: Your Supabase URL and Key are not configured in your hosting provider's environment variables. Please add them to your project settings and re-deploy.";
+    const errorMessage = "CRITICAL ERROR: Your Supabase URL and Key are not configured in your hosting provider's environment variables. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your project settings and re-deploy.";
     return NextResponse.redirect(new URL(`/login?message=${encodeURIComponent(errorMessage)}`, request.url));
   }
 
@@ -66,13 +66,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // If user is logged in and tries to access login or signup page, redirect to dashboard
-  if (
-    user &&
-    (request.nextUrl.pathname === '/login' ||
-      request.nextUrl.pathname === '/signup')
-  ) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+  const hasRefCode = request.nextUrl.searchParams.has('ref');
+
+  // If user is logged in...
+  if (user) {
+    // ...and tries to access login page, redirect to dashboard
+    if (request.nextUrl.pathname === '/login') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+    // ...and tries to access signup page WITHOUT a referral code, redirect to dashboard.
+    // This allows them (and others) to view the signup page when a referral link is used.
+    if (request.nextUrl.pathname === '/signup' && !hasRefCode) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
   }
 
   return response
