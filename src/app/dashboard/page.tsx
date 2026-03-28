@@ -1,3 +1,4 @@
+
 export const runtime = 'edge';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
@@ -11,6 +12,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { ReferralLink } from '@/components/ReferralLink';
+import InstallButton from '@/components/InstallButton';
 
 // The main page component
 export default async function DashboardPage() {
@@ -67,11 +69,16 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-black text-gray-900">
-          Welcome, {displayName}
-        </h1>
-        <p className="text-slate-500 text-sm">Here is your investment overview.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-gray-900">
+            Welcome, {displayName}
+          </h1>
+          <p className="text-slate-500 text-sm">Here is your investment overview.</p>
+        </div>
+        <div className="hidden sm:block">
+          <InstallButton />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
