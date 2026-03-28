@@ -358,6 +358,31 @@ WHERE
   );
 ```    
 
+### Reset All User Data (Use With Caution)
+
+If you need to completely clear all user accounts and their associated data to start fresh, you can run the following script. **WARNING: This is a destructive and irreversible action.**
+
+```sql
+-- WARNING: This script permanently deletes ALL user accounts and their associated data.
+-- This action cannot be undone.
+
+-- Step 1: Remove records from tables that would prevent user deletion.
+TRUNCATE public.rented_generators RESTART IDENTITY;
+
+-- Step 2: Un-redeem all gift codes so they can be used again.
+UPDATE public.gift_codes
+SET 
+  is_redeemed = false,
+  redeemed_at = NULL,
+  redeemed_by_user_id = NULL;
+
+-- Step 3: Delete all users from the core authentication table.
+-- This will automatically cascade to delete all linked records in 'profiles', 'deposit_requests',
+-- and 'withdrawal_requests' because of the database setup.
+DELETE FROM auth.users;
+```
     
 
     
+
+```
