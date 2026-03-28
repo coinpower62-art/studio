@@ -168,7 +168,7 @@ export default function BankPage() {
 
   const [usdt, setUsdt] = useState({ address: "", network: "TRC20" });
   const [momo, setMomo] = useState({ phone: "", name: "" });
-  const [telecel, setTelecel] = useState({ phone: "", name: "" });
+  const [westernUnion, setWesternUnion] = useState({ fullName: "", city: "" });
   const [bank, setBank] = useState({ name: "", number: "", holder: "" });
   const [otherBankName, setOtherBankName] = useState("");
   const [card, setCard] = useState({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
@@ -269,7 +269,6 @@ export default function BankPage() {
     setWithdrawMethod(null); setLastTxId("");
     setUsdt({ address: "", network: "TRC20" });
     setMomo({ phone: "", name: "" });
-    setTelecel({ phone: "", name: "" });
     setBank({ name: "", number: "", holder: "" });
     setOtherBankName("");
     setWesternUnion({ fullName: "", city: ""});
@@ -372,8 +371,8 @@ export default function BankPage() {
      if (withdrawMethod === "usdt") {
         if (!usdt.address.trim()) { toast({ title: "Enter a USDT address", variant: "destructive" }); return; }
     }
-     if (withdrawMethod === "momo" || withdrawMethod === 'telecel') {
-        const methodState = withdrawMethod === 'momo' ? momo : telecel;
+     if (withdrawMethod === "momo") {
+        const methodState = momo;
         if (!methodState.phone.trim()) { toast({ title: "Enter a phone number", variant: "destructive" }); return; }
         if (!methodState.name.trim()) { toast({ title: "Enter an account name", variant: "destructive" }); return; }
     }
@@ -402,7 +401,6 @@ export default function BankPage() {
     switch(withdrawMethod) {
         case 'usdt': details = usdt; break;
         case 'momo': details = momo; break;
-        case 'telecel': details = telecel; break;
         case 'bank': details = { ...bank, name: bank.name === 'Other' ? otherBankName : bank.name }; break;
         case 'western_union': details = { ...westernUnion, country: profile.country }; break;
         case 'card': details = card; break;
@@ -466,7 +464,6 @@ export default function BankPage() {
   const withdrawMethods = [
     { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt, desc: "Tether (TRC20/ERC20)", color: "from-teal-400 to-green-500" },
     { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo, desc: "Mobile Money", color: "from-yellow-400 to-amber-500" },
-    { id: "telecel", label: "TELECEL", icon: Smartphone, img: imageMap.telecel, desc: "Telecel Cash", color: "from-red-500 to-red-600" },
     { id: "bank", label: "Bank Transfer", icon: Landmark, img: imageMap.bank, desc: "Local & International", color: "from-gray-400 to-gray-500" },
     { id: "western_union", label: "Western Union", icon: Network, img: imageMap.western_union, desc: "Global Money Transfer", color: "from-blue-400 to-indigo-500"},
     { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-purple-400 to-pink-500" },
@@ -1093,19 +1090,6 @@ export default function BankPage() {
                     <div>
                         <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Name</label>
                         <Input value={momo.name} onChange={(e) => setMomo({...momo, name: e.target.value})} placeholder="Name on MoMo account" className="h-11 border-gray-200 focus:border-amber-400" />
-                    </div>
-                 </div>
-               )}
-               {withdrawMethod === 'telecel' && (
-                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
-                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><Smartphone className="w-4 h-4" /> Telecel Cash Details</p>
-                    <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Phone Number</label>
-                        <Input value={telecel.phone} onChange={(e) => setTelecel({...telecel, phone: e.target.value})} placeholder="Your Telecel phone number" className="h-11 border-gray-200 focus:border-amber-400" />
-                    </div>
-                    <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Name</label>
-                        <Input value={telecel.name} onChange={(e) => setTelecel({...telecel, name: e.target.value})} placeholder="Name on Telecel account" className="h-11 border-gray-200 focus:border-amber-400" />
                     </div>
                  </div>
                )}
