@@ -8,12 +8,15 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 
 export const metadata: Metadata = {
   title: 'CoinPower',
-  description: 'Your powerhouse for crypto investment.',
-  manifest: '/manifest.json',
-  themeColor: '#D4AF37',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'CoinPower',
+  },
   icons: {
-    icon: '/icon-192x192.png',
-    apple: '/icon-192x192.png',
+    icon: '/favicon.ico',
+    apple: '/apple-icon.png',
   },
 };
 

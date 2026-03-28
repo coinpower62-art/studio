@@ -41,6 +41,19 @@ export function SplashProvider({children}: {children: ReactNode}) {
         }
     }, [isSpecialPath, pathname]);
 
+    // Register service worker for PWA capabilities
+    useEffect(() => {
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('Service Worker registered: ', registration);
+                }).catch(error => {
+                    console.error('Service Worker registration failed: ', error);
+                });
+            });
+        }
+    }, []);
+
 
     const handleSplashDone = () => {
         sessionStorage.setItem("cp_splash_done", "1");
