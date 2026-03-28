@@ -25,27 +25,33 @@ export async function signup(values: any) {
     },
   });
 
-  // --- CRITICAL CHANGE ---
-  // If there's an auth error (like from our database function), return the EXACT message.
+  // --- CRITICAL ERROR HANDLING (FINAL) ---
   if (error) {
-    // This will expose the true root cause, e.g., "Username 'test' is already taken."
-    return { error: error.message };
+    // This is the definitive error handler. It checks for the specific technical
+    // error for a duplicate username and translates it into a user-friendly message.
+    if (error.message.includes('duplicate key value violates unique constraint "profiles_username_key"')) {
+      return { error: `Username "${username}" is already taken. Please choose a different one.` };
+    }
+    
+    // Fallback for other potential database errors, returning the specific technical message.
+    return { error: `Database error: ${error.message}` };
   }
 
-  // Double-check that the profile was created by the trigger.
+  // A brief delay to allow the database trigger to complete.
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  // Double-check that the profile was actually created.
   if (data.user) {
-    // We need a brief pause to allow the database trigger to complete.
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', data.user.id)
       .single();
 
-    if (!profile) {
-      // This is now a more specific fallback error.
-      return { error: 'User authenticated, but profile creation failed. Please ensure the latest SQL script from README.md has been run in your Supabase project.' };
+    if (profileError || !profile) {
+      // This is a last-resort error if the trigger fails for an unknown reason.
+      console.error("Profile creation check failed:", profileError);
+      return { error: 'Authentication successful, but profile creation failed. Please check the database trigger `handle_new_user` and contact support.' };
     }
   }
 
