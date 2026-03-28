@@ -20,7 +20,7 @@ import {
   Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
   Pencil, ImagePlus, Activity,
   Info, Building2, Phone, Mail, MapPin, Percent, Clock3,
-  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock
+  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Video
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
@@ -446,18 +446,20 @@ function DashboardContent() {
     }
   }
 
-  const handleImageUpload = async (type: 'generator' | 'activity', id: string, file: File) => {
-      const loadingId = type === 'generator' ? `gen-${id}` : `act-${id}`;
+  const handleFileUpload = async (type: 'generator' | 'activity' | 'video', id: string, file: File) => {
+      const loadingId = `${type}-${id}`;
       setUploading(loadingId);
 
       try {
-        // Step 1: Define file path
         const fileExt = file.name.split('.').pop();
-        const folder = type === 'generator' ? 'generator-image' : 'activity-image';
+        let folder = 'assets';
+        if (type === 'generator') folder = 'generator-images';
+        if (type === 'activity') folder = 'activity-images';
+        if (type === 'video') folder = 'tutorial-videos';
+        
         const filePath = `${folder}/${id}-${Date.now()}.${fileExt}`;
         const BUCKET_NAME = 'site_assets';
 
-        // Step 2: Upload directly from client
         const supabase = createClient();
         const { error: uploadError } = await supabase.storage
             .from(BUCKET_NAME)
@@ -467,7 +469,6 @@ function DashboardContent() {
           throw new Error(`Storage upload failed: ${uploadError.message}`);
         }
         
-        // Step 3: Get Public URL
         const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
         const publicUrl = urlData.publicUrl;
 
@@ -475,19 +476,19 @@ function DashboardContent() {
             throw new Error('Could not get public URL for the uploaded file.');
         }
 
-        // Step 4: Call server action to update database
-        const dbUpdateResult =
-          type === 'generator'
-            ? await adminUpdateGeneratorImage(id, publicUrl)
-            : await adminUpsertMedia(id, publicUrl);
+        let dbUpdateResult;
+        if (type === 'generator') {
+            dbUpdateResult = await adminUpdateGeneratorImage(id, publicUrl);
+        } else {
+            dbUpdateResult = await adminUpsertMedia(id, publicUrl);
+        }
 
         if (dbUpdateResult.error) {
           throw new Error(dbUpdateResult.error);
         }
 
-        // Step 5: Success
         await fetchData();
-        toast({ title: `Image updated for ${id}!` });
+        toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)} updated for ${id}!` });
 
       } catch (e: any) {
         toast({ title: 'Upload Failed', description: e.message, variant: 'destructive' });
@@ -1228,7 +1229,36 @@ function DashboardContent() {
           {/* ── MEDIA ── */}
           {tab === "media" && (
              <div className="space-y-4">
-              <div><h1 className="text-xl font-black text-white">Media Management</h1><p className="text-slate-400 text-sm">Update images for app logo, generators, and activity page</p></div>
+              <div><h1 className="text-xl font-black text-white">Media Management</h1><p className="text-slate-400 text-sm">Update images, videos, and icons for the app.</p></div>
+
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Tutorial Video</h3>
+                  <p className="text-sm text-slate-400">This video appears on the 'How to Start' and 'Video Tutorial' pages.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                          {media.find(m => m.id === 'tutorial-video')?.url ? (
+                            <video
+                                key={media.find(m => m.id === 'tutorial-video')?.url}
+                                controls
+                                src={media.find(m => m.id === 'tutorial-video')?.url}
+                                className="w-full h-auto rounded-lg aspect-video bg-slate-700"
+                            />
+                          ) : (
+                            <div className="w-full aspect-video rounded-lg bg-slate-700 flex flex-col items-center justify-center text-slate-500">
+                                <Video className="w-10 h-10 mb-2" />
+                                <span className="text-xs font-semibold">No video uploaded</span>
+                            </div>
+                          )}
+                           <label htmlFor={`vid-upload-tutorial-video`} className={`mt-2 text-xs cursor-pointer hover:underline ${uploading === 'video-tutorial-video' ? 'text-slate-400' : 'text-amber-400'}`}>
+                              {uploading === 'video-tutorial-video' ? 'Uploading...' : 'Upload new video'}
+                           </label>
+                           <input type="file" id={`vid-upload-tutorial-video`} className="hidden" accept="video/mp4,video/webm" disabled={uploading === 'video-tutorial-video'} onChange={async (e) => {
+                               const file = e.target.files?.[0];
+                               if (file) await handleFileUpload('video', 'tutorial-video', file);
+                           }}/>
+                      </div>
+                  </div>
+              </div>
 
                <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
                   <h3 className="font-bold text-white">Application Logo</h3>
@@ -1236,12 +1266,12 @@ function DashboardContent() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div className="text-center">
                           <img src={logoImg} alt="App Logo" className="w-full h-auto rounded-lg aspect-square object-cover bg-slate-700 p-4" />
-                           <label htmlFor={`act-upload-app-logo`} className={`mt-2 text-xs cursor-pointer hover:underline ${uploading === 'act-app-logo' ? 'text-slate-400' : 'text-amber-400'}`}>
-                              {uploading === 'act-app-logo' ? 'Uploading...' : 'Upload new logo'}
+                           <label htmlFor={`act-upload-app-logo`} className={`mt-2 text-xs cursor-pointer hover:underline ${uploading === 'activity-app-logo' ? 'text-slate-400' : 'text-amber-400'}`}>
+                              {uploading === 'activity-app-logo' ? 'Uploading...' : 'Upload new logo'}
                            </label>
-                           <input type="file" id={`act-upload-app-logo`} className="hidden" accept="image/*" disabled={uploading === 'act-app-logo'} onChange={async function(e) {
+                           <input type="file" id={`act-upload-app-logo`} className="hidden" accept="image/*" disabled={uploading === 'activity-app-logo'} onChange={async function(e) {
                                const file = e.target.files?.[0];
-                               if (file) await handleImageUpload('activity', 'app-logo', file);
+                               if (file) await handleFileUpload('activity', 'app-logo', file);
                            }}/>
                       </div>
                   </div>
@@ -1254,7 +1284,7 @@ function DashboardContent() {
                       const g = generators.find(gen => gen.id === id);
                       const imageUrl = g?.image_url || PlaceHolderImages.find(function(i) { return i.id === `gen-${id}`; })?.imageUrl;
                       const name = g?.name || id.toUpperCase();
-                      const isUploading = uploading === `gen-${id}`;
+                      const isUploading = uploading === `generator-${id}`;
                       return (
                         <div key={id} className="text-center">
                           <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-square object-contain bg-slate-700" />
@@ -1263,13 +1293,13 @@ function DashboardContent() {
                            </label>
                            <input type="file" id={`gen-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
                              const file = e.target.files?.[0];
-                             if (file) await handleImageUpload('generator', id, file);
+                             if (file) await handleFileUpload('generator', id, file);
                            }}/>
                         </div>
                       );
                     })}
                     {otherGenerators.map(function(g) {
-                      const isUploading = uploading === `gen-${g.id}`;
+                      const isUploading = uploading === `generator-${g.id}`;
                       return (
                         <div key={g.id} className="text-center">
                           <img src={g.image_url || PlaceHolderImages.find(function(i) { return i.id === `gen-${g.id}`; })?.imageUrl} alt={g.name} className="w-full h-auto rounded-lg aspect-square object-contain bg-slate-700" />
@@ -1278,7 +1308,7 @@ function DashboardContent() {
                            </label>
                            <input type="file" id={`gen-upload-${g.id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
                              const file = e.target.files?.[0];
-                             if (file) await handleImageUpload('generator', g.id, file);
+                             if (file) await handleFileUpload('generator', g.id, file);
                            }}/>
                         </div>
                       );
@@ -1296,7 +1326,7 @@ function DashboardContent() {
                           { id: 'leader-sm', name: 'Sophie Müller' },
                       ].map(({ id, name }) => {
                           const imageUrl = media.find(m => m.id === id)?.url || PlaceHolderImages.find(i => i.id === id)?.imageUrl;
-                          const isUploading = uploading === `act-${id}`;
+                          const isUploading = uploading === `activity-${id}`;
                           return (
                               <div key={id} className="text-center">
                                   <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-square object-cover bg-slate-700" />
@@ -1306,7 +1336,7 @@ function DashboardContent() {
                                   </label>
                                   <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
                                       const file = e.target.files?.[0];
-                                      if (file) await handleImageUpload('activity', id, file);
+                                      if (file) await handleFileUpload('activity', id, file);
                                   }}/>
                               </div>
                           )
@@ -1326,7 +1356,7 @@ function DashboardContent() {
                           { id: 'payment-card', name: 'Card' },
                       ].map(({ id, name }) => {
                           const imageUrl = media.find(m => m.id === id)?.url || PlaceHolderImages.find(i => i.id === id)?.imageUrl;
-                          const isUploading = uploading === `act-${id}`;
+                          const isUploading = uploading === `activity-${id}`;
                           return (
                               <div key={id} className="text-center">
                                   <div className="w-full h-auto rounded-lg aspect-square object-contain bg-slate-700 p-2">
@@ -1338,7 +1368,7 @@ function DashboardContent() {
                                   </label>
                                   <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
                                       const file = e.target.files?.[0];
-                                      if (file) await handleImageUpload('activity', id, file);
+                                      if (file) await handleFileUpload('activity', id, file);
                                   }}/>
                               </div>
                           )
@@ -1349,7 +1379,7 @@ function DashboardContent() {
                   <h3 className="font-bold text-white">Activity Page Images</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {['hero', 'teamwork'].map(function(id) {
-                        const isUploading = uploading === `act-${id}`;
+                        const isUploading = uploading === `activity-${id}`;
                         return (
                           <div key={id} className="text-center">
                             <img src={id === 'hero' ? heroImg : teamworkImg} alt={id} className="w-full h-auto rounded-lg aspect-[16/9] object-cover" />
@@ -1358,7 +1388,7 @@ function DashboardContent() {
                              </label>
                              <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
                                const file = e.target.files?.[0];
-                               if (file) await handleImageUpload('activity', id, file);
+                               if (file) await handleFileUpload('activity', id, file);
                              }} />
                           </div>
                         );
