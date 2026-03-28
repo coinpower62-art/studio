@@ -172,7 +172,6 @@ export default function BankPage() {
   const [bank, setBank] = useState({ name: "", number: "", holder: "" });
   const [otherBankName, setOtherBankName] = useState("");
   const [card, setCard] = useState({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
-  const [westernUnion, setWesternUnion] = useState({ fullName: "", city: "" });
   const [depositCard, setDepositCard] = useState({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
 
   const [pinMode, setPinMode] = useState<"security" | "setup" | "verify" | null>(null);
@@ -866,8 +865,8 @@ export default function BankPage() {
                 <div className="bg-white rounded-lg px-3 py-2.5 border border-teal-100">
                   <p className="text-xs text-gray-400 mb-1">Wallet Address (TRC20 / ERC20 / BEP20)</p>
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-mono text-xs text-gray-900 font-bold break-all">TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE</p>
-                    <button data-testid="copy-usdt-address" onClick={function() { return copy("TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE", "Wallet address"); }}
+                    <p className="font-mono text-xs text-gray-900 font-bold break-all">TXmRoXPs98oHwBhLZKEkwLKHceLwbADLnb</p>
+                    <button data-testid="copy-usdt-address" onClick={function() { return copy("TXmRoXPs98oHwBhLZKEkwLKHceLwbADLnb", "Wallet address"); }}
                       className="p-2 rounded-lg bg-teal-50 hover:bg-teal-100 transition-colors border border-teal-200 flex-shrink-0">
                       <Copy className="w-4 h-4 text-teal-600" />
                     </button>

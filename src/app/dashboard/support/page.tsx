@@ -37,7 +37,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 const DEPOSIT_PHONE = "+233592682060";
 const DEPOSIT_NAME = "M.K";
-const USDT_ADDRESS = "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE";
+const USDT_ADDRESS = "TXmRoXPs98oHwBhLZKEkwLKHceLwbADLnb";
 
 const steps = [
   {
