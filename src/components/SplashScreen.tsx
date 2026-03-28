@@ -41,7 +41,7 @@ export function SplashScreen({ onDone, logoUrl }: { onDone: () => void; logoUrl:
       >
         <div className="absolute -inset-2.5 rounded-full bg-radial-glow animate-pulse-glow" />
         <div className="w-[108px] h-[108px] rounded-[28px] border-[3px] border-amber-500/70 shadow-[0_0_40px_rgba(201,137,26,0.4),_0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden">
-            <div className="w-full h-full bg-black flex items-center justify-center p-3">
+            <div className="w-full h-full bg-white flex items-center justify-center p-3">
                  {logoUrl ? (
                     <img src={logoUrl} alt="CoinPower Logo" className="w-full h-full object-cover" />
                 ) : (
