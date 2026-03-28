@@ -338,18 +338,27 @@ This script will update any user profiles that are missing a username, full name
 
 ```sql
 -- This script updates existing user profiles that have missing information.
--- It safely populates the username, full_name, and email fields.
+-- It safely populates username, full_name, email, phone, and country fields.
 UPDATE public.profiles p
 SET
   email = COALESCE(p.email, u.email),
-  username = COALESCE(p.username, split_part(u.email, '@', 1)),
-  full_name = COALESCE(p.full_name, split_part(u.email, '@', 1))
+  username = COALESCE(p.username, u.raw_user_meta_data->>'username', split_part(u.email, '@', 1)),
+  full_name = COALESCE(p.full_name, u.raw_user_meta_data->>'full_name', split_part(u.email, '@', 1)),
+  country = COALESCE(p.country, u.raw_user_meta_data->>'country'),
+  phone = COALESCE(p.phone, u.raw_user_meta_data->>'phone')
 FROM auth.users u
 WHERE
   p.id = u.id
-  AND (p.username IS NULL OR p.username = '' OR p.full_name IS NULL OR p.full_name = '' OR p.email IS NULL OR p.email = '');
+  AND (
+    p.username IS NULL OR p.username = '' OR
+    p.full_name IS NULL OR p.full_name = '' OR
+    p.email IS NULL OR p.email = '' OR
+    p.country IS NULL OR p.country = '' OR
+    p.phone IS NULL OR p.phone = ''
+  );
 ```    
 
     
 
     
+
