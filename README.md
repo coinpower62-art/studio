@@ -356,7 +356,9 @@ WHERE
     p.country IS NULL OR p.country = '' OR
     p.phone IS NULL OR p.phone = ''
   );
-```    
+```
+
+ 
 
     
 
