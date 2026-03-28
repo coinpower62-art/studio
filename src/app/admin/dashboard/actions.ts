@@ -191,7 +191,6 @@ export async function adminResetUserPassword(userId: string, newPassword: string
 }
 
 export async function adminDeleteUser(userId: string) {
-  // Note: This only deletes the profile, not the auth.users record.
   const cookieStore = cookies()
   if (cookieStore.get('admin_logged_in')?.value !== 'true') {
     return { error: 'Unauthorized' }
@@ -199,7 +198,9 @@ export async function adminDeleteUser(userId: string) {
   if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
   try {
     const supabaseAdmin = await getSupabaseAdminClient()
-    const { error } = await supabaseAdmin.from('profiles').delete().eq('id', userId)
+    // This deletes the auth.users record. The profile record is deleted automatically
+    // via the 'ON DELETE CASCADE' constraint on the profiles.id foreign key.
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (error) return { error: error.message }
     return { success: true }
   } catch (e: any) {
