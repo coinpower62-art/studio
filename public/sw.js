@@ -1,5 +1,4 @@
-self.addEventListener('fetch', event => {
-  // This is a basic service worker to make the app installable.
-  // It doesn't perform any caching in this simple version.
-  return;
+// A simple, do-nothing service worker to make the app installable.
+self.addEventListener('fetch', (event) => {
+  // This empty fetch listener is enough to make the app installable.
 });
