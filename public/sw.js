@@ -1,4 +1,11 @@
-// A simple, do-nothing service worker to make the app installable.
+// This is a basic service worker file.
+// It's required for a web app to be installable (PWA).
+self.addEventListener('install', (event) => {
+  console.log('Service worker installed');
+});
+
 self.addEventListener('fetch', (event) => {
-  // This empty fetch listener is enough to make the app installable.
+  // A basic fetch handler.
+  // For a more robust offline experience, you would add caching strategies here.
+  event.respondWith(fetch(event.request));
 });
