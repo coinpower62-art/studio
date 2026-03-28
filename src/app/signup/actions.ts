@@ -42,26 +42,8 @@ export async function signup(values: any) {
   // profile if an old trigger created it, or INSERT a new one if it doesn't exist.
   try {
     // Generate a unique referral code for the new user. This is THEIR OWN code.
-    let generatedReferralCode: string;
-    let isCodeUnique = false;
-    let attempts = 0;
-    const MAX_ATTEMPTS = 5;
-
-    while (!isCodeUnique && attempts < MAX_ATTEMPTS) {
-      // Use Math.random() which is available in all JS environments, including Edge.
-      const randomPart = Math.random().toString(36).substring(2, 12).toUpperCase();
-      generatedReferralCode = 'CP-' + randomPart;
-      
-      const { data: existingCode } = await supabase.from('profiles').select('referral_code').eq('referral_code', generatedReferralCode).single();
-      if (!existingCode) {
-        isCodeUnique = true;
-      }
-      attempts++;
-    }
-
-    if (!isCodeUnique) {
-      throw new Error('Could not generate a unique referral code. Please try again.');
-    }
+    const randomPart = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+    const generatedReferralCode = `CP-${username.toUpperCase()}${randomPart}`;
 
     // Use .upsert() to prevent primary key conflicts.
     const { error: profileError } = await supabase
@@ -73,7 +55,7 @@ export async function signup(values: any) {
         email: email,
         country: country,
         phone: phone,
-        referral_code: generatedReferralCode!, // The new user's own, unique code.
+        referral_code: generatedReferralCode, // The new user's own, unique code.
         referred_by: referralCode || null, // The code of the person who referred them.
         balance: 1.00, // Give the user their $1 starting bonus.
       });
