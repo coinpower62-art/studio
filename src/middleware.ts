@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    const errorMessage = "CRITICAL ERROR: Your Supabase URL and Key are not configured in your Cloudflare project settings. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY as environment variables.";
+    const errorMessage = "CRITICAL ERROR: Your Supabase URL and Key are not configured in your hosting provider's environment variables. Please add them to your project settings and re-deploy.";
     return NextResponse.redirect(new URL(`/login?message=${encodeURIComponent(errorMessage)}`, request.url));
   }
 
