@@ -284,7 +284,7 @@ function SignUpForm() {
                 </div>
             )}
 
-            {refFromUrl && (
+            {refFromUrl && !errors.root && (
                 <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-4">
                 <Gift className="w-4 h-4 text-amber-600 flex-shrink-0" />
                 <p className="text-xs text-amber-700 font-medium">{t.referralLabel} <span className="font-black">{refFromUrl}</span> {t.referralApplied}</p>
@@ -407,6 +407,27 @@ function SignUpForm() {
                                 <div className="relative">
                                     <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                     <Input {...field} type="password" data-testid="input-confirm-password" placeholder={t.confirmPassword} className={cn(fieldClass(!!errors.confirmPassword), "pl-9")} />
+                                </div>
+                            </FormControl>
+                            <FormMessage className="text-red-600 text-xs font-medium" />
+                        </FormItem>
+                    )} />
+
+                    <FormField control={form.control} name="referralCode" render={({ field }) => (
+                        <FormItem>
+                            <FormControl>
+                                <div className="relative">
+                                    <Gift className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <Input 
+                                        {...field}
+                                        readOnly={!!refFromUrl} 
+                                        placeholder={t.referralCode} 
+                                        className={cn(
+                                            fieldClass(!!errors.referralCode), 
+                                            "pl-9",
+                                            refFromUrl && "font-mono bg-amber-50/50 border-amber-200 text-amber-800 font-bold cursor-not-allowed"
+                                        )} 
+                                    />
                                 </div>
                             </FormControl>
                             <FormMessage className="text-red-600 text-xs font-medium" />
