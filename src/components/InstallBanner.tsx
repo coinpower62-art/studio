@@ -8,19 +8,15 @@ export default function InstallBanner() {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // 1. Check if user already dismissed this banner in this session
-    const isDismissed = sessionStorage.getItem('installBannerDismissed');
+    const isDismissed = sessionStorage.getItem('downloadDismissed');
     if (isDismissed) return;
 
-    // 2. Detect iOS
     const ua = navigator.userAgent.toLowerCase();
     const isIphone = /iphone|ipad|ipod/.test(ua);
     setIsIOS(isIphone);
 
-    // iOS doesn't have a 'beforeinstallprompt' event, so we show the banner manually
     if (isIphone) setIsVisible(true);
 
-    // 3. For Android/Chrome
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -31,23 +27,25 @@ export default function InstallBanner() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  const handleInstall = async () => {
+  const handleDownload = async () => {
     if (isIOS) {
-      alert("Install CoinPower:\n1. Tap the Share icon (square with arrow)\n2. Select 'Add to Home Screen'");
+      alert("To Download CoinPower to your iPhone:\n1. Tap the Share icon (square with arrow)\n2. Select 'Add to Home Screen'");
       return;
     }
 
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') setIsVisible(false);
+      if (outcome === 'accepted') {
+        setIsVisible(false);
+      }
       setDeferredPrompt(null);
     }
   };
-
+  
   const closeBanner = () => {
     setIsVisible(false);
-    sessionStorage.setItem('installBannerDismissed', 'true');
+    sessionStorage.setItem('downloadDismissed', 'true');
   };
 
   if (!isVisible) return null;
@@ -55,42 +53,42 @@ export default function InstallBanner() {
   return (
     <div style={{
       position: 'fixed',
-      bottom: '20px',
-      left: '20px',
-      right: '20px',
-      backgroundColor: '#D4AF37', // CoinPower Gold
-      padding: '16px',
-      borderRadius: '12px',
+      bottom: '15px',
+      left: '15px',
+      right: '15px',
+      backgroundColor: '#111',
+      border: '2px solid #D4AF37', // Your Gold
+      padding: '12px 15px 12px 12px',
+      borderRadius: '50px', // Capsule shape like a real app link
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
       zIndex: 9999,
-      border: '1px solid rgba(255,255,255,0.2)'
+      boxShadow: '0 10px 30px rgba(0,0,0,0.8)'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <button onClick={closeBanner} style={{ 
-          background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#000', padding: '0 5px' 
+          background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#888', padding: '0 5px' 
         }}>✕</button>
-        <div style={{ color: '#000', fontWeight: 'bold', fontSize: '14px' }}>
-          Install CoinPower App
-        </div>
+        <img src="/icon-192.png" alt="Logo" style={{ width: '30px', height: '30px', borderRadius: '6px' }} />
+        <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '14px' }}>CoinPower App</span>
       </div>
       
       <button 
-        onClick={handleInstall}
+        onClick={handleDownload}
         style={{
-          backgroundColor: '#000',
-          color: '#D4AF37',
+          backgroundColor: '#D4AF37',
+          color: '#000',
           border: 'none',
-          padding: '10px 18px',
-          borderRadius: '8px',
-          fontWeight: '800',
+          padding: '8px 20px',
+          borderRadius: '25px',
+          fontWeight: '900',
+          fontSize: '12px',
           cursor: 'pointer',
-          fontSize: '13px'
+          textTransform: 'uppercase'
         }}
       >
-        INSTALL
+        Download
       </button>
     </div>
   );
