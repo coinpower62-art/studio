@@ -897,6 +897,13 @@ function DashboardContent() {
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1">@ Username</p>
                                 <p className="text-slate-200 text-xs truncate">{u.username || u.email?.split('@')[0] || '—'}</p>
                             </div>
+                            <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
+                                <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Mail className="w-3 h-3"/> Email</p>
+                                <div className="flex items-center gap-1.5">
+                                    <p className="text-slate-200 text-xs truncate">{u.email}</p>
+                                    <button onClick={() => copyText(u.email, "Email")} className="text-slate-500 hover:text-amber-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>
+                                </div>
+                            </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Phone className="w-3 h-3" /> Phone</p>
                                 <p className="text-slate-200 text-xs truncate">{u.phone || '—'}</p>
