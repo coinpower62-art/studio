@@ -38,11 +38,10 @@ export async function signup(values: any) {
   }
 
   // Step 2: Create or update the user's profile in `public.profiles`.
-  // We use `upsert` here. This is the key change. `upsert` will UPDATE the
+  // We use `upsert` here. `upsert` will UPDATE the
   // profile if an old trigger created it, or INSERT a new one if it doesn't exist.
-  // This prevents the "duplicate key" error permanently.
   try {
-    // Generate a unique referral code for the new user.
+    // Generate a unique referral code for the new user. This is THEIR OWN code.
     let generatedReferralCode: string;
     let isCodeUnique = false;
     let attempts = 0;
@@ -74,8 +73,8 @@ export async function signup(values: any) {
         email: email,
         country: country,
         phone: phone,
-        referral_code: generatedReferralCode!,
-        referred_by: referralCode || null,
+        referral_code: generatedReferralCode!, // The new user's own, unique code.
+        referred_by: referralCode || null, // The code of the person who referred them.
         balance: 1.00, // Give the user their $1 starting bonus.
       });
 
@@ -84,7 +83,6 @@ export async function signup(values: any) {
     }
 
   } catch (error: any) {
-    // This catch block will now only handle very rare errors, as the main conflicts are resolved.
     if (error.message.includes('duplicate key value violates unique constraint "profiles_username_key"')) {
       return { error: `Username "${username}" is already taken. Please choose a different one.` };
     }
@@ -94,13 +92,7 @@ export async function signup(values: any) {
     return { error: `Account created, but profile setup failed: ${error.message}. Please contact support.` };
   }
 
-  // If we reach here, signup and profile creation were successful.
-  if (signupData.session) {
-    redirect('/dashboard');
-  } 
-  else {
-    return { error: "Account created! Please check your email to confirm your account before signing in." };
-  }
-
-  return { error: null };
+  // Redirect to the login page with a success message.
+  // This prevents automatic login after signup, requiring the user to sign in manually.
+  redirect('/login?message=Account created successfully. Please sign in.');
 }
