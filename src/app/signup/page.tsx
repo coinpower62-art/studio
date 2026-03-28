@@ -158,20 +158,36 @@ function PasswordStrength({ password }: { password?: string }) {
     { id: "number", regex: /[0-9]/, label: "1 number" },
   ];
 
+  const metChecks = checks.filter(c => password && c.regex.test(password)).length;
+  const strength = (metChecks / checks.length) * 100;
+
+  const progressColor = 
+    strength < 100 ? "bg-amber-500" : "bg-green-500";
+
   return (
-    <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-2">
-      {checks.map((check) => {
-        const met = password ? check.regex.test(password) : false;
-        return (
-          <div key={check.id} className={`flex items-center gap-1.5 text-xs transition-colors ${met ? 'text-green-600' : 'text-amber-600'}`}>
-            {met 
-              ? <CheckCircle2 className="w-3.5 h-3.5" /> 
-              : <div className="w-3.5 h-3.5 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-amber-300"/></div>
-            }
-            <span className="text-[11px] font-medium">{check.label}</span>
-          </div>
-        );
-      })}
+    <div className="space-y-2 pt-1">
+      <div className="relative w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+        <div 
+          className={`h-full transition-all duration-300 ${strength > 0 ? progressColor : 'bg-transparent'}`} 
+          style={{ width: `${strength}%` }}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+        {checks.map((check) => {
+          const met = password ? check.regex.test(password) : false;
+          return (
+            <div key={check.id} className={`flex items-center gap-1.5 text-xs transition-colors ${met ? 'text-green-600' : 'text-gray-500'}`}>
+              <div className={`w-3.5 h-3.5 flex items-center justify-center rounded-full transition-colors ${met ? 'bg-green-100' : 'bg-gray-100'}`}>
+                {met 
+                  ? <CheckCircle2 className="w-2.5 h-2.5 text-green-600" /> 
+                  : <div className="w-1.5 h-1.5 rounded-full bg-gray-400"/>
+                }
+              </div>
+              <span className="text-xs font-medium">{check.label}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -254,7 +270,7 @@ function SignUpForm() {
   const { errors } = form.formState;
   const fieldClass = (hasError: boolean) => cn(
     "h-11 bg-gray-50 border-gray-200 focus:bg-white focus-visible:ring-amber-300",
-    hasError && "border-red-300 bg-red-50 focus-visible:ring-red-300"
+    hasError && "border-amber-300 bg-amber-50 focus-visible:ring-amber-300"
   );
   
   const passwordValue = form.watch("password");
@@ -276,9 +292,9 @@ function SignUpForm() {
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-5">{t.heading}</h2>
 
             {errors.root && (
-                <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4" data-testid="error-signup">
-                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700 font-medium">{errors.root.message}</p>
+                <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4" data-testid="error-signup">
+                <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-700 font-medium">{errors.root.message}</p>
                 </div>
             )}
 
@@ -331,7 +347,7 @@ function SignUpForm() {
                     <FormField control={form.control} name="phone" render={({ field }) => (
                         <FormItem>
                             <FormControl>
-                                <div className={cn("flex h-11 rounded-lg border overflow-hidden transition-colors bg-gray-50", errors.phone ? "border-red-300" : "border-gray-200 focus-within:border-amber-400")}>
+                                <div className={cn("flex h-11 rounded-lg border overflow-hidden transition-colors bg-gray-50", errors.phone ? "border-amber-300" : "border-gray-200 focus-within:border-amber-400")}>
                                 <Select value={selectedPhoneCode} onValueChange={setSelectedPhoneCode}>
                                     <SelectTrigger data-testid="select-phone-code" className="w-[5.5rem] h-full rounded-none border-0 border-r border-gray-200 focus:ring-0 text-sm font-medium px-2 shrink-0">
                                     <span className="flex items-center gap-1 truncate">
