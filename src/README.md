@@ -83,88 +83,14 @@ USING (auth.uid() = id)
 WITH CHECK (auth.uid() = id);
 
 -- =================================================================
--- 2. AUTOMATIC PROFILE CREATION (DEFINITIVE FIX)
--- This function and trigger automatically create a profile for new users.
--- This version is robust and handles uniqueness constraints internally.
+-- 2. NOTE ON PROFILE CREATION
+-- The trigger for automatic profile creation has been removed.
+-- Profile creation is now handled explicitly in the application code
+-- within the `/src/app/signup/actions.ts` file for better error handling.
+-- The old trigger function can be safely removed from your database.
 -- =================================================================
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-DECLARE
-  resolved_username TEXT;
-  is_username_taken BOOLEAN;
-  generated_referral_code TEXT;
-  attempts INT := 0;
-  max_attempts INT := 5;
-BEGIN
-  -- Step 1: Resolve the initial username from metadata or generate from email.
-  resolved_username := COALESCE(
-    NULLIF(TRIM(new.raw_user_meta_data->>'username'), ''),
-    split_part(new.email, '@', 1)
-  );
-
-  -- Step 2: Check if a user-chosen username is taken. If so, raise a clear error.
-  IF new.raw_user_meta_data->>'username' IS NOT NULL THEN
-      SELECT EXISTS (SELECT 1 FROM public.profiles WHERE username = resolved_username) INTO is_username_taken;
-      IF is_username_taken THEN
-          RAISE EXCEPTION 'Username "%" is already taken.', resolved_username;
-      END IF;
-  -- If no username was chosen, generate a unique one from their email.
-  ELSE
-      LOOP
-        SELECT EXISTS (SELECT 1 FROM public.profiles WHERE username = resolved_username) INTO is_username_taken;
-        IF NOT is_username_taken THEN
-          EXIT; -- Username is unique, exit the loop.
-        END IF;
-        
-        -- If username is taken, append a random suffix and try again.
-        attempts := attempts + 1;
-        IF attempts >= max_attempts THEN
-          RAISE EXCEPTION 'Could not generate a unique username for % after % attempts.', new.email, max_attempts;
-        END IF;
-        
-        resolved_username := split_part(new.email, '@', 1) || '-' || lower(substr(encode(gen_random_bytes(2), 'hex'), 1, 4));
-      END LOOP;
-  END IF;
-  
-  -- Step 3: Loop to generate a truly unique referral code. This is guaranteed to work.
-  attempts := 0; -- Reset counter
-  LOOP
-    generated_referral_code := 'CP-' || upper(substr(encode(gen_random_bytes(6), 'hex'), 1, 10));
-    
-    IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE referral_code = generated_referral_code) THEN
-      EXIT; -- Referral code is unique, exit the loop.
-    END IF;
-    
-    attempts := attempts + 1;
-    IF attempts >= max_attempts THEN
-      RAISE EXCEPTION 'Could not generate a unique referral code.';
-    END IF;
-  END LOOP;
-
-  -- Step 4: Insert the new profile record. This is now guaranteed to succeed.
-  INSERT INTO public.profiles (id, full_name, username, email, country, phone, referral_code, referred_by, balance)
-  VALUES (
-    new.id,
-    COALESCE(new.raw_user_meta_data->>'full_name', resolved_username),
-    resolved_username,
-    new.email,
-    new.raw_user_meta_data->>'country',
-    new.raw_user_meta_data->>'phone',
-    generated_referral_code,
-    new.raw_user_meta_data->>'referred_by',
-    1.00
-  );
-  
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-
--- Recreate the trigger to ensure it uses the updated function.
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+DROP FUNCTION IF EXISTS public.handle_new_user();
 
 
 -- =================================================================
@@ -377,6 +303,8 @@ BEGIN
   RETURN redeemed_amount;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+    
 
     
 
