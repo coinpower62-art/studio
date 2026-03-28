@@ -326,7 +326,29 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-    
+---
+
+## 🔧 Data Repair Scripts
+
+If you have users who signed up before the registration process was fixed, their profile information (like username and full name) might be missing. You can run the following SQL script in your Supabase SQL Editor to repair this missing data.
+
+### Fix Missing User Profile Details
+
+This script will update any user profiles that are missing a username, full name, or email. It safely populates these fields using information from the main authentication table. It will not overwrite any data that already exists.
+
+```sql
+-- This script updates existing user profiles that have missing information.
+-- It safely populates the username, full_name, and email fields.
+UPDATE public.profiles p
+SET
+  email = COALESCE(p.email, u.email),
+  username = COALESCE(p.username, split_part(u.email, '@', 1)),
+  full_name = COALESCE(p.full_name, split_part(u.email, '@', 1))
+FROM auth.users u
+WHERE
+  p.id = u.id
+  AND (p.username IS NULL OR p.username = '' OR p.full_name IS NULL OR p.full_name = '' OR p.email IS NULL OR p.email = '');
+```    
 
     
 
