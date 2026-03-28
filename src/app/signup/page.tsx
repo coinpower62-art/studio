@@ -35,9 +35,10 @@ const signupSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(6, "Phone number must be at least 6 digits").regex(/^\d+$/, "Enter digits only"),
   password: z.string()
-    .min(6, "Password must be at least 6 characters")
-    .regex(/[A-Z]/, "Password must contain at least one capital letter")
-    .regex(/[^a-zA-Z0-9]/, "Password must contain at least one symbol (e.g. @, #, !)"),
+    .min(6, "Password must be at least 6 characters.")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter.")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter.")
+    .regex(/[0-9]/, "Password must contain at least one number."),
   country: z.string().min(1, "Please select your country"),
   confirmPassword: z.string().min(1, "Please confirm your password"),
   referralCode: z.string().optional(),
@@ -152,12 +153,13 @@ function TermsContent() {
 function PasswordStrength({ password }: { password?: string }) {
   const checks = [
     { id: "length", regex: /.{6,}/, label: "6+ characters" },
-    { id: "capital", regex: /[A-Z]/, label: "1 uppercase" },
-    { id: "symbol", regex: /[^a-zA-Z0-9]/, label: "1 symbol" },
+    { id: "lowercase", regex: /[a-z]/, label: "1 lowercase" },
+    { id: "uppercase", regex: /[A-Z]/, label: "1 uppercase" },
+    { id: "number", regex: /[0-9]/, label: "1 number" },
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-x-2 gap-y-1 mt-2">
+    <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-2">
       {checks.map((check) => {
         const met = password ? check.regex.test(password) : false;
         return (
@@ -236,11 +238,7 @@ function SignUpForm() {
           });
           form.setError("root", { message: result.error });
         } else {
-          toast({
-            title: "Account created! Welcome to CoinPower.",
-            description: "You have been credited $1.00. You will now be redirected.",
-          });
-          router.push("/dashboard");
+          // This will redirect to login page with a success message as handled in actions.ts
         }
     } catch (e: any) {
         toast({
@@ -395,7 +393,7 @@ function SignUpForm() {
                                     <Input {...field} type="password" data-testid="input-password" placeholder={t.password} className={cn(fieldClass(!!errors.password), "pl-9")} />
                                 </div>
                             </FormControl>
-                            {/* Do not show a red error message here, use the strength component */}
+                             <FormMessage className="text-red-600 text-xs font-medium" />
                         </FormItem>
                     )} />
                     
