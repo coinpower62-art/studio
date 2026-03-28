@@ -26,13 +26,13 @@ export async function signup(values: any) {
   });
 
   // --- CRITICAL CHANGE ---
-  // If there's an auth error, we now return the EXACT message from Supabase.
+  // If there's an auth error (like from our database function), return the EXACT message.
   if (error) {
-    // This will expose the true root cause of the registration failure.
-    return { error: `Supabase Auth Error: ${error.message}` };
+    // This will expose the true root cause, e.g., "Username 'test' is already taken."
+    return { error: error.message };
   }
 
-  // If auth succeeded, double-check that the profile was created by the trigger.
+  // Double-check that the profile was created by the trigger.
   if (data.user) {
     // We need a brief pause to allow the database trigger to complete.
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -44,9 +44,8 @@ export async function signup(values: any) {
       .single();
 
     if (!profile) {
-      // This is the "Database error saving new user" situation.
-      // Now we know for sure the database function `handle_new_user` is the problem.
-      return { error: 'User authentication succeeded, but profile creation in the database failed. Please run the latest SQL script from the README.md in your Supabase SQL Editor.' };
+      // This is now a more specific fallback error.
+      return { error: 'User authenticated, but profile creation failed. Please ensure the latest SQL script from README.md has been run in your Supabase project.' };
     }
   }
 

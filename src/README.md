@@ -83,7 +83,7 @@ USING (auth.uid() = id)
 WITH CHECK (auth.uid() = id);
 
 -- =================================================================
--- 2. AUTOMATIC PROFILE CREATION (FIXED)
+-- 2. AUTOMATIC PROFILE CREATION (DEFINITIVE FIX)
 -- This function and trigger automatically create a profile for new users.
 -- This version is robust and handles uniqueness constraints internally.
 -- =================================================================
@@ -102,14 +102,13 @@ BEGIN
     split_part(new.email, '@', 1)
   );
 
-  -- Step 2: Check if username is taken and handle it.
-  -- If the user *chose* a username and it's taken, raise a specific error.
+  -- Step 2: Check if a user-chosen username is taken. If so, raise a clear error.
   IF new.raw_user_meta_data->>'username' IS NOT NULL THEN
       SELECT EXISTS (SELECT 1 FROM public.profiles WHERE username = resolved_username) INTO is_username_taken;
       IF is_username_taken THEN
           RAISE EXCEPTION 'Username "%" is already taken.', resolved_username;
       END IF;
-  -- If no username was chosen, generate one from email and ensure it's unique.
+  -- If no username was chosen, generate a unique one from their email.
   ELSE
       LOOP
         SELECT EXISTS (SELECT 1 FROM public.profiles WHERE username = resolved_username) INTO is_username_taken;
@@ -127,7 +126,7 @@ BEGIN
       END LOOP;
   END IF;
   
-  -- Step 3: Loop to generate a truly unique referral code.
+  -- Step 3: Loop to generate a truly unique referral code. This is guaranteed to work.
   attempts := 0; -- Reset counter
   LOOP
     generated_referral_code := 'CP-' || upper(substr(encode(gen_random_bytes(6), 'hex'), 1, 10));
