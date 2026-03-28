@@ -21,14 +21,16 @@ export default function InstallGuide() {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-      <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-        <DownloadCloud className="w-4 h-4 text-amber-600" />
-        Install CoinPower App
-      </h3>
-      <p className="text-xs text-gray-500 mt-1 mb-3">Get a native app experience with one-click access from your home screen.</p>
+      <div className="flex items-center gap-2">
+        <DownloadCloud className="w-5 h-5 text-amber-600" />
+        <h3 className="font-bold text-gray-900 text-base">
+          Install CoinPower App
+        </h3>
+      </div>
+      <p className="text-sm text-gray-500 mt-2 mb-4">Get a native app experience with one-click access from your home screen.</p>
       
       {device === 'ios' && (
-        <div className="text-gray-700 text-sm space-y-1">
+        <div className="text-gray-700 text-sm space-y-2 leading-relaxed">
            <p>1. Tap the <strong>Share</strong> icon in your browser.</p>
            <p>2. Scroll down and tap <strong>'Add to Home Screen'</strong>.</p>
            <p>3. Tap <strong>'Add'</strong> to finish.</p>
@@ -36,7 +38,7 @@ export default function InstallGuide() {
       )}
 
       {device === 'android' && (
-        <div className="text-gray-700 text-sm space-y-1">
+        <div className="text-gray-700 text-sm space-y-2 leading-relaxed">
             <p>1. Tap the <strong>three dots (⋮)</strong> in Chrome.</p>
             <p>2. Select <strong>'Install app'</strong> or <strong>'Add to Home screen'</strong>.</p>
             <p>3. Confirm the installation.</p>
@@ -44,7 +46,7 @@ export default function InstallGuide() {
       )}
 
       {device === 'desktop' && (
-        <p className="text-gray-700 text-sm">Click the <strong>Install icon</strong> in your browser's address bar to add CoinPower to your desktop.</p>
+        <p className="text-gray-700 text-sm leading-relaxed">Click the <strong>Install icon</strong> in your browser's address bar to add CoinPower to your desktop.</p>
       )}
     </div>
   );
