@@ -163,10 +163,10 @@ function PasswordStrength({ password }: { password?: string }) {
       {checks.map((check) => {
         const met = password ? check.regex.test(password) : false;
         return (
-          <div key={check.id} className={`flex items-center gap-1.5 text-xs transition-colors ${met ? 'text-green-600' : 'text-gray-400'}`}>
+          <div key={check.id} className={`flex items-center gap-1.5 text-xs transition-colors ${met ? 'text-green-600' : 'text-amber-600'}`}>
             {met 
               ? <CheckCircle2 className="w-3.5 h-3.5" /> 
-              : <div className="w-3.5 h-3.5 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-gray-300"/></div>
+              : <div className="w-3.5 h-3.5 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-amber-300"/></div>
             }
             <span className="text-[11px] font-medium">{check.label}</span>
           </div>
@@ -300,7 +300,7 @@ function SignUpForm() {
                                         <Input {...field} data-testid="input-fullname" placeholder={t.fullName} className={cn(fieldClass(!!errors.fullName), "pl-9")} />
                                     </div>
                                 </FormControl>
-                                <FormMessage className="text-red-600 text-xs font-medium" />
+                                <FormMessage className="text-amber-600 text-xs font-medium" />
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="username" render={({ field }) => (
@@ -311,7 +311,7 @@ function SignUpForm() {
                                         <Input {...field} data-testid="input-username" placeholder={t.username} className={cn(fieldClass(!!errors.username), "pl-9")} />
                                     </div>
                                 </FormControl>
-                                <FormMessage className="text-red-600 text-xs font-medium" />
+                                <FormMessage className="text-amber-600 text-xs font-medium" />
                             </FormItem>
                         )} />
                     </div>
@@ -324,7 +324,7 @@ function SignUpForm() {
                                     <Input {...field} type="email" data-testid="input-email" placeholder={t.email} className={cn(fieldClass(!!errors.email), "pl-9")} />
                                 </div>
                             </FormControl>
-                            <FormMessage className="text-red-600 text-xs font-medium" />
+                            <FormMessage className="text-amber-600 text-xs font-medium" />
                         </FormItem>
                     )} />
                     
@@ -364,7 +364,7 @@ function SignUpForm() {
                                 </div>
                                 </div>
                             </FormControl>
-                            <FormMessage className="text-red-600 text-xs font-medium" />
+                            <FormMessage className="text-amber-600 text-xs font-medium" />
                         </FormItem>
                     )} />
 
@@ -381,7 +381,7 @@ function SignUpForm() {
                                 </FormControl>
                                 <SelectContent className="max-h-56">{countries.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                             </Select>
-                            <FormMessage className="text-red-600 text-xs font-medium" />
+                            <FormMessage className="text-amber-600 text-xs font-medium" />
                         </FormItem>
                     )} />
 
@@ -393,7 +393,7 @@ function SignUpForm() {
                                     <Input {...field} type="password" data-testid="input-password" placeholder={t.password} className={cn(fieldClass(!!errors.password), "pl-9")} />
                                 </div>
                             </FormControl>
-                             <FormMessage className="text-red-600 text-xs font-medium" />
+                             <FormMessage className="text-amber-600 text-xs font-medium" />
                         </FormItem>
                     )} />
                     
@@ -407,7 +407,7 @@ function SignUpForm() {
                                     <Input {...field} type="password" data-testid="input-confirm-password" placeholder={t.confirmPassword} className={cn(fieldClass(!!errors.confirmPassword), "pl-9")} />
                                 </div>
                             </FormControl>
-                            <FormMessage className="text-red-600 text-xs font-medium" />
+                            <FormMessage className="text-amber-600 text-xs font-medium" />
                         </FormItem>
                     )} />
 
@@ -428,7 +428,7 @@ function SignUpForm() {
                                     />
                                 </div>
                             </FormControl>
-                            <FormMessage className="text-red-600 text-xs font-medium" />
+                            <FormMessage className="text-amber-600 text-xs font-medium" />
                         </FormItem>
                     )} />
 
@@ -466,7 +466,7 @@ function SignUpForm() {
                             </label>
                           </div>
                         </FormControl>
-                        <FormMessage className="text-red-600 text-xs font-medium" />
+                        <FormMessage className="text-amber-600 text-xs font-medium" />
                       </FormItem>
                     )} />
 
