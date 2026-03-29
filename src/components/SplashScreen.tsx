@@ -22,8 +22,8 @@ export function SplashScreen({ onDone, logoUrl }: { onDone: () => void; logoUrl:
     >
         <defs>
             <linearGradient id="logo-gradient" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#F97316"/>
-                <stop offset="1" stop-color="#EC4899"/>
+                <stop stop-color="#FBBF24"/>
+                <stop offset="1" stop-color="#F59E0B"/>
             </linearGradient>
         </defs>
         <path d="M11.9999 15.132C11.9999 15.132 10.5179 12.213 13.1329 10.899C15.7479 9.585 18.9999 10.461 18.9999 10.461C18.9999 10.461 16.9219 7.419 14.3059 8.64C11.6899 9.861 11.9999 15.132 11.9999 15.132Z" fill="url(#logo-gradient)"/>
@@ -33,17 +33,16 @@ export function SplashScreen({ onDone, logoUrl }: { onDone: () => void; logoUrl:
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-green-900 via-zinc-800 to-amber-800 transition-opacity duration-700 ease-in-out ${phase === "out" ? "opacity-0" : "opacity-100"}`}
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white transition-opacity duration-700 ease-in-out ${phase === "out" ? "opacity-0" : "opacity-100"}`}
       style={{pointerEvents: phase === 'out' ? 'none' : 'all'}}
     >
       <div
-        className={`relative mb-7 transition-all duration-500 ease-custom-in-out ${phase === "in" ? "opacity-0 scale-60" : "opacity-100 scale-100"}`}
+        className={`relative mb-4 transition-all duration-500 ease-custom-in-out ${phase === "in" ? "opacity-0 scale-75" : "opacity-100 scale-100"}`}
       >
-        <div className="absolute -inset-2.5 rounded-full bg-radial-glow animate-pulse-glow" />
-        <div className="w-[108px] h-[108px] rounded-[28px] border-[3px] border-amber-500/70 shadow-[0_0_40px_rgba(201,137,26,0.4),_0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden">
-            <div className="w-full h-full bg-white flex items-center justify-center p-3">
+        <div className="w-24 h-24 rounded-full border-4 border-amber-300 shadow-lg flex items-center justify-center p-1">
+            <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
                  {logoUrl ? (
-                    <img src={logoUrl} alt="CoinPower Logo" className="w-full h-full object-cover" />
+                    <img src={logoUrl} alt="CoinPower Logo" className="w-full h-full object-contain p-2 rounded-full" />
                 ) : (
                     <SvgLogo />
                 )}
@@ -54,16 +53,16 @@ export function SplashScreen({ onDone, logoUrl }: { onDone: () => void; logoUrl:
       <div
         className={`text-center transition-all duration-500 delay-150 ${phase === "in" ? "opacity-0 translate-y-5" : "opacity-100 translate-y-0"}`}
       >
-        <h1 className="text-4xl font-extrabold text-white leading-none -tracking-wide">
-          Coin<span className="text-amber-400">Power</span>
+        <h1 className="text-4xl font-black text-zinc-800 leading-none">
+          CoinPower
         </h1>
-        <p className="text-amber-300/75 text-sm font-medium mt-2 tracking-wider">
-          Digital Energy Mining Platform
+        <p className="text-zinc-500 text-sm font-bold mt-2 tracking-widest">
+          DIGITAL ENERGY MINING
         </p>
       </div>
 
       <div
-        className={`mt-12 flex gap-2 transition-opacity duration-400 delay-300 ${phase === "in" ? "opacity-0" : "opacity-100"}`}
+        className={`mt-16 flex gap-2 transition-opacity duration-400 delay-300 ${phase === "in" ? "opacity-0" : "opacity-100"}`}
       >
         {[0, 1, 2].map(i => (
           <div
