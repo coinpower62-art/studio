@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { ReferralLink } from '@/components/ReferralLink';
+import { InstallCard } from '@/components/InstallCard';
 
 // The main page component
 export default async function DashboardPage() {
@@ -117,6 +118,8 @@ export default async function DashboardPage() {
           <p className="text-gray-500 text-xs mt-0.5">Active Generators</p>
         </div>
       </div>
+      
+      <InstallCard />
 
       <ReferralLink referralCode={profile?.referral_code ?? null} />
 
