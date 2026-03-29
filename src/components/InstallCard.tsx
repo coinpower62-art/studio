@@ -6,33 +6,34 @@ export function InstallCard() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
-    // This "catches" the official install signal from Chrome and other supported browsers.
+    // This "catches" the official install signal from Chrome
     window.addEventListener('beforeinstallprompt', (e) => {
-      // Prevent the browser from showing the default install prompt.
       e.preventDefault();
-      // Store the event so we can trigger it later from our button.
       setDeferredPrompt(e);
     });
   }, []);
 
   const handleDownloadClick = async () => {
-    // Check if we have the stored install prompt event.
     if (deferredPrompt) {
-      // Show the browser's native install prompt.
-      deferredPrompt.prompt();
-      
-      // Wait for the user to respond to the prompt.
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        console.log('User accepted the CoinPower app install prompt');
+      try {
+        // This is the "Magic" line that triggers the real Android Install window
+        await deferredPrompt.prompt();
+        
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          console.log('User installed CoinPower');
+        }
+        // We do not set the deferredPrompt to null to allow repeated clicks,
+        // though the browser will likely only show the prompt once.
+        // The catch block will handle subsequent attempts.
+      } catch (error) {
+        // This error will likely be thrown on subsequent clicks.
+        // We show the manual instructions as a fallback.
+        alert("Installation prompt can only be shown once. To install, tap the 3 dots (⋮) in your browser menu and select 'Install App' or 'Add to Home Screen'.");
       }
-      // We can only use the prompt once, so we clear it.
-      setDeferredPrompt(null);
     } else {
-      // If the deferredPrompt is not available, it means the browser isn't ready,
-      // the user is on an unsupported browser (like iOS Safari), or has previously
-      // dismissed the prompt. In this case, we show a helpful alert.
-      alert("To install, please tap the three dots (⋮) in your browser menu and select 'Install App' or 'Add to Home Screen'.");
+      // If the browser isn't ready or doesn't support the prompt (e.g., iOS)
+      alert("To install this app, tap the 3 dots (⋮) in your browser menu and select 'Install App' or 'Add to Home Screen'.");
     }
   };
 
