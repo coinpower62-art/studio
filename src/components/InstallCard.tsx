@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowDownToLine, Smartphone, Share } from 'lucide-react';
+import { ArrowDownToLine, Smartphone, Share, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -69,7 +69,7 @@ export function InstallCard() {
                 Install CoinPower App
             </DialogTitle>
             <DialogDescription>
-              Follow these steps to add the app to your home screen.
+              The direct install prompt isn't available right now (this can happen if you've previously dismissed it). No problem! Just follow the steps for your device below.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4 text-sm">
@@ -94,11 +94,11 @@ export function InstallCard() {
                  <p className="font-semibold text-gray-800">For Android & Desktop:</p>
                   <div className="flex items-start gap-3">
                   <div className="font-bold text-lg text-amber-600">1.</div>
-                  <p>Look for an 'Install' icon in your browser's address bar (usually on the right side).</p>
+                  <p>Open your browser menu (usually three dots <MoreVertical className="w-4 h-4 inline-block mx-0.5" /> in the top-right).</p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="font-bold text-lg text-amber-600">2.</div>
-                  <p>Alternatively, open the browser menu (usually three dots) and look for an "Install App" or "Add to Home Screen" option.</p>
+                  <p>Look for and tap on "Install App" or "Add to Home Screen".</p>
                 </div>
               </div>
             )}
