@@ -7,22 +7,15 @@ import { DownloadCloud } from 'lucide-react';
 export default function InstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
-  const [canBeInstalled, setCanBeInstalled] = useState(false);
 
   useEffect(() => {
     const ua = navigator.userAgent.toLowerCase();
     const isIosDevice = /iphone|ipad|ipod/.test(ua);
     setIsIOS(isIosDevice);
 
-    // Show button for iOS devices immediately for manual 'Add to Home Screen'
-    if (isIosDevice) {
-      setCanBeInstalled(true);
-    }
-
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setCanBeInstalled(true);
     };
 
     window.addEventListener('beforeinstallprompt', handler);
@@ -36,18 +29,19 @@ export default function InstallButton() {
       return;
     }
 
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      setCanBeInstalled(false); // Hide button after successful install
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      if (outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      }
+      setDeferredPrompt(null);
+    } else {
+      // Fallback for browsers that don't fire the event or if it was dismissed
+      alert("To install CoinPower:\n\n1. Tap the menu (⋮) in your browser.\n2. Select 'Install app' or 'Add to Home screen'.");
     }
-    setDeferredPrompt(null);
   };
-
-  if (!canBeInstalled) return null;
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
