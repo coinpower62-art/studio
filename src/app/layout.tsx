@@ -7,8 +7,11 @@ import { SplashProvider } from '@/components/SplashProvider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 export const metadata: Metadata = {
-  title: 'CoinPower',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  title: "CoinPower",
+  description: "Digital Energy Mining",
+  manifest: "/manifest.json",
+  themeColor: "#b8860b",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
