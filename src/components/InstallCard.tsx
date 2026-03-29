@@ -1,54 +1,51 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowDownToLine, Smartphone } from 'lucide-react';
+import { ArrowDownToLine, Smartphone, Share } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 export function InstallCard() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isVisible, setIsVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [showManualInstall, setShowManualInstall] = useState(false);
 
   useEffect(() => {
-    // Set up the install prompt handler
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
     };
     window.addEventListener('beforeinstallprompt', handler);
 
-    // Check for iOS to show manual instructions
     const ua = navigator.userAgent.toLowerCase();
     const isIphone = /iphone|ipad|ipod/.test(ua);
     if (isIphone) {
-        setIsIOS(true);
+      setIsIOS(true);
     }
-    
-    // Always make the card visible on the client side.
-    setIsVisible(true);
 
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
   const handleInstall = async () => {
-    if (isIOS) {
-      alert("To install CoinPower on your iPhone:\n\n1. Tap the 'Share' icon (a square with an arrow pointing up) in your browser's toolbar.\n\n2. Scroll down and tap on 'Add to Home Screen'.\n\n3. Tap 'Add' in the top-right corner.");
-      return;
-    }
-
     if (deferredPrompt) {
       deferredPrompt.prompt();
-      // We don't need to check the outcome, as the button should remain visible.
-      setDeferredPrompt(null);
+      deferredPrompt.userChoice.then(() => {
+        setDeferredPrompt(null);
+      });
     } else {
-        // Fallback for desktop/other browsers where the prompt isn't available
-        alert("To install CoinPower on your device:\n\nLook for an 'Install' icon in your browser's address bar or check the browser menu for an 'Install App' option.");
+      setShowManualInstall(true);
     }
   };
 
-  if (!isVisible) return null;
-
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+    <>
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
         <div className="flex flex-col items-center gap-3">
              <h3 className="font-bold text-gray-900 text-sm text-center">Click to download CoinPower app</h3>
              <p className="text-xs text-gray-500 mt-0.5 text-center">For faster access and notifications, install the app on your device.</p>
@@ -62,6 +59,55 @@ export function InstallCard() {
                 </div>
             </button>
         </div>
-    </div>
+      </div>
+
+      <Dialog open={showManualInstall} onOpenChange={setShowManualInstall}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+                <Smartphone className="w-5 h-5" />
+                Install CoinPower App
+            </DialogTitle>
+            <DialogDescription>
+              Follow these steps to add the app to your home screen.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4 text-sm">
+            {isIOS ? (
+              <div className="space-y-3">
+                <p className="font-semibold text-gray-800">For iPhone & iPad:</p>
+                <div className="flex items-start gap-3">
+                  <div className="font-bold text-lg text-amber-600">1.</div>
+                  <p>Tap the <Share className="w-4 h-4 inline-block mx-1" /> 'Share' icon in your Safari browser toolbar.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="font-bold text-lg text-amber-600">2.</div>
+                  <p>Scroll down in the share menu and tap on 'Add to Home Screen'.</p>
+                </div>
+                 <div className="flex items-start gap-3">
+                  <div className="font-bold text-lg text-amber-600">3.</div>
+                  <p>Tap 'Add' in the top-right corner of the screen.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                 <p className="font-semibold text-gray-800">For Android & Desktop:</p>
+                  <div className="flex items-start gap-3">
+                  <div className="font-bold text-lg text-amber-600">1.</div>
+                  <p>Look for an 'Install' icon in your browser's address bar (usually on the right side).</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="font-bold text-lg text-amber-600">2.</div>
+                  <p>Alternatively, open the browser menu (usually three dots) and look for an "Install App" or "Add to Home Screen" option.</p>
+                </div>
+              </div>
+            )}
+          </div>
+          <Button onClick={() => setShowManualInstall(false)} className="w-full">
+            Got it
+          </Button>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
