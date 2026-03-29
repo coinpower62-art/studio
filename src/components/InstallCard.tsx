@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { DownloadCloud, Smartphone } from 'lucide-react';
+import { ArrowDownToLine, Smartphone } from 'lucide-react';
 
 export function InstallCard() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -16,27 +15,22 @@ export function InstallCard() {
       return;
     }
 
-    // 1. Check if user already dismissed this banner in this session
-    const isDismissed = sessionStorage.getItem('installCardDismissed');
-    if (isDismissed) return;
-
-    // 2. Detect iOS
-    const ua = navigator.userAgent.toLowerCase();
-    const isIphone = /iphone|ipad|ipod/.test(ua);
-    setIsIOS(isIphone);
-
-    // iOS doesn't have a 'beforeinstallprompt' event, so we show the banner manually
-    // if the app is not already installed.
-    if (isIphone) setIsVisible(true);
-
-    // 3. For Android/Chrome
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setIsVisible(true);
     };
-
     window.addEventListener('beforeinstallprompt', handler);
+
+    // Also check for iOS to show manual instructions
+    const ua = navigator.userAgent.toLowerCase();
+    const isIphone = /iphone|ipad|ipod/.test(ua);
+    if (isIphone) {
+        setIsIOS(true);
+        setIsVisible(true);
+    }
+
+
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
@@ -51,42 +45,30 @@ export function InstallCard() {
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
           setIsVisible(false);
-          sessionStorage.setItem('installCardDismissed', 'true');
       }
       setDeferredPrompt(null);
     } else {
-        // Fallback for desktop browsers that don't fire the event but are installable
-        alert("To install CoinPower on your desktop:\n\nLook for an 'Install' icon in your browser's address bar (usually on the right side) and click it.");
+        // Fallback for desktop/other browsers
+        alert("To install CoinPower on your device:\n\nLook for an 'Install' icon in your browser's address bar or check the browser menu for an 'Install App' option.");
     }
-  };
-
-  const closeBanner = () => {
-    setIsVisible(false);
-    sessionStorage.setItem('installCardDismissed', 'true');
   };
 
   if (!isVisible) return null;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm relative">
-        <button onClick={closeBanner} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-        <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg flex-shrink-0">
-                <DownloadCloud className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1">
-                <h3 className="font-bold text-gray-900 text-sm">Install CoinPower App</h3>
-                <p className="text-xs text-gray-500 mt-0.5">Get a native app experience for faster access and notifications.</p>
-            </div>
-            <Button
+    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <div className="flex flex-col items-center gap-3">
+             <h3 className="font-bold text-gray-900 text-sm text-center">Click to download CoinPower app</h3>
+             <p className="text-xs text-gray-500 mt-0.5 text-center">For faster access and notifications, install the app on your device.</p>
+            <button
                 onClick={handleInstall}
-                className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-lg shadow-md transition-all flex items-center gap-2 justify-center text-sm px-5 h-10"
+                className="group w-full max-w-xs mx-auto bg-slate-900 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-between text-base h-14 mt-2"
             >
-                <Smartphone className="w-4 h-4" />
-                Download & Install
-            </Button>
+                <span className="pl-8">Download</span>
+                <div className="mr-2 h-11 w-11 rounded-full bg-red-600 group-hover:bg-red-500 transition-colors flex items-center justify-center ring-2 ring-slate-900">
+                    <ArrowDownToLine className="w-5 h-5 text-white" />
+                </div>
+            </button>
         </div>
     </div>
   );
