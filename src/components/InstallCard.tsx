@@ -1,76 +1,37 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 export function InstallCard() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-
-  useEffect(() => {
-    // This "catches" the official install signal from Chrome
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    });
-  }, []);
-
-  const handleDownloadClick = async () => {
-    if (deferredPrompt) {
-      try {
-        // This is the "Magic" line that triggers the real Android Install window
-        await deferredPrompt.prompt();
-        
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          console.log('User installed CoinPower');
-        }
-        // We do not set the deferredPrompt to null to allow repeated clicks,
-        // though the browser will likely only show the prompt once.
-        // The catch block will handle subsequent attempts.
-      } catch (error) {
-        // This error will likely be thrown on subsequent clicks.
-        // We show the manual instructions as a fallback.
-        alert("Installation prompt can only be shown once. To install, tap the 3 dots (⋮) in your browser menu and select 'Install App' or 'Add to Home Screen'.");
-      }
-    } else {
-      // If the browser isn't ready or doesn't support the prompt (e.g., iOS)
-      alert("To install this app, tap the 3 dots (⋮) in your browser menu and select 'Install App' or 'Add to Home Screen'.");
-    }
-  };
+  const downloadUrl = '/coinpower.apk'; // Make sure the file is in your /public folder
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-      <div className="flex flex-col items-center gap-3">
-          <h3 className="font-bold text-gray-900 text-sm text-center">Click to download CoinPower app</h3>
-          <p className="text-xs text-gray-500 mt-0.5 text-center">For faster access and notifications, install the app on your device.</p>
-          <button 
-            onClick={handleDownloadClick}
-            style={{
-              backgroundColor: '#000',
-              color: '#D4AF37',
-              padding: '15px 30px',
-              borderRadius: '50px',
-              fontWeight: 'bold',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '15px',
-              border: 'none',
-              cursor: 'pointer',
-              marginTop: '8px',
-            }}
-          >
-            <span>Download</span>
-            <div style={{ 
-              backgroundColor: '#D4AF37', 
-              borderRadius: '50%', 
-              padding: '5px',
-              display: 'flex' 
-            }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3">
-                <path d="M12 5v14M5 12l7 7 7-7"/>
-              </svg>
-            </div>
-          </button>
-      </div>
+    <div style={{ textAlign: 'center', margin: '20px' }}>
+      <a 
+        href={downloadUrl} 
+        download="CoinPower.apk"
+        style={{
+          backgroundColor: '#D4AF37', // Your Gold
+          color: '#000',
+          padding: '18px 40px',
+          borderRadius: '12px',
+          fontWeight: '900',
+          fontSize: '16px',
+          textDecoration: 'none',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '12px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          border: '2px solid #000'
+        }}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+        </svg>
+        DOWNLOAD ANDROID APP (.APK)
+      </a>
+      
+      <p style={{ color: '#888', fontSize: '12px', marginTop: '10px' }}>
+        *If prompted, select "Download Anyway" or "Allow from this source".
+      </p>
     </div>
   );
 }
