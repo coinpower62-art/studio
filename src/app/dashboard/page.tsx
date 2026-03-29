@@ -12,7 +12,6 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { ReferralLink } from '@/components/ReferralLink';
-import InstallButton from '@/components/InstallButton';
 
 // The main page component
 export default async function DashboardPage() {
@@ -120,8 +119,6 @@ export default async function DashboardPage() {
       </div>
 
       <ReferralLink referralCode={profile?.referral_code ?? null} />
-      
-      <InstallButton />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
