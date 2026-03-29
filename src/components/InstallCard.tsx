@@ -9,27 +9,22 @@ export function InstallCard() {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Prevent banner from showing if user has already installed the app
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsVisible(false);
-      return;
-    }
-
+    // Set up the install prompt handler
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setIsVisible(true);
     };
     window.addEventListener('beforeinstallprompt', handler);
 
-    // Also check for iOS to show manual instructions
+    // Check for iOS to show manual instructions
     const ua = navigator.userAgent.toLowerCase();
     const isIphone = /iphone|ipad|ipod/.test(ua);
     if (isIphone) {
         setIsIOS(true);
-        setIsVisible(true);
     }
-
+    
+    // Always make the card visible on the client side.
+    setIsVisible(true);
 
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
@@ -42,13 +37,10 @@ export function InstallCard() {
 
     if (deferredPrompt) {
       deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-          setIsVisible(false);
-      }
+      // We don't need to check the outcome, as the button should remain visible.
       setDeferredPrompt(null);
     } else {
-        // Fallback for desktop/other browsers
+        // Fallback for desktop/other browsers where the prompt isn't available
         alert("To install CoinPower on your device:\n\nLook for an 'Install' icon in your browser's address bar or check the browser menu for an 'Install App' option.");
     }
   };
