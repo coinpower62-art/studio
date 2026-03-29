@@ -44,12 +44,8 @@ export function SplashProvider({children}: {children: ReactNode}) {
     // Register service worker for PWA capabilities
     useEffect(() => {
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').then(registration => {
-                    console.log('Service Worker registered: ', registration);
-                }).catch(error => {
-                    console.error('Service Worker registration failed: ', error);
-                });
+            navigator.serviceWorker.register('/sw.js').then(() => {
+            console.log('CoinPower Engine Active');
             });
         }
     }, []);
