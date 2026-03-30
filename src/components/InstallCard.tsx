@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { DownloadCloud, Loader } from 'lucide-react';
+import { DownloadCloud, MoreVertical, PlusSquare, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export function InstallCard() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isPreparing, setIsPreparing] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -16,8 +16,6 @@ export function InstallCard() {
       e.preventDefault();
       // Stash the event so it can be triggered later.
       setDeferredPrompt(e);
-      // If the user clicked while we were waiting for the prompt, hide the spinner
-      setIsPreparing(false);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -28,23 +26,55 @@ export function InstallCard() {
   }, []);
 
   const handleInstallClick = async () => {
+    // If the browser has offered the install prompt, show it.
     if (deferredPrompt) {
-      // Show the install prompt
       deferredPrompt.prompt();
-      // Wait for the user to respond to the prompt
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
         toast({ title: "App installed!", description: "CoinPower has been added to your Home screen." });
       }
-      // We can only use the prompt once, clear it.
       setDeferredPrompt(null);
     } else {
-      // If prompt isn't ready, show a preparing state
-      setIsPreparing(true);
-      // Hide preparing state after a few seconds if the event doesn't fire (e.g., on iOS)
-      setTimeout(() => setIsPreparing(false), 3000);
+      // Otherwise, show the manual installation guide.
+      setShowInstallGuide(true);
     }
   };
+
+  if (showInstallGuide) {
+    return (
+        <div className="bg-white rounded-2xl border-2 border-amber-300 p-5 shadow-lg animate-in fade-in">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-gray-900 text-base">Manual Install Guide</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                    Follow these steps to add the app to your Home Screen.
+                </p>
+              </div>
+               <Button variant="ghost" size="sm" onClick={() => setShowInstallGuide(false)} className="text-gray-500 hover:bg-gray-100">
+                    <ArrowLeft className="w-4 h-4 mr-1" />
+                    Back
+                </Button>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                  <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center flex-shrink-0 font-bold text-sm">1</div>
+                  <div>
+                      <p className="font-semibold text-gray-800 text-sm">Open Browser Menu</p>
+                      <p className="text-xs text-gray-600">Tap the <MoreVertical className="inline-block w-4 h-4" /> icon in your browser's address bar.</p>
+                  </div>
+              </div>
+              <div className="flex items-start gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                  <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center flex-shrink-0 font-bold text-sm">2</div>
+                  <div>
+                      <p className="font-semibold text-gray-800 text-sm">Tap 'Install App'</p>
+                      <p className="text-xs text-gray-600">Select <span className="font-semibold">"Install App"</span> or <span className="font-semibold">"Add to Home Screen"</span> from the menu.</p>
+                  </div>
+              </div>
+            </div>
+        </div>
+    )
+  }
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
@@ -61,16 +91,8 @@ export function InstallCard() {
         <Button
           onClick={handleInstallClick}
           className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-xl h-10 px-6 shadow-md transition-all text-sm"
-          disabled={isPreparing}
         >
-          {isPreparing ? (
-            <>
-              <Loader className="mr-2 h-4 w-4 animate-spin" />
-              Preparing...
-            </>
-          ) : (
-            'Install App'
-          )}
+          Install App
         </Button>
       </div>
     </div>
