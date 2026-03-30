@@ -7,39 +7,39 @@ import { useToast } from '@/hooks/use-toast';
 
 export function InstallCard() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isVisible, setIsVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check if the app is already installed and running in standalone mode
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
-      setIsVisible(true);
     }
 
+    // Detect if the user is on an iOS device
     const ua = navigator.userAgent.toLowerCase();
     const isIphone = /iphone|ipad|ipod/.test(ua);
     setIsIOS(isIphone);
 
+    // Listen for the beforeinstallprompt event
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      if (!window.matchMedia('(display-mode: standalone)').matches) {
-        setIsVisible(true);
-      }
     };
 
     window.addEventListener('beforeinstallprompt', handler);
-
-    if (isIphone && !window.matchMedia('(display-mode: standalone)').matches) {
-      setIsVisible(true);
-    }
 
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
   const handleDownload = async () => {
+    // If the app is already installed, do nothing.
+    if (isInstalled) {
+        toast({ title: "App is already installed!" });
+        return;
+    }
+
     // If on iOS, show the manual install guide toast.
     if (isIOS) {
         toast({
@@ -55,7 +55,7 @@ export function InstallCard() {
         return;
     }
 
-    // For other browsers, trigger the deferred prompt if available.
+    // If the deferredPrompt is available, show the browser's install prompt.
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
@@ -64,11 +64,22 @@ export function InstallCard() {
         setIsInstalled(true);
       }
       setDeferredPrompt(null);
+    } else {
+      // If the prompt isn't available, guide the user.
+      toast({
+        title: "Installation Not Ready",
+        description: "The install prompt isn't ready yet. Please browse the app for a moment and try again. You can also use your browser's 'Install App' menu option.",
+        duration: 8000,
+      });
     }
   };
   
+  // The card should be visible if it's not installed yet, or if it is installed (to show the "Installed" state)
+  // We always show it, and the button's state changes.
+  const isVisible = true; 
+
   if (!isVisible) {
-      return null; // Don't show anything if install is not available (and not on iOS)
+      return null;
   }
 
   return (
@@ -80,47 +91,24 @@ export function InstallCard() {
         <div className="flex-1">
           <h3 className="font-bold text-gray-900 text-base">Install CoinPower App</h3>
           <p className="text-xs text-gray-500 mt-1">
-            Add CoinPower to your home screen for easy access and notifications.
+            Add CoinPower to your home screen for easy access and a better experience.
           </p>
         </div>
         {isInstalled ? (
-           <button 
+           <Button 
              disabled
-             style={{
-               backgroundColor: '#4CAF50',
-               color: '#fff',
-               border: 'none',
-               padding: '8px 20px',
-               borderRadius: '25px',
-               fontWeight: '900',
-               fontSize: '12px',
-               cursor: 'not-allowed',
-               textTransform: 'uppercase',
-               display: 'inline-flex',
-               alignItems: 'center',
-               gap: '8px'
-             }}
+             className="bg-green-500 hover:bg-green-500 text-white font-bold text-xs uppercase rounded-full px-5 py-2.5 flex items-center gap-2 cursor-not-allowed"
            >
              <CheckCircle className="w-4 h-4" />
              Installed
-           </button>
+           </Button>
         ) : (
-          <button 
+          <Button 
             onClick={handleDownload}
-            style={{
-              backgroundColor: '#D4AF37',
-              color: '#000',
-              border: 'none',
-              padding: '8px 20px',
-              borderRadius: '25px',
-              fontWeight: '900',
-              fontSize: '12px',
-              cursor: 'pointer',
-              textTransform: 'uppercase'
-            }}
+            className="bg-amber-500 hover:bg-amber-600 text-black font-black text-xs uppercase rounded-full px-5 py-2.5"
           >
-            Download & Install
-          </button>
+            {isIOS ? 'Install Guide' : 'Download & Install'}
+          </Button>
         )}
       </div>
     </div>
