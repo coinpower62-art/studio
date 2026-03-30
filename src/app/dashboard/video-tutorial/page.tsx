@@ -2,15 +2,19 @@
 export const runtime = 'edge';
 
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Video, Loader } from 'lucide-react';
+import { ArrowLeft, Video, Loader, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export default function VideoTutorialPage() {
   const router = useRouter();
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchVideo = async () => {
@@ -28,6 +32,14 @@ export default function VideoTutorialPage() {
     };
     fetchVideo();
   }, []);
+
+  const handleRating = (rate: number) => {
+    setRating(rate);
+    toast({
+      title: "Thank you for your feedback!",
+      description: `You rated the tutorial ${rate} out of 5 stars.`,
+    });
+  };
 
   return (
     <div className="fixed inset-0 bg-slate-900 text-white flex flex-col items-center justify-center p-4 z-50">
@@ -69,6 +81,31 @@ export default function VideoTutorialPage() {
             </>
           )}
         </div>
+
+        {/* Star Rating Section */}
+        <div className="mt-8">
+          <p className="text-slate-300 mb-3">Was this tutorial helpful?</p>
+          <div className="flex justify-center gap-2">
+            {[...Array(5)].map((_, index) => {
+              const starValue = index + 1;
+              return (
+                <Star
+                  key={starValue}
+                  data-testid={`star-${starValue}`}
+                  className={`w-8 h-8 cursor-pointer transition-all duration-200 ${
+                    starValue <= (hoverRating || rating)
+                      ? 'text-amber-400 fill-amber-400'
+                      : 'text-slate-600'
+                  }`}
+                  onClick={() => handleRating(starValue)}
+                  onMouseEnter={() => setHoverRating(starValue)}
+                  onMouseLeave={() => setHoverRating(0)}
+                />
+              );
+            })}
+          </div>
+        </div>
+
       </div>
     </div>
   );
