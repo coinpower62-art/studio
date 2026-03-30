@@ -120,8 +120,6 @@ export default async function DashboardPage() {
         </div>
       </div>
       
-      <InstallCard />
-
       <ReferralLink referralCode={profile?.referral_code ?? null} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -169,6 +167,7 @@ export default async function DashboardPage() {
           </div>
         </Link>
       </div>
+      <InstallCard />
     </div>
   );
 }
