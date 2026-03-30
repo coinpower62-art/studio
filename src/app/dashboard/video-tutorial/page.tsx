@@ -39,14 +39,14 @@ export default function VideoTutorialPage() {
         </Button>
       </div>
 
-      <div className="w-full max-w-4xl animate-in fade-in zoom-in-95 text-center">
+      <div className="w-full max-w-sm animate-in fade-in zoom-in-95 text-center">
         
         <div className="mb-8">
           <h1 className="text-3xl font-black text-amber-400">Video Tutorial</h1>
           <p className="text-slate-400 mt-1">How to deposit and start earning.</p>
         </div>
 
-        <div className="aspect-video w-full bg-slate-800 border-2 border-slate-700 rounded-2xl flex flex-col items-center justify-center shadow-2xl overflow-hidden">
+        <div className="aspect-[9/16] w-full bg-slate-800 border-2 border-slate-700 rounded-2xl flex flex-col items-center justify-center shadow-2xl overflow-hidden">
           {loading ? (
             <>
               <Loader className="w-12 h-12 text-slate-600 animate-spin" />
