@@ -1,7 +1,7 @@
 export function SplashIcon() {
     return (
         <div className="rounded-3xl bg-white/95 p-4 shadow-2xl border-2 border-yellow-300/50 w-44 h-44 flex flex-col items-center justify-center">
-            <div className="w-20 h-20 rounded-full bg-black flex items-center justify-center border-4 border-primary relative overflow-hidden p-3">
+            <div className="w-20 h-20 rounded-2xl bg-black flex items-center justify-center border-4 border-primary relative overflow-hidden p-3">
                 <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                         <linearGradient id="logo-gradient" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
