@@ -2,21 +2,21 @@
   "name": "CoinPower",
   "short_name": "CoinPower",
   "description": "Digital Energy Mining",
-  "start_url": "/dashboard",
+  "start_url": "https://coinpower-app.vercel.app/",
+  "scope": "https://coinpower-app.vercel.app/",
   "display": "standalone",
   "background_color": "#0d1117",
   "theme_color": "#b8860b",
   "icons": [
     {
-      "src": "/apple-icon.png",
-      "sizes": "192x192",
+      "src": "logo-192.png",
       "type": "image/png",
-      "purpose": "any maskable"
+      "sizes": "192x192"
     },
     {
-      "src": "/apple-icon.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "logo-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
     }
   ]
 }
