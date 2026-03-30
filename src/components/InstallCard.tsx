@@ -2,16 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { DownloadCloud, Share } from 'lucide-react';
+import { DownloadCloud, Share, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export function InstallCard() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+      setIsVisible(true);
+    }
+
     const ua = navigator.userAgent.toLowerCase();
     const isIphone = /iphone|ipad|ipod/.test(ua);
     setIsIOS(isIphone);
@@ -19,13 +25,14 @@ export function InstallCard() {
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setIsVisible(true); // Show the button when the prompt is available
+      if (!window.matchMedia('(display-mode: standalone)').matches) {
+        setIsVisible(true);
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handler);
 
-    if (isIphone) {
-      // Always show the install card on iOS.
+    if (isIphone && !window.matchMedia('(display-mode: standalone)').matches) {
       setIsVisible(true);
     }
 
@@ -53,8 +60,8 @@ export function InstallCard() {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
-        setIsVisible(false); // Hide the card after successful install
         toast({ title: "App installed!", description: "CoinPower has been added to your Home screen." });
+        setIsInstalled(true);
       }
       setDeferredPrompt(null);
     }
@@ -76,22 +83,45 @@ export function InstallCard() {
             Add CoinPower to your home screen for easy access and notifications.
           </p>
         </div>
-        <button 
-          onClick={handleDownload}
-          style={{
-            backgroundColor: '#D4AF37', // A gold color
-            color: '#000',
-            border: 'none',
-            padding: '8px 20px',
-            borderRadius: '25px',
-            fontWeight: '900',
-            fontSize: '12px',
-            cursor: 'pointer',
-            textTransform: 'uppercase'
-          }}
-        >
-          Download & Install
-        </button>
+        {isInstalled ? (
+           <button 
+             disabled
+             style={{
+               backgroundColor: '#4CAF50',
+               color: '#fff',
+               border: 'none',
+               padding: '8px 20px',
+               borderRadius: '25px',
+               fontWeight: '900',
+               fontSize: '12px',
+               cursor: 'not-allowed',
+               textTransform: 'uppercase',
+               display: 'inline-flex',
+               alignItems: 'center',
+               gap: '8px'
+             }}
+           >
+             <CheckCircle className="w-4 h-4" />
+             Installed
+           </button>
+        ) : (
+          <button 
+            onClick={handleDownload}
+            style={{
+              backgroundColor: '#D4AF37',
+              color: '#000',
+              border: 'none',
+              padding: '8px 20px',
+              borderRadius: '25px',
+              fontWeight: '900',
+              fontSize: '12px',
+              cursor: 'pointer',
+              textTransform: 'uppercase'
+            }}
+          >
+            Download & Install
+          </button>
+        )}
       </div>
     </div>
   );
