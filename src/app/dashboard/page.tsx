@@ -8,6 +8,7 @@ import {
   ArrowUpFromLine,
   ChevronRight,
   Zap,
+  Play,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -151,22 +152,22 @@ export default async function DashboardPage() {
             </p>
           </div>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-900 text-sm">
-              Recent Activity
-            </h3>
-            <Link
-              href="/dashboard/activity"
-              className="text-amber-600 text-xs flex items-center gap-1"
-            >
-              View all <ChevronRight className="w-3 h-3" />
-            </Link>
+        <Link href="/dashboard/video-tutorial" className="block group">
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-5 text-white shadow-lg group-hover:shadow-xl transition-all h-full flex flex-col justify-center">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                    <Play className="w-4 h-4 text-white ml-0.5" fill="white" />
+                  </div>
+                  Watch Tutorial
+                </h3>
+                <p className="text-xs text-blue-100 mt-2">Learn how to operate the app and start earning.</p>
+              </div>
+              <ChevronRight className="w-6 h-6 text-blue-200 transition-transform group-hover:translate-x-1" />
+            </div>
           </div>
-          <div className="text-center py-4">
-            <p className="text-sm text-gray-400">No recent activity.</p>
-          </div>
-        </div>
+        </Link>
       </div>
     </div>
   );
