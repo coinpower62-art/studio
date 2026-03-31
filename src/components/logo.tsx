@@ -8,13 +8,13 @@ export function Logo({ className }: { className?: string }) {
 
     return (
     <div className={cn("flex items-center gap-2", className)}>
-        <div className="w-8 h-8 rounded-md flex items-center justify-center bg-white p-0.5">
+        <div className="w-8 h-8 rounded-md flex items-center justify-center">
             <Image
                 src={logoUrl}
                 alt="CoinPower Logo"
-                width={28}
-                height={28}
-                className="rounded object-contain"
+                width={32}
+                height={32}
+                className="rounded-md object-contain"
             />
         </div>
       <span className="text-xl font-bold text-foreground">CoinPower</span>

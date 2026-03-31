@@ -25,13 +25,13 @@ export function SplashScreen({ onDone }: { onDone: () => void; }) {
       <div
         className={`relative mb-4 transition-all duration-500 ease-custom-in-out ${phase === "in" ? "opacity-0 scale-75" : "opacity-100 scale-100"}`}
       >
-        <div className="w-24 h-24 rounded-3xl bg-white flex items-center justify-center p-2 shadow-lg">
+        <div className="w-24 h-24 rounded-3xl flex items-center justify-center">
             <Image 
                 src={finalLogoUrl}
                 alt="CoinPower Logo"
-                width={80}
-                height={80}
-                className="rounded-2xl object-contain"
+                width={96}
+                height={96}
+                className="rounded-3xl object-contain"
                 priority
             />
         </div>
