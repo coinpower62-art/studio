@@ -6,16 +6,19 @@ export default function RegionalNotice() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    const hasSeenNotice = sessionStorage.getItem('coinpower_regional_notified');
+    // Show the notice at the start of every new session.
+    const hasSeenNoticeInSession = sessionStorage.getItem('coinpower_session_notice_acknowledged');
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
-    if (!hasSeenNotice && !isStandalone) {
+    // Do not show if already seen in this session or if running as an installed app.
+    if (!hasSeenNoticeInSession && !isStandalone) {
       setIsOpen(true);
     }
   }, []);
 
   const handleClose = () => {
-    sessionStorage.setItem('coinpower_regional_notified', 'true');
+    // Mark as seen for the current browser session.
+    sessionStorage.setItem('coinpower_session_notice_acknowledged', 'true');
     setIsOpen(false);
   };
 
@@ -46,17 +49,19 @@ export default function RegionalNotice() {
           backgroundSize: 'cover', borderRadius: '20px', border: '1px solid #D4AF37'
         }} />
 
-        <h2 style={{ color: '#D4AF37', fontSize: '24px', fontWeight: '800', marginBottom: '20px' }}>
-          GLOBAL ACCESS PROTOCOL
+        <h2 style={{ color: '#D4AF37', fontSize: '24px', fontWeight: '800', marginBottom: '10px' }}>
+          Platform Access Notice
         </h2>
+        <p style={{color: '#AAAAAA', fontSize: '13px', marginBottom: '20px'}}>A message from the CoinPower compliance team.</p>
+
 
         <div style={{ textAlign: 'left', marginBottom: '30px' }}>
           <p style={{ color: '#FFFFFF', fontSize: '15px', lineHeight: '1.7', marginBottom: '15px' }}>
-            To provide our services worldwide, <strong>CoinPower</strong> utilizes a direct-to-device installation method. 
+            To guarantee unrestricted global access and comply with international financial regulations, CoinPower operates as a direct-to-device web application.
           </p>
           
           <p style={{ color: '#AAAAAA', fontSize: '14px', lineHeight: '1.6', marginBottom: '15px' }}>
-            Traditional platforms like the <strong>Google Play Store</strong> and <strong>Apple App Store</strong> often impose regional restrictions on cryptocurrency and mining applications, limiting access for millions of users.
+            This model allows us to deliver a secure, high-performance service without the regional blockades often imposed by traditional app stores on investment platforms.
           </p>
 
           <div style={{ 
@@ -66,7 +71,7 @@ export default function RegionalNotice() {
             borderLeft: '3px solid #D4AF37' 
           }}>
             <p style={{ color: '#D4AF37', fontSize: '13px', margin: 0, fontWeight: '600' }}>
-              By installing directly from our secure servers, you bypass these regional blocks and receive the same high-level encryption and security features found in standard store apps.
+              Installing CoinPower on your home screen ensures you receive critical security updates directly from our servers and enjoy the best possible user experience.
             </p>
           </div>
         </div>
@@ -88,7 +93,7 @@ export default function RegionalNotice() {
             boxShadow: '0 4px 20px rgba(212, 175, 55, 0.4)'
           }}
         >
-          Proceed to Dashboard
+          Acknowledge & Continue
         </button>
       </div>
     </div>
