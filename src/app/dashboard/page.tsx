@@ -13,7 +13,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { ReferralLink } from '@/components/ReferralLink';
-import { InstallCard } from '@/components/InstallCard';
+import InstallButton from '@/components/InstallButton';
 
 // The main page component
 export default async function DashboardPage() {
@@ -167,7 +167,7 @@ export default async function DashboardPage() {
           </div>
         </Link>
       </div>
-      <InstallCard />
+      <InstallButton />
     </div>
   );
 }
