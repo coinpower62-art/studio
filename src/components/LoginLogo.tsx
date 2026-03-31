@@ -25,7 +25,7 @@ export function LoginLogo({ className }: { className?: string }) {
     );
 
     return (
-        <div className={cn("w-16 h-16 rounded-2xl border-2 border-amber-500/50 shadow-lg overflow-hidden mx-auto mb-3 bg-white p-2", className)}>
+        <div className={cn("w-16 h-16 rounded-2xl border-2 border-amber-500/50 shadow-lg overflow-hidden mx-auto mb-3", className)}>
             {logoUrl ? (
                 <img src={logoUrl} alt="CoinPower Logo" className="w-full h-full object-contain" />
             ) : (
