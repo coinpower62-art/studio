@@ -1,13 +1,12 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
 
-export default function InstallButton() {
+export default function RegionalNotice() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    const hasSeenNotice = localStorage.getItem('coinpower_regional_notified');
+    const hasSeenNotice = sessionStorage.getItem('coinpower_regional_notified');
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
     if (!hasSeenNotice && !isStandalone) {
@@ -16,7 +15,7 @@ export default function InstallButton() {
   }, []);
 
   const handleClose = () => {
-    localStorage.setItem('coinpower_regional_notified', 'true');
+    sessionStorage.setItem('coinpower_regional_notified', 'true');
     setIsOpen(false);
   };
 
