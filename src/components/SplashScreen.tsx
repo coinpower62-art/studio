@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/client";
 
 export function SplashScreen({ onDone }: { onDone: () => void; }) {
   const [phase, setPhase] = useState<"in" | "hold" | "out">("in");
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     // Splash screen timings
@@ -14,25 +12,10 @@ export function SplashScreen({ onDone }: { onDone: () => void; }) {
     const t2 = setTimeout(() => setPhase("out"), 2200);
     const t3 = setTimeout(() => onDone(), 2900);
     
-    // Fetch logo in parallel
-    const fetchLogo = async () => {
-        const supabase = createClient();
-        const { data } = await supabase
-            .from('media')
-            .select('url')
-            .eq('id', 'app-logo')
-            .single();
-        if (data?.url) {
-            setLogoUrl(data.url);
-        }
-    };
-
-    fetchLogo();
-
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [onDone]);
 
-  const finalLogoUrl = logoUrl || "https://picsum.photos/seed/coinpowerlogo/80/80";
+  const finalLogoUrl = "/icon-512x512.png";
 
   return (
     <div
