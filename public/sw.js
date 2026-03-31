@@ -1,17 +1,20 @@
-// A minimal service worker to make the app installable.
+// This is a basic service worker file.
+// It's required for a web app to be installable (PWA).
 self.addEventListener('install', (event) => {
-  console.log('Service worker installing...');
-  // Optional: skip waiting to activate the new service worker immediately.
-  self.skipWaiting();
+  event.waitUntil(self.skipWaiting()); // Activate worker immediately
 });
 
 self.addEventListener('activate', (event) => {
-    console.log('Service worker activated.');
-    // Optional: take control of all pages under its scope immediately.
-    event.waitUntil(self.clients.claim());
+  event.waitUntil(self.clients.claim()); // Become available to all pages
 });
 
 self.addEventListener('fetch', (event) => {
-  // A basic fetch handler. For a real app, you would implement caching strategies here.
-  event.respondWith(fetch(event.request));
+  // A simple "network-first" strategy.
+  // For a real-world app, you'd want more robust caching.
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      // If the network fails, you could try to serve a cached response
+      // For now, it will just fail.
+    })
+  );
 });
