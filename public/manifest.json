@@ -2,10 +2,6 @@
   "name": "CoinPower",
   "short_name": "CoinPower",
   "description": "Digital Energy Mining Platform",
-  "start_url": "/dashboard",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#b8860b",
   "icons": [
     {
       "src": "/icon-192x192.png",
@@ -16,11 +12,11 @@
       "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
-    },
-    {
-      "src": "/apple-icon.png",
-      "sizes": "180x180",
-      "type": "image/png"
     }
-  ]
+  ],
+  "theme_color": "#b8860b",
+  "background_color": "#ffffff",
+  "start_url": "/",
+  "display": "standalone",
+  "scope": "/"
 }
