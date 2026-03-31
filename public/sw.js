@@ -1,11 +1,7 @@
-
-// A basic service worker to make the app installable.
-self.addEventListener('install', (event) => {
-  console.log('Service Worker: Installing...');
-  // You can add caching logic here if needed in the future.
-});
-
+// This is a basic service worker to make the app installable.
+// It is intentionally left simple to meet PWA criteria without adding complexity.
 self.addEventListener('fetch', (event) => {
-  // For now, just fetch from the network.
+  // A simple pass-through fetch handler.
+  // This allows the browser to handle all network requests as it normally would.
   event.respondWith(fetch(event.request));
 });
