@@ -29,23 +29,23 @@ export default function InstallButton() {
       left: 0,
       width: '100%',
       height: '100%',
-      backgroundColor: 'rgba(0,0,0,0.9)',
+      backgroundColor: 'rgba(0,0,0,0.7)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 99999,
       padding: '20px',
-      backdropFilter: 'blur(10px)'
+      backdropFilter: 'blur(8px)'
     }}>
       <div style={{
-        backgroundColor: '#0A0A0A',
-        border: '1px solid #D4AF37',
+        backgroundColor: '#FFFFFF',
+        border: '1px solid #e5e7eb',
         borderRadius: '24px',
         padding: '35px 25px',
         maxWidth: '380px',
         width: '100%',
         textAlign: 'center',
-        boxShadow: '0 0 40px rgba(212, 175, 55, 0.2)'
+        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
       }}>
         {/* Your Gold Logo */}
         <div style={{ 
@@ -55,11 +55,11 @@ export default function InstallButton() {
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           borderRadius: '18px',
-          border: '1px solid #D4AF37'
+          border: '1px solid #fde68a'
         }} />
 
         <h2 style={{ 
-          color: '#D4AF37', 
+          color: '#111827', 
           fontSize: '20px', 
           marginBottom: '15px',
           fontWeight: 'bold'
@@ -67,11 +67,11 @@ export default function InstallButton() {
           Dashboard Notice
         </h2>
 
-        <p style={{ color: '#FFFFFF', fontSize: '14px', lineHeight: '1.6', marginBottom: '10px' }}>
+        <p style={{ color: '#374151', fontSize: '14px', lineHeight: '1.6', marginBottom: '10px' }}>
           To ensure all global users can access <strong>CoinPower</strong> mining tools without regional interference, we recommend installing this platform directly.
         </p>
         
-        <p style={{ color: '#888', fontSize: '13px', lineHeight: '1.5', marginBottom: '25px' }}>
+        <p style={{ color: '#6b7280', fontSize: '13px', lineHeight: '1.5', marginBottom: '25px' }}>
           Due to regional app store restrictions, our official mobile app is hosted here for secure, unrestricted access.
         </p>
 
