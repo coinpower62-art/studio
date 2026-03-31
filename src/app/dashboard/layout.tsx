@@ -35,6 +35,8 @@ import { createClient } from "@/lib/supabase/client";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { logout } from '@/app/login/actions';
 import TickerTape from "@/components/TickerTape";
+import { InstallPromptProvider, useInstallPrompt } from "@/context/InstallPromptContext";
+import InstallNotice from "@/components/InstallNotice";
 
 const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -96,17 +98,27 @@ function DashboardHeader({ user }: { user: SupabaseUser | null }) {
   );
 }
 
-
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function DashboardClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = React.useState<SupabaseUser | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [profileError, setProfileError] = React.useState(false);
+  const { setIsOpen } = useInstallPrompt();
+
+  React.useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    if (isStandalone) return;
+
+    const hasSeenNotice = sessionStorage.getItem('coinpower_regional_session_notified');
+    if (!hasSeenNotice) {
+      const timer = setTimeout(() => {
+        setIsOpen(true);
+        sessionStorage.setItem('coinpower_regional_session_notified', 'true');
+      }, 1500); // 1.5 second delay
+      return () => clearTimeout(timer);
+    }
+  }, [setIsOpen]);
 
   React.useEffect(() => {
     const supabase = createClient();
@@ -128,7 +140,6 @@ export default function DashboardLayout({
         .single();
       
       if (!profile) {
-        // Profile doesn't exist, create it ("self-heal")
         const { error: createError } = await supabase.from('profiles').insert({
           id: user.id,
           full_name: user.user_metadata?.full_name,
@@ -136,7 +147,7 @@ export default function DashboardLayout({
           email: user.email,
           country: user.user_metadata?.country,
           phone: user.user_metadata?.phone,
-          balance: 1.00, // Default starting balance
+          balance: 1.00,
           has_withdrawal_pin: false,
           referral_code: user.user_metadata?.referral_code,
           referred_by: user.user_metadata?.referred_by,
@@ -147,8 +158,6 @@ export default function DashboardLayout({
           setProfileError(true);
           setLoading(false);
         } else {
-          // Successfully created, now we can continue loading the app.
-          // The profile now exists, so subsequent fetches in child components will succeed.
           setLoading(false);
         }
       } else {
@@ -286,6 +295,19 @@ export default function DashboardLayout({
 
             <BottomNav />
         </div>
+        <InstallNotice />
     </div>
+  );
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <InstallPromptProvider>
+      <DashboardClientLayout>{children}</DashboardClientLayout>
+    </InstallPromptProvider>
   );
 }
