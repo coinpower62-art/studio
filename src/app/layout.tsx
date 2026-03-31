@@ -18,8 +18,8 @@ export const metadata: Metadata = {
     title: 'CoinPower',
   },
   icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
+    icon: '/icon-512x512.png',
+    apple: '/icon-512x512.png',
   },
 };
 
