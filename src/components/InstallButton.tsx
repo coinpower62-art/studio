@@ -47,11 +47,6 @@ export default function InstallButton() {
         setDeferredPrompt(null);
     }
   };
-  
-  // Don't show the button at all if it's not an installable context and not already installed.
-  if (!deferredPrompt && !isInstalled) {
-      return null;
-  }
 
   return (
     <button 
