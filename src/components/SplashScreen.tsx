@@ -15,7 +15,7 @@ export function SplashScreen({ onDone }: { onDone: () => void; }) {
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [onDone]);
 
-  const finalLogoUrl = "/icon-512x512.png";
+  const finalLogoUrl = "/logo.png";
 
   return (
     <div

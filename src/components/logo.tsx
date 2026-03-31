@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import Image from 'next/image';
 
 export function Logo({ className }: { className?: string }) {
-    const logoUrl = "/icon-512x512.png";
+    const logoUrl = "/logo.png";
 
     return (
     <div className={cn("flex items-center gap-2", className)}>
