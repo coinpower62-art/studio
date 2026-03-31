@@ -1,27 +1,9 @@
 'use client';
 
-import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
 
 export function Logo({ className }: { className?: string }) {
-    const [logoUrl, setLogoUrl] = useState<string | null>(null);
-
-    useEffect(() => {
-        const fetchLogo = async () => {
-            const supabase = createClient();
-            const { data } = await supabase
-                .from('media')
-                .select('url')
-                .eq('id', 'app-logo')
-                .single();
-            
-            if (data?.url) {
-                setLogoUrl(data.url);
-            }
-        };
-        fetchLogo();
-    }, []);
+    const logoUrl = '/icon-512x512.png';
 
     const SvgIcon = () => (
         <svg

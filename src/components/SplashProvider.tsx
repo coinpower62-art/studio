@@ -3,7 +3,6 @@
 import { useState, useEffect, ReactNode } from 'react';
 import { SplashScreen } from './SplashScreen';
 import { usePathname } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 
 // Paths where the splash screen should NOT appear
 const NO_SPLASH_PATHS = ["/admin", "/admin/dashboard", "/video-tutorial"];
@@ -15,7 +14,6 @@ export function SplashProvider({children}: {children: ReactNode}) {
     // Default to not showing splash screen, then check on client. This prevents flashes.
     const [showSplash, setShowSplash] = useState(false);
     const [isClient, setIsClient] = useState(false);
-    const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
     useEffect(() => {
         setIsClient(true);
@@ -25,20 +23,6 @@ export function SplashProvider({children}: {children: ReactNode}) {
         } else {
             setShowSplash(true);
             document.body.style.overflow = 'hidden';
-            
-            const fetchLogo = async () => {
-                const supabase = createClient();
-                const { data } = await supabase
-                    .from('media')
-                    .select('url')
-                    .eq('id', 'app-logo')
-                    .single();
-                
-                if (data?.url) {
-                    setLogoUrl(data.url);
-                }
-            };
-            fetchLogo();
         }
     }, [isSpecialPath, pathname]);
 
@@ -60,7 +44,7 @@ export function SplashProvider({children}: {children: ReactNode}) {
 
     return (
         <>
-            {isClient && showSplash && <SplashScreen onDone={handleSplashDone} logoUrl={logoUrl} />}
+            {isClient && showSplash && <SplashScreen onDone={handleSplashDone} />}
             {children}
         </>
     )

@@ -1,30 +1,9 @@
 'use client';
 
-import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export function LoginLogo({ className }: { className?: string }) {
-    const [logoUrl, setLogoUrl] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchLogo = async () => {
-            const supabase = createClient();
-            const { data } = await supabase
-                .from('media')
-                .select('url')
-                .eq('id', 'app-logo')
-                .single();
-            
-            if (data?.url) {
-                setLogoUrl(data.url);
-            }
-            setLoading(false);
-        };
-        fetchLogo();
-    }, []);
+    const logoUrl = '/icon-512x512.png';
 
     const SvgLogo = () => (
         <svg
@@ -44,10 +23,6 @@ export function LoginLogo({ className }: { className?: string }) {
             <path d="M12.0001 8.868C12.0001 8.868 13.4821 11.787 10.8671 13.101C8.25211 14.415 5.00012 13.539 5.00012 13.539C5.00012 13.539 7.07812 16.581 9.69412 15.36C12.3101 14.139 12.0001 8.868 12.0001 8.868Z" fill="url(#logo-gradient)"/>
         </svg>
     );
-
-    if (loading) {
-        return <Skeleton className={cn("w-16 h-16 rounded-2xl mx-auto mb-3", className)} />
-    }
 
     return (
         <div className={cn("w-16 h-16 rounded-2xl border-2 border-amber-500/50 shadow-lg overflow-hidden mx-auto mb-3", className)}>
