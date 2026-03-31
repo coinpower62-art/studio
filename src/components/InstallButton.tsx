@@ -6,8 +6,8 @@ export default function InstallButton() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // Only check and show once the user reaches the dashboard
-    const hasSeenNotice = localStorage.getItem('coinpower_regional_notified');
+    // Only check and show once per session
+    const hasSeenNotice = sessionStorage.getItem('coinpower_regional_notified');
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
     if (!hasSeenNotice && !isStandalone) {
@@ -16,7 +16,7 @@ export default function InstallButton() {
   }, []);
 
   const handleClose = () => {
-    localStorage.setItem('coinpower_regional_notified', 'true');
+    sessionStorage.setItem('coinpower_regional_notified', 'true');
     setIsOpen(false);
   };
 
