@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button';
 export default function InstallButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Check if the app is running in standalone mode (installed)
+    // This effect should run only on the client
+    setIsClient(true);
     const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
     setIsStandalone(isInstalled);
   }, []);
@@ -17,8 +19,8 @@ export default function InstallButton() {
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => setIsOpen(false);
 
-  // Don't show the button if the app is already installed
-  if (isStandalone) {
+  // Don't show the button if the app is already installed or if not on client
+  if (!isClient || isStandalone) {
     return null;
   }
 
