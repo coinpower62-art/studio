@@ -25,14 +25,14 @@ export function LoginLogo({ className }: { className?: string }) {
     );
 
     return (
-        <div className={cn("w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-3", className)}>
+        <>
             {logoUrl ? (
-                <img src={logoUrl} alt="CoinPower Logo" className="w-full h-full object-contain" />
+                <img src={logoUrl} alt="CoinPower Logo" className={cn("w-16 h-16 rounded-2xl object-contain mx-auto mb-3", className)} />
             ) : (
-                <div className="w-full h-full flex items-center justify-center">
+                <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center">
                     <SvgLogo />
                 </div>
             )}
-        </div>
+        </>
     );
 }

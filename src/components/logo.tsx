@@ -27,9 +27,7 @@ export function Logo({ className }: { className?: string }) {
     return (
     <div className={cn("flex items-center gap-2", className)}>
         {logoUrl ? (
-            <div className="w-8 h-8 rounded-md flex items-center justify-center overflow-hidden">
-                <img src={logoUrl} alt="CoinPower" className="w-full h-full object-contain" />
-            </div>
+            <img src={logoUrl} alt="CoinPower" className="w-8 h-8 rounded-md object-contain" />
         ) : (
              <div className="w-8 h-8 rounded-md flex items-center justify-center">
                 <SvgIcon />
