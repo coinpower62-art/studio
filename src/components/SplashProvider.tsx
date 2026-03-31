@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, ReactNode } from 'react';
 import { SplashScreen } from './SplashScreen';
@@ -33,6 +32,21 @@ export function SplashProvider({children}: {children: ReactNode}) {
             console.log('CoinPower Engine Active');
             });
         }
+    }, []);
+    
+    useEffect(() => {
+        const chunkLoadErrorHandler = (event: PromiseRejectionEvent) => {
+            if (event.reason && event.reason.name === 'ChunkLoadError') {
+                console.warn('ChunkLoadError detected, forcing page reload.');
+                window.location.reload();
+            }
+        };
+
+        window.addEventListener('unhandledrejection', chunkLoadErrorHandler);
+
+        return () => {
+            window.removeEventListener('unhandledrejection', chunkLoadErrorHandler);
+        };
     }, []);
 
 
