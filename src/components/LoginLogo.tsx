@@ -1,10 +1,8 @@
-'use client';
+"use client";
 
 import { cn } from "@/lib/utils";
 
 export function LoginLogo({ className }: { className?: string }) {
-    const logoUrl = '/icon-512x512.png';
-
     const SvgLogo = () => (
         <svg
             width="40"
@@ -15,8 +13,8 @@ export function LoginLogo({ className }: { className?: string }) {
         >
             <defs>
                 <linearGradient id="logo-gradient" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                    <stop stop-color="#F97316"/>
-                    <stop offset="1" stop-color="#EC4899"/>
+                    <stop stop-color="#FBBF24"/>
+                    <stop offset="1" stop-color="#F59E0B"/>
                 </linearGradient>
             </defs>
             <path d="M11.9999 15.132C11.9999 15.132 10.5179 12.213 13.1329 10.899C15.7479 9.585 18.9999 10.461 18.9999 10.461C18.9999 10.461 16.9219 7.419 14.3059 8.64C11.6899 9.861 11.9999 15.132 11.9999 15.132Z" fill="url(#logo-gradient)"/>
@@ -25,14 +23,8 @@ export function LoginLogo({ className }: { className?: string }) {
     );
 
     return (
-        <>
-            {logoUrl ? (
-                <img src={logoUrl} alt="CoinPower Logo" className={cn("w-16 h-16 rounded-2xl object-contain mx-auto mb-3", className)} />
-            ) : (
-                <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center">
-                    <SvgLogo />
-                </div>
-            )}
-        </>
+        <div className={cn("w-16 h-16 rounded-2xl mx-auto mb-3 bg-black flex items-center justify-center border-2 border-primary p-1 shadow-md", className)}>
+            <SvgLogo />
+        </div>
     );
 }

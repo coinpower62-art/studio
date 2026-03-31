@@ -1,22 +1,20 @@
-'use client';
+"use client";
 
 import { cn } from "@/lib/utils";
 
 export function Logo({ className }: { className?: string }) {
-    const logoUrl = '/icon-512x512.png';
-
     const SvgIcon = () => (
         <svg
-            width="32"
-            height="32"
+            width="24"
+            height="24"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
         >
             <defs>
                 <linearGradient id="logo-gradient-small" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                    <stop stop-color="#F97316"/>
-                    <stop offset="1" stop-color="#EC4899"/>
+                    <stop stop-color="#FBBF24"/>
+                    <stop offset="1" stop-color="#F59E0B"/>
                 </linearGradient>
             </defs>
             <path d="M11.9999 15.132C11.9999 15.132 10.5179 12.213 13.1329 10.899C15.7479 9.585 18.9999 10.461 18.9999 10.461C18.9999 10.461 16.9219 7.419 14.3059 8.64C11.6899 9.861 11.9999 15.132 11.9999 15.132Z" fill="url(#logo-gradient-small)"/>
@@ -26,13 +24,9 @@ export function Logo({ className }: { className?: string }) {
 
     return (
     <div className={cn("flex items-center gap-2", className)}>
-        {logoUrl ? (
-            <img src={logoUrl} alt="CoinPower" className="w-8 h-8 rounded-md object-contain" />
-        ) : (
-             <div className="w-8 h-8 rounded-md flex items-center justify-center">
-                <SvgIcon />
-            </div>
-        )}
+        <div className="w-8 h-8 rounded-md flex items-center justify-center bg-black border border-amber-400 p-0.5">
+            <SvgIcon />
+        </div>
       <span className="text-xl font-bold text-foreground">CoinPower</span>
     </div>
   );
