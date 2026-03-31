@@ -1,6 +1,5 @@
-// This is a basic service worker to make the app installable.
-self.addEventListener('fetch', function(event) {
-  // We are not adding any offline caching for now.
-  // The service worker's presence is enough for PWA installability.
-  event.respondWith(fetch(event.request));
+// This service worker file is required to make the app installable.
+self.addEventListener('fetch', (event) => {
+  // For now, we're not adding complex caching. 
+  // The existence of this file is enough for PWA capabilities.
 });

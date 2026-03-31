@@ -2,18 +2,18 @@
   "name": "CoinPower",
   "short_name": "CoinPower",
   "description": "Digital Energy Mining",
-  "start_url": "/",
+  "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#b8860b",
   "icons": [
     {
-      "src": "https://picsum.photos/seed/coinpowerlogo/192/192",
+      "src": "/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://picsum.photos/seed/coinpowerlogo/512/512",
+      "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
