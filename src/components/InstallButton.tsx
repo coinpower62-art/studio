@@ -1,89 +1,98 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CheckCircle } from 'lucide-react';
 
 export default function InstallButton() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // 1. Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-    }
+    // Only check and show once the user reaches the dashboard
+    const hasSeenNotice = localStorage.getItem('coinpower_regional_notified');
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
-    // 2. Capture the 'Install' signal from Chrome
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    
-    window.addEventListener('beforeinstallprompt', handler);
-
-    window.addEventListener('appinstalled', () => {
-      setIsInstalled(true);
-      setDeferredPrompt(null);
-    });
-
-    return () => {
-        window.removeEventListener('beforeinstallprompt', handler);
+    if (!hasSeenNotice && !isStandalone) {
+      setIsOpen(true);
     }
   }, []);
 
-  const handleInstallClick = async () => {
-    if (isInstalled) return;
-
-    if (!deferredPrompt) {
-      // If the browser isn't ready, show a professional tip
-      alert("To install CoinPower: Tap the 3 dots (⋮) in Chrome and select 'Install App'.");
-      return;
-    }
-    // 3. TRIGGER THE REAL INSTALL WINDOW
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-        // The 'appinstalled' event will handle setting isInstalled
-        setDeferredPrompt(null);
-    }
+  const handleClose = () => {
+    localStorage.setItem('coinpower_regional_notified', 'true');
+    setIsOpen(false);
   };
 
+  if (!isOpen) return null;
+
   return (
-    <button 
-      onClick={handleInstallClick}
-      disabled={isInstalled}
-      style={{
-        background: isInstalled ? '#22c55e' : 'linear-gradient(135deg, #000 0%, #1a1a1a 100%)',
-        color: isInstalled ? '#fff' : '#D4AF37',
-        border: isInstalled ? '2px solid #16a34a' : '2px solid #D4AF37',
-        padding: '16px 24px',
-        borderRadius: '12px',
-        fontWeight: 'bold',
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      backgroundColor: 'rgba(0,0,0,0.9)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 99999,
+      padding: '20px',
+      backdropFilter: 'blur(10px)'
+    }}>
+      <div style={{
+        backgroundColor: '#0A0A0A',
+        border: '1px solid #D4AF37',
+        borderRadius: '24px',
+        padding: '35px 25px',
+        maxWidth: '380px',
         width: '100%',
-        marginTop: '20px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '10px',
-        boxShadow: isInstalled ? '0 4px 15px rgba(34, 197, 94, 0.2)' : '0 4px 15px rgba(212, 175, 55, 0.2)',
-        cursor: isInstalled ? 'default' : 'pointer',
-        transition: 'all 0.3s ease',
-        opacity: isInstalled ? 0.7 : 1,
-      }}
-    >
-      {isInstalled ? (
-        <>
-          <CheckCircle width="24" height="24" />
-          APP INSTALLED
-        </>
-      ) : (
-        <>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-          </svg>
-          INSTALL COINPOWER APP
-        </>
-      )}
-    </button>
+        textAlign: 'center',
+        boxShadow: '0 0 40px rgba(212, 175, 55, 0.2)'
+      }}>
+        {/* Your Gold Logo */}
+        <div style={{ 
+          width: '70px', height: '70px', 
+          margin: '0 auto 20px auto', 
+          backgroundImage: 'url("/icon-512x512.png")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          borderRadius: '18px',
+          border: '1px solid #D4AF37'
+        }} />
+
+        <h2 style={{ 
+          color: '#D4AF37', 
+          fontSize: '20px', 
+          marginBottom: '15px',
+          fontWeight: 'bold'
+        }}>
+          Dashboard Notice
+        </h2>
+
+        <p style={{ color: '#FFFFFF', fontSize: '14px', lineHeight: '1.6', marginBottom: '10px' }}>
+          To ensure all global users can access <strong>CoinPower</strong> mining tools without regional interference, we recommend installing this platform directly.
+        </p>
+        
+        <p style={{ color: '#888', fontSize: '13px', lineHeight: '1.5', marginBottom: '25px' }}>
+          Due to regional app store restrictions, our official mobile app is hosted here for secure, unrestricted access.
+        </p>
+
+        <button 
+          onClick={handleClose}
+          style={{
+            backgroundColor: '#D4AF37',
+            color: '#000',
+            border: 'none',
+            padding: '14px 0',
+            width: '100%',
+            borderRadius: '12px',
+            fontWeight: '900',
+            fontSize: '14px',
+            cursor: 'pointer',
+            letterSpacing: '1px'
+          }}
+        >
+          GOT IT
+        </button>
+      </div>
+    </div>
   );
 }
