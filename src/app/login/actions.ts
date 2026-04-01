@@ -11,7 +11,7 @@ export async function login(formData: FormData) {
   const password = formData.get('password') as string
 
   // Admin Login Check
-  if (email.toLowerCase() === 'admin' && password === 'password') {
+  if (email.toLowerCase() === 'coinpoweritaly' && password === 'Hostmyapp2577') {
       cookies().set('admin_logged_in', 'true', { path: '/' });
       return redirect('/admin/dashboard');
   }
