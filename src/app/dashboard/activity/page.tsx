@@ -488,8 +488,8 @@ export default function ActivityPage() {
               <h3 className="font-bold text-white text-sm sm:text-base">Community Stats</h3>
               <p className="text-green-100 text-xs">Global CoinPower network</p>
             </div>
-            <div className="p-4 sm:p-5">
-              <div className="relative rounded-xl overflow-hidden mb-3 sm:mb-4">
+            <div>
+              <div className="relative overflow-hidden">
                 <img src={teamWorkImg} alt="CoinPower Team at Work" className="w-full h-auto block" />
                 <div className="absolute inset-0 bg-black/55" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
@@ -506,19 +506,21 @@ export default function ActivityPage() {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { label: "Countries", value: "21", icon: "🌍" },
-                  { label: "Daily Volume", value: "$2.4M", icon: "📈" },
-                  { label: "Satisfaction", value: "98%", icon: "⭐" },
-                ].map(function({ label, value, icon }) {
-                  return (
-                  <div key={label} className="bg-gray-50 rounded-xl p-2 sm:p-3 text-center">
-                    <p className="text-lg sm:text-xl mb-0.5">{icon}</p>
-                    <p className="font-bold text-gray-900 text-xs sm:text-sm">{value}</p>
-                    <p className="text-xs text-gray-500">{label}</p>
-                  </div>
-                )})}
+              <div className="p-4 sm:p-5">
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: "Countries", value: "21", icon: "🌍" },
+                    { label: "Daily Volume", value: "$2.4M", icon: "📈" },
+                    { label: "Satisfaction", value: "98%", icon: "⭐" },
+                  ].map(function({ label, value, icon }) {
+                    return (
+                    <div key={label} className="bg-gray-50 rounded-xl p-2 sm:p-3 text-center">
+                      <p className="text-lg sm:text-xl mb-0.5">{icon}</p>
+                      <p className="font-bold text-gray-900 text-xs sm:text-sm">{value}</p>
+                      <p className="text-xs text-gray-500">{label}</p>
+                    </div>
+                  )})}
+                </div>
               </div>
             </div>
           </div>
