@@ -56,17 +56,23 @@ export default async function DashboardPage() {
   const pendingWithdrawalsCount = withdrawalsResult.data?.filter(w => w.status === 'pending').length ?? 0;
   
   const now = new Date().getTime();
-  const activeGeneratorCount = rentedGeneratorsResult.data?.filter(g => new Date(g.expires_at).getTime() > now).length ?? 0;
+  const activeGeneratorCount = rentedGeneratorsResult.data?.filter(g => g.expires_at && new Date(g.expires_at).getTime() > now).length ?? 0;
 
+  const getFirstName = (name: string | null | undefined): string => {
+    if (!name) return "";
+    return name.split(" ")[0];
+  };
+
+  const nameForInitials = profile?.full_name || user.email || "";
   const initials =
-    (profile?.full_name || user.email)
-      ?.split(' ')
-      .map(function(n) { return n[0]; })
+    nameForInitials
+      .split(' ')
+      .map(function(n) { return n[0] || ''; })
       .join('')
       .toUpperCase()
       .slice(0, 2) || '??';
       
-  const displayName = profile?.full_name?.split(' ')[0] || user?.user_metadata?.full_name?.split(' ')[0] || profile?.username || user?.user_metadata?.username || 'User';
+  const displayName = getFirstName(profile?.full_name) || getFirstName(user?.user_metadata?.full_name) || profile?.username || user?.user_metadata?.username || 'User';
 
   return (
     <div className="space-y-5">

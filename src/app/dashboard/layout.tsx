@@ -104,21 +104,6 @@ function DashboardClientLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<SupabaseUser | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [profileError, setProfileError] = React.useState(false);
-  const { setIsOpen } = useInstallPrompt();
-
-  React.useEffect(() => {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    if (isStandalone) return;
-
-    const hasSeenNotice = sessionStorage.getItem('coinpower_regional_session_notified');
-    if (!hasSeenNotice) {
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-        sessionStorage.setItem('coinpower_regional_session_notified', 'true');
-      }, 1500); // 1.5 second delay
-      return () => clearTimeout(timer);
-    }
-  }, [setIsOpen]);
 
   React.useEffect(() => {
     const supabase = createClient();
