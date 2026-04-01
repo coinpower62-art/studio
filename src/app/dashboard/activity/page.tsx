@@ -73,7 +73,6 @@ export default function ActivityPage() {
 
   const heroImg = media.find(m => m.id === 'hero')?.url || PlaceHolderImages.find(i => i.id === 'activity-hero')?.imageUrl;
   const teamWorkImg = media.find(m => m.id === 'teamwork')?.url || PlaceHolderImages.find(i => i.id === 'activity-teamwork')?.imageUrl;
-  const ceoImg = media.find(m => m.id === 'ceo-portrait')?.url || PlaceHolderImages.find(i => i.id === 'ceo-portrait')?.imageUrl;
   
   // For now, admin posts are static.
   const adminPosts: any[] = [];
@@ -125,7 +124,60 @@ export default function ActivityPage() {
     return <ActivityPageSkeleton />;
   }
 
-  const initials = profile.full_name?.split(" ").map(function(n) { return n[0]; }).join("").toUpperCase().slice(0, 2) || "CP";
+  const licenseCards = [
+    {
+      id: "license-consob",
+      icon: Landmark,
+      body: "CONSOB",
+      bodyFull: "Commissione Nazionale per le Società e la Borsa",
+      ref: "IT-CONSOB-2019-04821",
+      desc: "Italian Securities & Exchange Commission — authorisation to operate as a licensed investment intermediary on Italian and EU financial markets.",
+      issued: "14 March 2019",
+      expires: "14 March 2029",
+      badge: "Active",
+      stampColor: "#1a3c6e",
+      headerColor: "from-[#1a3c6e] to-[#2d5fa3]",
+    },
+    {
+      id: "license-banca",
+      icon: Building2,
+      body: "Banca d'Italia",
+      bodyFull: "Bank of Italy — Financial Intelligence Unit",
+      ref: "BI-FIU-2020-00374",
+      desc: "Authorised by the Central Bank of Italy for cross-border capital management, digital asset custody and regulated fund distribution.",
+      issued: "02 June 2020",
+      expires: "02 June 2030",
+      badge: "Active",
+      stampColor: "#7a5200",
+      headerColor: "from-[#7a5200] to-[#c48a00]",
+    },
+    {
+      id: "license-camera",
+      icon: FileText,
+      body: "Camera di Commercio",
+      bodyFull: "Italian Chamber of Commerce — Rome",
+      ref: "P.IVA IT 04837612009",
+      desc: "Registered legal entity in the Italian Business Registry with full trading rights across all 27 EU member states.",
+      issued: "08 January 2019",
+      expires: "Permanent",
+      badge: "Registered",
+      stampColor: "#8b0000",
+      headerColor: "from-[#8b0000] to-[#c0392b]",
+    },
+    {
+      id: "license-mica",
+      icon: Award,
+      body: "EU MiCA Compliance",
+      bodyFull: "Markets in Crypto-Assets Regulation — European Union",
+      ref: "EU-MiCA-2024-IT-0091",
+      desc: "Fully compliant with the EU Markets in Crypto-Assets framework, enabling regulated digital asset investment services across all EU countries.",
+      issued: "01 January 2024",
+      expires: "01 January 2027",
+      badge: "Certified",
+      stampColor: "#4a1080",
+      headerColor: "from-[#4a1080] to-[#7b2fbe]",
+    },
+  ];
 
   return (
     <div className="pb-20 min-h-screen -mx-4 sm:-mx-6 -mt-4 sm:-mt-6">
@@ -279,7 +331,6 @@ export default function ActivityPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4 sm:mb-6">
-          <div className="bg-gradient-to-r from-green-700 via-white to-red-600 p-0.5 rounded-t-2xl">
             <div className="bg-white rounded-t-2xl px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl shadow-md flex-shrink-0 overflow-hidden flex border border-gray-200">
@@ -301,140 +352,97 @@ export default function ActivityPage() {
                 </span>
               </div>
             </div>
-          </div>
 
           <div className="px-4 sm:px-6 py-4 sm:py-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {[
-              {
-                icon: Landmark,
-                body: "CONSOB",
-                bodyFull: "Commissione Nazionale per le Società e la Borsa",
-                ref: "IT-CONSOB-2019-04821",
-                desc: "Italian Securities & Exchange Commission — authorisation to operate as a licensed investment intermediary on Italian and EU financial markets.",
-                issued: "14 March 2019",
-                expires: "14 March 2029",
-                badge: "Active",
-                stampColor: "#1a3c6e",
-                headerColor: "from-[#1a3c6e] to-[#2d5fa3]",
-              },
-              {
-                icon: Building2,
-                body: "Banca d'Italia",
-                bodyFull: "Bank of Italy — Financial Intelligence Unit",
-                ref: "BI-FIU-2020-00374",
-                desc: "Authorised by the Central Bank of Italy for cross-border capital management, digital asset custody and regulated fund distribution.",
-                issued: "02 June 2020",
-                expires: "02 June 2030",
-                badge: "Active",
-                stampColor: "#7a5200",
-                headerColor: "from-[#7a5200] to-[#c48a00]",
-              },
-              {
-                icon: FileText,
-                body: "Camera di Commercio",
-                bodyFull: "Italian Chamber of Commerce — Rome",
-                ref: "P.IVA IT 04837612009",
-                desc: "Registered legal entity in the Italian Business Registry with full trading rights across all 27 EU member states.",
-                issued: "08 January 2019",
-                expires: "Permanent",
-                badge: "Registered",
-                stampColor: "#8b0000",
-                headerColor: "from-[#8b0000] to-[#c0392b]",
-              },
-              {
-                icon: Award,
-                body: "EU MiCA Compliance",
-                bodyFull: "Markets in Crypto-Assets Regulation — European Union",
-                ref: "EU-MiCA-2024-IT-0091",
-                desc: "Fully compliant with the EU Markets in Crypto-Assets framework, enabling regulated digital asset investment services across all EU countries.",
-                issued: "01 January 2024",
-                expires: "01 January 2027",
-                badge: "Certified",
-                stampColor: "#4a1080",
-                headerColor: "from-[#4a1080] to-[#7b2fbe]",
-              },
-            ].map(function({ icon: Icon, body, bodyFull, ref, desc, issued, expires, badge, stampColor, headerColor }) {
+            {licenseCards.map((card) => {
+              const { id, icon: Icon, body, bodyFull, ref, desc, issued, expires, badge, stampColor, headerColor } = card;
+              const imageUrl = media.find(m => m.id === id)?.url;
+              const cardStyles = imageUrl ? { backgroundImage: `url(${imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {};
               return (
-              <div key={body} className="relative rounded-2xl overflow-hidden shadow-lg"
-                style={{ border: "3px solid #c9a84c", background: "linear-gradient(135deg,#fffdf4 0%,#fff8e1 50%,#fffdf4 100%)" }}>
-                <div className="absolute inset-[6px] rounded-xl pointer-events-none z-10"
-                  style={{ border: "1.5px solid #c9a84c", opacity: 0.5 }} />
-                {["top-2 left-2", "top-2 right-2", "bottom-2 left-2", "bottom-2 right-2"].map(function(pos) {
-                  return (
-                  <div key={pos} className={`absolute ${pos} w-4 h-4 z-20 pointer-events-none`}
-                    style={{ background: "radial-gradient(circle,#c9a84c 30%,transparent 70%)", opacity: 0.7 }} />
-                )})}
-                <div className={`bg-gradient-to-r ${headerColor}`}>
-                  <div className="px-4 py-3 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white font-black text-sm leading-tight">{body}</p>
-                      <p className="text-white/70 text-[10px] italic truncate">{bodyFull}</p>
-                    </div>
-                    <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-green-400/30 text-green-100 border border-green-300/40 flex-shrink-0">{badge}</span>
-                  </div>
-                </div>
-                <div className="p-4 relative">
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none opacity-[0.04] z-0">
-                    <span className="text-7xl font-black text-gray-800 rotate-[-25deg] tracking-widest">CERTIFIED</span>
-                  </div>
-                  <div className="flex items-start justify-between gap-3 mb-3 relative z-10">
-                    <div>
-                      <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mb-0.5">Certificate of Authorization</p>
-                      <p className="text-xs text-gray-700 leading-relaxed">{desc}</p>
-                    </div>
-                    <div className="flex-shrink-0 flex flex-col items-center" style={{ minWidth: 60 }}>
-                      <div className="relative w-[58px] h-[58px]">
-                        <svg viewBox="0 0 58 58" className="absolute inset-0 w-full h-full">
-                          <circle cx="29" cy="29" r="27" fill="none" stroke={stampColor} strokeWidth="2.5" strokeDasharray="4 2" />
-                          <circle cx="29" cy="29" r="22" fill="none" stroke={stampColor} strokeWidth="1" opacity="0.5" />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-8 h-[22px] rounded-sm overflow-hidden flex shadow-sm border border-gray-300">
-                            <div className="flex-1 bg-[#009246]" />
-                            <div className="flex-1 bg-white" />
-                            <div className="flex-1 bg-[#ce2b37]" />
-                          </div>
+              <div key={id} className="relative rounded-2xl overflow-hidden shadow-lg h-80"
+                style={{ border: "3px solid #c9a84c", ...cardStyles }}>
+                {!imageUrl && (
+                    <div style={{background: "linear-gradient(135deg,#fffdf4 0%,#fff8e1 50%,#fffdf4 100%)"}} className="absolute inset-0">
+                        <div className="absolute inset-[6px] rounded-xl pointer-events-none z-10"
+                        style={{ border: "1.5px solid #c9a84c", opacity: 0.5 }} />
+                        {["top-2 left-2", "top-2 right-2", "bottom-2 left-2", "bottom-2 right-2"].map(function(pos) {
+                        return (
+                        <div key={pos} className={`absolute ${pos} w-4 h-4 z-20 pointer-events-none`}
+                            style={{ background: "radial-gradient(circle,#c9a84c 30%,transparent 70%)", opacity: 0.7 }} />
+                        )})}
+                        <div className={`bg-gradient-to-r ${headerColor}`}>
+                        <div className="px-4 py-3 flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+                            <Icon className="w-4 h-4 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                            <p className="text-white font-black text-sm leading-tight">{body}</p>
+                            <p className="text-white/70 text-[10px] italic truncate">{bodyFull}</p>
+                            </div>
+                            <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-green-400/30 text-green-100 border border-green-300/40 flex-shrink-0">{badge}</span>
                         </div>
-                        <svg viewBox="0 0 58 58" className="absolute inset-0 w-full h-full">
-                          <path id={`arc-${body}`} d="M 29,29 m -20,0 a 20,20 0 1,1 40,0" fill="none" />
-                          <text fontSize="5.5" fill={stampColor} fontWeight="700" letterSpacing="1.5">
-                            <textPath href={`#arc-${body}`} startOffset="10%">ITALIA · UFFICIALE · 🇮🇹</textPath>
-                          </text>
-                        </svg>
-                      </div>
-                      <p className="text-[8px] font-bold text-center mt-1" style={{ color: stampColor }}>TIMBRO UFFICIALE</p>
+                        </div>
+                        <div className="p-4 relative">
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none opacity-[0.04] z-0">
+                            <span className="text-7xl font-black text-gray-800 rotate-[-25deg] tracking-widest">CERTIFIED</span>
+                        </div>
+                        <div className="flex items-start justify-between gap-3 mb-3 relative z-10">
+                            <div>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mb-0.5">Certificate of Authorization</p>
+                            <p className="text-xs text-gray-700 leading-relaxed">{desc}</p>
+                            </div>
+                            <div className="flex-shrink-0 flex flex-col items-center" style={{ minWidth: 60 }}>
+                            <div className="relative w-[58px] h-[58px]">
+                                <svg viewBox="0 0 58 58" className="absolute inset-0 w-full h-full">
+                                <circle cx="29" cy="29" r="27" fill="none" stroke={stampColor} strokeWidth="2.5" strokeDasharray="4 2" />
+                                <circle cx="29" cy="29" r="22" fill="none" stroke={stampColor} strokeWidth="1" opacity="0.5" />
+                                </svg>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-8 h-[22px] rounded-sm overflow-hidden flex shadow-sm border border-gray-300">
+                                    <div className="flex-1 bg-[#009246]" />
+                                    <div className="flex-1 bg-white" />
+                                    <div className="flex-1 bg-[#ce2b37]" />
+                                </div>
+                                </div>
+                                <svg viewBox="0 0 58 58" className="absolute inset-0 w-full h-full">
+                                <path id={`arc-${body}`} d="M 29,29 m -20,0 a 20,20 0 1,1 40,0" fill="none" />
+                                <text fontSize="5.5" fill={stampColor} fontWeight="700" letterSpacing="1.5">
+                                    <textPath href={`#arc-${body}`} startOffset="10%">ITALIA · UFFICIALE · 🇮🇹</textPath>
+                                </text>
+                                </svg>
+                            </div>
+                            <p className="text-[8px] font-bold text-center mt-1" style={{ color: stampColor }}>TIMBRO UFFICIALE</p>
+                            </div>
+                        </div>
+                        <div className="relative z-10 flex items-center gap-2 mb-3 p-2 rounded-lg"
+                            style={{ background: `rgba(${parseInt(stampColor.slice(1, 3), 16)}, ${parseInt(stampColor.slice(3, 5), 16)}, ${parseInt(stampColor.slice(5, 7), 16)}, 0.12)`, border: `1px solid rgba(${parseInt(stampColor.slice(1, 3), 16)}, ${parseInt(stampColor.slice(3, 5), 16)}, ${parseInt(stampColor.slice(5, 7), 16)}, 0.4)` }}>
+                            <Shield className="w-3.5 h-3.5 flex-shrink-0" style={{ color: stampColor }} />
+                            <p className="text-[10px] font-mono font-black tracking-wide" style={{ color: stampColor }}>Ref No. {ref}</p>
+                        </div>
+                        <div className="relative z-10 flex gap-2">
+                            <div className="flex-1 bg-white/70 rounded-lg p-2 border border-amber-200/60">
+                            <p className="text-[9px] text-gray-400 uppercase tracking-wider">Date Issued</p>
+                            <p className="text-[10px] font-bold text-gray-700">{issued}</p>
+                            </div>
+                            <div className="flex-1 bg-white/70 rounded-lg p-2 border border-amber-200/60">
+                            <p className="text-[9px] text-gray-400 uppercase tracking-wider">Valid Until</p>
+                            <p className="text-[10px] font-bold text-gray-700">{expires}</p>
+                            </div>
+                            <div className="flex-1 bg-white/70 rounded-lg p-2 border border-amber-200/60 flex flex-col items-center justify-center">
+                            <CheckCircle2 className="w-4 h-4 text-green-600 mb-0.5" />
+                            <p className="text-[9px] font-bold text-green-700">VERIFIED</p>
+                            </div>
+                        </div>
+                        <div className="relative z-10 mt-3 pt-2 border-t border-amber-200/60 flex items-center justify-between">
+                            <div>
+                                <div className="h-0.5 w-24 bg-gray-400/40 mb-0.5" />
+                                <p className="text-[9px] text-gray-400">Authorised Signatory</p>
+                            </div>
+                            <p className="text-[9px] text-gray-400 italic">CoinPower Italy S.r.l.</p>
+                        </div>
+                        </div>
                     </div>
-                  </div>
-                  <div className="relative z-10 flex items-center gap-2 mb-3 p-2 rounded-lg"
-                    style={{ background: `rgba(${parseInt(stampColor.slice(1, 3), 16)}, ${parseInt(stampColor.slice(3, 5), 16)}, ${parseInt(stampColor.slice(5, 7), 16)}, 0.12)`, border: `1px solid rgba(${parseInt(stampColor.slice(1, 3), 16)}, ${parseInt(stampColor.slice(3, 5), 16)}, ${parseInt(stampColor.slice(5, 7), 16)}, 0.4)` }}>
-                    <Shield className="w-3.5 h-3.5 flex-shrink-0" style={{ color: stampColor }} />
-                    <p className="text-[10px] font-mono font-black tracking-wide" style={{ color: stampColor }}>Ref No. {ref}</p>
-                  </div>
-                  <div className="relative z-10 flex gap-2">
-                    <div className="flex-1 bg-white/70 rounded-lg p-2 border border-amber-200/60">
-                      <p className="text-[9px] text-gray-400 uppercase tracking-wider">Date Issued</p>
-                      <p className="text-[10px] font-bold text-gray-700">{issued}</p>
-                    </div>
-                    <div className="flex-1 bg-white/70 rounded-lg p-2 border border-amber-200/60">
-                      <p className="text-[9px] text-gray-400 uppercase tracking-wider">Valid Until</p>
-                      <p className="text-[10px] font-bold text-gray-700">{expires}</p>
-                    </div>
-                    <div className="flex-1 bg-white/70 rounded-lg p-2 border border-amber-200/60 flex flex-col items-center justify-center">
-                      <CheckCircle2 className="w-4 h-4 text-green-600 mb-0.5" />
-                      <p className="text-[9px] font-bold text-green-700">VERIFIED</p>
-                    </div>
-                  </div>
-                  <div className="relative z-10 mt-3 pt-2 border-t border-amber-200/60 flex items-center justify-between">
-                    <div>
-                      <div className="h-0.5 w-24 bg-gray-400/40 mb-0.5" />
-                      <p className="text-[9px] text-gray-400">Authorised Signatory</p>
-                    </div>
-                    <p className="text-[9px] text-gray-400 italic">CoinPower Italy S.r.l.</p>
-                  </div>
-                </div>
+                )}
               </div>
             )})}
           </div>

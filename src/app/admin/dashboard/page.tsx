@@ -446,7 +446,7 @@ function DashboardContent() {
     }
   }
 
-  const handleFileUpload = async (type: 'generator' | 'activity' | 'video', id: string, file: File) => {
+  const handleFileUpload = async (type: 'generator' | 'activity' | 'video' | 'license', id: string, file: File) => {
       const loadingId = `${type}-${id}`;
       setUploading(loadingId);
 
@@ -456,6 +456,7 @@ function DashboardContent() {
         if (type === 'generator') folder = 'generator-images';
         if (type === 'activity') folder = 'activity-images';
         if (type === 'video') folder = 'tutorial-videos';
+        if (type === 'license') folder = 'license-images';
         
         const filePath = `${folder}/${id}-${Date.now()}.${fileExt}`;
         const BUCKET_NAME = 'site_assets';
@@ -1315,6 +1316,36 @@ function DashboardContent() {
                     })}
                   </div>
               </div>
+
+               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">License Card Images</h3>
+                  <p className="text-sm text-slate-400">These images appear as the background for the license cards on the Activity page.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { id: 'license-consob', name: 'CONSOB License' },
+                      { id: 'license-banca', name: 'Banca d\'Italia License' },
+                      { id: 'license-camera', name: 'Camera di Commercio' },
+                      { id: 'license-mica', name: 'EU MiCA Compliance' },
+                    ].map(({ id, name }) => {
+                        const imageUrl = media.find(m => m.id === id)?.url || `https://picsum.photos/seed/${id}/600/400`;
+                        const isUploading = uploading === `license-${id}`;
+                        return (
+                            <div key={id} className="text-center">
+                                <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-[3/2] object-cover bg-slate-700" />
+                                <p className="text-white text-sm font-semibold mt-2">{name}</p>
+                                <label htmlFor={`lic-upload-${id}`} className={`mt-1 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                    {isUploading ? 'Uploading...' : 'Upload new image'}
+                                </label>
+                                <input type="file" id={`lic-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) await handleFileUpload('license', id, file);
+                                }}/>
+                            </div>
+                        )
+                    })}
+                  </div>
+              </div>
+              
               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
                   <h3 className="font-bold text-white">Leadership Team Images</h3>
                   <p className="text-sm text-slate-400">These images appear on the About page.</p>

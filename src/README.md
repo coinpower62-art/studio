@@ -232,7 +232,11 @@ INSERT INTO public.media (id, url) VALUES
   ('payment-telecel', 'https://picsum.photos/seed/paymenttelecel/100/100'),
   ('payment-bank-transfer', 'https://picsum.photos/seed/paymentbank/100/100'),
   ('payment-western-union', 'https://picsum.photos/seed/paymentwu/100/100'),
-  ('payment-card', 'https://picsum.photos/seed/paymentcard/100/100')
+  ('payment-card', 'https://picsum.photos/seed/paymentcard/100/100'),
+  ('license-consob', 'https://picsum.photos/seed/licenseconsob/600/400'),
+  ('license-banca', 'https://picsum.photos/seed/licensebanca/600/400'),
+  ('license-camera', 'https://picsum.photos/seed/licensecamera/600/400'),
+  ('license-mica', 'https://picsum.photos/seed/licensemica/600/400')
 ON CONFLICT(id) DO NOTHING;
 
 -- =================================================================
@@ -364,5 +368,3 @@ DELETE FROM auth.users;
     
 
     
-
-```
