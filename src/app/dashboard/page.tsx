@@ -97,8 +97,9 @@ export default async function DashboardPage() {
                     </div>
                 </div>
                  <form action={logout}>
-                    <button type="submit" className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500 transition-colors bg-gray-100 hover:bg-red-50 rounded-full p-2">
-                        <LogOut className="w-4 h-4" />
+                    <button type="submit" className="flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-red-500 transition-colors bg-gray-100 hover:bg-red-50 rounded-lg px-3 py-2">
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Log out</span>
                     </button>
                 </form>
             </div>
