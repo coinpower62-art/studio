@@ -364,15 +364,17 @@ export default function ActivityPage() {
                   <div key={pos} className={`absolute ${pos} w-4 h-4 z-20 pointer-events-none`}
                     style={{ background: "radial-gradient(circle,#c9a84c 30%,transparent 70%)", opacity: 0.7 }} />
                 )})}
-                <div className={`bg-gradient-to-r ${headerColor} px-4 py-3 flex items-center gap-3`}>
-                  <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-4 h-4 text-white" />
+                <div className={`bg-gradient-to-r ${headerColor}`}>
+                  <div className="px-4 py-3 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-black text-sm leading-tight">{body}</p>
+                      <p className="text-white/70 text-[10px] italic truncate">{bodyFull}</p>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-green-400/30 text-green-100 border border-green-300/40 flex-shrink-0">{badge}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-black text-sm leading-tight">{body}</p>
-                    <p className="text-white/70 text-[10px] italic truncate">{bodyFull}</p>
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-green-400/30 text-green-100 border border-green-300/40 flex-shrink-0">{badge}</span>
                 </div>
                 <div className="p-4 relative">
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none opacity-[0.04] z-0">
