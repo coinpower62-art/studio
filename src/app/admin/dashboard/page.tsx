@@ -916,7 +916,12 @@ function DashboardContent() {
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Lock className="w-3 h-3" /> Password</p>
-                                <p className="text-slate-200 text-xs truncate font-mono">{"*".repeat(10)}</p>
+                                <div className="flex items-center justify-between">
+                                  <p className="text-slate-200 text-xs truncate font-mono">{"*".repeat(10)}</p>
+                                  <button onClick={() => { setEditingPassword(u); setNewPassword(''); setEditingUser(null); }} className="text-slate-400 hover:text-white p-1 -mr-1" title="Reset Password">
+                                      <Eye className="w-4 h-4" />
+                                  </button>
+                                </div>
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><KeyRound className="w-3 h-3"/> PIN Set</p>
@@ -948,11 +953,6 @@ function DashboardContent() {
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-900/30 text-blue-400 border border-blue-800 hover:bg-blue-900/50 text-xs font-semibold">
                             <Edit3 className="w-3 h-3" /> Edit Balance
                           </button>
-                           <button onClick={() => { setEditingPassword(u); setNewPassword(''); setEditingUser(null); }}
-                                data-testid={`button-reset-password-${u.id}`}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-900/30 text-orange-400 border border-orange-800 hover:bg-orange-900/50 text-xs font-semibold">
-                                <KeyRound className="w-3 h-3" /> Reset Password
-                           </button>
                           <button onClick={function() { return openConfirm("Delete User Account", `You are about to permanently delete "${nameForDisplay}". Their profile and all data will be erased. This CANNOT be undone.`,function() { return handleDeleteUser(u.id); }); }}
                             data-testid={`button-delete-user-${u.id}`}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-800 hover:bg-red-900/50 text-xs font-semibold">
