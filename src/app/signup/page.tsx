@@ -280,7 +280,7 @@ function SignUpForm() {
       <div className="w-full max-w-lg">
         <div className="text-center mb-6">
            <LoginLogo />
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Coin<span className="text-primary">Power</span></h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground"><span className="text-primary">Coin</span>Power</h1>
           <p className="text-muted-foreground mt-1 text-sm font-medium">Digital Energy Mining Platform</p>
         </div>
 

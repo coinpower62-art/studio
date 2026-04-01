@@ -41,7 +41,7 @@ export function SplashScreen({ onDone }: { onDone: () => void; }) {
         className={`text-center transition-all duration-500 delay-150 ${phase === "in" ? "opacity-0 translate-y-5" : "opacity-100 translate-y-0"}`}
       >
         <h1 className="text-4xl font-black text-zinc-800 leading-none">
-          CoinPower
+          <span className="text-amber-500">Coin</span>Power
         </h1>
         <p className="text-zinc-500 text-sm font-bold mt-2 tracking-widest">
           DIGITAL ENERGY MINING

@@ -19,7 +19,7 @@ function LoginComponent() {
         <div className="w-full max-w-sm">
             <div className="text-center mb-8">
                <LoginLogo />
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Coin<span className="text-primary">Power</span></h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground"><span className="text-primary">Coin</span>Power</h1>
               <p className="text-muted-foreground mt-1 text-sm font-medium">Sign in to access your dashboard</p>
             </div>
             <form

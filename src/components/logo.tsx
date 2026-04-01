@@ -17,7 +17,9 @@ export function Logo({ className }: { className?: string }) {
                 className="rounded-md object-contain"
             />
         </div>
-      <span className="text-xl font-bold text-foreground">CoinPower</span>
+      <span className="text-xl font-bold text-foreground">
+        <span className="text-primary">Coin</span>Power
+      </span>
     </div>
   );
 }
