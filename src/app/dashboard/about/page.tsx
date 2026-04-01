@@ -55,10 +55,10 @@ const earningWays = [
 
 function AboutPageSkeleton() {
   return (
-    <div className="pb-20 min-h-screen">
-      <div className="max-w-6xl mx-auto px-3 sm:px-6">
-        <Skeleton className="h-64 rounded-3xl my-4 sm:my-6" />
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-10">
+    <div className="pb-20 min-h-screen -mx-4 sm:-mx-6 -mt-4 sm:-mt-6">
+      <Skeleton className="h-64" />
+      <div className="max-w-6xl mx-auto px-7 sm:px-12">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 my-8 sm:my-10">
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
         </div>
         <Skeleton className="h-24 rounded-2xl mb-8 sm:mb-10" />
@@ -96,36 +96,37 @@ export default function AboutPage() {
   }
 
   return (
-    <div className="pb-20 min-h-screen">
-      <div className="max-w-6xl mx-auto px-3 sm:px-6">
-
-        {/* ── Hero Banner ── */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl sm:rounded-3xl p-6 sm:p-10 my-4 sm:my-6 text-white shadow-2xl">
-          <div className="absolute inset-0 opacity-10">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="absolute rounded-full border border-amber-400"
-                style={{ width: `${(i + 1) * 100}px`, height: `${(i + 1) * 100}px`, bottom: "-50px", right: "-40px" }} />
-            ))}
-          </div>
-          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-8">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-2xl flex-shrink-0">
-              <Rocket className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+    <div className="pb-20 min-h-screen -mx-4 sm:-mx-6 -mt-4 sm:-mt-6">
+      {/* ── Hero Banner ── */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl">
+        <div className="max-w-6xl mx-auto px-7 sm:px-12">
+            <div className="absolute inset-0 opacity-10">
+                {[...Array(4)].map((_, i) => (
+                <div key={i} className="absolute rounded-full border border-amber-400"
+                    style={{ width: `${(i + 1) * 100}px`, height: `${(i + 1) * 100}px`, bottom: "-50px", right: "-40px" }} />
+                ))}
             </div>
-            <div>
-              <Badge className="mb-2 bg-amber-400/20 text-amber-300 border-amber-400/30 text-xs">Est. 2018 · Rome, Italy</Badge>
-              <h1 className="text-2xl sm:text-4xl font-black mb-2">
-                Welcome to <span className="text-amber-400">CoinPower</span>
-              </h1>
-              <p className="text-amber-300 text-base sm:text-lg font-semibold mb-2">Your Gateway to Effortless Earnings 🚀</p>
-              <p className="text-gray-300 text-sm sm:text-base max-w-2xl leading-relaxed">
-                We're passionate about empowering individuals to achieve financial freedom through cryptocurrency investments. Since 2018, our team has been dedicated to creating a secure and rewarding platform for investors worldwide.
-              </p>
+            <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-8 py-10 sm:py-16">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-2xl flex-shrink-0">
+                <Rocket className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                </div>
+                <div>
+                <Badge className="mb-2 bg-amber-400/20 text-amber-300 border-amber-400/30 text-xs">Est. 2018 · Rome, Italy</Badge>
+                <h1 className="text-2xl sm:text-4xl font-black mb-2">
+                    Welcome to <span className="text-amber-400">CoinPower</span>
+                </h1>
+                <p className="text-amber-300 text-base sm:text-lg font-semibold mb-2">Your Gateway to Effortless Earnings 🚀</p>
+                <p className="text-gray-300 text-sm sm:text-base max-w-2xl leading-relaxed">
+                    We're passionate about empowering individuals to achieve financial freedom through cryptocurrency investments. Since 2018, our team has been dedicated to creating a secure and rewarding platform for investors worldwide.
+                </p>
+                </div>
             </div>
-          </div>
         </div>
+      </div>
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 pt-6">
 
         {/* ── Stats ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-10">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 my-8 sm:my-10">
           {[
             { label: "Years Active", value: "7+", icon: "📅" },
             { label: "Active Users", value: "26K+", icon: "👥" },
