@@ -9,11 +9,15 @@ import {
   ChevronRight,
   Zap,
   Play,
+  Globe,
+  LogOut,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { ReferralLink } from '@/components/ReferralLink';
 import InstallButton from '@/components/InstallButton';
+import { logout } from '@/app/login/actions';
+import { Badge } from '@/components/ui/badge';
 
 // The main page component
 export default async function DashboardPage() {
@@ -58,11 +62,6 @@ export default async function DashboardPage() {
   const now = new Date().getTime();
   const activeGeneratorCount = rentedGeneratorsResult.data?.filter(g => g.expires_at && new Date(g.expires_at).getTime() > now).length ?? 0;
 
-  const getFirstName = (name: string | null | undefined): string => {
-    if (!name) return "";
-    return name.split(" ")[0];
-  };
-
   const nameForInitials = profile?.full_name || user.email || "";
   const initials =
     nameForInitials
@@ -71,91 +70,57 @@ export default async function DashboardPage() {
       .join('')
       .toUpperCase()
       .slice(0, 2) || '??';
-      
-  const displayName = getFirstName(profile?.full_name) || getFirstName(user?.user_metadata?.full_name) || profile?.username || user?.user_metadata?.username || 'User';
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-900">
-            Welcome, {displayName}
-          </h1>
-          <p className="text-slate-500 text-sm">Here is your investment overview.</p>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gradient-to-r from-amber-500 to-amber-700 p-4">
+            <h3 className="font-bold text-white text-sm sm:text-base">Your Profile</h3>
+            <p className="text-amber-100 text-xs">Personal investment overview</p>
         </div>
-        <div className="hidden sm:block">
-          
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Balance */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-3 shadow-lg">
-            <DollarSign className="w-4 h-4 text-white" />
-          </div>
-          <p className="text-xl font-black text-gray-900">${(profile?.balance ?? 0).toFixed(2)}</p>
-          <p className="text-gray-500 text-xs mt-0.5">Your Balance</p>
-        </div>
-
-        {/* Total Users */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-3 shadow-lg">
-            <Users className="w-4 h-4 text-white" />
-          </div>
-          <p className="text-xl font-black text-gray-900">{String(displayedUserCount)}</p>
-          <p className="text-gray-500 text-xs mt-0.5">Total Users</p>
-        </div>
-        
-        {/* Pending Withdrawals */}
-         <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center mb-3 shadow-lg">
-              <ArrowUpFromLine className="w-4 h-4 text-white" />
+        <div className="p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3 sm:gap-4 mb-4">
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <Avatar className="w-14 h-14 sm:w-16 sm:h-16 border-2 border-amber-300 flex-shrink-0">
+                        <AvatarFallback className="bg-gradient-to-br from-green-400 to-amber-600 text-white font-bold text-lg sm:text-xl">
+                            {initials}
+                        </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                        <p className="font-bold text-gray-900 text-base sm:text-lg truncate">{profile.full_name || profile.username}</p>
+                        <p className="text-gray-500 text-xs sm:text-sm truncate">{user.email}</p>
+                        <div className="flex items-center gap-1 mt-1 flex-wrap">
+                            <Globe className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                            <span className="text-xs text-gray-500">{profile.country}</span>
+                            <Badge className="text-xs px-1.5 py-0 bg-green-100 text-green-700 border-0">Active</Badge>
+                        </div>
+                    </div>
+                </div>
+                 <form action={logout}>
+                    <button type="submit" className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500 transition-colors bg-gray-100 hover:bg-red-50 rounded-full p-2">
+                        <LogOut className="w-4 h-4" />
+                    </button>
+                </form>
             </div>
-            <p className="text-xl font-black text-gray-900">{String(pendingWithdrawalsCount)}</p>
-            <p className="text-gray-500 text-xs mt-0.5">Pending Withdrawals</p>
-          </div>
-
-        {/* Active Generators */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-3 shadow-lg">
-            <Zap className="w-4 h-4 text-white" />
-          </div>
-          <p className="text-xl font-black text-gray-900">{String(activeGeneratorCount)}</p>
-          <p className="text-gray-500 text-xs mt-0.5">Active Generators</p>
+            <div className="grid grid-cols-2 gap-2">
+                {[
+                    { label: "Balance", value: `$${profile.balance.toFixed(2)}`, color: "text-amber-600" },
+                    { label: "Total Earned", value: "$0.00", color: "text-green-600" },
+                    { label: "Active Plans", value: activeGeneratorCount.toString(), color: "text-blue-600" },
+                    { label: "Member Since", value: new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), color: "text-purple-600" },
+                ].map(({ label, value, color }) => (
+                    <div key={label} className="bg-gray-50 rounded-xl p-2.5 sm:p-3">
+                        <p className="text-xs text-gray-500">{label}</p>
+                        <p className={`font-bold ${color} text-lg mt-0.5`}>{value}</p>
+                    </div>
+                ))}
+            </div>
         </div>
       </div>
       
       <ReferralLink referralCode={profile?.referral_code ?? null} />
-
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-900 text-sm">Your Profile</h3>
-            <Link
-              href="/dashboard/support"
-              className="text-amber-600 text-xs flex items-center gap-1"
-            >
-              View Profile <ChevronRight className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <Avatar className="w-12 h-12 flex-shrink-0">
-              <AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-white text-base font-bold">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-gray-900 text-sm font-medium truncate">
-                {profile?.full_name || profile?.username || user.email}
-              </p>
-              <p className="text-slate-500 text-xs">@{profile?.username || 'user'}</p>
-            </div>
-            <p className="text-green-500 text-lg font-bold">
-              ${(profile?.balance ?? 0).toFixed(2)}
-            </p>
-          </div>
-        </div>
         <Link href="/dashboard/video-tutorial" className="block group">
           <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-5 text-white shadow-lg group-hover:shadow-xl transition-all h-full flex flex-col justify-center">
             <div className="flex items-center justify-between">
@@ -172,8 +137,8 @@ export default async function DashboardPage() {
             </div>
           </div>
         </Link>
+        <InstallButton />
       </div>
-      <InstallButton />
     </div>
   );
 }

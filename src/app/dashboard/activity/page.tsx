@@ -447,45 +447,6 @@ export default function ActivityPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-amber-500 to-amber-700 p-4">
-              <h3 className="font-bold text-white text-sm sm:text-base">Your Profile</h3>
-              <p className="text-amber-100 text-xs">Personal investment overview</p>
-            </div>
-            <div className="p-4 sm:p-5">
-              <div className="flex items-center gap-3 sm:gap-4 mb-4">
-                <Avatar className="w-14 h-14 sm:w-16 sm:h-16 border-2 border-amber-300 flex-shrink-0">
-                  <AvatarFallback className="bg-gradient-to-br from-amber-400 to-green-600 text-white font-bold text-lg sm:text-xl">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <p className="font-bold text-gray-900 text-base sm:text-lg truncate" data-testid="text-profile-name">{profile.full_name}</p>
-                  <p className="text-gray-500 text-xs sm:text-sm truncate" data-testid="text-profile-email">{user.email}</p>
-                  <div className="flex items-center gap-1 mt-1 flex-wrap">
-                    <Globe className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                    <span className="text-xs text-gray-500">{profile.country}</span>
-                    <Badge className="text-xs px-1.5 py-0 bg-green-100 text-green-700 border-0">Active</Badge>
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { label: "Balance", value: `$${profile.balance.toFixed(2)}`, color: "text-amber-600" },
-                  { label: "Total Earned", value: "$0.00", color: "text-green-600" },
-                  { label: "Active Plans", value: "0", color: "text-blue-600" },
-                  { label: "Member Since", value: "Mar 2026", color: "text-purple-600" },
-                ].map(function({ label, value, color }) {
-                  return (
-                  <div key={label} className="bg-gray-50 rounded-xl p-2.5 sm:p-3">
-                    <p className="text-xs text-gray-500">{label}</p>
-                    <p className={`font-bold ${color} text-sm mt-0.5`}>{value}</p>
-                  </div>
-                )})}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
               <h3 className="font-bold text-white text-sm sm:text-base">Community Stats</h3>
               <p className="text-green-100 text-xs">Global CoinPower network</p>
