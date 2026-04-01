@@ -42,16 +42,16 @@ export default function VideoTutorialPage() {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900 text-white flex flex-col items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-slate-900 text-white flex flex-col items-center p-4 z-50 overflow-y-auto">
       
-      <div className="absolute top-6 left-6">
+      <div className="absolute top-4 left-4 sm:top-6 sm:left-6">
         <Button variant="ghost" onClick={() => router.back()} className="text-slate-300 hover:text-white hover:bg-slate-800 rounded-full px-4 h-10">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
       </div>
 
-      <div className="w-full max-w-sm animate-in fade-in zoom-in-95 text-center">
+      <div className="w-full max-w-sm animate-in fade-in zoom-in-95 text-center pt-20 pb-10">
         
         <div className="mb-8">
           <h1 className="text-3xl font-black text-amber-400">Video Tutorial</h1>
@@ -92,10 +92,10 @@ export default function VideoTutorialPage() {
                 <Star
                   key={starValue}
                   data-testid={`star-${starValue}`}
-                  className={`w-8 h-8 cursor-pointer transition-all duration-200 ${
+                  className={`w-7 h-7 cursor-pointer transition-all duration-200 ${
                     starValue <= (hoverRating || rating)
                       ? 'text-amber-400 fill-amber-400'
-                      : 'text-slate-600'
+                      : 'text-slate-500'
                   }`}
                   onClick={() => handleRating(starValue)}
                   onMouseEnter={() => setHoverRating(starValue)}
