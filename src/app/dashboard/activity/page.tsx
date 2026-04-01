@@ -48,13 +48,15 @@ const announcements = [
 
 function ActivityPageSkeleton() {
     return (
-      <div className="p-4 pb-20 max-w-7xl mx-auto">
-        <Skeleton className="h-96 rounded-2xl" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-6">
-            <div className="lg:col-span-2"><Skeleton className="h-64 rounded-2xl" /></div>
-            <div className="space-y-4">
-                <Skeleton className="h-48 rounded-2xl" />
-                <Skeleton className="h-48 rounded-2xl" />
+      <div className="pb-20 min-h-screen -mx-4 sm:-mx-6 -mt-4 sm:-mt-6">
+        <Skeleton className="w-full aspect-[3/1] mb-4 sm:mb-6" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
+                <div className="lg:col-span-2"><Skeleton className="h-64 rounded-2xl" /></div>
+                <div className="space-y-4">
+                    <Skeleton className="h-48 rounded-2xl" />
+                    <Skeleton className="h-48 rounded-2xl" />
+                </div>
             </div>
         </div>
     </div>
@@ -126,23 +128,24 @@ export default function ActivityPage() {
   const initials = profile.full_name?.split(" ").map(function(n) { return n[0]; }).join("").toUpperCase().slice(0, 2) || "CP";
 
   return (
-    <div className="pb-20 min-h-screen">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6">
-
+    <div className="pb-20 min-h-screen -mx-4 sm:-mx-6 -mt-4 sm:-mt-6">
         {/* Hero banner */}
-        <div className="relative rounded-2xl overflow-hidden mb-4 sm:mb-6 shadow-lg">
+        <div className="relative overflow-hidden mb-4 sm:mb-6 shadow-lg">
           <img src={heroImg} alt="CoinPower Team" className="w-full h-auto block" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-green-400 text-xs font-semibold uppercase tracking-wide">Live</span>
+          <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-green-400 text-xs font-semibold uppercase tracking-wide">Live</span>
+              </div>
+              <h1 className="text-white text-xl sm:text-2xl font-black drop-shadow">Activity Room</h1>
+              <p className="text-white/75 text-xs sm:text-sm">Live global investment activity · CoinPower HQ</p>
             </div>
-            <h1 className="text-white text-xl sm:text-2xl font-black drop-shadow">Activity Room</h1>
-            <p className="text-white/75 text-xs sm:text-sm">Live global investment activity · CoinPower HQ</p>
           </div>
         </div>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
           <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-100">
@@ -440,66 +443,9 @@ export default function ActivityPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4 sm:mb-6">
-          <div className="bg-gradient-to-r from-amber-500 to-amber-700 px-4 sm:px-6 py-4 sm:py-5">
-            <div className="flex items-center gap-2 mb-1">
-              <Crown className="w-4 h-4 text-amber-200" />
-              <span className="text-amber-100 text-xs font-semibold uppercase tracking-wider">Company Leadership</span>
-            </div>
-            <h2 className="font-black text-white text-base sm:text-lg">Meet the Founder &amp; CEO</h2>
-          </div>
-          <div className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-              <div className="flex-shrink-0 text-center sm:text-left">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shadow-xl mx-auto sm:mx-0 border-[3px] border-amber-400">
-                  <img src={ceoImg} alt="Alessandro Romano" className="w-full h-full object-cover object-top" />
-                </div>
-                <div className="mt-2 flex flex-col items-center sm:items-start gap-1">
-                  <span className="flex items-center gap-1 text-xs text-gray-500 font-medium">
-                    <span>🇮🇹</span> Rome, Italy
-                  </span>
-                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold border border-amber-200">
-                    <BadgeCheck className="w-3 h-3" /> Verified CEO
-                  </span>
-                </div>
-              </div>
-              <div className="flex-1 text-center sm:text-left">
-                <h3 className="font-black text-gray-900 text-xl sm:text-2xl mb-0.5">Alessandro Romano</h3>
-                <p className="text-amber-600 font-bold text-sm mb-3">Founder &amp; Chief Executive Officer — CoinPower Italy</p>
-                <p className="text-gray-600 text-sm leading-relaxed mb-4">
-                  Alessandro Romano is a seasoned Italian financial entrepreneur and digital asset strategist with over 15 years of experience
-                  in European capital markets. Born and raised in Rome, he founded CoinPower with a vision to democratise investment income
-                  for everyday people across the globe — beginning from Italy and expanding to 21 countries worldwide.
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                  {[
-                    { label: "Founded", value: "2019", icon: "🏛️" },
-                    { label: "Countries", value: "21", icon: "🌍" },
-                    { label: "Investors", value: "26K+", icon: "👥" },
-                    { label: "Volume", value: "$2.4M/day", icon: "📈" },
-                  ].map(function({ label, value, icon }) {
-                    return (
-                    <div key={label} className="bg-gray-50 rounded-xl p-2.5 text-center border border-gray-100">
-                      <p className="text-base mb-0.5">{icon}</p>
-                      <p className="font-black text-gray-900 text-sm">{value}</p>
-                      <p className="text-xs text-gray-500">{label}</p>
-                    </div>
-                  )})}
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap items-center gap-2">
-              {["Fintech Innovator", "EU Certified Advisor", "Digital Asset Expert", "CONSOB Registered"].map(function(tag) {
-                return (
-                <span key={tag} className="px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold">{tag}</span>
-              )})}
-            </div>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4">
+            <div className="bg-gradient-to-r from-amber-500 to-amber-700 p-4">
               <h3 className="font-bold text-white text-sm sm:text-base">Your Profile</h3>
               <p className="text-amber-100 text-xs">Personal investment overview</p>
             </div>
