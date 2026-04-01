@@ -35,8 +35,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { logout } from '@/app/login/actions';
 import TickerTape from "@/components/TickerTape";
-import { InstallPromptProvider, useInstallPrompt } from "@/context/InstallPromptContext";
-import InstallNotice from "@/components/InstallNotice";
+import { InstallPromptProvider } from "@/context/InstallPromptContext";
 
 const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -280,7 +279,6 @@ function DashboardClientLayout({ children }: { children: React.ReactNode }) {
 
             <BottomNav />
         </div>
-        <InstallNotice />
     </div>
   );
 }

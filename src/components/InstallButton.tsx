@@ -4,27 +4,47 @@ import { useEffect, useState } from 'react';
 import { DownloadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useInstallPrompt } from '@/context/InstallPromptContext';
+import { useToast } from '@/hooks/use-toast';
 
 export default function InstallButton() {
-  const { setIsOpen } = useInstallPrompt();
+  const { installPromptEvent } = useInstallPrompt();
+  const { toast } = useToast();
   const [isStandalone, setIsStandalone] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
-    setIsStandalone(isInstalled);
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsStandalone(true);
+    }
   }, []);
 
-  const handleOpen = () => setIsOpen(true);
+  const handleInstallClick = async () => {
+    if (!installPromptEvent) {
+      toast({
+        title: "Installation Guide",
+        description: "To install the app, open your browser menu and select 'Add to Home Screen' or 'Install App'.",
+      });
+      return;
+    }
+    
+    await installPromptEvent.prompt();
+    const { outcome } = await installPromptEvent.userChoice;
+    
+    if (outcome === 'accepted') {
+      console.log('User accepted the A2HS prompt');
+    } else {
+      console.log('User dismissed the A2HS prompt');
+    }
+  };
 
-  if (!isClient || isStandalone) {
+  if (!isClient || isStandalone || !installPromptEvent) {
     return null;
   }
 
   return (
     <Button
-      onClick={handleOpen}
+      onClick={handleInstallClick}
       className="w-full h-14 bg-black text-amber-400 font-bold rounded-xl text-base border-2 border-amber-400/50 hover:bg-gray-800 hover:border-amber-400 shadow-lg"
     >
       <DownloadCloud className="w-5 h-5 mr-2.5" />

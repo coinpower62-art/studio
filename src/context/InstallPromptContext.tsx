@@ -1,18 +1,42 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+// This is the type for the BeforeInstallPromptEvent
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: Array<string>;
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed';
+    platform: string;
+  }>;
+  prompt(): Promise<void>;
+}
 
 type InstallPromptContextType = {
-  isOpen: boolean;
-  setIsOpen: Dispatch<SetStateAction<boolean>>;
+  installPromptEvent: BeforeInstallPromptEvent | null;
 };
 
 const InstallPromptContext = createContext<InstallPromptContextType | undefined>(undefined);
 
 export function InstallPromptProvider({ children }: { children: ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setInstallPromptEvent(e as BeforeInstallPromptEvent);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
   return (
-    <InstallPromptContext.Provider value={{ isOpen, setIsOpen }}>
+    <InstallPromptContext.Provider value={{ installPromptEvent }}>
       {children}
     </InstallPromptContext.Provider>
   );
