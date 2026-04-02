@@ -289,7 +289,10 @@ export default function AboutPage() {
             </div>
             <div className="flex items-center gap-2 bg-white/20 rounded-xl px-3 py-2">
               <Phone className="w-3.5 h-3.5 text-amber-200 flex-shrink-0" />
-              <span className="text-xs sm:text-sm">+39 06 1234 5678</span>
+              <div className="text-left">
+                <p className="text-xs sm:text-sm text-amber-100">Platform Manager</p>
+                <p className="text-xs sm:text-sm font-semibold">+1 (856) 528-1086</p>
+              </div>
             </div>
             <a href="https://t.me/coinpow_group" target="_blank" rel="noopener noreferrer"
               data-testid="link-telegram-about"
