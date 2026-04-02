@@ -19,7 +19,7 @@ export default async function HomePage() {
         src={coverImageUrl}
         alt="A joyful woman smiling, representing financial freedom with CoinPower."
         fill
-        className="object-contain z-0"
+        className="object-cover z-0"
         data-ai-hint="woman smiling"
         priority
       />
