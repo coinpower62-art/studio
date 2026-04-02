@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import InstallButton from '@/components/InstallButton';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ReferralLink } from '@/components/ReferralLink';
 
 // Define profile type
 type Profile = {
@@ -84,9 +85,6 @@ export default function DashboardPage() {
         fetchData();
     }, [fetchData]);
 
-    const siteUrl = "https://coinpower-app.vercel.app";
-    const referralLink = profile?.referral_code ? `${siteUrl}/signup?ref=${profile.referral_code}` : null;
-
     if (loading || !profile || !user) {
         return <DashboardSkeleton />;
     }
@@ -141,26 +139,26 @@ export default function DashboardPage() {
                             </div>
                         ))}
                     </div>
-                    
-                    {referralLink && (
-                        <div className="bg-green-50/80 p-4 rounded-2xl border border-green-100/80">
-                            <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                                <Gift className="w-5 h-5 text-green-600" />
-                                </div>
-                                <div>
-                                <h3 className="font-bold text-gray-900 text-sm">
-                                    Referral Bonus
-                                </h3>
-                                <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                                    Refer a friend and earn 5% of their first deposit as a bonus. Plus, your friend gets a 10% discount on their first Power Plan.
-                                </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
+
+            <div className="bg-green-50/80 p-4 rounded-2xl border border-green-100/80">
+                <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <Gift className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                    <h3 className="font-bold text-gray-900 text-sm">
+                        Referral Bonus
+                    </h3>
+                    <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                        Refer a friend and earn 5% of their first deposit as a bonus. Plus, your friend gets a 10% discount on their first Power Plan.
+                    </p>
+                    </div>
+                </div>
+            </div>
+
+            <ReferralLink referralCode={profile.referral_code} />
 
             <Link href="/dashboard/video-tutorial" className="block group">
                 <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-5 text-white shadow-lg group-hover:shadow-xl transition-all h-full flex flex-col justify-center">
