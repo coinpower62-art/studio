@@ -124,24 +124,26 @@ function DashboardClientLayout({ children }: { children: React.ReactNode }) {
         .single();
       
       if (!profile) {
-        const { error: createError } = await supabase.from('profiles').insert({
+        const username = user.user_metadata?.username || user.email?.split('@')[0] || 'user';
+        const { error: createError } = await supabase.from('profiles').upsert({
           id: user.id,
           full_name: user.user_metadata?.full_name,
-          username: user.user_metadata?.username,
+          username: username,
           email: user.email,
           country: user.user_metadata?.country,
           phone: user.user_metadata?.phone,
           balance: 1.00,
           has_withdrawal_pin: false,
-          referral_code: user.user_metadata?.referral_code,
+          referral_code: user.user_metadata?.referral_code || `CP-${username.toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}`,
           referred_by: user.user_metadata?.referred_by,
         });
 
         if (createError) {
-          console.error("Fatal error: Could not create user profile.", createError);
+          console.error("Fatal error: Could not create or update user profile.", createError);
           setProfileError(true);
           setLoading(false);
         } else {
+          router.refresh();
           setLoading(false);
         }
       } else {
