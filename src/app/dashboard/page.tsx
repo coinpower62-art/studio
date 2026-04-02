@@ -11,7 +11,7 @@ import { logout } from '@/app/login/actions';
 import { redeemGiftCode } from '@/app/dashboard/bank/actions';
 
 // Icons and components
-import { LogOut, Play, ChevronRight, Globe, Gift } from 'lucide-react';
+import { LogOut, Play, ChevronRight, Globe, Gift, Share2 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -196,25 +196,26 @@ export default function DashboardPage() {
             <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <Gift className="w-5 h-5 text-gray-600" />
+                        <Share2 className="w-5 h-5 text-gray-600" />
                     </div>
                     <div>
-                    <h3 className="font-bold text-gray-900 text-sm">
-                        Referral Bonus
-                    </h3>
-                    <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                        Refer a friend and earn 5% of their first deposit as a bonus. Plus, your friend gets a 10% discount on their first Power Plan.
-                    </p>
+                        <h3 className="font-bold text-gray-900 text-sm">
+                            Referral Bonus
+                        </h3>
+                        <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                            Refer a friend and earn 5% of their first deposit as a bonus. Plus, your friend gets a 10% discount on their first Power Plan.
+                        </p>
                     </div>
                 </div>
             </div>
+
 
             <ReferralLink referralCode={profile.referral_code} />
 
             <RedeemGiftCode onRedeem={fetchData} />
 
             <Link href="/dashboard/video-tutorial" className="block group">
-                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-5 text-white shadow-lg group-hover:shadow-xl transition-all h-full flex flex-col justify-center">
+                <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-5 text-white shadow-lg group-hover:shadow-xl transition-all h-full flex flex-col justify-center">
                     <div className="flex items-center justify-between">
                         <div>
                             <h3 className="font-bold text-base flex items-center gap-2">
@@ -223,9 +224,9 @@ export default function DashboardPage() {
                                 </div>
                                 Watch Tutorial
                             </h3>
-                            <p className="text-xs text-blue-100 mt-2">Learn how to operate the app and start earning.</p>
+                            <p className="text-xs text-amber-100 mt-2">Learn how to operate the app and start earning.</p>
                         </div>
-                        <ChevronRight className="w-6 h-6 text-blue-200 transition-transform group-hover:translate-x-1" />
+                        <ChevronRight className="w-6 h-6 text-amber-200 transition-transform group-hover:translate-x-1" />
                     </div>
                 </div>
             </Link>
