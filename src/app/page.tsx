@@ -1,10 +1,17 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import { createClient } from '@/lib/supabase/server';
 
-export default function HomePage() {
-  // Using a placeholder image that reflects the user's request for a joyful woman.
-  const coverImageUrl = 'https://picsum.photos/seed/joyfulwoman/1080/1920';
+export default async function HomePage() {
+  const supabase = createClient();
+  const { data: mediaData } = await supabase
+    .from('media')
+    .select('url')
+    .eq('id', 'homepage-cover')
+    .single();
+
+  const coverImageUrl = mediaData?.url || 'https://picsum.photos/seed/joyfulwoman/1080/1920';
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-background">

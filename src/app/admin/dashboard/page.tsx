@@ -1233,6 +1233,23 @@ function DashboardContent() {
               <div><h1 className="text-xl font-black text-white">Media Management</h1><p className="text-slate-400 text-sm">Update images, videos, and icons for the app.</p></div>
 
               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Homepage Cover Image</h3>
+                  <p className="text-sm text-slate-400">This is the main background image on the public homepage.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                           <img src={media.find(m => m.id === 'homepage-cover')?.url || 'https://picsum.photos/seed/joyfulwoman/1080/1920'} alt="Homepage Cover" className="w-full h-auto rounded-lg aspect-[9/16] object-cover bg-slate-700" />
+                           <label htmlFor={`act-upload-homepage-cover`} className={`mt-2 text-xs cursor-pointer hover:underline ${uploading === 'activity-homepage-cover' ? 'text-slate-400' : 'text-amber-400'}`}>
+                              {uploading === 'activity-homepage-cover' ? 'Uploading...' : 'Upload new cover image'}
+                           </label>
+                           <input type="file" id={`act-upload-homepage-cover`} className="hidden" accept="image/*" disabled={uploading === 'activity-homepage-cover'} onChange={async (e) => {
+                               const file = e.target.files?.[0];
+                               if (file) await handleFileUpload('activity', 'homepage-cover', file);
+                           }}/>
+                      </div>
+                  </div>
+              </div>
+
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
                   <h3 className="font-bold text-white">Tutorial Video</h3>
                   <p className="text-sm text-slate-400">This video appears on the 'How to Start' and 'Video Tutorial' pages.</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
