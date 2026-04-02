@@ -75,12 +75,12 @@ function RedeemGiftCode({ onRedeem }: { onRedeem: () => void }) {
                     value={giftCode}
                     onChange={(e) => setGiftCode(e.target.value)}
                     placeholder="Enter gift code"
-                    className="h-11 border-gray-200 focus:border-amber-400"
+                    className="flex-1 h-11 border-gray-200 focus:border-amber-400 font-mono tracking-wider text-sm"
                 />
-                <Button
+                <Button 
                     onClick={handleRedeem}
                     disabled={isRedeeming}
-                    className="h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md hover:from-amber-600 hover:to-amber-700"
+                    className="h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md"
                 >
                     {isRedeeming ? "Redeeming..." : "Redeem Code"}
                 </Button>
@@ -143,14 +143,10 @@ export default function DashboardPage() {
 
     useEffect(() => {
         fetchData();
-        const telegramPopupShown = sessionStorage.getItem('telegram_popup_shown');
-        if (!telegramPopupShown) {
-            const timer = setTimeout(() => {
-                setShowTelegramPopup(true);
-                sessionStorage.setItem('telegram_popup_shown', 'true');
-            }, 1500); // 1.5s delay
-            return () => clearTimeout(timer);
-        }
+        const timer = setTimeout(() => {
+            setShowTelegramPopup(true);
+        }, 1500); // 1.5s delay
+        return () => clearTimeout(timer);
     }, [fetchData]);
 
     if (loading || !profile || !user) {
