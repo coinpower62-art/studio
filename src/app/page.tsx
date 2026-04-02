@@ -14,12 +14,12 @@ export default async function HomePage() {
   const coverImageUrl = mediaData?.url || 'https://picsum.photos/seed/joyfulwoman/1080/1920';
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-background">
+    <main className="relative h-screen w-screen overflow-hidden bg-black">
       <Image
         src={coverImageUrl}
         alt="A joyful woman smiling, representing financial freedom with CoinPower."
         fill
-        className="object-cover z-0"
+        className="object-contain z-0"
         data-ai-hint="woman smiling"
         priority
       />
