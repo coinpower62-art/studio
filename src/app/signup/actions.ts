@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -74,7 +73,9 @@ export async function signup(values: any) {
     return { error: `Account created, but profile setup failed: ${error.message}. Please contact support.` };
   }
 
-  // Redirect to the login page with a success message.
-  // This prevents automatic login after signup, requiring the user to sign in manually.
-  redirect('/login?message=Account created successfully! Your $1.00 welcome bonus has been added. Please sign in.');
+  // Return a success message to the client.
+  return {
+    success: true,
+    message: 'Account created successfully! Your $1.00 welcome bonus has been added. Please sign in.'
+  };
 }

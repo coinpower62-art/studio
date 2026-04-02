@@ -247,14 +247,14 @@ function SignUpForm() {
         const result = await signup({ ...values, phone: fullPhone, language: selectedLang });
 
         if (result?.error) {
-          toast({
-            variant: "destructive",
-            title: "Registration failed",
-            description: result.error,
-          });
-          form.setError("root", { message: result.error });
-        } else {
-          // This will redirect to login page with a success message as handled in actions.ts
+            toast({
+                variant: "destructive",
+                title: "Registration failed",
+                description: result.error,
+            });
+            form.setError("root", { message: result.error });
+        } else if (result?.success && result.message) {
+            router.push(`/login?message=${encodeURIComponent(result.message)}`);
         }
     } catch (e: any) {
         toast({
