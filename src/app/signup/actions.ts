@@ -76,5 +76,5 @@ export async function signup(values: any) {
 
   // Redirect to the login page with a success message.
   // This prevents automatic login after signup, requiring the user to sign in manually.
-  redirect('/login?message=Account created successfully. Please sign in.');
+  redirect('/login?message=Account created successfully! Your $1.00 welcome bonus has been added. Please sign in.');
 }
