@@ -294,11 +294,11 @@ export default function AboutPage() {
                 <p className="text-xs sm:text-sm font-semibold">+1 (856) 528-1086</p>
               </div>
             </div>
-            <a href="https://t.me/coinpow_group" target="_blank" rel="noopener noreferrer"
+            <a href="https://t.me/coinpowerofficial" target="_blank" rel="noopener noreferrer"
               data-testid="link-telegram-about"
               className="flex items-center gap-2 bg-white/20 hover:bg-white/30 rounded-xl px-3 py-2 transition-colors cursor-pointer">
               <SiTelegram className="w-3.5 h-3.5 text-amber-200 flex-shrink-0" />
-              <span className="text-xs sm:text-sm font-semibold">t.me/coinpow_group</span>
+              <span className="text-xs sm:text-sm font-semibold">t.me/coinpowerofficial</span>
             </a>
             <div className="flex items-center gap-2 bg-white/20 rounded-xl px-3 py-2">
               <MapPin className="w-3.5 h-3.5 text-amber-200 flex-shrink-0" />
