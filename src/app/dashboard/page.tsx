@@ -142,10 +142,10 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            <div className="bg-green-50/80 p-4 rounded-2xl border border-green-100/80">
+            <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
                 <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                    <Gift className="w-5 h-5 text-green-600" />
+                    <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <Gift className="w-5 h-5 text-gray-600" />
                     </div>
                     <div>
                     <h3 className="font-bold text-gray-900 text-sm">
