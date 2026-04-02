@@ -644,13 +644,13 @@ export default function Power() {
           onDone={function() { return setClaimedInfo(null); }}
         />
       )}
-      <div className="max-w-6xl mx-auto px-3 sm:px-6">
+      <div className="max-w-6xl mx-auto">
 
-        <div className="relative overflow-hidden bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 rounded-2xl sm:rounded-3xl p-5 sm:p-8 my-4 sm:my-6 text-white shadow-2xl">
-            <div className="absolute inset-0 opacity-20">
+        <div className="relative overflow-hidden bg-gradient-to-br from-orange-400 to-yellow-500 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-white shadow-2xl">
+            <div className="absolute inset-0 opacity-10">
                 {[...Array(4)].map((_, i) => (
-                <div key={i} className="absolute rounded-full border-2 border-white"
-                    style={{ width: `${(i + 1) * 100}px`, height: `${(i + 1) * 100}px`, top: "50%", right: "-30px", transform: "translateY(-50%)" }} />
+                <div key={i} className="absolute rounded-full border border-white"
+                    style={{ width: `${(i + 1) * 200}px`, height: `${(i + 1) * 200}px`, top: "-50px", right: "-100px" }} />
                 ))}
             </div>
             <div className="relative z-10">
@@ -669,122 +669,124 @@ export default function Power() {
                 <div className="bg-white/20 backdrop-blur-md rounded-2xl p-8 text-center border border-white/10">
                     <p className="text-white/80 text-sm uppercase tracking-wider">Active Generators</p>
                     <div className="text-6xl font-bold text-white my-2">{activeGenerators.length}</div>
-                    <p className="text-white/70 italic">{activeGenerators.length === 0 ? "Rent from Market" : "running now"}</p>
+                    <p className="text-white/70 italic">running now</p>
                 </div>
             </div>
         </div>
-
-        {activeGenerators.length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <h2 className="font-bold text-gray-900">Active Generators</h2>
-              <Badge className="bg-green-100 text-green-700 border-0">{activeGenerators.length}</Badge>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {activeGenerators.map(function(ug) {
-                return (
-                <GeneratorCard key={ug.id} ug={ug}
-                  onClaim={handleClaim}
-                  isClaiming={isClaimingId === ug.id}
-                />
-              ); })}
-            </div>
-          </div>
-        )}
-
-        {rentedGenerators.length === 0 && !isLoading && (
-          <div className="bg-white rounded-2xl border border-amber-100/60 shadow-sm p-10 text-center mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-4">
-              <Zap className="w-8 h-8 text-amber-600" />
-            </div>
-            <h3 className="font-bold text-gray-900 text-lg mb-2">No generators yet</h3>
-            <p className="text-gray-500 text-sm mb-4 max-w-sm mx-auto">
-              Go to the Market to rent a generator. Your generators will appear here with a 24-hour claim timer.
-            </p>
-            <Button onClick={function() { return router.push("/dashboard/market"); }}
-              className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-xl px-6 h-10 shadow-md">
-              Browse Market
-            </Button>
-          </div>
-        )}
-
-        {expiredGenerators.length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <h2 className="font-semibold text-gray-500 text-sm">Expired Generators</h2>
-              <Badge className="bg-gray-100 text-gray-500 border-0 text-xs">{expiredGenerators.length}</Badge>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {expiredGenerators.map(function(ug) {
-                return (
-                <GeneratorCard key={ug.id} ug={ug}
-                  onClaim={handleClaim}
-                  isClaiming={isClaimingId === ug.id}
-                />
-              ); })}
-            </div>
-          </div>
-        )}
-
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1 mt-4">Boost Power Plans</h2>
-        <p className="text-gray-500 text-center text-sm mb-5 sm:mb-8">Multiply your returns even further</p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {powerPlans.map(function(plan) {
-            return (
-            <div key={plan.name}
-              data-testid={`card-power-${plan.name.toLowerCase().replace(" ", "-")}`}
-              className={`relative bg-white rounded-2xl border-2 ${plan.popular ? "border-amber-400 shadow-xl shadow-amber-100" : "border-gray-200 shadow-sm"} p-5 sm:p-6 hover:shadow-lg transition-all duration-300`}>
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 px-3 py-1 shadow-md whitespace-nowrap">Most Popular</Badge>
+        
+        <div className="px-3 sm:px-6">
+            {activeGenerators.length > 0 && (
+              <div className="mb-6 mt-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <h2 className="font-bold text-gray-900">Active Generators</h2>
+                  <Badge className="bg-green-100 text-green-700 border-0">{activeGenerators.length}</Badge>
                 </div>
-              )}
-              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4 shadow-lg`}>
-                <Zap className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {activeGenerators.map(function(ug) {
+                    return (
+                    <GeneratorCard key={ug.id} ug={ug}
+                      onClaim={handleClaim}
+                      isClaiming={isClaimingId === ug.id}
+                    />
+                  ); })}
+                </div>
               </div>
-              <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-1">{plan.name}</h3>
-              <div className="flex items-end gap-1 mb-3">
-                <span className="text-3xl font-black text-gray-900">{plan.boost}</span>
-                <span className="text-gray-500 text-sm mb-1">Return Boost</span>
+            )}
+
+            {rentedGenerators.length === 0 && !isLoading && (
+              <div className="bg-white rounded-2xl border border-amber-100/60 shadow-sm p-10 text-center mb-6 mt-6">
+                <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-4">
+                  <Zap className="w-8 h-8 text-amber-600" />
+                </div>
+                <h3 className="font-bold text-gray-900 text-lg mb-2">No generators yet</h3>
+                <p className="text-gray-500 text-sm mb-4 max-w-sm mx-auto">
+                  Go to the Market to rent a generator. Your generators will appear here with a 24-hour claim timer.
+                </p>
+                <Button onClick={function() { return router.push("/dashboard/market"); }}
+                  className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-xl px-6 h-10 shadow-md">
+                  Browse Market
+                </Button>
               </div>
-              <p className="text-amber-600 font-semibold text-base sm:text-lg mb-4 sm:mb-5">{plan.price}</p>
-              <div className="space-y-2 mb-5">
-                {plan.features.map(function(f) {
-                  return (
-                  <div key={f} className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm text-gray-600">{f}</span>
+            )}
+
+            {expiredGenerators.length > 0 && (
+              <div className="mb-6 mt-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="font-semibold text-gray-500 text-sm">Expired Generators</h2>
+                  <Badge className="bg-gray-100 text-gray-500 border-0 text-xs">{expiredGenerators.length}</Badge>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {expiredGenerators.map(function(ug) {
+                    return (
+                    <GeneratorCard key={ug.id} ug={ug}
+                      onClaim={handleClaim}
+                      isClaiming={isClaimingId === ug.id}
+                    />
+                  ); })}
+                </div>
+              </div>
+            )}
+
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1 mt-4">Boost Power Plans</h2>
+            <p className="text-gray-500 text-center text-sm mb-5 sm:mb-8">Multiply your returns even further</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+              {powerPlans.map(function(plan) {
+                return (
+                <div key={plan.name}
+                  data-testid={`card-power-${plan.name.toLowerCase().replace(" ", "-")}`}
+                  className={`relative bg-white rounded-2xl border-2 ${plan.popular ? "border-amber-400 shadow-xl shadow-amber-100" : "border-gray-200 shadow-sm"} p-5 sm:p-6 hover:shadow-lg transition-all duration-300`}>
+                  {plan.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 px-3 py-1 shadow-md whitespace-nowrap">Most Popular</Badge>
+                    </div>
+                  )}
+                  <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4 shadow-lg`}>
+                    <Zap className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                   </div>
-                ); })}
-              </div>
-              <div className="mb-4">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>Power Level</span><span>{plan.multiplier * 10}%</span>
+                  <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-1">{plan.name}</h3>
+                  <div className="flex items-end gap-1 mb-3">
+                    <span className="text-3xl font-black text-gray-900">{plan.boost}</span>
+                    <span className="text-gray-500 text-sm mb-1">Return Boost</span>
+                  </div>
+                  <p className="text-amber-600 font-semibold text-base sm:text-lg mb-4 sm:mb-5">{plan.price}</p>
+                  <div className="space-y-2 mb-5">
+                    {plan.features.map(function(f) {
+                      return (
+                      <div key={f} className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        <span className="text-xs sm:text-sm text-gray-600">{f}</span>
+                      </div>
+                    ); })}
+                  </div>
+                  <div className="mb-4">
+                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>Power Level</span><span>{plan.multiplier * 10}%</span>
+                    </div>
+                    <Progress value={plan.multiplier * 10} className="h-2" />
+                  </div>
+                  <Button
+                    data-testid={`button-activate-${plan.name.toLowerCase().replace(" ", "-")}`}
+                    onClick={function() { return toast({ title: `${plan.name} Activated!`, description: "This is a demo. Your power plan has been activated." }); }}
+                    className="w-full h-10 sm:h-11 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all text-sm">
+                    Activate {plan.name}
+                  </Button>
                 </div>
-                <Progress value={plan.multiplier * 10} className="h-2" />
-              </div>
-              <Button
-                data-testid={`button-activate-${plan.name.toLowerCase().replace(" ", "-")}`}
-                onClick={function() { return toast({ title: `${plan.name} Activated!`, description: "This is a demo. Your power plan has been activated." }); }}
-                className="w-full h-10 sm:h-11 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all text-sm">
-                Activate {plan.name}
-              </Button>
+              ); })}
             </div>
-          ); })}
-        </div>
 
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 sm:p-6 flex items-start gap-3 sm:gap-4">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-            <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-          </div>
-          <div>
-            <h4 className="font-bold text-green-800 mb-1 text-sm sm:text-base">Referral Bonus</h4>
-            <p className="text-green-700 text-xs sm:text-sm">
-              Refer a friend and earn 5% of their first deposit as a bonus. Plus, your friend gets a 10% discount on their first Power Plan.
-            </p>
-          </div>
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 sm:p-6 flex items-start gap-3 sm:gap-4">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+                <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+              </div>
+              <div>
+                <h4 className="font-bold text-green-800 mb-1 text-sm sm:text-base">Referral Bonus</h4>
+                <p className="text-green-700 text-xs sm:text-sm">
+                  Refer a friend and earn 5% of their first deposit as a bonus. Plus, your friend gets a 10% discount on their first Power Plan.
+                </p>
+              </div>
+            </div>
         </div>
       </div>
     </div>
