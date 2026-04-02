@@ -8,6 +8,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import { logout } from '@/app/login/actions';
+import { redeemGiftCode } from '@/app/dashboard/bank/actions';
 
 // Icons and components
 import { LogOut, Play, ChevronRight, Globe, Gift } from 'lucide-react';
@@ -17,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import InstallButton from '@/components/InstallButton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ReferralLink } from '@/components/ReferralLink';
+import { Input } from '@/components/ui/input';
 
 // Define profile type
 type Profile = {
@@ -29,6 +31,55 @@ type Profile = {
     balance: number;
     referral_code: string | null;
 };
+
+function RedeemGiftCode({ onRedeem }: { onRedeem: () => void }) {
+    const { toast } = useToast();
+    const [giftCode, setGiftCode] = useState("");
+    const [isRedeeming, setIsRedeeming] = useState(false);
+
+    const handleRedeem = async () => {
+        if (!giftCode.trim()) {
+            toast({ title: "Please enter a gift code.", variant: "destructive" });
+            return;
+        }
+        setIsRedeeming(true);
+        const result = await redeemGiftCode(giftCode.trim().toUpperCase());
+        setIsRedeeming(false);
+
+        if (result.error) {
+            toast({ title: "Redemption Failed", description: result.error, variant: "destructive" });
+        } else {
+            toast({ title: "Success!", description: `You have redeemed $${result.amount?.toFixed(2)}. It has been added to your balance.` });
+            setGiftCode("");
+            onRedeem();
+        }
+    };
+
+    return (
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-2">
+                <Gift className="w-5 h-5 text-amber-600" />
+                Redeem Gift Code
+            </h3>
+            <p className="text-xs text-gray-500 mb-3">Have a gift code? Enter it below to add funds to your account.</p>
+            <div className="flex flex-col gap-2">
+                <Input
+                    value={giftCode}
+                    onChange={(e) => setGiftCode(e.target.value)}
+                    placeholder="Enter gift code"
+                    className="h-11 border-gray-200 focus:border-amber-400"
+                />
+                <Button
+                    onClick={handleRedeem}
+                    disabled={isRedeeming}
+                    className="h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md hover:from-amber-600 hover:to-amber-700"
+                >
+                    {isRedeeming ? "Redeeming..." : "Redeem Code"}
+                </Button>
+            </div>
+        </div>
+    );
+}
 
 function DashboardSkeleton() {
     return (
@@ -159,6 +210,8 @@ export default function DashboardPage() {
             </div>
 
             <ReferralLink referralCode={profile.referral_code} />
+
+            <RedeemGiftCode onRedeem={fetchData} />
 
             <Link href="/dashboard/video-tutorial" className="block group">
                 <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-5 text-white shadow-lg group-hover:shadow-xl transition-all h-full flex flex-col justify-center">
