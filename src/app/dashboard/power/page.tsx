@@ -646,12 +646,11 @@ export default function Power() {
       )}
       <div className="max-w-6xl mx-auto">
 
-        <div className="relative overflow-hidden bg-gradient-to-br from-orange-400 to-yellow-500 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-white shadow-2xl">
+        <div className="relative overflow-hidden bg-gradient-to-br from-orange-400 to-yellow-500 rounded-b-2xl sm:rounded-b-3xl p-5 sm:p-8 text-white shadow-2xl -mt-6 -mx-6 sm:mb-6">
             <div className="absolute inset-0 opacity-10">
-                {[...Array(4)].map((_, i) => (
-                <div key={i} className="absolute rounded-full border border-white"
-                    style={{ width: `${(i + 1) * 200}px`, height: `${(i + 1) * 200}px`, top: "-50px", right: "-100px" }} />
-                ))}
+                <div className="absolute w-[200px] h-[200px] rounded-full border border-white -top-12 -left-12" />
+                <div className="absolute w-[300px] h-[300px] rounded-full border border-white -bottom-20 -right-16" />
+                <div className="absolute w-[150px] h-[150px] rounded-full border border-white top-1/4 right-1/4" />
             </div>
             <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-6">
@@ -682,7 +681,7 @@ export default function Power() {
                   <h2 className="font-bold text-gray-900">Active Generators</h2>
                   <Badge className="bg-green-100 text-green-700 border-0">{activeGenerators.length}</Badge>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   {activeGenerators.map(function(ug) {
                     return (
                     <GeneratorCard key={ug.id} ug={ug}
@@ -716,7 +715,7 @@ export default function Power() {
                   <h2 className="font-semibold text-gray-500 text-sm">Expired Generators</h2>
                   <Badge className="bg-gray-100 text-gray-500 border-0 text-xs">{expiredGenerators.length}</Badge>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   {expiredGenerators.map(function(ug) {
                     return (
                     <GeneratorCard key={ug.id} ug={ug}
