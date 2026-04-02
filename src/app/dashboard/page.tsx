@@ -20,6 +20,13 @@ import InstallButton from '@/components/InstallButton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ReferralLink } from '@/components/ReferralLink';
 import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 // Define profile type
 type Profile = {
@@ -99,6 +106,7 @@ export default function DashboardPage() {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [activeGeneratorCount, setActiveGeneratorCount] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [showTelegramPopup, setShowTelegramPopup] = useState(false);
 
     const fetchData = useCallback(async () => {
         const supabase = createClient();
@@ -135,6 +143,14 @@ export default function DashboardPage() {
 
     useEffect(() => {
         fetchData();
+        const telegramPopupShown = sessionStorage.getItem('telegram_popup_shown');
+        if (!telegramPopupShown) {
+            const timer = setTimeout(() => {
+                setShowTelegramPopup(true);
+                sessionStorage.setItem('telegram_popup_shown', 'true');
+            }, 1500); // 1.5s delay
+            return () => clearTimeout(timer);
+        }
     }, [fetchData]);
 
     if (loading || !profile || !user) {
@@ -146,6 +162,26 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-4">
+             <Dialog open={showTelegramPopup} onOpenChange={setShowTelegramPopup}>
+                <DialogContent className="sm:max-w-md rounded-2xl">
+                    <DialogHeader className="text-center items-center">
+                        <div className="w-16 h-16 rounded-2xl bg-sky-100 flex items-center justify-center mb-2">
+                           <SiTelegram className="w-8 h-8 text-sky-500" />
+                        </div>
+                        <DialogTitle className="text-xl font-bold">Join our Community!</DialogTitle>
+                        <DialogDescription className="text-gray-500 text-sm pt-1">
+                            Click below to join our official Telegram group for live support, announcements, and to connect with other investors.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <a href="https://t.me/coinpowerofficial" target="_blank" rel="noopener noreferrer" onClick={() => setShowTelegramPopup(false)}>
+                        <Button className="w-full h-11 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-lg text-base">
+                            <SiTelegram className="w-5 h-5 mr-2" />
+                            Join Telegram Group
+                        </Button>
+                    </a>
+                </DialogContent>
+            </Dialog>
+
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-500 to-amber-700 p-4">
                     <h3 className="font-bold text-white text-sm sm:text-base">Your Profile</h3>
@@ -194,7 +230,7 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-green-200 shadow-sm">
+            <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-4">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
                         <Share2 className="w-5 h-5 text-green-600" />
@@ -220,7 +256,7 @@ export default function DashboardPage() {
             <RedeemGiftCode onRedeem={fetchData} />
 
             <Link href="/dashboard/video-tutorial" className="block group">
-                <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-5 text-white shadow-lg group-hover:shadow-xl transition-all h-full flex flex-col justify-center">
+                <div className="bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl p-5 text-white shadow-lg group-hover:shadow-xl transition-all h-full flex flex-col justify-center">
                     <div className="flex items-center justify-between">
                         <div>
                             <h3 className="font-bold text-base flex items-center gap-2">
