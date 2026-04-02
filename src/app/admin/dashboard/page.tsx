@@ -269,6 +269,7 @@ function DashboardContent() {
   const [showPassFor, setShowPassFor] = useState<string | null>(null);
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [createUserForm, setCreateUserForm] = useState({ full_name: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
+  const [showCreateUserPassword, setShowCreateUserPassword] = useState(false);
 
   // Generator modal states
   const [showCreateGen, setShowCreateGen] = useState(false);
@@ -788,8 +789,13 @@ function DashboardContent() {
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Password *</label>
-                          <Input type="password" value={createUserForm.password} onChange={function(e) { return setCreateUserForm(function(f) { return ({ ...f, password: e.target.value }); }); }}
-                            placeholder="Min 6 characters" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                          <div className="relative">
+                            <Input type={showCreateUserPassword ? "text" : "password"} value={createUserForm.password} onChange={function(e) { return setCreateUserForm(function(f) { return ({ ...f, password: e.target.value }); }); }}
+                              placeholder="Min 6 characters" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm pr-10" />
+                            <button type="button" onClick={() => setShowCreateUserPassword(!showCreateUserPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center text-slate-400 hover:text-white">
+                              {showCreateUserPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
                         </div>
                         <div>
                           <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Starting Balance</label>
@@ -1146,7 +1152,7 @@ function DashboardContent() {
                     <DatabaseZap className="w-4 h-4 mr-2" /> Seed Defaults
                   </Button>
                   <Button onClick={function() { return fetchData(); }} variant="outline" size="sm" className="h-9 border-slate-600 text-slate-300 hover:bg-slate-700"><RefreshCw className="w-3.5 h-3.5" /></Button>
-                  <Button onClick={function() { setNewGen({ ...BLANK_GEN }); setShowCreateGen(true); }}
+                  <Button onClick={function() { return setNewGen({ ...BLANK_GEN }); setShowCreateGen(true); }}
                     data-testid="button-create-generator"
                     className="h-9 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-sm flex items-center gap-1.5 rounded-xl shadow-md">
                     <Plus className="w-4 h-4" /> New Generator
