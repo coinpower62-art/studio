@@ -117,35 +117,16 @@ function DashboardClientLayout({ children }: { children: React.ReactNode }) {
       
       setUser(user);
 
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', user.id)
         .single();
       
-      if (!profile) {
-        const username = user.user_metadata?.username || user.email?.split('@')[0] || 'user';
-        const { error: createError } = await supabase.from('profiles').upsert({
-          id: user.id,
-          full_name: user.user_metadata?.full_name,
-          username: username,
-          email: user.email,
-          country: user.user_metadata?.country,
-          phone: user.user_metadata?.phone,
-          balance: 1.00,
-          has_withdrawal_pin: false,
-          referral_code: user.user_metadata?.referral_code || `CP-${username.toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}`,
-          referred_by: user.user_metadata?.referred_by,
-        });
-
-        if (createError) {
-          console.error("Fatal error: Could not create or update user profile.", createError);
-          setProfileError(true);
-          setLoading(false);
-        } else {
-          router.refresh();
-          setLoading(false);
-        }
+      if (error || !profile) {
+        console.error("Fatal error: Could not load user profile. The signup process should handle profile creation.", error);
+        setProfileError(true);
+        setLoading(false);
       } else {
         setLoading(false);
       }
@@ -190,7 +171,7 @@ function DashboardClientLayout({ children }: { children: React.ReactNode }) {
           <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
           <h2 className="mt-4 text-xl font-bold text-destructive-foreground">User Profile Not Found</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-              We could not load or create your user profile. This is a critical error.
+              We could not load your user profile. This can happen if the account was not created correctly.
               Please try signing out and signing back in. If the problem persists, please contact support.
           </p>
           <form action={logout} className="mt-6">
