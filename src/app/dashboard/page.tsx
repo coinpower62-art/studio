@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { logout } from '@/app/login/actions';
 
 // Icons and components
-import { LogOut, Share2, Copy, Play, ChevronRight, Globe } from 'lucide-react';
+import { LogOut, Play, ChevronRight, Globe, Gift } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -87,16 +87,6 @@ export default function DashboardPage() {
     const siteUrl = "https://coinpower-app.vercel.app";
     const referralLink = profile?.referral_code ? `${siteUrl}/signup?ref=${profile.referral_code}` : null;
 
-    const copyLink = () => {
-        if (referralLink) {
-            navigator.clipboard.writeText(referralLink);
-            toast({
-                title: "Referral link copied!",
-                description: "You can now share it with your friends.",
-            });
-        }
-    };
-
     if (loading || !profile || !user) {
         return <DashboardSkeleton />;
     }
@@ -153,20 +143,19 @@ export default function DashboardPage() {
                     </div>
                     
                     {referralLink && (
-                        <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-100/80">
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-                                    <Share2 className="w-4 h-4 text-amber-600" />
-                                    Your Referral Link
+                        <div className="bg-green-50/80 p-4 rounded-2xl border border-green-100/80">
+                            <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+                                <Gift className="w-5 h-5 text-green-600" />
+                                </div>
+                                <div>
+                                <h3 className="font-bold text-gray-900 text-sm">
+                                    Referral Bonus
                                 </h3>
-                            </div>
-                            <p className="text-xs text-gray-500 mb-3">Share your link with friends. When they sign up using your link, you'll earn a commission on their first investment!</p>
-                            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-2">
-                                <p className="text-sm text-amber-700 font-mono truncate flex-1">{referralLink}</p>
-                                <Button size="sm" variant="ghost" onClick={copyLink} className="h-8 px-2.5">
-                                    <Copy className="w-4 h-4 mr-1" />
-                                    Copy
-                                </Button>
+                                <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                                    Refer a friend and earn 5% of their first deposit as a bonus. Plus, your friend gets a 10% discount on their first Power Plan.
+                                </p>
+                                </div>
                             </div>
                         </div>
                     )}
