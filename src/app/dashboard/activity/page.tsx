@@ -41,9 +41,9 @@ const topInvestors = [
 ];
 
 const announcements = [
-  { title: "New PG5 Generator Coming Soon!", date: "Mar 10, 2026", tag: "New", tagColor: "bg-green-100 text-green-700" },
-  { title: "March Bonus: Extra 5% on all deposits", date: "Mar 8, 2026", tag: "Bonus", tagColor: "bg-amber-100 text-amber-700" },
-  { title: "System maintenance scheduled for Mar 15", date: "Mar 7, 2026", tag: "Info", tagColor: "bg-blue-100 text-blue-700" },
+  { title: "New PG5 Generator Coming Soon!", date: "Jul 20, 2026", tag: "New", tagColor: "bg-green-100 text-green-700" },
+  { title: "March Bonus: Extra 5% on all deposits", date: "Nov 10, 2026", tag: "Bonus", tagColor: "bg-amber-100 text-amber-700" },
+  { title: "System maintenance scheduled for Mar 15", date: "Nov 10, 2026", tag: "Info", tagColor: "bg-blue-100 text-blue-700" },
 ];
 
 function ActivityPageSkeleton() {
