@@ -654,24 +654,24 @@ export default function Power() {
                 style={{ width: `${(i + 1) * 100}px`, height: `${(i + 1) * 100}px`, top: "50%", right: "-30px", transform: "translateY(-50%)" }} />
             ); })}
           </div>
-          <div className="relative z-10 flex flex-col items-start gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <Badge className="bg-white/20 text-white border-0 text-xs">Power Center</Badge>
+          <div className="relative z-10 flex flex-col sm:flex-row items-stretch gap-4">
+              <div className="flex-1 flex flex-col justify-center">
+                  <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                      <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  </div>
+                  <Badge className="bg-white/20 text-white border-0 text-xs">Power Center</Badge>
+                  </div>
+                  <h1 className="text-2xl sm:text-3xl font-black mb-1 sm:mb-2">Your Active Generators</h1>
+                  <p className="text-amber-100 text-sm sm:text-base max-w-md">
+                  You must click 'Collect' on each generator every 24 hours to add its income to your balance.
+                  </p>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black mb-1 sm:mb-2">Your Active Generators</h1>
-              <p className="text-amber-100 text-sm sm:text-base">
-                You must click 'Collect' on each generator every 24 hours to add its income to your balance.
-              </p>
-            </div>
-            <div className="text-center bg-white/20 backdrop-blur-sm rounded-2xl p-4 sm:p-5 border border-white/30">
-              <p className="text-amber-100 text-xs mb-1">Active Generators</p>
-              <p className="text-4xl sm:text-5xl font-black">{activeGenerators.length}</p>
-              <p className="text-amber-200 text-xs mt-1">{activeGenerators.length === 0 ? "Rent from Market" : "running now"}</p>
-            </div>
+              <div className="flex-1 text-center bg-white/20 backdrop-blur-sm rounded-2xl p-4 sm:p-5 border border-white/30 flex flex-col justify-center">
+                  <p className="text-amber-100 text-xs mb-1">Active Generators</p>
+                  <p className="text-4xl sm:text-5xl font-black">{activeGenerators.length}</p>
+                  <p className="text-amber-200 text-xs mt-1">{activeGenerators.length === 0 ? "Rent from Market" : "running now"}</p>
+              </div>
           </div>
         </div>
 
