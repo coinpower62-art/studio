@@ -774,18 +774,6 @@ export default function Power() {
                 </div>
               ); })}
             </div>
-
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 sm:p-6 flex items-start gap-3 sm:gap-4">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-              </div>
-              <div>
-                <h4 className="font-bold text-green-800 mb-1 text-sm sm:text-base">Referral Bonus</h4>
-                <p className="text-green-700 text-xs sm:text-sm">
-                  Refer a friend and earn 5% of their first deposit as a bonus. Plus, your friend gets a 10% discount on their first Power Plan.
-                </p>
-              </div>
-            </div>
         </div>
       </div>
     </div>
