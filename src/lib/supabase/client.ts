@@ -1,30 +1,26 @@
 import { createBrowserClient } from '@supabase/ssr'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-// This ensures that the client is a true singleton in development to prevent
-// the "AbortError: Lock broken by another request" error during HMR.
-const globalForSupabase = globalThis as unknown as {
-  supabase: SupabaseClient | undefined
-}
+let supabase: SupabaseClient | undefined;
 
 export function createClient() {
-  // Use the global instance if it exists.
-  if (globalForSupabase.supabase) {
-    return globalForSupabase.supabase
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+  if (process.env.NODE_ENV === 'development') {
+    // In development, use a global variable to preserve the client across HMR.
+    const globalWithSupabase = globalThis as typeof globalThis & {
+      supabase: SupabaseClient | undefined;
+    };
+    if (!globalWithSupabase.supabase) {
+      globalWithSupabase.supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+    }
+    return globalWithSupabase.supabase;
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are required.')
+  if (!supabase) {
+    supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
   }
 
-  // Create a new client and store it globally.
-  globalForSupabase.supabase = createBrowserClient(
-    supabaseUrl,
-    supabaseAnonKey
-  )
-  
-  return globalForSupabase.supabase
+  return supabase;
 }
