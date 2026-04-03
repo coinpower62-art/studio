@@ -2,7 +2,7 @@
   "name": "CoinPower",
   "short_name": "CoinPower",
   "description": "Digital Energy Mining",
-  "start_url": "/dashboard",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#b8860b",
