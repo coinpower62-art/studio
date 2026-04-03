@@ -342,12 +342,26 @@ WHERE
 
 ### Fix Missing Phone Number Uniqueness
 
-If you set up your database before the phone number uniqueness rule was added, run the following command to enforce it. This prevents multiple accounts from using the same phone number. Note: This will fail if you have duplicate phone numbers in your database already.
+If you set up your database before the phone number uniqueness rule was added, run the following command to enforce it. This prevents multiple accounts from using the same phone number.
 
 ```sql
 -- Add a UNIQUE constraint to the phone column if it doesn't exist
 ALTER TABLE public.profiles ADD CONSTRAINT profiles_phone_unique_constraint UNIQUE (phone);
 ```
+
+**Important:** This command will fail if you already have duplicate phone numbers in your database. It will **not** delete any data, but it will show an error. To fix this, you must find and either delete or update the duplicate entries.
+
+You can find duplicate phone numbers by running this query in your Supabase SQL Editor:
+
+```sql
+-- Find duplicate phone numbers
+SELECT phone, COUNT(*)
+FROM public.profiles
+WHERE phone IS NOT NULL AND phone <> ''
+GROUP BY phone
+HAVING COUNT(*) > 1;
+```
+Once you have resolved the duplicates, you can run the `ALTER TABLE` command again.
 
 ### Reset All User Data (Use With Caution)
 
@@ -372,8 +386,6 @@ SET
 -- and 'withdrawal_requests' because of the database setup.
 DELETE FROM auth.users;
 ```
-    
-
     
 
     
