@@ -234,7 +234,7 @@ VALUES
   ('pg1', 'PG1 Generator', 'Basic Power', '⚡', 'from-amber-400 to-orange-500', 0, 2, 0.5, true, '10%', 'Daily', '$0', '$0', '12050', 'https://picsum.photos/seed/genpg1/300/300'),
   ('pg2', 'PG2 Generator', 'Standard Power', '🔋', 'from-green-400 to-emerald-600', 25, 30, 2.5, true, '12%', 'Daily', '$25', '$1000', '8520', 'https://picsum.photos/seed/genpg2/300/300'),
   ('pg3', 'PG3 Generator', 'Mega Power', '💡', 'from-blue-400 to-indigo-600', 100, 45, 10, true, '15%', 'Daily', '$100', '$5000', '4310', 'https://picsum.photos/seed/genpg3/300/300'),
-  ('pg4', 'PG4 Generator', 'Ultra Power', '🚀', 'from-purple-500 to-pink-600', 500, 60, 55, true, '20%', 'Daily', '$500', '$20000', '1250', 'https://picsum.photos/seed/genpg4/300/300')
+  ('pg4', 'PG4 Generator', 'Ultra Power', '🚀', 'from-purple-500 to-pink-600', 500, 30, 55, true, '20%', 'Daily', '$500', '$20000', '1250', 'https://picsum.photos/seed/genpg4/300/300')
 ON CONFLICT(id) DO NOTHING;
 
 -- =================================================================
@@ -407,3 +407,4 @@ DELETE FROM auth.users;
     
 
     
+
