@@ -8,7 +8,28 @@ export async function signup(values: any) {
   const supabase = createClient();
   const { email, password, fullName, username, country, phone, referralCode } = values;
 
-  // Step 1: Attempt to sign up the user.
+  // Step 1: Pre-flight checks for username and phone number to provide better error messages.
+  const { data: existingProfile, error: checkError } = await supabase
+    .from('profiles')
+    .select('username, phone')
+    .or(`username.eq.${username},phone.eq.${phone}`);
+
+  if (checkError) {
+      // If the check fails, we don't block signup, but we log the error.
+      // The database's unique constraints will still catch duplicates.
+      console.error('Error checking for existing profile:', checkError.message);
+  }
+
+  if (existingProfile && existingProfile.length > 0) {
+      if (existingProfile.some(p => p.username && p.username.toLowerCase() === username.toLowerCase())) {
+          return { error: `Username "${username}" is already taken. Please choose a different one.` };
+      }
+      if (existingProfile.some(p => p.phone === phone)) {
+          return { error: `This phone number is already in use. Please use a different one.` };
+      }
+  }
+
+  // Step 2: Attempt to sign up the user.
   // This will fail if the user's email already exists in `auth.users`, which is what we want.
   const { data: signupData, error: signupError } = await supabase.auth.signUp({
     email,
@@ -27,7 +48,7 @@ export async function signup(values: any) {
   // Handle auth errors immediately (e.g., user already exists).
   if (signupError) {
     if (signupError.message.includes("User already registered")) {
-      return { error: 'This account already exists. Please try signing in or use a different email to create a new account.' };
+      return { error: 'This email address is already registered. Please try signing in.' };
     }
     return { error: signupError.message };
   }
@@ -36,15 +57,11 @@ export async function signup(values: any) {
     return { error: 'Signup failed unexpectedly. Please try again.' };
   }
 
-  // Step 2: Create or update the user's profile in `public.profiles`.
-  // We use `upsert` here. `upsert` will UPDATE the
-  // profile if an old trigger created it, or INSERT a new one if it doesn't exist.
+  // Step 3: Create or update the user's profile in `public.profiles`.
   try {
-    // Generate a unique referral code for the new user. This is THEIR OWN code.
     const randomPart = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
     const generatedReferralCode = `CP-${username.toUpperCase()}${randomPart}`;
 
-    // Use .upsert() to prevent primary key conflicts.
     const { error: profileError } = await supabase
       .from('profiles')
       .upsert({
@@ -54,9 +71,9 @@ export async function signup(values: any) {
         email: email,
         country: country,
         phone: phone,
-        referral_code: generatedReferralCode, // The new user's own, unique code.
-        referred_by: referralCode || null, // The code of the person who referred them.
-        balance: 1.00, // Give the user their $1 starting bonus.
+        referral_code: generatedReferralCode,
+        referred_by: referralCode || null,
+        balance: 1.00,
       });
 
     if (profileError) {
@@ -64,12 +81,18 @@ export async function signup(values: any) {
     }
 
   } catch (error: any) {
+    // This catch block handles potential race conditions if the pre-flight check passes
+    // but a duplicate is inserted before this upsert runs.
     if (error.message.includes('duplicate key value violates unique constraint "profiles_username_key"')) {
       return { error: `Username "${username}" is already taken. Please choose a different one.` };
+    }
+    if (error.message.includes('duplicate key value violates unique constraint "profiles_phone_key"')) {
+      return { error: `This phone number is already in use. Please use a different one.` };
     }
     if (error.message.includes('duplicate key value violates unique constraint "profiles_email_key"')) {
       return { error: `Email "${email}" is already in use. Please sign in.` };
     }
+    // Generic error for other profile issues
     return { error: `Account created, but profile setup failed: ${error.message}. Please contact support.` };
   }
 

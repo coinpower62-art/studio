@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   full_name text,
   email text UNIQUE,
   country text,
-  phone text,
+  phone text UNIQUE,
   balance numeric(10, 2) DEFAULT 0.00,
   referral_code text UNIQUE,
   referred_by text,
