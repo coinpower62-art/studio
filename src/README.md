@@ -340,6 +340,15 @@ WHERE
   );
 ```    
 
+### Fix Missing Phone Number Uniqueness
+
+If you set up your database before the phone number uniqueness rule was added, run the following command to enforce it. This prevents multiple accounts from using the same phone number. Note: This will fail if you have duplicate phone numbers in your database already.
+
+```sql
+-- Add a UNIQUE constraint to the phone column if it doesn't exist
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_phone_unique_constraint UNIQUE (phone);
+```
+
 ### Reset All User Data (Use With Caution)
 
 If you need to completely clear all user accounts and their associated data to start fresh, you can run the following script. **WARNING: This is a destructive and irreversible action.**

@@ -83,10 +83,10 @@ export async function signup(values: any) {
   } catch (error: any) {
     // This catch block handles potential race conditions if the pre-flight check passes
     // but a duplicate is inserted before this upsert runs.
-    if (error.message.includes('duplicate key value violates unique constraint "profiles_username_key"')) {
+    if (error.message.includes('unique constraint') && error.message.includes('username')) {
       return { error: `Username "${username}" is already taken. Please choose a different one.` };
     }
-    if (error.message.includes('duplicate key value violates unique constraint "profiles_phone_key"')) {
+    if (error.message.includes('unique constraint') && error.message.includes('phone')) {
       return { error: `This phone number is already in use. Please use a different one.` };
     }
     if (error.message.includes('duplicate key value violates unique constraint "profiles_email_key"')) {
