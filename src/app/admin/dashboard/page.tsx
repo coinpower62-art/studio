@@ -605,7 +605,7 @@ function DashboardContent() {
       )}
 
       {/* ── SLIDE-OUT SIDEBAR ── */}
-      <div className={`fixed top-0 left-0 h-full z-50 w-72 bg-slate-900 border-r border-slate-700 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:relative`}>
+      <div className={`fixed top-0 left-0 h-full z-50 w-72 bg-slate-900 border-r border-slate-700 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
         {/* Sidebar header */}
         <div className="flex items-center justify-between px-4 h-14 border-b border-slate-700 flex-shrink-0">
           <div className="flex items-center gap-2.5">
@@ -691,7 +691,7 @@ function DashboardContent() {
         </div>
       </div>
 
-      <main className="flex flex-col md:pl-72 pt-12 md:pt-0">
+      <main className="flex flex-col md:ml-72 pt-12 md:pt-0">
         <div className="flex-1 p-4 sm:p-6">
 
           {/* ── OVERVIEW ── */}
@@ -1138,12 +1138,12 @@ function DashboardContent() {
           {/* ── GENERATORS FACTORY ── */}
           {tab === "generators" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
                   <h1 className="text-xl font-black text-white">Generators Factory</h1>
                   <p className="text-slate-400 text-sm">Create, edit, publish generators · {generators.length} total · {generators.filter(function(g) { return g.published; }).length} published</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap justify-start sm:justify-end">
                   <Button onClick={() => openConfirm(
                     "Seed Default Generators?",
                     "This will DELETE all current generators and replace them with the 4 default (PG1-PG4) generators. This cannot be undone.",
