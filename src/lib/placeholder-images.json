@@ -103,12 +103,6 @@
       "imageHint": "MTN MOMO logo"
     },
     {
-      "id": "payment-telecel",
-      "description": "Icon for TELECEL payment method.",
-      "imageUrl": "https://picsum.photos/seed/paymenttelecel/100/100",
-      "imageHint": "TELECEL logo"
-    },
-    {
       "id": "payment-bank-transfer",
       "description": "Icon for Bank Transfer payment method.",
       "imageUrl": "https://picsum.photos/seed/paymentbank/100/100",

@@ -251,7 +251,6 @@ INSERT INTO public.media (id, url) VALUES
   ('leader-sm', 'https://picsum.photos/seed/leadersm/200/200'),
   ('payment-usdt', 'https://picsum.photos/seed/paymentusdt/100/100'),
   ('payment-mtn-momo', 'https://picsum.photos/seed/paymentmomo/100/100'),
-  ('payment-telecel', 'https://picsum.photos/seed/paymenttelecel/100/100'),
   ('payment-bank-transfer', 'https://picsum.photos/seed/paymentbank/100/100'),
   ('payment-western-union', 'https://picsum.photos/seed/paymentwu/100/100'),
   ('payment-card', 'https://picsum.photos/seed/paymentcard/100/100')
@@ -407,4 +406,3 @@ DELETE FROM auth.users;
     
 
     
-

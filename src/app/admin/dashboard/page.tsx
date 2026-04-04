@@ -1404,7 +1404,6 @@ function DashboardContent() {
                       {[
                           { id: 'payment-usdt', name: 'USDT' },
                           { id: 'payment-mtn-momo', name: 'MTN MOMO' },
-                          { id: 'payment-telecel', name: 'Telecel' },
                           { id: 'payment-bank-transfer', name: 'Bank Transfer' },
                           { id: 'payment-western-union', name: 'Western Union' },
                           { id: 'payment-card', name: 'Card' },

@@ -448,7 +448,6 @@ export default function BankPage() {
   const imageMap = {
     usdt: media.find(m => m.id === 'payment-usdt')?.url || PlaceHolderImages.find(i => i.id === 'payment-usdt')?.imageUrl,
     momo: media.find(m => m.id === 'payment-mtn-momo')?.url || PlaceHolderImages.find(i => i.id === 'payment-mtn-momo')?.imageUrl,
-    telecel: media.find(m => m.id === 'payment-telecel')?.url || PlaceHolderImages.find(i => i.id === 'payment-telecel')?.imageUrl,
     bank: media.find(m => m.id === 'payment-bank-transfer')?.url || PlaceHolderImages.find(i => i.id === 'payment-bank-transfer')?.imageUrl,
     western_union: media.find(m => m.id === 'payment-western-union')?.url || PlaceHolderImages.find(i => i.id === 'payment-western-union')?.imageUrl,
     card: media.find(m => m.id === 'payment-card')?.url || PlaceHolderImages.find(i => i.id === 'payment-card')?.imageUrl,
@@ -456,7 +455,6 @@ export default function BankPage() {
 
   const depositMethods = [
     { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo, desc: "Mobile Money", color: "from-yellow-400 to-amber-500" },
-    { id: "telecel", label: "TELECEL", icon: Smartphone, img: imageMap.telecel, desc: "Telecel Cash", color: "from-red-500 to-red-600" },
     { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt, desc: "Tether (TRC20/ERC20)", color: "from-teal-400 to-green-500" },
     { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-blue-400 to-indigo-500" },
   ];
@@ -810,42 +808,6 @@ export default function BankPage() {
                 <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
                   <p className="text-amber-800 text-xs leading-relaxed font-medium">
                     ✅ Send your exact deposit amount to the MTN MOMO number above, then fill in the amount and the Transaction ID from your confirmation SMS below.
-                  </p>
-                </div>
-              </div>
-            )}
-            
-            {depositMethod === "telecel" && (
-              <div className="bg-red-50 rounded-xl border border-red-200 p-4 space-y-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-14 h-9 rounded-lg overflow-hidden shadow-sm flex-shrink-0 bg-white flex items-center justify-center p-1">
-                    <img src={imageMap.telecel} alt="Telecel Cash" className="w-full h-full object-contain" />
-                  </div>
-                  <p className="text-xs text-red-800 font-bold uppercase tracking-wide">Send Telecel Cash payment to</p>
-                </div>
-                <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-red-100">
-                  <div>
-                    <p className="text-xs text-gray-400">Account Name</p>
-                    <p className="font-bold text-gray-900 text-sm sm:text-base">{DEPOSIT_NAME}</p>
-                  </div>
-                  <button data-testid="copy-telecel-name" onClick={function() { return copy(DEPOSIT_NAME, "Name"); }}
-                    className="p-2 rounded-lg bg-red-50 hover:bg-red-100 transition-colors border border-red-200">
-                    <Copy className="w-4 h-4 text-red-600" />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-red-100">
-                  <div>
-                    <p className="text-xs text-gray-400">Telecel Cash Number</p>
-                    <p className="font-bold text-gray-900 text-lg tracking-widest">{DEPOSIT_PHONE}</p>
-                  </div>
-                  <button data-testid="copy-telecel-phone" onClick={function() { return copy(DEPOSIT_PHONE, "Phone number"); }}
-                    className="p-2 rounded-lg bg-red-50 hover:bg-red-100 transition-colors border border-red-200">
-                    <Copy className="w-4 h-4 text-red-600" />
-                  </button>
-                </div>
-                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
-                  <p className="text-red-800 text-xs leading-relaxed font-medium">
-                    ✅ Send your exact deposit amount via Telecel Cash to the number above, then fill in the amount and Transaction ID from your confirmation SMS below.
                   </p>
                 </div>
               </div>
