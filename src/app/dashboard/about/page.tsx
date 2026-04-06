@@ -82,7 +82,7 @@ export default function AboutPage() {
       setIsLoading(true);
       const [mediaResult, generatorsResult] = await Promise.all([
         supabase.from('media').select('*'),
-        supabase.from('generators').select('id, name, daily_income, expire_days').order('price', { ascending: true })
+        supabase.from('generators').select('id, name, daily_income, expire_days, price').order('price', { ascending: true })
       ]);
 
       const { data: mediaData, error: mediaError } = mediaResult;
@@ -120,11 +120,12 @@ export default function AboutPage() {
   const profitTable = Object.keys(staticProfitData)
     .map((id) => {
       const gen = generators.find(g => g.id === id);
-      const expire_days = gen ? gen.expire_days : (id === 'pg1' ? 2 : id === 'pg3' ? 45 : 30); // fallback to original static values
+      const expire_days = gen ? gen.expire_days : (id === 'pg1' ? 2 : id === 'pg3' ? 45 : 30);
       const staticData = staticProfitData[id as keyof typeof staticProfitData];
 
       return {
         level: staticData.name,
+        price: gen ? gen.price : 0,
         daily: staticData.daily,
         cycle: `${expire_days} Days`,
         total: staticData.daily * expire_days,
@@ -255,6 +256,7 @@ export default function AboutPage() {
                         <thead>
                             <tr className="bg-amber-50 border-b border-amber-200">
                                 <th className="px-2 sm:px-4 py-3 text-left font-semibold text-amber-800 text-xs">Level</th>
+                                <th className="px-2 sm:px-4 py-3 text-right font-semibold text-amber-800 text-xs">Rent Price</th>
                                 <th className="px-2 sm:px-4 py-3 text-right font-semibold text-amber-800 text-xs">Daily</th>
                                 <th className="px-2 sm:px-4 py-3 text-right font-semibold text-amber-800 text-xs">Cycle</th>
                                 <th className="px-2 sm:px-4 py-3 text-right font-semibold text-amber-800 text-xs">Total</th>
@@ -265,6 +267,7 @@ export default function AboutPage() {
                             {profitTable.map((row) => (
                                 <tr key={row.level}>
                                     <td className="px-2 sm:px-4 py-3 font-semibold text-amber-900">{row.level}</td>
+                                    <td className="px-2 sm:px-4 py-3 text-right text-gray-700 font-bold">{row.price === 0 ? 'FREE' : `$${row.price}`}</td>
                                     <td className="px-2 sm:px-4 py-3 text-right text-gray-700">${row.daily.toFixed(2)}</td>
                                     <td className="px-2 sm:px-4 py-3 text-right text-gray-700">{row.cycle}</td>
                                     <td className="px-2 sm:px-4 py-3 text-right font-bold text-amber-600">
