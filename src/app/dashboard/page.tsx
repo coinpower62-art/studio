@@ -8,10 +8,11 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import { logout } from '@/app/login/actions';
+import { claimReferralBonus } from './actions';
 import { redeemGiftCode } from '@/app/dashboard/bank/actions';
 
 // Icons and components
-import { LogOut, Play, ChevronRight, Globe, Gift, Share2, Users } from 'lucide-react';
+import { LogOut, Play, ChevronRight, Globe, Gift, Share2, Users, CheckCircle } from 'lucide-react';
 import { SiTelegram } from 'react-icons/si';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -41,9 +42,17 @@ type Profile = {
     referral_code: string | null;
 };
 
-function ReferralProgress({ referralCount }: { referralCount: number }) {
+function ReferralProgress({ referralCount, hasClaimed, onClaim }: { referralCount: number; hasClaimed: boolean; onClaim: () => Promise<any> }) {
     const maxReferrals = 5;
     const progress = Math.min((referralCount / maxReferrals) * 100, 100);
+    const canClaim = referralCount >= maxReferrals && !hasClaimed;
+    const [isClaiming, setIsClaiming] = useState(false);
+
+    const handleClaim = async () => {
+        setIsClaiming(true);
+        await onClaim();
+        setIsClaiming(false);
+    }
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
@@ -52,13 +61,26 @@ function ReferralProgress({ referralCount }: { referralCount: number }) {
                 Referral Progress
             </h3>
             <p className="text-xs text-gray-500 mb-3">
-                Refer {maxReferrals} users to fill your progress bar. You have referred {referralCount} so far.
+                Refer {maxReferrals} users to fill your progress bar and earn a <span className="font-bold text-amber-600">$3.00 bonus!</span> You have referred {referralCount} so far.
             </p>
             <Progress value={progress} className="h-3 [&>div]:bg-blue-500" />
             <div className="flex justify-between text-xs text-gray-500 mt-2">
                 <span className="font-medium">{referralCount} / {maxReferrals} Referrals</span>
                 <span className="font-bold">{progress.toFixed(0)}%</span>
             </div>
+            
+            {canClaim && (
+                 <Button onClick={handleClaim} disabled={isClaiming} className="w-full mt-3 h-10 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-lg text-sm">
+                    {isClaiming ? 'Claiming...' : 'Claim $3.00 Bonus'}
+                </Button>
+            )}
+
+            {hasClaimed && (
+                <div className="mt-3 text-center bg-green-50 border border-green-200 text-green-700 rounded-lg p-2 text-xs font-semibold flex items-center justify-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    Congratulations! You've claimed your referral bonus.
+                </div>
+            )}
         </div>
     );
 }
@@ -131,6 +153,7 @@ export default function DashboardPage() {
     const [referralCount, setReferralCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [showTelegramPopup, setShowTelegramPopup] = useState(false);
+    const [hasClaimedReferralBonus, setHasClaimedReferralBonus] = useState(false);
 
     const fetchData = useCallback(async () => {
         const supabase = createClient();
@@ -142,9 +165,10 @@ export default function DashboardPage() {
         }
         setUser(user);
 
-        const [profileResult, rentedGeneratorsResult] = await Promise.all([
+        const [profileResult, rentedGeneratorsResult, bonusResult] = await Promise.all([
             supabase.from('profiles').select('*').eq('id', user.id).single(),
             supabase.from('rented_generators').select('id, expires_at').eq('user_id', user.id),
+            supabase.from('gift_codes').select('id').eq('code', `REF-BONUS-5-${user.id}`).maybeSingle(),
         ]);
 
         const { data: profileData, error: profileError } = profileResult;
@@ -154,6 +178,7 @@ export default function DashboardPage() {
             return;
         }
         setProfile(profileData);
+        setHasClaimedReferralBonus(!!bonusResult.data);
 
         if (profileData.referral_code) {
             const { count, error: referralError } = await supabase
@@ -185,6 +210,16 @@ export default function DashboardPage() {
         }, 1500); // 1.5s delay
         return () => clearTimeout(timer);
     }, [fetchData]);
+
+    const handleClaimBonus = async () => {
+        const result = await claimReferralBonus();
+        if (result.error) {
+            toast({ title: "Bonus Claim Failed", description: result.error, variant: "destructive" });
+        } else {
+            toast({ title: "Bonus Claimed!", description: `You have received $${result.amount?.toFixed(2)}.` });
+            fetchData(); // to refresh balance and claimed status
+        }
+    }
 
     if (loading || !profile || !user) {
         return <DashboardSkeleton />;
@@ -273,7 +308,7 @@ export default function DashboardPage() {
                             Referral Bonus
                         </h3>
                         <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                            Refer a friend and earn 5% of their first deposit as a bonus. Plus, your friend gets a 10% discount on their first Power Plan.
+                            For each friend that signs up with your link, you'll earn a <span className="font-bold text-amber-600">$5.00 bonus</span> when they make their first deposit.
                         </p>
                         <a href="https://t.me/coinpowerofficial" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-3 bg-sky-100 text-sky-700 font-bold text-xs px-3 py-2 rounded-lg hover:bg-sky-200 transition-colors">
                             <SiTelegram className="w-4 h-4" />
@@ -286,7 +321,7 @@ export default function DashboardPage() {
 
             <ReferralLink referralCode={profile.referral_code} />
 
-            <ReferralProgress referralCount={referralCount} />
+            <ReferralProgress referralCount={referralCount} hasClaimed={hasClaimedReferralBonus} onClaim={handleClaimBonus} />
 
             <RedeemGiftCode onRedeem={fetchData} />
 
