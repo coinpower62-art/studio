@@ -54,10 +54,10 @@ const earningWays = [
 ];
 
 const profitTable = [
-  { level: "PG1 Generator", daily: 0.50, cycle: "2 Days", total: 2.00, monthly: null, asterisk: true },
-  { level: "PG2 Generator", daily: 1.20, cycle: "15 Days", total: 18.00, monthly: 36.00 },
-  { level: "PG3 Generator", daily: 1.50, cycle: "25 Days", total: 37.50, monthly: 45.00 },
-  { level: "PG4 Generator", daily: 2.00, cycle: "30 Days", total: 60.00, monthly: 60.00 },
+  { level: "PG1 Generator", daily: 0.50, cycle: "2 Days", total: 1.00, monthly: null, asterisk: true },
+  { level: "PG2 Generator", daily: 2.5, cycle: "30 Days", total: 75.00, monthly: 75.00 },
+  { level: "PG3 Generator", daily: 10, cycle: "45 Days", total: 450.00, monthly: 300.00 },
+  { level: "PG4 Generator", daily: 55, cycle: "30 Days", total: 1650.00, monthly: 1650.00 },
 ];
 
 function AboutPageSkeleton() {
@@ -220,26 +220,26 @@ export default function AboutPage() {
             <p className="text-gray-500 text-center text-xs sm:text-sm mb-5 sm:mb-8">An overview of potential earnings</p>
             <div className="bg-white rounded-2xl shadow-sm border border-amber-300 overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-xs sm:text-sm">
                         <thead>
                             <tr className="bg-amber-50 border-b border-amber-200">
-                                <th className="px-4 py-3 text-left font-semibold text-amber-800">Level</th>
-                                <th className="px-4 py-3 text-right font-semibold text-amber-800">Daily</th>
-                                <th className="px-4 py-3 text-right font-semibold text-amber-800">Cycle</th>
-                                <th className="px-4 py-3 text-right font-semibold text-amber-800">Total</th>
-                                <th className="px-4 py-3 text-right font-semibold text-amber-800">Monthly</th>
+                                <th className="px-2 sm:px-4 py-3 text-left font-semibold text-amber-800 text-xs">Level</th>
+                                <th className="px-2 sm:px-4 py-3 text-right font-semibold text-amber-800 text-xs">Daily</th>
+                                <th className="px-2 sm:px-4 py-3 text-right font-semibold text-amber-800 text-xs">Cycle</th>
+                                <th className="px-2 sm:px-4 py-3 text-right font-semibold text-amber-800 text-xs">Total</th>
+                                <th className="px-2 sm:px-4 py-3 text-right font-semibold text-amber-800 text-xs">Monthly</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-amber-100">
                             {profitTable.map((row) => (
                                 <tr key={row.level}>
-                                    <td className="px-4 py-3 font-semibold text-amber-900">{row.level}</td>
-                                    <td className="px-4 py-3 text-right text-gray-700">${row.daily.toFixed(2)}</td>
-                                    <td className="px-4 py-3 text-right text-gray-700">{row.cycle}</td>
-                                    <td className="px-4 py-3 text-right font-bold text-amber-600">
+                                    <td className="px-2 sm:px-4 py-3 font-semibold text-amber-900">{row.level}</td>
+                                    <td className="px-2 sm:px-4 py-3 text-right text-gray-700">${row.daily.toFixed(2)}</td>
+                                    <td className="px-2 sm:px-4 py-3 text-right text-gray-700">{row.cycle}</td>
+                                    <td className="px-2 sm:px-4 py-3 text-right font-bold text-amber-600">
                                         ${row.total.toFixed(2)}{row.asterisk && '*'}
                                     </td>
-                                    <td className="px-4 py-3 text-right font-bold text-amber-600">
+                                    <td className="px-2 sm:px-4 py-3 text-right font-bold text-amber-600">
                                       {row.monthly ? `$${row.monthly.toFixed(2)}` : '—'}
                                     </td>
                                 </tr>
