@@ -98,7 +98,7 @@ function ReferredUsersList({ users }: { users: ReferredUser[] }) {
             <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm text-center">
                 <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                 <h3 className="font-bold text-gray-900 text-sm">Your Referral Team is Empty</h3>
-                <p className="text-xs text-gray-500 mt-1">You haven't referred anyone yet. Share your link to start building your team!</p>
+                <p className="text-xs text-gray-500 mt-1">You haven't referred anyone yet. Share your link to start building your leadership team and earn more.</p>
             </div>
         );
     }
