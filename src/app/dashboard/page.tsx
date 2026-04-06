@@ -11,7 +11,7 @@ import { logout } from '@/app/login/actions';
 import { redeemGiftCode } from '@/app/dashboard/bank/actions';
 
 // Icons and components
-import { LogOut, Play, ChevronRight, Globe, Gift, Share2 } from 'lucide-react';
+import { LogOut, Play, ChevronRight, Globe, Gift, Share2, Users } from 'lucide-react';
 import { SiTelegram } from 'react-icons/si';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import InstallButton from '@/components/InstallButton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ReferralLink } from '@/components/ReferralLink';
 import { Input } from '@/components/ui/input';
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,28 @@ type Profile = {
     balance: number;
     referral_code: string | null;
 };
+
+function ReferralProgress({ referralCount }: { referralCount: number }) {
+    const maxReferrals = 5;
+    const progress = Math.min((referralCount / maxReferrals) * 100, 100);
+
+    return (
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                Referral Progress
+            </h3>
+            <p className="text-xs text-gray-500 mb-3">
+                Refer {maxReferrals} users to fill your progress bar. You have referred {referralCount} so far.
+            </p>
+            <Progress value={progress} className="h-3 [&>div]:bg-blue-500" />
+            <div className="flex justify-between text-xs text-gray-500 mt-2">
+                <span className="font-medium">{referralCount} / {maxReferrals} Referrals</span>
+                <span className="font-bold">{progress.toFixed(0)}%</span>
+            </div>
+        </div>
+    );
+}
 
 function RedeemGiftCode({ onRedeem }: { onRedeem: () => void }) {
     const { toast } = useToast();
@@ -105,6 +128,7 @@ export default function DashboardPage() {
     const [user, setUser] = useState<SupabaseUser | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [activeGeneratorCount, setActiveGeneratorCount] = useState(0);
+    const [referralCount, setReferralCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [showTelegramPopup, setShowTelegramPopup] = useState(false);
 
@@ -130,6 +154,19 @@ export default function DashboardPage() {
             return;
         }
         setProfile(profileData);
+
+        if (profileData.referral_code) {
+            const { count, error: referralError } = await supabase
+                .from('profiles')
+                .select('*', { count: 'exact', head: true })
+                .eq('referred_by', profileData.referral_code);
+
+            if (referralError) {
+                console.error("Could not fetch referral count:", referralError.message);
+            } else {
+                setReferralCount(count || 0);
+            }
+        }
 
         const { data: rentedData } = rentedGeneratorsResult;
         if (rentedData) {
@@ -248,6 +285,8 @@ export default function DashboardPage() {
 
 
             <ReferralLink referralCode={profile.referral_code} />
+
+            <ReferralProgress referralCount={referralCount} />
 
             <RedeemGiftCode onRedeem={fetchData} />
 
