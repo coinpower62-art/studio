@@ -3,7 +3,7 @@ export const runtime = 'edge';
 
 import {
   Shield, Globe, TrendingUp, Users, Award, CheckCircle, MapPin,
-  Mail, Phone, Gift, UserPlus, Cpu, Trophy, Star, Rocket
+  Mail, Phone, Gift, UserPlus, Cpu, Trophy, Star, Rocket, BarChart3
 } from "lucide-react";
 import { SiTelegram } from "react-icons/si";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +51,13 @@ const earningWays = [
     color: "from-green-400 to-green-600",
     badge: "Travel to Italy",
   },
+];
+
+const profitTable = [
+  { level: "PG1 (Free)", daily: 0.50, cycle: "2 Days", total: 2.00, monthly: 15.00, asterisk: true },
+  { level: "PG2 (Rent)", daily: 1.20, cycle: "15 Days", total: 18.00, monthly: 36.00 },
+  { level: "PG3 (Pro)", daily: 1.50, cycle: "25 Days", total: 37.50, monthly: 45.00 },
+  { level: "PG4 (Elite)", daily: 2.00, cycle: "30 Days", total: 60.00, monthly: 60.00 },
 ];
 
 function AboutPageSkeleton() {
@@ -202,6 +209,46 @@ export default function AboutPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* ── Quick Profit Table ── */}
+        <div className="mb-8 sm:mb-12">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1 flex items-center justify-center gap-2">
+                <BarChart3 className="w-6 h-6 text-amber-500" />
+                CoinPower Quick Profit Table
+            </h2>
+            <p className="text-gray-500 text-center text-xs sm:text-sm mb-5 sm:mb-8">An overview of potential earnings</p>
+            <div className="bg-white rounded-2xl shadow-sm border border-amber-100/60 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="bg-gray-50 border-b border-amber-100/60">
+                                <th className="px-4 py-3 text-left font-semibold text-gray-600">Level</th>
+                                <th className="px-4 py-3 text-right font-semibold text-gray-600">Daily</th>
+                                <th className="px-4 py-3 text-right font-semibold text-gray-600">Cycle</th>
+                                <th className="px-4 py-3 text-right font-semibold text-gray-600">Total</th>
+                                <th className="px-4 py-3 text-right font-semibold text-gray-600">Monthly</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {profitTable.map((row) => (
+                                <tr key={row.level}>
+                                    <td className="px-4 py-3 font-semibold text-gray-800">{row.level}</td>
+                                    <td className="px-4 py-3 text-right text-gray-700">${row.daily.toFixed(2)}</td>
+                                    <td className="px-4 py-3 text-right text-gray-700">{row.cycle}</td>
+                                    <td className="px-4 py-3 text-right font-bold text-green-600">
+                                        ${row.total.toFixed(2)}{row.asterisk && '*'}
+                                    </td>
+                                    <td className="px-4 py-3 text-right font-bold text-green-600">${row.monthly.toFixed(2)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="px-4 py-2 bg-gray-50/50 border-t border-amber-100/60 text-right">
+                    <p className="text-xs text-gray-400">*Total for PG1 is based on a 2-day free trial period. The monthly amount assumes continuous rental.</p>
+                </div>
+            </div>
         </div>
 
         {/* ── Our Journey ── */}
