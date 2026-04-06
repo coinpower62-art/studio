@@ -53,13 +53,6 @@ const earningWays = [
   },
 ];
 
-const profitTable = [
-  { level: "PG1 Generator", daily: 0.50, cycle: "2 Days", total: 1.00, monthly: null, asterisk: true },
-  { level: "PG2 Generator", daily: 2.5, cycle: "30 Days", total: 75.00, monthly: 75.00 },
-  { level: "PG3 Generator", daily: 10, cycle: "45 Days", total: 450.00, monthly: 300.00 },
-  { level: "PG4 Generator", daily: 55, cycle: "30 Days", total: 1650.00, monthly: 1650.00 },
-];
-
 function AboutPageSkeleton() {
   return (
     <div className="pb-20 min-h-screen -mx-4 sm:-mx-6 -mt-4 sm:-mt-6">
@@ -79,18 +72,33 @@ function AboutPageSkeleton() {
 
 export default function AboutPage() {
   const [media, setMedia] = useState<any[]>([]);
+  const [generators, setGenerators] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     const supabase = createClient();
     const fetchData = async () => {
-      const { data: mediaData, error: mediaError } = await supabase.from('media').select('*');
+      setIsLoading(true);
+      const [mediaResult, generatorsResult] = await Promise.all([
+        supabase.from('media').select('*'),
+        supabase.from('generators').select('id, name, daily_income, expire_days').order('price', { ascending: true })
+      ]);
+
+      const { data: mediaData, error: mediaError } = mediaResult;
       if (mediaError) {
           toast({ title: 'Error fetching images', description: mediaError.message, variant: 'destructive'});
       } else {
           setMedia(mediaData || []);
       }
+
+      const { data: generatorsData, error: generatorsError } = generatorsResult;
+      if (generatorsError) {
+          toast({ title: 'Error fetching generators', description: generatorsError.message, variant: 'destructive'});
+      } else {
+          setGenerators(generatorsData || []);
+      }
+      
       setIsLoading(false);
     }
     fetchData();
@@ -101,6 +109,17 @@ export default function AboutPage() {
   if (isLoading) {
     return <AboutPageSkeleton />;
   }
+
+  const profitTable = generators
+    .filter((gen: any) => ['pg1', 'pg2', 'pg3', 'pg4'].includes(gen.id))
+    .map((gen: any) => ({
+        level: gen.name,
+        daily: gen.daily_income,
+        cycle: `${gen.expire_days} Days`,
+        total: gen.daily_income * gen.expire_days,
+        monthly: gen.id === 'pg1' ? null : gen.daily_income * 30,
+        asterisk: gen.id === 'pg1',
+    }));
 
   return (
     <div className="pb-20 min-h-screen -mx-4 sm:-mx-6 -mt-4 sm:-mt-6">
