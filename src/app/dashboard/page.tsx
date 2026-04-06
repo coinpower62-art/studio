@@ -49,7 +49,7 @@ type ReferredUser = {
 };
 
 
-function ReferralProgress({ referralCount, hasClaimed, onClaim }: { referralCount: number; hasClaimed: boolean; onClaim: () => Promise<any> }) {
+function ReferralBonusGoal({ referralCount, hasClaimed, onClaim }: { referralCount: number; hasClaimed: boolean; onClaim: () => Promise<any> }) {
     const maxReferrals = 5;
     const progress = Math.min((referralCount / maxReferrals) * 100, 100);
     const canClaim = referralCount >= maxReferrals && !hasClaimed;
@@ -65,10 +65,10 @@ function ReferralProgress({ referralCount, hasClaimed, onClaim }: { referralCoun
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
             <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-2">
                 <Users className="w-5 h-5 text-blue-600" />
-                Referral Progress
+                Referral Bonus Goal
             </h3>
             <p className="text-xs text-gray-500 mb-3">
-                Refer {maxReferrals} users to fill your progress bar and earn a <span className="font-bold text-amber-600">$3.00 bonus!</span> You have referred {referralCount} so far.
+                Refer {maxReferrals} users to unlock a <span className="font-bold text-amber-600">$3.00 bonus!</span> You have referred {referralCount} so far.
             </p>
             <Progress value={progress} className="h-3 [&>div]:bg-blue-500" />
             <div className="flex justify-between text-xs text-gray-500 mt-2">
@@ -381,7 +381,7 @@ export default function DashboardPage() {
 
             <ReferralLink referralCode={profile.referral_code} />
 
-            <ReferralProgress referralCount={referralCount} hasClaimed={hasClaimedReferralBonus} onClaim={handleClaimBonus} />
+            <ReferralBonusGoal referralCount={referralCount} hasClaimed={hasClaimedReferralBonus} onClaim={handleClaimBonus} />
             
             <ReferredUsersList users={referredUsers} />
 
