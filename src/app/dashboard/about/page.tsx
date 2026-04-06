@@ -110,27 +110,19 @@ export default function AboutPage() {
     return <AboutPageSkeleton />;
   }
 
-  const staticProfitData = {
-    pg1: { name: 'PG1 Generator', daily: 0.5 },
-    pg2: { name: 'PG2 Generator', daily: 2.5 },
-    pg3: { name: 'PG3 Generator', daily: 10 },
-    pg4: { name: 'PG4 Generator', daily: 55 },
-  };
+  const logoUrl = media.find(m => m.id === 'app-logo')?.url || '/icon-512x512.png';
 
-  const profitTable = Object.keys(staticProfitData)
-    .map((id) => {
-      const gen = generators.find(g => g.id === id);
-      const expire_days = gen ? gen.expire_days : (id === 'pg1' ? 2 : id === 'pg3' ? 45 : 30);
-      const staticData = staticProfitData[id as keyof typeof staticProfitData];
-
+  const profitTable = generators
+    .filter(g => ['pg1', 'pg2', 'pg3', 'pg4'].includes(g.id))
+    .map((gen) => {
       return {
-        level: staticData.name,
-        price: gen ? gen.price : 0,
-        daily: staticData.daily,
-        cycle: `${expire_days} Days`,
-        total: staticData.daily * expire_days,
-        monthly: id === 'pg1' ? null : staticData.daily * 30,
-        asterisk: id === 'pg1',
+        level: gen.name,
+        price: gen.price,
+        daily: gen.daily_income,
+        cycle: `${gen.expire_days} Days`,
+        total: gen.daily_income * gen.expire_days,
+        monthly: gen.id === 'pg1' ? null : gen.daily_income * 30,
+        asterisk: gen.id === 'pg1',
       };
     });
 
@@ -250,30 +242,37 @@ export default function AboutPage() {
                 CoinPower Quick Profit Table
             </h2>
             <p className="text-gray-500 text-center text-xs sm:text-sm mb-5 sm:mb-8">An overview of potential earnings</p>
-            <div className="bg-white rounded-2xl shadow-sm border border-amber-300 overflow-hidden">
-                <div className="overflow-x-auto">
+            <div className="relative bg-white rounded-2xl shadow-sm border border-amber-300 overflow-hidden">
+                {logoUrl && (
+                    <img
+                        src={logoUrl}
+                        alt="CoinPower Logo Watermark"
+                        className="absolute inset-0 w-2/3 h-2/3 object-contain m-auto opacity-5 pointer-events-none"
+                    />
+                )}
+                <div className="overflow-x-auto relative">
                     <table className="w-full text-xs sm:text-sm">
                         <thead>
                             <tr className="bg-amber-50 border-b border-amber-200">
-                                <th className="px-2 sm:px-4 py-3 text-left font-semibold text-amber-800 text-xs">Level</th>
-                                <th className="px-2 sm:px-4 py-3 text-right font-semibold text-amber-800 text-xs">Rent Price</th>
-                                <th className="px-2 sm:px-4 py-3 text-right font-semibold text-amber-800 text-xs">Daily</th>
-                                <th className="px-2 sm:px-4 py-3 text-right font-semibold text-amber-800 text-xs">Cycle</th>
-                                <th className="px-2 sm:px-4 py-3 text-right font-semibold text-amber-800 text-xs">Total</th>
-                                <th className="px-2 sm:px-4 py-3 text-right font-semibold text-amber-800 text-xs">Monthly</th>
+                                <th className="px-2 sm:px-3 py-3 text-left font-semibold text-amber-800 text-xs">Level</th>
+                                <th className="px-2 sm:px-3 py-3 text-right font-semibold text-amber-800 text-xs">Rent Price</th>
+                                <th className="px-2 sm:px-3 py-3 text-right font-semibold text-amber-800 text-xs">Daily</th>
+                                <th className="px-2 sm:px-3 py-3 text-right font-semibold text-amber-800 text-xs">Cycle</th>
+                                <th className="px-2 sm:px-3 py-3 text-right font-semibold text-amber-800 text-xs">Total</th>
+                                <th className="px-2 sm:px-3 py-3 text-right font-semibold text-amber-800 text-xs">Monthly</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-amber-100">
                             {profitTable.map((row) => (
                                 <tr key={row.level}>
-                                    <td className="px-2 sm:px-4 py-3 font-semibold text-amber-900">{row.level}</td>
-                                    <td className="px-2 sm:px-4 py-3 text-right text-gray-700 font-bold">{row.price === 0 ? 'FREE' : `$${row.price}`}</td>
-                                    <td className="px-2 sm:px-4 py-3 text-right text-gray-700">${row.daily.toFixed(2)}</td>
-                                    <td className="px-2 sm:px-4 py-3 text-right text-gray-700">{row.cycle}</td>
-                                    <td className="px-2 sm:px-4 py-3 text-right font-bold text-amber-600">
+                                    <td className="px-2 sm:px-3 py-3 font-semibold text-amber-900">{row.level}</td>
+                                    <td className="px-2 sm:px-3 py-3 text-right text-gray-700 font-bold">{row.price === 0 ? 'FREE' : `$${row.price}`}</td>
+                                    <td className="px-2 sm:px-3 py-3 text-right text-gray-700">${row.daily.toFixed(2)}</td>
+                                    <td className="px-2 sm:px-3 py-3 text-right text-gray-700">{row.cycle}</td>
+                                    <td className="px-2 sm:px-3 py-3 text-right font-bold text-amber-600">
                                         ${row.total.toFixed(2)}{row.asterisk && '*'}
                                     </td>
-                                    <td className="px-2 sm:px-4 py-3 text-right font-bold text-amber-600">
+                                    <td className="px-2 sm:px-3 py-3 text-right font-bold text-amber-600">
                                       {row.monthly ? `$${row.monthly.toFixed(2)}` : '—'}
                                     </td>
                                 </tr>
