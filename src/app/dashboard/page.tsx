@@ -97,7 +97,7 @@ function ReferredUsersList({ users }: { users: ReferredUser[] }) {
         return (
             <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm text-center">
                 <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <h3 className="font-bold text-gray-900 text-sm">Your Referral Tree is Empty</h3>
+                <h3 className="font-bold text-gray-900 text-sm">Your Referral Team is Empty</h3>
                 <p className="text-xs text-gray-500 mt-1">You haven't referred anyone yet. Share your link to start building your team!</p>
             </div>
         );
@@ -107,7 +107,7 @@ function ReferredUsersList({ users }: { users: ReferredUser[] }) {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
             <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-3">
                 <Users className="w-5 h-5 text-purple-600" />
-                Your Referral Tree ({users.length})
+                Your Referral Team ({users.length})
             </h3>
             <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                 {users.map((user, index) => (
