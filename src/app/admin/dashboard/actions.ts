@@ -51,7 +51,7 @@ export async function adminGetAllData() {
         { data: media, error: mediaError },
         { data: codes, error: codesError },
     ] = await Promise.all([
-        supabaseAdmin.from('profiles').select('id, created_at, username, full_name, email, country, phone, balance, referral_code, referred_by, has_withdrawal_pin').order('created_at', { ascending: false }),
+        supabaseAdmin.from('profiles').select('id, created_at, username, full_name, email, country, phone, balance, referral_code, referred_by, has_withdrawal_pin, withdrawal_locked').order('created_at', { ascending: false }),
         supabaseAdmin.from('generators').select('*').order('price', { ascending: true }),
         supabaseAdmin.from('deposit_requests').select('*').order('created_at', { ascending: false }),
         supabaseAdmin.from('withdrawal_requests').select('*').order('created_at', { ascending: false }),
@@ -388,3 +388,20 @@ export async function adminDeleteGiftCode(codeId: string) {
         return { error: e.message };
     }
 }
+
+export async function adminToggleWithdrawalLock(userId: string, lock: boolean) {
+    const cookieStore = cookies()
+    if (cookieStore.get('admin_logged_in')?.value !== 'true') {
+      return { error: 'Unauthorized' }
+    }
+    if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
+    try {
+      const supabaseAdmin = await getSupabaseAdminClient()
+      const { error } = await supabaseAdmin.from('profiles').update({ withdrawal_locked: lock }).eq('id', userId)
+      if (error) return { error: error.message }
+      revalidatePath('/admin/dashboard')
+      return { success: true }
+    } catch (e: any) {
+      return { error: e.message }
+    }
+  }

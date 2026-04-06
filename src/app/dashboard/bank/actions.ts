@@ -66,12 +66,16 @@ export async function createWithdrawalRequest(formData: {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('balance, country')
+    .select('balance, country, withdrawal_locked')
     .eq('id', user.id)
     .single()
 
   if (!profile) {
     return { error: 'Could not find user profile.' }
+  }
+
+  if (profile.withdrawal_locked) {
+    return { error: 'Your account withdrawal is locked. Please contact support.' }
   }
 
   if (formData.amount > profile.balance) {

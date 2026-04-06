@@ -63,7 +63,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   balance numeric(10, 2) DEFAULT 0.00,
   referral_code text UNIQUE,
   referred_by text,
-  has_withdrawal_pin boolean DEFAULT false NOT NULL
+  has_withdrawal_pin boolean DEFAULT false NOT NULL,
+  withdrawal_locked boolean DEFAULT false NOT NULL
 );
 
 -- Enable Row Level Security (RLS)

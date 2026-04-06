@@ -20,7 +20,7 @@ import {
   Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
   Pencil, ImagePlus, Activity,
   Info, Building2, Phone, Mail, MapPin, Percent, Clock3,
-  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Video
+  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Unlock, Video
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
@@ -38,6 +38,7 @@ import {
   adminCreateGiftCode,
   adminDeleteGiftCode,
   adminResetUserPassword,
+  adminToggleWithdrawalLock,
 } from "./actions";
 import { Switch } from "@/components/ui/switch";
 
@@ -60,6 +61,7 @@ type UserRecord = {
   referral_count?: number;
   phone?: string | null;
   has_withdrawal_pin?: boolean;
+  withdrawal_locked?: boolean;
 };
 
 type Generator = {
@@ -343,6 +345,22 @@ function DashboardContent() {
     }
   }
 
+  const handleToggleWithdrawalLock = async (userId: string, isCurrentlyLocked: boolean) => {
+    openConfirm(
+      isCurrentlyLocked ? "Unlock Withdrawals?" : "Lock Withdrawals?",
+      `Are you sure you want to ${isCurrentlyLocked ? 'allow' : 'prevent'} this user from making withdrawals?`,
+      async () => {
+        const result = await adminToggleWithdrawalLock(userId, !isCurrentlyLocked);
+        if (result.error) {
+          toast({ title: 'Error updating lock status', description: result.error, variant: 'destructive' });
+        } else {
+          toast({ title: `Withdrawals ${!isCurrentlyLocked ? 'Locked' : 'Unlocked'}` });
+          await fetchData();
+        }
+      }
+    );
+};
+
   const handleCreateUser = async () => {
     const newUserProfile = {
       full_name: createUserForm.full_name,
@@ -571,7 +589,7 @@ function DashboardContent() {
     { id: "overview",     label: "Overview",    icon: BarChart3,       color: "from-blue-500 to-blue-600" },
     { id: "users",        label: "Users",       icon: Users,           color: "from-violet-500 to-purple-600", badge: users.length },
     { id: "deposits",     label: "Deposits",    icon: DollarSign,      color: "from-green-500 to-emerald-600", badge: pendingDepositsCount || undefined },
-    { id: "withdrawals",  label: "Withdrawals", icon: ArrowUpFromLine, color: "from-amber-500 to-orange-500",  badge: pendingWithdrawalsCount || undefined },
+    { id: "withdrawals",  label: "Withdrawals", icon: ArrowUpFromLine, color: "from-amber-500 to-orange-600",  badge: pendingWithdrawalsCount || undefined },
     { id: "referrals",    label: "Referrals",   icon: Link2,           color: "from-pink-500 to-rose-600" },
     { id: "generators",   label: "Generators",  icon: Zap,             color: "from-yellow-400 to-amber-500",  badge: generators.length },
     { id: "media",        label: "Media",       icon: ImagePlus,       color: "from-teal-500 to-cyan-600" },
@@ -863,7 +881,10 @@ function DashboardContent() {
                           <div className="flex items-center gap-3 min-w-0">
                             <Avatar className="w-10 h-10 flex-shrink-0"><AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-white text-xs font-bold">{initials}</AvatarFallback></Avatar>
                             <div className="min-w-0">
-                                <p className="text-white font-bold text-sm truncate">{nameForDisplay}</p>
+                               <div className="flex items-center gap-2">
+                                  <p className="text-white font-bold text-sm truncate">{nameForDisplay}</p>
+                                  {u.withdrawal_locked && <Badge className="text-xs bg-red-900/40 text-red-400 border-red-700 px-1.5 py-0"><Lock className="w-2.5 h-2.5 mr-1" />Locked</Badge>}
+                                </div>
                                 <p className="text-slate-400 text-xs truncate">{u.email}</p>
                             </div>
                           </div>
@@ -973,6 +994,16 @@ function DashboardContent() {
                             data-testid={`button-edit-user-${u.id}`}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-900/30 text-blue-400 border border-blue-800 hover:bg-blue-900/50 text-xs font-semibold">
                             <Edit3 className="w-3 h-3" /> Edit Balance
+                          </button>
+                          <button onClick={() => handleToggleWithdrawalLock(u.id, !!u.withdrawal_locked)}
+                            data-testid={`button-lock-user-${u.id}`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold ${
+                                u.withdrawal_locked
+                                ? "bg-green-900/30 text-green-400 border-green-800 hover:bg-green-900/50" // to unlock
+                                : "bg-orange-900/40 text-orange-400 border-orange-700 hover:bg-orange-900/50" // to lock
+                            }`}>
+                            {u.withdrawal_locked ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                            {u.withdrawal_locked ? 'Unlock Withdrawals' : 'Lock Withdrawals'}
                           </button>
                           <button onClick={function() { return openConfirm("Delete User Account", `You are about to permanently delete "${nameForDisplay}". Their profile and all data will be erased. This CANNOT be undone.`,function() { return handleDeleteUser(u.id); }); }}
                             data-testid={`button-delete-user-${u.id}`}
