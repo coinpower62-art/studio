@@ -227,7 +227,21 @@ function DashboardContent() {
       if (result.error || !result.data) {
         toast({ title: 'Error fetching admin data', description: result.error, variant: 'destructive' });
       } else {
-        setUsers(result.data.users as UserRecord[]);
+        const rawUsers = result.data.users as UserRecord[];
+        
+        const referralCounts = rawUsers.reduce((acc, user) => {
+          if (user.referred_by) {
+            acc[user.referred_by] = (acc[user.referred_by] || 0) + 1;
+          }
+          return acc;
+        }, {} as Record<string, number>);
+
+        const usersWithCounts = rawUsers.map(user => ({
+          ...user,
+          referral_count: user.referral_code ? referralCounts[user.referral_code] || 0 : 0
+        }));
+
+        setUsers(usersWithCounts);
         setGenerators(result.data.generators as Generator[]);
         setDeposits(result.data.deposits as DepositRequest[]);
         setWithdrawals(result.data.withdrawals as WithdrawalRecord[]);
@@ -547,6 +561,7 @@ function DashboardContent() {
   const pendingDepositsCount = deposits.filter(function(d) { return d.status === "pending"; }).length;
   const copyText = (text: string, label: string) => navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!` }));
   const totalReferrals = users.reduce(function(s, u) { return s + (u.referral_count || 0); }, 0);
+  const codeToUserMap = new Map(users.map(u => u.referral_code ? [u.referral_code, u] : [null, null]));
 
   const heroImg = media.find(function(m) { return m.id === 'hero'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'activity-hero'; })?.imageUrl;
   const teamworkImg = media.find(function(m) { return m.id === 'teamwork'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'activity-teamwork'; })?.imageUrl;
@@ -1111,20 +1126,33 @@ function DashboardContent() {
                         <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">User</th>
                         <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referral Code</th>
                         <th className="text-center px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referred</th>
+                        <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referred By</th>
                         <th className="text-right px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Balance</th>
                       </tr></thead>
                       <tbody className="divide-y divide-slate-700">
-                        {users.map(function(r: any) { return (
-                          <tr key={r.id} className="hover:bg-slate-700/40 transition-colors">
-                            <td className="px-4 py-3"><p className="text-white font-medium text-sm">{r.full_name}</p><p className="text-slate-400 text-xs">@{r.username}</p></td>
+                        {users.map((u: UserRecord) => { 
+                          const referrer = u.referred_by ? codeToUserMap.get(u.referred_by) : null;
+                          return (
+                          <tr key={u.id} className="hover:bg-slate-700/40 transition-colors">
+                            <td className="px-4 py-3"><p className="text-white font-medium text-sm">{u.full_name}</p><p className="text-slate-400 text-xs">@{u.username}</p></td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
-                                <span className="text-amber-400 font-bold font-mono text-xs bg-amber-900/30 border border-amber-700 px-2 py-0.5 rounded-lg">{r.referral_code || "—"}</span>
-                                {r.referral_code && <button onClick={function() { return copyText(r.referral_code, "Referral code"); }} className="text-slate-500 hover:text-amber-400"><Copy className="w-3 h-3" /></button>}
+                                <span className="text-amber-400 font-bold font-mono text-xs bg-amber-900/30 border border-amber-700 px-2 py-0.5 rounded-lg">{u.referral_code || "—"}</span>
+                                {u.referral_code && <button onClick={function() { return copyText(u.referral_code, "Referral code"); }} className="text-slate-500 hover:text-amber-400"><Copy className="w-3 h-3" /></button>}
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-center"><Badge className={`text-xs border ${(r.referral_count || 0) > 0 ? "bg-green-900/40 text-green-400 border-green-700" : "bg-slate-700 text-slate-400 border-slate-600"}`}>{r.referral_count || 0} users</Badge></td>
-                            <td className="px-4 py-3 text-right"><span className="text-green-400 font-bold text-sm">${(r.balance || 0).toFixed(2)}</span></td>
+                            <td className="px-4 py-3 text-center"><Badge className={`text-xs border ${(u.referral_count || 0) > 0 ? "bg-green-900/40 text-green-400 border-green-700" : "bg-slate-700 text-slate-400 border-slate-600"}`}>{u.referral_count || 0} users</Badge></td>
+                            <td className="px-4 py-3">
+                                {referrer ? (
+                                    <div>
+                                        <p className="text-slate-300 text-sm font-medium">{referrer.full_name}</p>
+                                        <p className="text-slate-500 text-xs">@{referrer.username}</p>
+                                    </div>
+                                ) : (
+                                    <span className="text-slate-500">—</span>
+                                )}
+                            </td>
+                            <td className="px-4 py-3 text-right"><span className="text-green-400 font-bold text-sm">${(u.balance || 0).toFixed(2)}</span></td>
                           </tr>
                         ); })}
                       </tbody>
