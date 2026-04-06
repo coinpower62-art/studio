@@ -184,6 +184,7 @@ export default function BankPage() {
   const [withdrawRecords, setWithdrawRecords] = useState<WithdrawRecord[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [media, setMedia] = useState<any[]>([]);
+  const [hasRentedGenerator, setHasRentedGenerator] = useState(false);
 
   const { display: countdown, expired } = useCountdown(mode === "deposit");
 
@@ -200,12 +201,15 @@ export default function BankPage() {
     }
     setUser(user);
 
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('balance, country, has_withdrawal_pin, username, full_name')
-      .eq('id', user.id)
-      .maybeSingle();
-
+    const [profileResult, depositsResult, withdrawalsResult, mediaResult, rentedResult] = await Promise.all([
+        supabase.from('profiles').select('balance, country, has_withdrawal_pin, username, full_name').eq('id', user.id).maybeSingle(),
+        supabase.from('deposit_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('withdrawal_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('media').select('*'),
+        supabase.from('rented_generators').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+    ]);
+    
+    const { data: profileData, error: profileError } = profileResult;
     if (profileError) {
       // This case should be handled by the layout's self-healing now
       console.error('BankPage: Profile fetch failed');
@@ -215,39 +219,36 @@ export default function BankPage() {
       setDepositCountry(profileData.country || '');
     }
 
-    const { data: depositsData, error: depositsError } = await supabase
-      .from('deposit_requests')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
+    const { data: depositsData, error: depositsError } = depositsResult;
     if (depositsError) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch deposit history.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch deposit history.' });
     } else {
-      setDepositRecords(depositsData as DepositRecord[]);
+        setDepositRecords(depositsData as DepositRecord[]);
     }
 
-    const { data: withdrawalsData, error: withdrawalsError } = await supabase
-      .from('withdrawal_requests')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
+    const { data: withdrawalsData, error: withdrawalsError } = withdrawalsResult;
     if (withdrawalsError) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch withdrawal history.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch withdrawal history.' });
     } else {
-      setWithdrawRecords(withdrawalsData as WithdrawRecord[]);
+        setWithdrawRecords(withdrawalsData as WithdrawRecord[]);
+    }
+    
+    const { data: mediaData, error: mediaError } = mediaResult;
+    if (mediaError) {
+        toast({ title: 'Error fetching media', description: mediaError.message, variant: 'destructive' });
+    } else if (mediaData) {
+        setMedia(mediaData);
+        const logo = mediaData.find(m => m.id === 'app-logo');
+        if (logo?.url) {
+            setLogoUrl(logo.url);
+        }
     }
 
-    const { data: mediaData, error: mediaError } = await supabase.from('media').select('*');
-    if (mediaError) {
-      toast({ title: 'Error fetching media', description: mediaError.message, variant: 'destructive' });
-    } else if (mediaData) {
-      setMedia(mediaData);
-      const logo = mediaData.find(m => m.id === 'app-logo');
-      if (logo?.url) {
-        setLogoUrl(logo.url);
-      }
+    const { count: rentedCount, error: rentedError } = rentedResult;
+    if(rentedError) {
+        toast({ title: 'Error fetching generators', description: rentedError.message, variant: 'destructive' });
+    } else {
+        setHasRentedGenerator((rentedCount || 0) > 0);
     }
     
     setLoading(false);
@@ -467,7 +468,6 @@ export default function BankPage() {
     { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-purple-400 to-pink-500" },
   ];
 
-  const hasApprovedDeposit = (depositRecords || []).some(function(d) { return d.status === "approved"; });
   const allTransactions = [...(depositRecords || []), ...(withdrawRecords || [])]
     .sort(function(a, b) { return new Date(b.created_at).getTime() - new Date(a.created_at).getTime(); });
   const depositButtonLogo = logoUrl || imageMap.momo;
@@ -679,8 +679,8 @@ export default function BankPage() {
             <div 
               data-testid="button-withdraw"
               onClick={function() {
-                if (!hasApprovedDeposit) {
-                  toast({ title: "Deposit required", description: "You must have at least one approved deposit before you can withdraw.", variant: "destructive" });
+                if (!hasRentedGenerator) {
+                  toast({ title: "Generator required", description: "You must rent at least one generator before you can withdraw.", variant: "destructive" });
                   return;
                 }
                 if (!profile.has_withdrawal_pin) {
@@ -690,7 +690,7 @@ export default function BankPage() {
                 }
               }}
               className={`bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 transition-all ${
-                !hasApprovedDeposit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-amber-300 hover:bg-amber-50/50'
+                !hasRentedGenerator ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-amber-300 hover:bg-amber-50/50'
               }`}
             >
               <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
