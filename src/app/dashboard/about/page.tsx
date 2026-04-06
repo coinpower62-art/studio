@@ -110,16 +110,28 @@ export default function AboutPage() {
     return <AboutPageSkeleton />;
   }
 
-  const profitTable = generators
-    .filter((gen: any) => ['pg1', 'pg2', 'pg3', 'pg4'].includes(gen.id))
-    .map((gen: any) => ({
-        level: gen.name,
-        daily: gen.daily_income,
-        cycle: `${gen.expire_days} Days`,
-        total: gen.daily_income * gen.expire_days,
-        monthly: gen.id === 'pg1' ? null : gen.daily_income * 30,
-        asterisk: gen.id === 'pg1',
-    }));
+  const staticProfitData = {
+    pg1: { name: 'PG1 Generator', daily: 0.5 },
+    pg2: { name: 'PG2 Generator', daily: 2.5 },
+    pg3: { name: 'PG3 Generator', daily: 10 },
+    pg4: { name: 'PG4 Generator', daily: 55 },
+  };
+
+  const profitTable = Object.keys(staticProfitData)
+    .map((id) => {
+      const gen = generators.find(g => g.id === id);
+      const expire_days = gen ? gen.expire_days : (id === 'pg1' ? 2 : id === 'pg3' ? 45 : 30); // fallback to original static values
+      const staticData = staticProfitData[id as keyof typeof staticProfitData];
+
+      return {
+        level: staticData.name,
+        daily: staticData.daily,
+        cycle: `${expire_days} Days`,
+        total: staticData.daily * expire_days,
+        monthly: id === 'pg1' ? null : staticData.daily * 30,
+        asterisk: id === 'pg1',
+      };
+    });
 
   return (
     <div className="pb-20 min-h-screen -mx-4 sm:-mx-6 -mt-4 sm:-mt-6">
