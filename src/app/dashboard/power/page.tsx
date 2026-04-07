@@ -459,7 +459,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
                         <div>
                             <p className="text-amber-800 font-semibold text-xs">Earning • Live</p>
-                            <p className="text-amber-600 text-[10px]">Mining power</p>
+                            <p className="text-amber-600 text-[10px]">Tracking crypto</p>
                         </div>
                     </div>
                     <LiveEarningsCounter lastRef={lastRef} dailyIncome={actualDailyIncome} active={true} />
