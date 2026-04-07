@@ -689,12 +689,12 @@ export default function BankPage() {
 
             <div 
               data-testid="button-withdraw"
-              onClick={function() {
+              onClick={() => {
                 if (!canWithdraw) {
                   if (userHasPg1Only) {
-                    toast({ title: "Upgrade Required", description: "You must upgrade from PG1 by renting a PG2 generator or higher to unlock withdrawals.", variant: "destructive" });
+                    toast({ title: "Upgrade to Withdraw", description: "To withdraw your earnings, you need to upgrade from the free PG1. Please rent a PG2 generator or higher.", variant: "destructive" });
                   } else {
-                    toast({ title: "Generator Required", description: "You must rent a PG2 generator or higher to unlock withdrawals.", variant: "destructive" });
+                    toast({ title: "Withdrawal Locked", description: "To withdraw funds, you must have an active PG2 generator or higher. Please visit the market to rent one.", variant: "destructive" });
                   }
                   return;
                 }
