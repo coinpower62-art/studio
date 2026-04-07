@@ -185,6 +185,7 @@ export default function BankPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [media, setMedia] = useState<any[]>([]);
   const [canWithdraw, setCanWithdraw] = useState(false);
+  const [userHasPg1Only, setUserHasPg1Only] = useState(false);
 
   const { display: countdown, expired } = useCountdown(mode === "deposit");
 
@@ -251,10 +252,14 @@ export default function BankPage() {
         description: rentedError.message,
         variant: 'destructive',
       });
+      setCanWithdraw(false);
+      setUserHasPg1Only(false);
     } else {
       const hasPaidGenerator =
         rentedData?.some((g) => g.generator_id !== 'pg1') ?? false;
       setCanWithdraw(hasPaidGenerator);
+      const hasAnyGenerator = rentedData && rentedData.length > 0;
+      setUserHasPg1Only(hasAnyGenerator && !hasPaidGenerator);
     }
     
     setLoading(false);
@@ -686,7 +691,11 @@ export default function BankPage() {
               data-testid="button-withdraw"
               onClick={function() {
                 if (!canWithdraw) {
-                  toast({ title: "Upgrade Required", description: "You must rent a PG2 generator or higher to unlock withdrawals.", variant: "destructive" });
+                  if (userHasPg1Only) {
+                    toast({ title: "Upgrade Required", description: "You must upgrade from PG1 by renting a PG2 generator or higher to unlock withdrawals.", variant: "destructive" });
+                  } else {
+                    toast({ title: "Generator Required", description: "You must rent a PG2 generator or higher to unlock withdrawals.", variant: "destructive" });
+                  }
                   return;
                 }
                 if (!profile.has_withdrawal_pin) {
