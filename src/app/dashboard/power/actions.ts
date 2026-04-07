@@ -18,7 +18,7 @@ export async function collectEarnings(rentedGeneratorId: string): Promise<{ succ
     .from('rented_generators')
     .select(`
       *,
-      generators ( daily_income )
+      generators ( daily_income, expire_days )
     `)
     .eq('id', rentedGeneratorId)
     .eq('user_id', user.id)
@@ -30,10 +30,16 @@ export async function collectEarnings(rentedGeneratorId: string): Promise<{ succ
   }
   
   // @ts-ignore
-  const dailyIncome = rentedGen.generators?.daily_income;
-  if (typeof dailyIncome !== 'number') {
-      return { success: false, message: 'Could not determine daily income for this generator.' };
+  const dbDailyIncome = rentedGen.generators?.daily_income;
+  // @ts-ignore
+  const expireDays = rentedGen.generators?.expire_days;
+
+  if (typeof dbDailyIncome !== 'number' || typeof expireDays !== 'number' || expireDays <= 0) {
+      return { success: false, message: 'Could not determine income/duration for this generator.' };
   }
+  
+  const dailyIncome = dbDailyIncome / expireDays;
+
 
   // 2. Check if it's expired or suspended
   const now = Date.now();

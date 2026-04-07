@@ -341,10 +341,11 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
   const lastRef = ug.last_claimed_at ? new Date(ug.last_claimed_at).getTime() : new Date(ug.rented_at).getTime();
   
   const endOfCollection = Math.min(now, expiresAtMs);
+  const actualDailyIncome = (ug.expire_days && ug.expire_days > 0) ? ug.daily_income / ug.expire_days : ug.daily_income;
   const periodsReady = !isSuspended ? Math.floor((endOfCollection - lastRef) / TWENTY_FOUR_H) : 0;
   const canCollect = !isSuspended && periodsReady > 0;
   const isExpired = expiresAtMs <= now && !canCollect;
-  const pendingIncome = periodsReady * ug.daily_income;
+  const pendingIncome = periodsReady * actualDailyIncome;
   const nextCreditAt = lastRef + TWENTY_FOUR_H;
 
   const borderColor = isExpired ? "border-gray-200 opacity-60"
@@ -387,7 +388,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
             <span className="bg-red-500 text-white text-xs font-black px-2 py-1 rounded-lg">SUSPENDED</span>
           ) : (
             <>
-              <p className="text-white text-xl font-black">${ug.daily_income}</p>
+              <p className="text-white text-xl font-black">${actualDailyIncome.toFixed(2)}</p>
               <p className="text-white/70 text-xs">per day</p>
             </>
           )}
@@ -398,7 +399,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
         <ExpiryBar rentedAt={new Date(ug.rented_at).getTime()} expiresAt={expiresAtMs} />
 
         {!isExpired && !canCollect && (
-          <LiveChart genId={ug.id} dailyIncome={ug.daily_income} genColor={ug.color} suspended={isSuspended} canCollect={canCollect} />
+          <LiveChart genId={ug.id} dailyIncome={actualDailyIncome} genColor={ug.color} suspended={isSuspended} canCollect={canCollect} />
         )}
 
         {canCollect ? (
@@ -461,7 +462,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                             <p className="text-amber-600 text-[10px]">Accumulating now</p>
                         </div>
                     </div>
-                    <LiveEarningsCounter lastRef={lastRef} dailyIncome={ug.daily_income} active={true} />
+                    <LiveEarningsCounter lastRef={lastRef} dailyIncome={actualDailyIncome} active={true} />
                 </div>
                 <div className="flex items-center justify-between pt-1.5 border-t border-amber-200">
                     <p className="text-amber-700 text-[10px] font-semibold">Collectable in</p>
