@@ -184,7 +184,7 @@ export default function BankPage() {
   const [withdrawRecords, setWithdrawRecords] = useState<WithdrawRecord[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [media, setMedia] = useState<any[]>([]);
-  const [hasRentedGenerator, setHasRentedGenerator] = useState(false);
+  const [canWithdraw, setCanWithdraw] = useState(false);
 
   const { display: countdown, expired } = useCountdown(mode === "deposit");
 
@@ -206,7 +206,7 @@ export default function BankPage() {
         supabase.from('deposit_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('withdrawal_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('media').select('*'),
-        supabase.from('rented_generators').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+        supabase.from('rented_generators').select('generator_id').eq('user_id', user.id)
     ]);
     
     const { data: profileData, error: profileError } = profileResult;
@@ -244,11 +244,17 @@ export default function BankPage() {
         }
     }
 
-    const { count: rentedCount, error: rentedError } = rentedResult;
-    if(rentedError) {
-        toast({ title: 'Error fetching generators', description: rentedError.message, variant: 'destructive' });
+    const { data: rentedData, error: rentedError } = rentedResult;
+    if (rentedError) {
+      toast({
+        title: 'Error fetching rental status',
+        description: rentedError.message,
+        variant: 'destructive',
+      });
     } else {
-        setHasRentedGenerator((rentedCount || 0) > 0);
+      const hasPaidGenerator =
+        rentedData?.some((g) => g.generator_id !== 'pg1') ?? false;
+      setCanWithdraw(hasPaidGenerator);
     }
     
     setLoading(false);
@@ -679,8 +685,8 @@ export default function BankPage() {
             <div 
               data-testid="button-withdraw"
               onClick={function() {
-                if (!hasRentedGenerator) {
-                  toast({ title: "Generator required", description: "You must rent at least one generator before you can withdraw.", variant: "destructive" });
+                if (!canWithdraw) {
+                  toast({ title: "Upgrade Required", description: "You must rent a PG2 generator or higher to unlock withdrawals.", variant: "destructive" });
                   return;
                 }
                 if (!profile.has_withdrawal_pin) {
@@ -690,7 +696,7 @@ export default function BankPage() {
                 }
               }}
               className={`bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 transition-all ${
-                !hasRentedGenerator ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-amber-300 hover:bg-amber-50/50'
+                !canWithdraw ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-amber-300 hover:bg-amber-50/50'
               }`}
             >
               <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
@@ -1231,7 +1237,7 @@ export default function BankPage() {
             <h3 className="text-lg font-bold text-gray-900">Withdrawal Submitted!</h3>
             <p className="text-gray-500 text-sm">Your withdrawal request for <span className="font-semibold text-green-600">${amount}</span> has been submitted for processing.</p>
             {lastTxId && <p className="text-xs text-gray-400">TXN ID: {lastTxId}</p>}
-            <Button onClick={function() { openMode(null); }} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl h-10 px-6">Done</Button>
+            <Button onClick={function() { return openMode(null); }} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl h-10 px-6">Done</Button>
           </div>
         )}
 
