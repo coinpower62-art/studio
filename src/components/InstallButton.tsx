@@ -9,21 +9,17 @@ import { useToast } from '@/hooks/use-toast';
 export default function InstallButton() {
   const { installPromptEvent } = useInstallPrompt();
   const { toast } = useToast();
-  const [isStandalone, setIsStandalone] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsStandalone(true);
-    }
   }, []);
 
   const handleInstallClick = async () => {
     if (!installPromptEvent) {
       toast({
-        title: "Installation Guide",
-        description: "To install the app, open your browser menu and select 'Add to Home Screen' or 'Install App'.",
+        title: "App is Installed or Installable",
+        description: "To install the app, open your browser menu and select 'Add to Home Screen' or 'Install App'. If already installed, you can launch it from your home screen.",
       });
       return;
     }
@@ -38,7 +34,7 @@ export default function InstallButton() {
     }
   };
 
-  if (!isClient || isStandalone || !installPromptEvent) {
+  if (!isClient) {
     return null;
   }
 
