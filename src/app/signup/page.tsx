@@ -209,6 +209,17 @@ function SignUpForm() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deviceHasAccount, setDeviceHasAccount] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // This effect runs only on the client
+    const hasAccount = localStorage.getItem('coinpower_device_has_account');
+    if (hasAccount === 'true') {
+      setDeviceHasAccount(true);
+    } else {
+      setDeviceHasAccount(false);
+    }
+  }, []);
 
   const handleScroll = useCallback(function() {
     const el = scrollRef.current;
@@ -254,6 +265,7 @@ function SignUpForm() {
             });
             form.setError("root", { message: result.error });
         } else if (result?.success && result.message) {
+            localStorage.setItem('coinpower_device_has_account', 'true');
             router.push(`/login?message=${encodeURIComponent(result.message)}`);
         }
     } catch (e: any) {
@@ -274,6 +286,37 @@ function SignUpForm() {
   );
   
   const passwordValue = form.watch("password");
+
+  if (deviceHasAccount === null) {
+    // Loading state while checking localStorage
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+          <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (deviceHasAccount) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+            <div className="w-full max-w-sm text-center">
+                <LoginLogo />
+                <div className="bg-card rounded-2xl shadow-xl border border-gray-100 p-6 mt-6">
+                    <AlertCircle className="mx-auto h-12 w-12 text-amber-500" />
+                    <h2 className="mt-4 text-xl font-bold text-foreground">Account Limit Reached</h2>
+                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                        An account has already been created from this device. Only one account is permitted per device to ensure fairness.
+                    </p>
+                    <Link href="/login" className="mt-6 block">
+                    <Button className="w-full h-11 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-lg shadow-md transition-all">
+                        Sign In Instead
+                    </Button>
+                    </Link>
+                </div>
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8 sm:py-12">
