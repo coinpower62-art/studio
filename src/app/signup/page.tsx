@@ -292,9 +292,9 @@ function SignUpForm() {
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-5">{t.heading}</h2>
 
             {errors.root && (
-                <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4" data-testid="error-signup">
-                <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-amber-700 font-medium">{errors.root.message}</p>
+                <div className="flex items-start gap-2.5 bg-card border border-destructive/50 rounded-xl px-4 py-3 mb-4" data-testid="error-signup">
+                  <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-destructive font-medium">{errors.root.message}</p>
                 </div>
             )}
 

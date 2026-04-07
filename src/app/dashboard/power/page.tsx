@@ -504,14 +504,14 @@ function ClaimSuccessOverlay({ amount, generatorName, onDone }: { amount: number
         className="mx-4 w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-90 slide-in-from-bottom-10"
         onClick={function(e) { return e.stopPropagation(); }}
       >
-        <div className="bg-gradient-to-r from-amber-400 to-amber-600 pt-8 pb-6 flex flex-col items-center gap-2 relative">
-          <Star className="absolute top-3 left-6 text-white/60 w-5 h-5 animate-in zoom-in-50 delay-200" />
-          <Star className="absolute top-5 right-8 text-white/50 w-4 h-4 animate-in zoom-in-50 delay-300" />
-          <Star className="absolute top-2 right-5 text-white/40 w-3 h-3 animate-in zoom-in-50 delay-400" />
-          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg animate-in zoom-in-75 delay-100">
-            <DollarSign className="w-8 h-8 text-amber-500" />
+        <div className="bg-card pt-8 pb-6 flex flex-col items-center gap-2 relative">
+          <Star className="absolute top-3 left-6 text-amber-400/60 w-5 h-5 animate-in zoom-in-50 delay-200" />
+          <Star className="absolute top-5 right-8 text-amber-400/50 w-4 h-4 animate-in zoom-in-50 delay-300" />
+          <Star className="absolute top-2 right-5 text-amber-400/40 w-3 h-3 animate-in zoom-in-50 delay-400" />
+          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center shadow-lg animate-in zoom-in-75 delay-100">
+            <DollarSign className="w-8 h-8 text-green-600" />
           </div>
-          <p className="text-white font-black text-xl tracking-wide mt-1">Income Collected!</p>
+          <p className="text-foreground font-black text-xl tracking-wide mt-1">Income Collected!</p>
         </div>
 
         <div className="px-6 pt-5 pb-2 text-center animate-in fade-in slide-in-from-bottom-3 delay-200">

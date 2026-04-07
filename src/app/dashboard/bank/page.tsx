@@ -22,6 +22,7 @@ import { countries as COUNTRIES_DATA } from "@/lib/data";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { createDepositRequest, createWithdrawalRequest, setWithdrawalPin, redeemGiftCode } from "./actions";
 import { logout } from "@/app/login/actions";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 // Card validation helpers
 function luhnCheck(num: string): boolean {
@@ -173,6 +174,7 @@ export default function BankPage() {
   const [otherBankName, setOtherBankName] = useState("");
   const [card, setCard] = useState({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
   const [depositCard, setDepositCard] = useState({ number: "", holder: "", expiry: "", cvv: "", cvvVisible: false });
+  const [lowBalanceGen, setLowBalanceGen] = useState<{ name: string; price: number } | null>(null);
 
   const [pinMode, setPinMode] = useState<"security" | "setup" | "verify" | null>(null);
   const [pinInput, setPinInput] = useState("");
@@ -504,6 +506,63 @@ export default function BankPage() {
 
   return (
     <div className="bg-[#f7f9f4]">
+       <Dialog open={!!lowBalanceGen} onOpenChange={(open) => { if (!open) setLowBalanceGen(null); }}>
+        <DialogContent className="max-w-sm mx-auto rounded-2xl p-0 overflow-hidden" data-testid="dialog-low-balance">
+          <div className="bg-card p-5 text-center">
+            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
+              <Wallet className="w-8 h-8 text-red-600" />
+            </div>
+            <DialogTitle className="text-foreground text-xl font-black mb-1">Insufficient Balance</DialogTitle>
+            <DialogDescription className="text-destructive text-sm">
+              You don't have enough funds to rent this generator.
+            </DialogDescription>
+          </div>
+          <div className="p-5 space-y-4">
+            {lowBalanceGen && profile && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
+                  <span className="text-gray-500 text-sm">Generator</span>
+                  <span className="font-bold text-gray-900 text-sm">{lowBalanceGen.name}</span>
+                </div>
+                <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
+                  <span className="text-gray-500 text-sm">Required</span>
+                  <span className="font-black text-red-600 text-sm">${lowBalanceGen.price.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
+                  <span className="text-gray-500 text-sm">Your Balance</span>
+                  <span className="font-black text-gray-900 text-sm">${profile.balance.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                  <span className="text-red-600 text-sm font-medium">Shortfall</span>
+                  <span className="font-black text-red-600 text-sm">
+                    ${Math.max(0, lowBalanceGen.price - profile.balance).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+            <p className="text-gray-500 text-xs text-center leading-relaxed">
+              Deposit funds via MTN MOMO on the Bank page to top up your balance and activate this generator.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setLowBalanceGen(null)}
+                className="flex-1 rounded-xl h-11 font-semibold border-gray-200"
+                data-testid="button-low-balance-cancel"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => { setLowBalanceGen(null); router.push("/dashboard/bank"); }}
+                className="flex-1 rounded-xl h-11 font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md flex items-center gap-2 justify-center"
+                data-testid="button-low-balance-deposit"
+              >
+                <ArrowDownToLine className="w-4 h-4" /> Deposit Now
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       {pinMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 relative">
@@ -1031,7 +1090,7 @@ export default function BankPage() {
               <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-3 py-3">
               <Hourglass className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-blue-800 text-xs font-semibold">Processing Time: 1 – 24 Hours</p>
+                <p className="text-blue-800 text-xs font-semibold">Processing Time: 1–24 Hours</p>
                 <p className="text-blue-700 text-xs mt-0.5 leading-relaxed">
                   Withdrawals are processed Monday to Saturday. If your withdrawal is still pending after 24 hours, please contact the manager.
                 </p>

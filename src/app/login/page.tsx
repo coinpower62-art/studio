@@ -48,10 +48,10 @@ function LoginComponent() {
             </div>
             <Button>Sign In</Button>
             {message && (
-              <div className={`mt-4 flex items-start gap-3 rounded-lg p-4 text-sm ${
+              <div className={`mt-4 flex items-start gap-3 rounded-lg border p-4 text-sm ${
                   isSuccessMessage
-                    ? 'bg-green-50 border border-green-200 text-green-800'
-                    : 'bg-destructive/10 text-destructive'
+                    ? 'border-green-300 bg-card text-green-700'
+                    : 'border-destructive/50 bg-card text-destructive'
               }`}>
                 {isSuccessMessage && <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-500 mt-0.5" />}
                 <p className="leading-relaxed">{message}</p>
