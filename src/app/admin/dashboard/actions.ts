@@ -81,7 +81,7 @@ export async function adminGetAllData() {
   }
 }
 
-export async function adminHandleDeposit(depositId: string, userId: string, amount: number, action: 'approve' | 'reject') {
+export async function adminHandleDeposit(depositId: string, action: 'approve' | 'reject' | 'delete', userId?: string, amount?: number) {
     const cookieStore = cookies()
     if (cookieStore.get('admin_logged_in')?.value !== 'true') {
         return { error: 'Unauthorized' }
@@ -91,6 +91,7 @@ export async function adminHandleDeposit(depositId: string, userId: string, amou
     try {
         const supabaseAdmin = await getSupabaseAdminClient()
         if (action === 'approve') {
+            if (!userId || typeof amount !== 'number') return { error: 'User ID and amount required for approval.' };
             const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('balance').eq('id', userId).single()
             if (profileError || !profile) return { error: 'User profile not found.' }
 
@@ -102,9 +103,12 @@ export async function adminHandleDeposit(depositId: string, userId: string, amou
                 await supabaseAdmin.from('deposit_requests').update({ status: 'pending' }).eq('id', depositId) // Rollback
                 return { error: `Balance update failed: ${balanceError.message}` }
             }
-        } else { // reject
+        } else if (action === 'reject') {
             const { error } = await supabaseAdmin.from('deposit_requests').update({ status: 'rejected' }).eq('id', depositId)
             if (error) return { error: error.message }
+        } else if (action === 'delete') {
+            const { error } = await supabaseAdmin.from('deposit_requests').delete().eq('id', depositId);
+            if (error) return { error: error.message };
         }
         return { success: true }
     } catch (e: any) {

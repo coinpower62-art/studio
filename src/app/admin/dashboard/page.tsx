@@ -1,3 +1,4 @@
+
 'use client';
 export const runtime = 'edge';
 
@@ -118,11 +119,12 @@ type MediaAsset = {
     url: string;
 }
 
-function DepositRow({ d, user, onApprove, onReject, approvePending, rejectPending }: {
+function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, rejectPending }: {
   d: DepositRequest;
   user?: UserRecord;
   onApprove: () => void;
   onReject: () => void;
+  onDelete: () => void;
   approvePending: boolean;
   rejectPending: boolean;
 }) {
@@ -160,23 +162,33 @@ function DepositRow({ d, user, onApprove, onReject, approvePending, rejectPendin
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           <span className="text-green-400 font-black text-base">${d.amount.toFixed(2)}</span>
-          {d.status === "pending" ? (
-            <div className="flex gap-2">
-              <button data-testid={`button-approve-deposit-${d.id}`} onClick={onApprove} disabled={approvePending}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-green-900/30 text-green-400 border border-green-700 hover:bg-green-900/50 text-xs font-semibold disabled:opacity-50">
-                <CheckCircle className="w-3.5 h-3.5" /> Approve
-              </button>
-              <button data-testid={`button-reject-deposit-${d.id}`} onClick={onReject} disabled={rejectPending}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold disabled:opacity-50">
-                <XCircle className="w-3.5 h-3.5" /> Reject
-              </button>
-            </div>
-          ) : (
-            <span className={`flex items-center gap-1 text-xs font-semibold ${d.status === "approved" ? "text-green-400" : "text-red-400"}`}>
-              {d.status === "approved" ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-              {d.status === "approved" ? "Approved" : "Rejected"}
-            </span>
-          )}
+          <div className="flex gap-2 items-center">
+            {d.status === "pending" ? (
+              <>
+                <button data-testid={`button-approve-deposit-${d.id}`} onClick={onApprove} disabled={approvePending}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-green-900/30 text-green-400 border border-green-700 hover:bg-green-900/50 text-xs font-semibold disabled:opacity-50">
+                  <CheckCircle className="w-3.5 h-3.5" /> Approve
+                </button>
+                <button data-testid={`button-reject-deposit-${d.id}`} onClick={onReject} disabled={rejectPending}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold disabled:opacity-50">
+                  <XCircle className="w-3.5 h-3.5" /> Reject
+                </button>
+              </>
+            ) : (
+              <span className={`flex items-center gap-1 text-xs font-semibold ${d.status === "approved" ? "text-green-400" : "text-red-400"}`}>
+                {d.status === "approved" ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                {d.status === "approved" ? "Approved" : "Rejected"}
+              </span>
+            )}
+            <button
+              onClick={onDelete}
+              data-testid={`button-delete-deposit-${d.id}`}
+              className="flex items-center justify-center w-8 h-8 rounded-xl bg-red-950/40 text-red-500 border border-red-800/50 hover:bg-red-900/50 hover:text-red-300 transition-colors flex-shrink-0"
+              title="Delete record"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -384,7 +396,7 @@ function DashboardContent() {
   }
 
   const handleApproveDeposit = async (id: string, userId: string, amount: number) => {
-    const result = await adminHandleDeposit(id, userId, amount, 'approve');
+    const result = await adminHandleDeposit(id, 'approve', userId, amount);
     if (result.error) {
       toast({ title: "Error approving deposit", description: result.error, variant: "destructive" });
     } else {
@@ -394,11 +406,21 @@ function DashboardContent() {
   }
 
   const handleRejectDeposit = async (id: string, userId: string, amount: number) => {
-    const result = await adminHandleDeposit(id, userId, amount, 'reject');
+    const result = await adminHandleDeposit(id, 'reject', userId, amount);
     if (result.error) {
       toast({ title: "Error rejecting deposit", description: result.error, variant: "destructive" });
     } else {
       toast({ title: "Deposit rejected." });
+      await fetchData();
+    }
+  }
+
+  const handleDeleteDeposit = async (id: string) => {
+    const result = await adminHandleDeposit(id, 'delete');
+    if (result.error) {
+      toast({ title: "Error deleting record", description: result.error, variant: "destructive" });
+    } else {
+      toast({ title: "Record deleted." });
       await fetchData();
     }
   }
@@ -1045,6 +1067,7 @@ function DashboardContent() {
                       user={user}
                       onApprove={() => handleApproveDeposit(d.id, d.user_id, d.amount)}
                       onReject={() => handleRejectDeposit(d.id, d.user_id, d.amount)}
+                      onDelete={() => openConfirm("Delete Deposit Record", `Remove the deposit record for $${d.amount.toFixed(2)} from ${user?.full_name || 'user'}? This cannot be undone.`, () => handleDeleteDeposit(d.id))}
                       approvePending={false}
                       rejectPending={false}
                     />
