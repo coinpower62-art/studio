@@ -4,11 +4,11 @@ This is a Next.js starter app built with Supabase and shadcn/ui.
 
 ## 🚨 Troubleshooting: 'Internal Server Error' or Missing Content
 
-If your deployment builds successfully but you see an "Internal Server Error," or if content like logos and images are missing on your live website, it almost always means you have not correctly set your Supabase environment variables in your hosting provider's project settings (e.g., Vercel).
+If your deployment builds successfully but you see an "Internal Server Error," or if content like logos and images are missing on your live website, it almost always means you have not correctly set your Supabase environment variables in your hosting provider's project settings.
 
 **To fix this, you must:**
 
-1.  Go to your hosting provider's dashboard (e.g., Vercel) and navigate to your project.
+1.  Go to your hosting provider's dashboard and navigate to your project.
 2.  Find the **Environment Variables** settings.
 3.  Add the following three variables with their correct values from your Supabase project:
     -   `NEXT_PUBLIC_SUPABASE_URL`
@@ -464,4 +464,5 @@ DELETE FROM auth.users;
     
 
     
+
 

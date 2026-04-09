@@ -1,60 +1,49 @@
-# 🚀 CoinPower Deployment Guide for Vercel
+# 🚀 CoinPower Deployment Guide
 
-This guide provides instructions for deploying your CoinPower application to Vercel, the recommended hosting platform for this Next.js project.
+This guide provides instructions for deploying your CoinPower application to a modern hosting platform like Vercel or Cloudflare Pages.
 
 ---
 
-## 🚨 Critical: Connecting Supabase to Vercel
+## 🚨 Critical: Connecting Supabase to Your Hosting Provider
 
-For your live app on Vercel to function correctly, you **must** copy your Supabase keys into your Vercel project settings. This allows your Vercel deployment to connect to your Supabase database.
+For your live app to function correctly, you **must** copy your Supabase keys into your hosting provider's project settings. This allows your deployment to connect to your Supabase database.
 
 ### Step-by-Step Instructions:
 
-1.  **Log in to Vercel** and go to your CoinPower project dashboard.
-2.  Go to the **Settings** tab and click on **Environment Variables** in the side menu.
-3.  You will need to add three variables. For each one, enter the **Name** and **Value** exactly as shown below, then click **Add**.
+1.  **Log in to your hosting provider** (e.g., Vercel, Cloudflare) and go to your project dashboard.
+2.  Go to the **Settings** tab and find the **Environment Variables** section.
+3.  You will need to add three variables. For each one, enter the **Name** and **Value** exactly as shown below.
 
     ---
 
     #### Variable 1: Supabase URL
     -   **Name**: `NEXT_PUBLIC_SUPABASE_URL`
     -   **Value**: `https://ifdhcwsigjankvidokko.supabase.co`
-    -   *Leave all checkboxes unchecked.*
+    -   *This variable is public and can be exposed to the browser.*
 
     ---
 
     #### Variable 2: Public / Anon Key
     -   **Name**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
     -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTc0NzcsImV4cCI6MjA4OTMzMzQ3N30.Z-H5YqGo_L0Q0mJ_N23tV11Jb6W32aA2yS3R2zDAbJI`
-    -   *Leave all checkboxes unchecked.*
+    -   *This variable is public and can be exposed to the browser.*
 
     ---
 
     #### Variable 3: Secret Service Role Key
     -   **Name**: `SUPABASE_SERVICE_ROLE_KEY`
     -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzc1NzQ3NywiZXhwIjoyMDg5MzMzNDc3fQ.WYLx7zUkc0pl_02HpM1ULXTNKi_AWeXjD8EEYBbKrJc`
-    -   **Important:** You must select the **"Secret"** type for this variable in Vercel to keep it secure.
+    -   **Important:** You must mark this variable as a **"Secret"** or "encrypted" in your hosting provider's settings to keep it secure.
 
     ---
 
-4.  **Re-deploy Your Project.** After adding all three variables, go to the **Deployments** tab in Vercel. Find the latest deployment, click the "..." menu, and choose **Redeploy**. This will apply the new environment variables.
+4.  **Re-deploy Your Project.** After adding all three variables, trigger a new deployment. This will apply the new environment variables.
 
 **Why is this necessary?**
 - Your **public** keys (`NEXT_PUBLIC_...`) are used by the browser to fetch data securely.
 - Your **secret** key (`SUPABASE_SERVICE_ROLE_KEY`) is used by the server-side part of your app to perform administrative tasks. It must be kept secret.
 
-By following these steps, your Vercel app will be able to communicate with your Supabase database, and all features, including the Admin Panel, will work correctly.
-
----
-
-### Deployment on Vercel
-
-Vercel makes deployment simple.
-
-1.  **Import Project**: Import your GitHub repository into Vercel.
-2.  **Configure Project**: Vercel will automatically detect that this is a Next.js project. The default settings are correct.
-3.  **Add Environment Variables**: Follow the critical instructions at the top of this guide.
-4.  **Deploy**: Click the **Deploy** button.
+By following these steps, your app will be able to communicate with your Supabase database, and all features, including the Admin Panel, will work correctly.
 
 ---
 
@@ -482,4 +471,5 @@ DELETE FROM auth.users;
     
 
     
+
 
