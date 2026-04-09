@@ -326,6 +326,81 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+
+-- =================================================================
+-- 9. RPC FUNCTION FOR EARNINGS COLLECTION
+-- Atomically collects earnings for a generator and updates user balance.
+-- =================================================================
+CREATE OR REPLACE FUNCTION collect_earnings(rented_generator_id_in uuid, user_id_in uuid)
+RETURNS numeric AS $$
+DECLARE
+  rented_gen_record record;
+  generator_record record;
+  periods_to_claim integer;
+  amount_to_add numeric;
+  time_since_last_claim interval;
+  new_last_claimed_at timestamp with time zone;
+  twenty_four_hours interval := '24 hours';
+BEGIN
+  -- 1. Find and lock the rented generator row for the specific user
+  SELECT * INTO rented_gen_record FROM public.rented_generators 
+  WHERE id = rented_generator_id_in AND user_id = user_id_in FOR UPDATE;
+
+  -- 2. Check if the generator exists, belongs to the user, and is not suspended
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Rented generator not found or you do not own it.';
+  END IF;
+
+  IF rented_gen_record.suspended THEN
+    RAISE EXCEPTION 'Generator is suspended.';
+  END IF;
+  
+  -- 3. Get the base generator details
+  SELECT * INTO generator_record FROM public.generators WHERE id = rented_gen_record.generator_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Base generator not found.';
+  END IF;
+  
+  -- 4. Calculate how many 24-hour periods can be claimed
+  -- Use LEAST(now(), expires_at) to prevent claiming for time after expiry
+  time_since_last_claim := LEAST(now(), rented_gen_record.expires_at) - rented_gen_record.last_claimed_at;
+  
+  -- Check if at least 24 hours have passed
+  IF time_since_last_claim < twenty_four_hours THEN
+    RETURN 0; -- Not yet time to claim, return 0
+  END IF;
+
+  periods_to_claim := floor(extract(epoch from time_since_last_claim) / (24 * 60 * 60));
+
+  IF periods_to_claim < 1 THEN
+    RETURN 0; -- Not enough time, return 0
+  END IF;
+
+  -- 5. Calculate earnings
+  IF generator_record.expire_days <= 0 THEN
+    RAISE EXCEPTION 'Generator has invalid expiration days.';
+  END IF;
+  -- The 'daily_income' in the DB is the TOTAL for the period, so we divide by expire_days
+  amount_to_add := periods_to_claim * (generator_record.daily_income / generator_record.expire_days);
+
+  -- 6. Update user's balance
+  UPDATE public.profiles
+  SET balance = balance + amount_to_add
+  WHERE id = user_id_in;
+
+  -- 7. Update the last_claimed_at timestamp
+  new_last_claimed_at := rented_gen_record.last_claimed_at + (periods_to_claim * twenty_four_hours);
+  
+  UPDATE public.rented_generators
+  SET last_claimed_at = new_last_claimed_at
+  WHERE id = rented_generator_id_in;
+  
+  -- 8. Return the amount earned
+  RETURN amount_to_add;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
 ---
 
 ## 🔧 Data Repair Scripts
@@ -407,3 +482,4 @@ DELETE FROM auth.users;
     
 
     
+
