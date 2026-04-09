@@ -58,6 +58,12 @@ type Profile = {
   full_name: string;
 };
 
+type Generator = {
+  id: string;
+  price: number;
+  name: string;
+};
+
 type WithdrawRecord = {
   id: string;
   user_id: string;
@@ -188,6 +194,7 @@ export default function BankPage() {
   const [media, setMedia] = useState<any[]>([]);
   const [canWithdraw, setCanWithdraw] = useState(false);
   const [userHasPg1Only, setUserHasPg1Only] = useState(false);
+  const [generators, setGenerators] = useState<Generator[]>([]);
 
   const { display: countdown, expired } = useCountdown(mode === "deposit");
 
@@ -204,12 +211,13 @@ export default function BankPage() {
     }
     setUser(user);
 
-    const [profileResult, depositsResult, withdrawalsResult, mediaResult, rentedResult] = await Promise.all([
+    const [profileResult, depositsResult, withdrawalsResult, mediaResult, rentedResult, generatorsResult] = await Promise.all([
         supabase.from('profiles').select('balance, country, has_withdrawal_pin, username, full_name').eq('id', user.id).maybeSingle(),
         supabase.from('deposit_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('withdrawal_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('media').select('*'),
-        supabase.from('rented_generators').select('generator_id').eq('user_id', user.id)
+        supabase.from('rented_generators').select('generator_id').eq('user_id', user.id),
+        supabase.from('generators').select('id, name, price').order('price', { ascending: true })
     ]);
     
     const { data: profileData, error: profileError } = profileResult;
@@ -262,6 +270,13 @@ export default function BankPage() {
       setCanWithdraw(hasPaidGenerator);
       const hasAnyGenerator = rentedData && rentedData.length > 0;
       setUserHasPg1Only(hasAnyGenerator && !hasPaidGenerator);
+    }
+
+    const { data: generatorsData, error: generatorsError } = generatorsResult;
+    if (generatorsError) {
+        toast({ title: 'Error fetching generators', description: generatorsError.message, variant: 'destructive' });
+    } else if (generatorsData) {
+        setGenerators(generatorsData as Generator[]);
     }
     
     setLoading(false);
@@ -502,6 +517,8 @@ export default function BankPage() {
   }
   bankOptions.sort();
   bankOptions.push("Other");
+
+  const quickAmounts = generators.filter(g => g.price > 0).map(g => g.price);
 
 
   return (
@@ -1050,9 +1067,9 @@ export default function BankPage() {
                     className="pl-7 h-11 border-gray-200 focus:border-green-400 text-lg font-semibold" />
                 </div>
                 <div className="flex gap-2 mt-2 flex-wrap">
-                  {["50", "100", "250", "500"].map(function(q) {
+                  {quickAmounts.map(function(q) {
                     return (
-                    <button key={q} onClick={function() { return setAmount(q); }} data-testid={`quick-amount-${q}`}
+                    <button key={q} onClick={function() { return setAmount(String(q)); }} data-testid={`quick-amount-${q}`}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 transition-colors">
                       ${q}
                     </button>
