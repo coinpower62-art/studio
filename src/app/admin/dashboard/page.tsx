@@ -63,6 +63,7 @@ type UserRecord = {
   phone?: string | null;
   has_withdrawal_pin?: boolean;
   withdrawal_locked?: boolean;
+  active_generators?: { id: string, name: string, expires_at: string }[];
 };
 
 type Generator = {
@@ -84,6 +85,12 @@ type GiftCode = {
   redeemed_at: string | null;
   redeemed_by_user_id: string | null;
 };
+
+type RentedGeneratorRaw = {
+  user_id: string;
+  generator_id: string;
+  expires_at: string;
+}
 
 const BLANK_GEN: NewGenerator = {
   name: "", subtitle: "", icon: "⚡", color: "from-amber-400 to-orange-500",
@@ -242,6 +249,27 @@ function DashboardContent() {
         toast({ title: 'Error fetching admin data', description: result.error, variant: 'destructive' });
       } else {
         const rawUsers = result.data.users as UserRecord[];
+        const allGenerators = result.data.generators as Generator[];
+        // @ts-ignore
+        const allRentedGenerators = result.data.rentedGenerators as RentedGeneratorRaw[] || [];
+
+        // Create a map of generator IDs to names for efficient lookup
+        const generatorMap = new Map(allGenerators.map(g => [g.id, g.name]));
+        
+        // Group active rented generators by user ID
+        const activeRentedByUser = allRentedGenerators
+            .filter(rg => new Date(rg.expires_at).getTime() > Date.now())
+            .reduce((acc, rg) => {
+                if (!acc[rg.user_id]) {
+                    acc[rg.user_id] = [];
+                }
+                acc[rg.user_id].push({
+                    id: rg.generator_id,
+                    name: generatorMap.get(rg.generator_id) || 'Unknown Gen',
+                    expires_at: rg.expires_at,
+                });
+                return acc;
+            }, {} as Record<string, { id: string, name: string, expires_at: string }[]>);
         
         const referralCounts = rawUsers.reduce((acc, user) => {
           if (user.referred_by) {
@@ -250,12 +278,13 @@ function DashboardContent() {
           return acc;
         }, {} as Record<string, number>);
 
-        const usersWithCounts = rawUsers.map(user => ({
+        const usersWithData = rawUsers.map(user => ({
           ...user,
-          referral_count: user.referral_code ? referralCounts[user.referral_code] || 0 : 0
+          referral_count: user.referral_code ? referralCounts[user.referral_code] || 0 : 0,
+          active_generators: activeRentedByUser[user.id] || [],
         }));
 
-        setUsers(usersWithCounts);
+        setUsers(usersWithData);
         setGenerators(result.data.generators as Generator[]);
         setDeposits(result.data.deposits as DepositRequest[]);
         setWithdrawals(result.data.withdrawals as WithdrawalRecord[]);
@@ -1009,6 +1038,18 @@ function DashboardContent() {
                                     {referralLink && <button onClick={() => copyText(referralLink, "Referral link")} className="text-slate-500 hover:text-blue-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>}
                                 </div>
                             </div>
+                            {u.active_generators && u.active_generators.length > 0 && (
+                                <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
+                                    <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-1 flex items-center gap-1"><Zap className="w-3 h-3"/> Active Generators</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {u.active_generators.map(gen => (
+                                            <Badge key={gen.id} className="text-xs bg-green-900/40 text-green-300 border-green-700 font-semibold">
+                                                {gen.name}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex flex-wrap gap-2">

@@ -50,6 +50,7 @@ export async function adminGetAllData() {
         { data: withdrawals, error: withdrawalsError },
         { data: media, error: mediaError },
         { data: codes, error: codesError },
+        { data: rentedGenerators, error: rentedGensError },
     ] = await Promise.all([
         supabaseAdmin.from('profiles').select('id, created_at, username, full_name, email, country, phone, balance, referral_code, referred_by, has_withdrawal_pin, withdrawal_locked').order('created_at', { ascending: false }),
         supabaseAdmin.from('generators').select('*').order('price', { ascending: true }),
@@ -57,9 +58,10 @@ export async function adminGetAllData() {
         supabaseAdmin.from('withdrawal_requests').select('*').order('created_at', { ascending: false }),
         supabaseAdmin.from('media').select('*'),
         supabaseAdmin.from('gift_codes').select('*').order('created_at', { ascending: false }),
+        supabaseAdmin.from('rented_generators').select('user_id, generator_id, expires_at'),
     ]);
 
-    const errors = [usersError, gensError, depositsError, withdrawalsError, mediaError, codesError].filter(Boolean)
+    const errors = [usersError, gensError, depositsError, withdrawalsError, mediaError, codesError, rentedGensError].filter(Boolean)
     if (errors.length > 0) {
       // @ts-ignore
       return { error: errors.map(e => e.message).join(', ') }
@@ -73,6 +75,7 @@ export async function adminGetAllData() {
             withdrawals,
             media,
             codes,
+            rentedGenerators,
         }
     }
   } catch (e: any) {
