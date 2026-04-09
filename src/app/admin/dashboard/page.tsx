@@ -1035,7 +1035,7 @@ function DashboardContent() {
                                     <a href={referralLink || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs font-mono truncate">
                                         {referralLink || '—'}
                                     </a>
-                                    {referralLink && <button onClick={() => copyText(referralLink, "Referral link")} className="text-slate-500 hover:text-blue-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>}
+                                    {referralLink && <button onClick={() => copyText(referralLink!, "Referral link")} className="text-slate-500 hover:text-blue-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>}
                                 </div>
                             </div>
                             {u.active_generators && u.active_generators.length > 0 && (
@@ -1233,7 +1233,7 @@ function DashboardContent() {
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
                                 <span className="text-amber-400 font-bold font-mono text-xs bg-amber-900/30 border border-amber-700 px-2 py-0.5 rounded-lg">{u.referral_code || "—"}</span>
-                                {u.referral_code && <button onClick={function() { return copyText(u.referral_code, "Referral code"); }} className="text-slate-500 hover:text-amber-400"><Copy className="w-3 h-3" /></button>}
+                                {u.referral_code && <button onClick={() => copyText(u.referral_code!, "Referral code")} className="text-slate-500 hover:text-amber-400"><Copy className="w-3 h-3" /></button>}
                               </div>
                             </td>
                             <td className="px-4 py-3 text-center"><Badge className={`text-xs border ${(u.referral_count || 0) > 0 ? "bg-green-900/40 text-green-400 border-green-700" : "bg-slate-700 text-slate-400 border-slate-600"}`}>{u.referral_count || 0} users</Badge></td>
