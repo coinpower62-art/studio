@@ -879,9 +879,17 @@ export default function BankPage() {
                     <Copy className="w-4 h-4 text-amber-600" />
                   </button>
                 </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 space-y-1">
+                  <p className="text-blue-800 text-xs leading-relaxed font-medium">
+                    <span className="font-bold">Exchange Rate:</span> $1 USD = 10 GHS.
+                  </p>
+                  <p className="text-blue-800 text-xs leading-relaxed font-medium">
+                    <span className="font-bold">Remember your bonus:</span> Your $1 welcome bonus is already in your balance. To rent a $25 generator, you only need to deposit $24 (which is 240 GHS).
+                  </p>
+                </div>
                 <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
                   <p className="text-amber-800 text-xs leading-relaxed font-medium">
-                    ✅ Send your exact deposit amount to the MTN MOMO number above, then fill in the amount and the Transaction ID from your confirmation SMS below.
+                    ✅ Send your payment to the MTN MOMO number, then enter the <span className="font-bold">USD amount</span> and Transaction ID below.
                   </p>
                 </div>
               </div>
