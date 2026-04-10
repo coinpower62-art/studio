@@ -393,6 +393,7 @@ DECLARE
   referral_count integer;
   bonus_code_text text;
   bonus_amount numeric := 3; -- The bonus amount
+  has_paid_generator boolean;
 BEGIN
   -- 1. Get user profile and lock the row
   SELECT * INTO profile_record FROM public.profiles WHERE id = user_id_in FOR UPDATE;
@@ -400,31 +401,43 @@ BEGIN
   IF NOT FOUND OR profile_record.referral_code IS NULL THEN
     RAISE EXCEPTION 'User profile or referral code not found.';
   END IF;
-
-  -- 2. Count referrals
-  SELECT count(*) INTO referral_count FROM public.profiles WHERE referred_by = profile_record.referral_code;
-
-  IF referral_count < 5 THEN
-    RAISE EXCEPTION 'You need at least 5 referrals to claim the bonus.';
-  END IF;
-
-  -- 3. Check if this bonus has already been claimed
+  
+  -- 2. Check if this bonus has already been claimed
   bonus_code_text := 'REF-BONUS-5-' || user_id_in::text;
   
   IF EXISTS (SELECT 1 FROM public.gift_codes WHERE code = bonus_code_text) THEN
     RAISE EXCEPTION 'You have already claimed this referral bonus.';
   END IF;
 
-  -- 4. Update user's balance
+  -- 3. Count referrals
+  SELECT count(*) INTO referral_count FROM public.profiles WHERE referred_by = profile_record.referral_code;
+
+  IF referral_count < 5 THEN
+    RAISE EXCEPTION 'You need at least 5 referrals to claim the bonus.';
+  END IF;
+
+  -- 4. NEW: Check if the user has at least one paid generator
+  SELECT EXISTS (
+    SELECT 1 FROM public.rented_generators
+    WHERE user_id = user_id_in
+    AND generator_id != 'pg1'
+    AND expires_at > now()
+  ) INTO has_paid_generator;
+  
+  IF NOT has_paid_generator THEN
+    RAISE EXCEPTION 'You must have at least one active paid generator (PG2 or higher) to claim the referral bonus.';
+  END IF;
+
+  -- 5. Update user's balance
   UPDATE public.profiles
   SET balance = balance + bonus_amount
   WHERE id = user_id_in;
 
-  -- 5. Log the claim in gift_codes to prevent re-claiming
+  -- 6. Log the claim in gift_codes to prevent re-claiming
   INSERT INTO public.gift_codes (code, amount, note, is_redeemed, redeemed_at, redeemed_by_user_id)
   VALUES (bonus_code_text, bonus_amount, '5-referral bonus', true, now(), user_id_in);
 
-  -- 6. Return the amount granted
+  -- 7. Return the amount granted
   RETURN bonus_amount;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -514,5 +527,7 @@ DELETE FROM auth.users;
 
 
 
+
+    
 
     
