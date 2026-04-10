@@ -358,12 +358,8 @@ BEGIN
     RETURN 0; -- Not enough time, return 0
   END IF;
 
-  -- 5. Calculate earnings
-  IF generator_record.expire_days <= 0 THEN
-    RAISE EXCEPTION 'Generator has invalid expiration days.';
-  END IF;
-  -- The 'daily_income' in the DB is the TOTAL for the period, so we divide by expire_days
-  amount_to_add := periods_to_claim * (generator_record.daily_income / generator_record.expire_days);
+  -- 5. Calculate earnings using daily_income directly
+  amount_to_add := periods_to_claim * generator_record.daily_income;
 
   -- 6. Update user's balance
   UPDATE public.profiles

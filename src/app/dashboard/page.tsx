@@ -201,6 +201,7 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [showTelegramPopup, setShowTelegramPopup] = useState(false);
     const [hasClaimedReferralBonus, setHasClaimedReferralBonus] = useState(false);
+    const [totalEarned, setTotalEarned] = useState(0);
 
     const fetchData = useCallback(async () => {
         const supabase = createClient();
@@ -212,10 +213,18 @@ export default function DashboardPage() {
         }
         setUser(user);
 
-        const [profileResult, rentedGeneratorsResult, bonusResult] = await Promise.all([
+        const [
+            profileResult, 
+            rentedGeneratorsResult, 
+            bonusResult,
+            depositsResult,
+            withdrawalsResult
+        ] = await Promise.all([
             supabase.from('profiles').select('*').eq('id', user.id).single(),
             supabase.from('rented_generators').select('id, expires_at').eq('user_id', user.id),
             supabase.from('gift_codes').select('id').eq('code', `REF-BONUS-5-${user.id}`).maybeSingle(),
+            supabase.from('deposit_requests').select('amount').eq('user_id', user.id).eq('status', 'approved'),
+            supabase.from('withdrawal_requests').select('amount').eq('user_id', user.id).eq('status', 'approved')
         ]);
 
         const { data: profileData, error: profileError } = profileResult;
@@ -259,6 +268,11 @@ export default function DashboardPage() {
             const activeCount = rentedData.filter(g => g.expires_at && new Date(g.expires_at).getTime() > now).length;
             setActiveGeneratorCount(activeCount);
         }
+        
+        const totalDeposited = depositsResult.data?.reduce((sum, d) => sum + (d.amount || 0), 0) || 0;
+        const totalWithdrawn = withdrawalsResult.data?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
+        const calculatedTotalEarned = (profileData.balance - totalDeposited) + totalWithdrawn;
+        setTotalEarned(Math.max(0, calculatedTotalEarned));
 
         setLoading(false);
     }, [router, toast]);
@@ -346,7 +360,7 @@ export default function DashboardPage() {
                     <div className="grid grid-cols-2 gap-3">
                         {[
                             { label: "Balance", value: `$${profile.balance.toFixed(2)}`, color: "text-amber-600" },
-                            { label: "Total Earned", value: "$0.00", color: "text-green-600" },
+                            { label: "Total Earned", value: `$${totalEarned.toFixed(2)}`, color: "text-green-600" },
                             { label: "Active Plans", value: activeGeneratorCount.toString(), color: "text-blue-600" },
                             { label: "Member Since", value: new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), color: "text-purple-600" },
                         ].map(({ label, value, color }) => (

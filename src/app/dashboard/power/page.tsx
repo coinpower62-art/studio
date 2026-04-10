@@ -340,7 +340,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
   const lastRef = ug.last_claimed_at ? new Date(ug.last_claimed_at).getTime() : new Date(ug.rented_at).getTime();
   
   const endOfCollection = Math.min(now, expiresAtMs);
-  const actualDailyIncome = (ug.expire_days && ug.expire_days > 0) ? ug.daily_income / ug.expire_days : ug.daily_income;
+  const actualDailyIncome = ug.daily_income;
   const periodsReady = !isSuspended ? Math.floor((endOfCollection - lastRef) / TWENTY_FOUR_H) : 0;
   const canCollect = !isSuspended && periodsReady > 0;
   const isExpired = expiresAtMs <= now && !canCollect;
