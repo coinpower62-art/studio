@@ -61,7 +61,7 @@ type UserRecord = {
   phone?: string | null;
   has_withdrawal_pin?: boolean;
   withdrawal_locked?: boolean;
-  active_generators?: { id: string, name: string, expires_at: string }[];
+  rented_generators?: { id: string; name: string; expires_at: string }[];
 };
 
 type Generator = {
@@ -254,20 +254,17 @@ function DashboardContent() {
         // Create a map of generator IDs to names for efficient lookup
         const generatorMap = new Map(allGenerators.map(g => [g.id, g.name]));
         
-        // Group active rented generators by user ID
-        const activeRentedByUser = allRentedGenerators
-            .filter(rg => new Date(rg.expires_at).getTime() > Date.now())
-            .reduce((acc, rg) => {
-                if (!acc[rg.user_id]) {
-                    acc[rg.user_id] = [];
-                }
-                acc[rg.user_id].push({
-                    id: rg.generator_id,
-                    name: generatorMap.get(rg.generator_id) || 'Unknown Gen',
-                    expires_at: rg.expires_at,
-                });
-                return acc;
-            }, {} as Record<string, { id: string, name: string, expires_at: string }[]>);
+        const rentedByUser = allRentedGenerators.reduce((acc, rg) => {
+            if (!acc[rg.user_id]) {
+                acc[rg.user_id] = [];
+            }
+            acc[rg.user_id].push({
+                id: rg.generator_id,
+                name: generatorMap.get(rg.generator_id) || 'Unknown Gen',
+                expires_at: rg.expires_at,
+            });
+            return acc;
+        }, {} as Record<string, { id: string, name: string, expires_at: string }[]>);
         
         const referralCounts = rawUsers.reduce((acc, user) => {
           if (user.referred_by) {
@@ -279,7 +276,7 @@ function DashboardContent() {
         const usersWithData = rawUsers.map(user => ({
           ...user,
           referral_count: user.referral_code ? referralCounts[user.referral_code] || 0 : 0,
-          active_generators: activeRentedByUser[user.id] || [],
+          rented_generators: (rentedByUser[user.id] || []).sort((a, b) => new Date(b.expires_at).getTime() - new Date(a.expires_at).getTime()),
         }));
 
         setUsers(usersWithData);
@@ -1036,15 +1033,19 @@ function DashboardContent() {
                                     {referralLink && <button onClick={() => copyText(referralLink!, "Referral link")} className="text-slate-500 hover:text-blue-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>}
                                 </div>
                             </div>
-                            {u.active_generators && u.active_generators.length > 0 && (
+                            {u.rented_generators && u.rented_generators.length > 0 && (
                                 <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
-                                    <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-1 flex items-center gap-1"><Zap className="w-3 h-3"/> Active Generators</p>
+                                    <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-1 flex items-center gap-1"><Zap className="w-3 h-3"/> Rented Generators</p>
                                     <div className="flex flex-wrap gap-1.5">
-                                        {u.active_generators.map(gen => (
-                                            <Badge key={gen.id} className="text-xs bg-green-900/40 text-green-300 border-green-700 font-semibold">
-                                                {gen.name}
-                                            </Badge>
-                                        ))}
+                                        {u.rented_generators.map(gen => {
+                                            const isExpired = new Date(gen.expires_at).getTime() < Date.now();
+                                            return (
+                                                <Badge key={`${gen.id}-${gen.expires_at}`} className={`text-xs border font-semibold ${isExpired ? 'bg-gray-800 text-gray-400 border-gray-700' : 'bg-green-900/40 text-green-300 border-green-700'}`}>
+                                                    {gen.name}
+                                                    {isExpired && <span className="opacity-70 ml-1">(Expired)</span>}
+                                                </Badge>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
@@ -1151,7 +1152,7 @@ function DashboardContent() {
                     </div>
                     <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                       <div className="text-right">
-                          <p className="text-amber-400 font-black text-base">${w.amount.toFixed(2)}</p>
+                          <p className="text-amber-400 font-black text-base">${(w.net_amount + w.fee).toFixed(2)}</p>
                           <p className="text-slate-400 text-xs mt-0.5">Net ${w.net_amount.toFixed(2)} + Fee ${w.fee.toFixed(2)}</p>
                       </div>
                       <div className="flex gap-2 items-center">

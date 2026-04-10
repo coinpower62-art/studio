@@ -343,11 +343,9 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
   const actualDailyIncome = ug.daily_income;
   const periodsReady = !isSuspended ? Math.floor((endOfCollection - lastRef) / TWENTY_FOUR_H) : 0;
   const canCollect = !isSuspended && periodsReady > 0;
-  const isExpired = expiresAtMs <= now && !canCollect;
-  const pendingIncome = periodsReady * actualDailyIncome;
-  const nextCreditAt = lastRef + TWENTY_FOUR_H;
+  const isExpired = expiresAtMs <= now;
 
-  const borderColor = isExpired ? "border-gray-200 opacity-60"
+  const borderColor = isExpired && !canCollect ? "border-gray-200 opacity-60"
     : isSuspended ? "border-red-300 bg-red-50/30"
     : "border-amber-200 hover:shadow-xl hover:border-amber-400";
   
@@ -479,7 +477,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
           </div>
           <div className="bg-gray-50 rounded-xl p-2 border border-amber-100/60">
             <p className="text-gray-400 text-[10px]">Status</p>
-            <p className={`text-xs font-bold ${isExpired ? "text-gray-400" : isSuspended ? "text-red-600" : canCollect ? "text-green-600" : "text-amber-600"}`}>
+            <p className={`text-xs font-bold ${isExpired && !canCollect ? "text-gray-400" : isSuspended ? "text-red-600" : canCollect ? "text-green-600" : "text-amber-600"}`}>
               {canCollect ? "Collect Now" : isExpired ? "Expired" : isSuspended ? "Suspended" : "Earning"}
             </p>
           </div>
