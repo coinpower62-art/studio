@@ -1,4 +1,3 @@
-export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 
 // This API route is deprecated as of the admin login consolidation.
