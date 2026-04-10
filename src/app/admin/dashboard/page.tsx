@@ -805,7 +805,7 @@ function DashboardContent() {
                       const user = users.find(u => u.id === w.user_id);
                       return (
                       <div key={w.id} className="flex items-center justify-between gap-2">
-                        <div className="min-w-0"><p className="text-white text-sm font-medium truncate">{user?.full_name || 'Unknown'}</p><p className="text-slate-400 text-xs">{w.method.toUpperCase()} · @{user?.username || '...'}</p></div>
+                        <div className="min-w-0"><p className="text-white text-sm font-medium truncate">{user?.full_name || 'Unknown'}</p><p className="text-slate-400 text-xs">@{user?.username || '...'}</p></div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <span className="text-amber-400 text-sm font-bold">${w.amount.toFixed(2)}</span>
                           <Badge className="text-xs bg-yellow-900/40 text-yellow-400 border border-yellow-700 px-1.5">pending</Badge>
@@ -1147,11 +1147,13 @@ function DashboardContent() {
                           <Badge className={`text-xs border px-1.5 py-0 ${statusColor}`}>{w.status}</Badge>
                         </div>
                         <p className="text-slate-400 text-xs">@{user?.username || '...'} · {methodLabel} · {w.country} · {dateStr}</p>
-                        <p className="text-slate-500 text-xs">Net: <span className="text-slate-300">${w.net_amount.toFixed(2)}</span> · Fee: ${w.fee.toFixed(2)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                      <span className="text-amber-400 font-black text-base">${w.amount.toFixed(2)}</span>
+                      <div className="text-right">
+                          <p className="text-amber-400 font-black text-base">${w.amount.toFixed(2)}</p>
+                          <p className="text-slate-400 text-xs mt-0.5">Net ${w.net_amount.toFixed(2)} + Fee ${w.fee.toFixed(2)}</p>
+                      </div>
                       <div className="flex gap-2 items-center">
                         {w.status === "pending" ? (
                           <>
