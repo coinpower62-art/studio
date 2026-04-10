@@ -344,6 +344,8 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
   const periodsReady = !isSuspended ? Math.floor((endOfCollection - lastRef) / TWENTY_FOUR_H) : 0;
   const canCollect = !isSuspended && periodsReady > 0;
   const isExpired = expiresAtMs <= now;
+  const pendingIncome = periodsReady * actualDailyIncome;
+  const nextCreditAt = lastRef + TWENTY_FOUR_H;
 
   const borderColor = isExpired && !canCollect ? "border-gray-200 opacity-60"
     : isSuspended ? "border-red-300 bg-red-50/30"
@@ -629,8 +631,21 @@ export default function Power() {
   }
 
   const now = Date.now();
-  const activeGenerators = rentedGenerators.filter(function(ug) { return ug && ug.expires_at && new Date(ug.expires_at).getTime() > now; });
-  const expiredGenerators = rentedGenerators.filter(function(ug) { return ug && ug.expires_at && new Date(ug.expires_at).getTime() <= now; });
+  const activeGenerators = rentedGenerators.filter(function(ug) {
+    if (!ug || !ug.expires_at) return false;
+    const expiresAtMs = new Date(ug.expires_at).getTime();
+    if (expiresAtMs <= now) {
+      // It's expired, but can we still collect?
+      const lastRef = ug.last_claimed_at ? new Date(ug.last_claimed_at).getTime() : new Date(ug.rented_at).getTime();
+      const periodsReady = Math.floor((expiresAtMs - lastRef) / TWENTY_FOUR_H);
+      return periodsReady > 0 && !ug.suspended;
+    }
+    return true; // Not expired
+  });
+
+  const expiredGenerators = rentedGenerators.filter(function(ug) {
+    return !activeGenerators.some(ag => ag.id === ug.id);
+  });
 
   return (
     <div className="pb-20 min-h-screen">
