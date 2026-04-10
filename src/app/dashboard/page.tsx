@@ -147,7 +147,8 @@ function RedeemGiftCode({ onRedeem }: { onRedeem: () => void }) {
         if (result.error) {
             toast({ title: "Redemption Failed", description: result.error, variant: "destructive" });
         } else {
-            toast({ title: "Success!", description: `You have redeemed $${result.amount?.toFixed(2)}. It has been added to your balance.` });
+            const redeemedAmount = result.amount ? parseFloat(String(result.amount)) : 0;
+            toast({ title: "Success!", description: `You have redeemed $${redeemedAmount.toFixed(2)}. It has been added to your balance.` });
             setGiftCode("");
             onRedeem();
         }
@@ -275,7 +276,8 @@ export default function DashboardPage() {
         if (result.error) {
             toast({ title: "Bonus Claim Failed", description: result.error, variant: "destructive" });
         } else {
-            toast({ title: "Bonus Claimed!", description: `You have received $${result.amount?.toFixed(2)}.` });
+            const bonusAmount = result.amount ? parseFloat(String(result.amount)) : 0;
+            toast({ title: "Bonus Claimed!", description: `You have received $${bonusAmount.toFixed(2)}.` });
             fetchData(); // to refresh balance and claimed status
         }
     }

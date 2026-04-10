@@ -465,7 +465,8 @@ export default function BankPage() {
     if (result.error) {
       toast({ title: "Redemption Failed", description: result.error, variant: "destructive" });
     } else {
-      toast({ title: "Success!", description: `You have redeemed $${result.amount?.toFixed(2)}. It has been added to your balance.` });
+      const redeemedAmount = result.amount ? parseFloat(String(result.amount)) : 0;
+      toast({ title: "Success!", description: `You have redeemed $${redeemedAmount.toFixed(2)}. It has been added to your balance.` });
       setGiftCode("");
       fetchData(); // to refresh balance and history
     }
