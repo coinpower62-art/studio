@@ -1,6 +1,12 @@
 {
   "placeholderImages": [
     {
+      "id": "homepage-cover",
+      "description": "A joyful woman smiling, representing financial freedom with CoinPower.",
+      "imageUrl": "https://picsum.photos/seed/joyfulwoman/1080/1920",
+      "imageHint": "woman smiling"
+    },
+    {
       "id": "activity-hero",
       "description": "A modern office space with a team collaborating.",
       "imageUrl": "https://picsum.photos/seed/activityhero/1200/400",

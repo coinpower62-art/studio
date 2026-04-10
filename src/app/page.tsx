@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default async function HomePage() {
   const supabase = createClient();
@@ -11,7 +12,9 @@ export default async function HomePage() {
     .eq('id', 'homepage-cover')
     .single();
 
-  const coverImageUrl = mediaData?.url || 'https://picsum.photos/seed/joyfulwoman/1080/1920';
+  const placeholder = PlaceHolderImages.find(p => p.id === 'homepage-cover');
+  const coverImageUrl = mediaData?.url || placeholder?.imageUrl || 'https://picsum.photos/seed/joyfulwoman/1080/1920';
+  const imageHint = placeholder?.imageHint || 'woman smiling';
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-black">
@@ -20,7 +23,7 @@ export default async function HomePage() {
         alt="A joyful woman smiling, representing financial freedom with CoinPower."
         fill
         className="object-cover z-0"
-        data-ai-hint="woman smiling"
+        data-ai-hint={imageHint}
         priority
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10" />
