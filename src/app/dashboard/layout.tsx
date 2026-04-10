@@ -66,7 +66,7 @@ function DashboardHeader({ user }: { user: SupabaseUser | null }) {
   const pathname = usePathname();
   const getInitials = () => {
     if (user?.user_metadata?.full_name) {
-        return user.user_metadata.full_name.split(' ').map(function(n) { return n[0]; }).join('').toUpperCase();
+        return user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
     }
     if (user?.email) {
       return user.email[0].toUpperCase();
@@ -140,7 +140,7 @@ function DashboardClientLayout({ children }: { children: React.ReactNode }) {
 
   const getInitials = () => {
     if (user?.user_metadata?.full_name) {
-        return user.user_metadata.full_name.split(' ').map(function(n) { return n[0]; }).join('').toUpperCase();
+        return user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
     }
     if (user?.email) {
       return user.email[0].toUpperCase();
