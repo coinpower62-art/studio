@@ -310,8 +310,8 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 -- =================================================================
--- 9. RPC FUNCTION FOR EARNINGS COLLECTION
--- Atomically collects earnings for a generator and updates user balance.
+-- 9. RPC FUNCTION FOR EARNINGS COLLECTION (IMPROVED)
+-- Atomically collects earnings and resets the 24-hour timer to the current time.
 -- =================================================================
 CREATE OR REPLACE FUNCTION collect_earnings(rented_generator_id_in uuid, user_id_in uuid)
 RETURNS numeric AS $$
@@ -321,7 +321,6 @@ DECLARE
   periods_to_claim integer;
   amount_to_add numeric;
   time_since_last_claim interval;
-  new_last_claimed_at timestamp with time zone;
   twenty_four_hours interval := '24 hours';
 BEGIN
   -- 1. Find and lock the rented generator row for the specific user
@@ -366,11 +365,12 @@ BEGIN
   SET balance = balance + amount_to_add
   WHERE id = user_id_in;
 
-  -- 7. Update the last_claimed_at timestamp
-  new_last_claimed_at := rented_gen_record.last_claimed_at + (periods_to_claim * twenty_four_hours);
-  
+  -- 7. IMPORTANT CHANGE: Update the last_claimed_at timestamp to the current time.
+  -- This resets the 24-hour countdown timer every time a user collects, making it more intuitive.
+  -- The user will lose any fractional progress towards the next cycle if they collect late,
+  -- but this is a trade-off for a clearer user experience.
   UPDATE public.rented_generators
-  SET last_claimed_at = new_last_claimed_at
+  SET last_claimed_at = now()
   WHERE id = rented_generator_id_in;
   
   -- 8. Return the amount earned
