@@ -312,6 +312,8 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- =================================================================
 -- 9. RPC FUNCTION FOR EARNINGS COLLECTION (IMPROVED)
 -- Atomically collects earnings and resets the 24-hour timer to the current time.
+-- NOTE: This function does NOT affect the generator's overall expiration date (`expires_at`),
+-- which continues to count down regardless of collection activity.
 -- =================================================================
 CREATE OR REPLACE FUNCTION collect_earnings(rented_generator_id_in uuid, user_id_in uuid)
 RETURNS numeric AS $$
@@ -527,4 +529,5 @@ DELETE FROM auth.users;
     
 
     
+
 
