@@ -50,6 +50,7 @@ type DepositRequest = {
 
 type UserRecord = {
   id: string;
+  created_at: string;
   full_name: string | null;
   username: string | null;
   email: string;
@@ -921,6 +922,11 @@ function DashboardContent() {
                     const initials = (u.full_name || u.username || u.email)?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "??";
                     const isShowingPass = showPassFor === u.id;
                     const referralLink = u.referral_code ? `https://coinpower-app.vercel.app/signup?ref=${u.referral_code}` : null;
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    const userCreatedAt = new Date(u.created_at);
+                    const hasPaidGenerator = u.rented_generators?.some(gen => gen.id !== 'pg1') ?? false;
+                    const isInactive = userCreatedAt < thirtyDaysAgo && !hasPaidGenerator;
                     return (
                       <div key={u.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
                         <div className="flex items-start justify-between gap-3 mb-3">
@@ -930,6 +936,7 @@ function DashboardContent() {
                                <div className="flex items-center gap-2">
                                   <p className="text-white font-bold text-sm truncate">{nameForDisplay}</p>
                                   {u.withdrawal_locked && <Badge className="text-xs bg-red-900/40 text-red-400 border-red-700 px-1.5 py-0"><Lock className="w-2.5 h-2.5 mr-1" />Locked</Badge>}
+                                  {isInactive && <Badge className="text-xs bg-yellow-900/40 text-yellow-400 border-yellow-700 px-1.5 py-0"><AlertTriangle className="w-2.5 h-2.5 mr-1" />Inactive</Badge>}
                                 </div>
                                 <p className="text-slate-400 text-xs truncate">{u.email}</p>
                             </div>
