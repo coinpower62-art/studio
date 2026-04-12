@@ -34,8 +34,8 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
-const DEPOSIT_PHONE = "+233592682060";
-const DEPOSIT_NAME = "M.K";
+const DEPOSIT_PHONE = "+233548304717";
+const DEPOSIT_NAME = "Patience Opoku";
 const USDT_ADDRESS = "TXmRoXPs98oHwBhLZKEkwLKHceLwbADLnb";
 
 const steps = [

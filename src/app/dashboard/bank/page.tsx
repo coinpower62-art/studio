@@ -45,8 +45,8 @@ function isCardExpired(expiry: string): boolean {
   return expDate < new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
-const DEPOSIT_PHONE = "+233592682060";
-const DEPOSIT_NAME = "M.K";
+const DEPOSIT_PHONE = "+233548304717";
+const DEPOSIT_NAME = "Patience Opoku";
 const COUNTDOWN_SECONDS = 5 * 60;
 
 type Profile = {
