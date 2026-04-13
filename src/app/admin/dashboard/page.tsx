@@ -1159,8 +1159,14 @@ function DashboardContent() {
                     </div>
                     <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                       <div className="text-right">
-                          <p className="text-amber-400 font-black text-base">${(w.net_amount + w.fee).toFixed(2)}</p>
+                          <p className="text-amber-400 font-black text-base">${w.amount.toFixed(2)}</p>
                           <p className="text-slate-400 text-xs mt-0.5">Net ${w.net_amount.toFixed(2)} + Fee ${w.fee.toFixed(2)}</p>
+                          {w.country === 'Ghana' && (
+                            <div className="mt-2 text-green-300 bg-green-900/50 border border-green-700/50 rounded-lg p-2 text-center">
+                              <p className="text-[10px] font-bold uppercase tracking-wide text-green-400">Amount to Pay</p>
+                              <p className="text-lg font-black text-green-300">GH₵{(w.net_amount * 10).toFixed(2)}</p>
+                            </div>
+                          )}
                       </div>
                       <div className="flex gap-2 items-center">
                         {w.status === "pending" ? (
