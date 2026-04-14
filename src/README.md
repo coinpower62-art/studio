@@ -116,7 +116,8 @@ CREATE TABLE IF NOT EXISTS public.generators (
   min_invest text,
   max_invest text,
   investors text,
-  image_url text
+  image_url text,
+  max_rentals integer DEFAULT 1
 );
 ALTER TABLE public.generators ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Generators are viewable by everyone." ON public.generators;
@@ -208,12 +209,12 @@ WITH CHECK ( bucket_id = 'site_assets' );
 -- 5. DEFAULT GENERATOR DATA (OPTIONAL)
 -- Seeds the database with the default power generators.
 -- =================================================================
-INSERT INTO public.generators (id, name, subtitle, icon, color, price, expire_days, daily_income, published, roi, period, min_invest, max_invest, investors, image_url)
+INSERT INTO public.generators (id, name, subtitle, icon, color, price, expire_days, daily_income, published, roi, period, min_invest, max_invest, investors, image_url, max_rentals)
 VALUES
-  ('pg1', 'PG1 Generator', 'Basic Power', '⚡', 'from-amber-400 to-orange-500', 0, 2, 0.5, true, '10%', 'Daily', '$0', '$0', '12050', 'https://picsum.photos/seed/genpg1/300/300'),
-  ('pg2', 'PG2 Generator', 'Standard Power', '🔋', 'from-green-400 to-emerald-600', 25, 30, 2.5, true, '12%', 'Daily', '$25', '$1000', '8520', 'https://picsum.photos/seed/genpg2/300/300'),
-  ('pg3', 'PG3 Generator', 'Mega Power', '💡', 'from-blue-400 to-indigo-600', 100, 45, 10, true, '15%', 'Daily', '$100', '$5000', '4310', 'https://picsum.photos/seed/genpg3/300/300'),
-  ('pg4', 'PG4 Generator', 'Ultra Power', '🚀', 'from-purple-500 to-pink-600', 500, 30, 55, true, '20%', 'Daily', '$500', '$20000', '1250', 'https://picsum.photos/seed/genpg4/300/300')
+  ('pg1', 'PG1 Generator', 'Basic Power', '⚡', 'from-amber-400 to-orange-500', 0, 2, 0.5, true, '10%', 'Daily', '$0', '$0', '12050', 'https://picsum.photos/seed/genpg1/300/300', 1),
+  ('pg2', 'PG2 Generator', 'Standard Power', '🔋', 'from-green-400 to-emerald-600', 25, 30, 2.5, true, '12%', 'Daily', '$25', '$1000', '8520', 'https://picsum.photos/seed/genpg2/300/300', 2),
+  ('pg3', 'PG3 Generator', 'Mega Power', '💡', 'from-blue-400 to-indigo-600', 100, 45, 10, true, '15%', 'Daily', '$100', '$5000', '4310', 'https://picsum.photos/seed/genpg3/300/300', 1),
+  ('pg4', 'PG4 Generator', 'Ultra Power', '🚀', 'from-purple-500 to-pink-600', 500, 30, 55, true, '20%', 'Daily', '$500', '$20000', '1250', 'https://picsum.photos/seed/genpg4/300/300', 2)
 ON CONFLICT(id) DO NOTHING;
 
 -- =================================================================
@@ -528,6 +529,19 @@ HAVING COUNT(*) > 1;
 ```
 Once you have resolved the duplicates, you can run the `ALTER TABLE` command again.
 
+### Add Max Rentals to Existing Generators
+If you already have generators in your database, run this script to add the `max_rentals` column.
+```sql
+-- Add the max_rentals column to the generators table if it doesn't exist
+ALTER TABLE public.generators ADD COLUMN IF NOT EXISTS max_rentals integer DEFAULT 1;
+
+-- Update existing default generators with the new limits
+UPDATE public.generators SET max_rentals = 1 WHERE id = 'pg1';
+UPDATE public.generators SET max_rentals = 2 WHERE id = 'pg2';
+UPDATE public.generators SET max_rentals = 1 WHERE id = 'pg3';
+UPDATE public.generators SET max_rentals = 2 WHERE id = 'pg4';
+```
+
 ### Reset All User Data (Use With Caution)
 
 If you need to completely clear all user accounts and their associated data to start fresh, you can run the following script. **WARNING: This is a destructive and irreversible action.**
@@ -561,6 +575,7 @@ DELETE FROM auth.users;
     
 
     
+
 
 
 

@@ -90,6 +90,7 @@ export interface Generator {
   investors: string;
   isFree?: boolean;
   image_url?: string;
+  max_rentals: number;
 }
 
 export const generators: Generator[] = [];

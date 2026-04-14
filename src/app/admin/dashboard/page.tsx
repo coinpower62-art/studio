@@ -71,6 +71,7 @@ type Generator = {
   price: number; expire_days: number; daily_income: number; published: boolean;
   roi: string; period: string; min_invest: string; max_invest: string; investors: string;
   image_url?: string;
+  max_rentals: number;
 };
 
 type NewGenerator = Omit<Generator, "id">;
@@ -97,6 +98,7 @@ const BLANK_GEN: NewGenerator = {
   name: "", subtitle: "", icon: "⚡", color: "from-amber-400 to-orange-500",
   price: 0, expire_days: 30, daily_income: 0, published: false,
   roi: "", period: "Daily", min_invest: "", max_invest: "", investors: "0",
+  max_rentals: 1,
 };
 
 const COLORS = [
@@ -108,11 +110,11 @@ const COLORS = [
   { label: "Teal", value: "from-teal-400 to-cyan-600" },
 ];
 
-const DEFAULT_GENERATORS = [
-  { id: 'pg1', name: "PG1 Generator", subtitle: "Basic Power", icon: "⚡", color: "from-amber-400 to-orange-500", price: 0, expire_days: 2, daily_income: 0.5, published: true, roi: "10%", period: "Daily", min_invest: "$0", max_invest: "$0", investors: "12050" },
-  { id: 'pg2', name: "PG2 Generator", subtitle: "Standard Power", icon: "🔋", color: "from-green-400 to-emerald-600", price: 25, expire_days: 30, daily_income: 2.5, published: true, roi: "12%", period: "Daily", min_invest: "$25", max_invest: "$1000", investors: "8520" },
-  { id: 'pg3', name: "PG3 Generator", subtitle: "Mega Power", icon: "💡", color: "from-blue-400 to-indigo-600", price: 100, expire_days: 45, daily_income: 10, published: true, roi: "15%", period: "Daily", min_invest: "$100", max_invest: "$5000", investors: "4310" },
-  { id: 'pg4', name: "PG4 Generator", subtitle: "Ultra Power", icon: "🚀", color: "from-purple-500 to-pink-600", price: 500, expire_days: 30, daily_income: 55, published: true, roi: "20%", period: "Daily", min_invest: "$500", max_invest: "$20000", investors: "1250" },
+const DEFAULT_GENERATORS: Generator[] = [
+  { id: 'pg1', name: "PG1 Generator", subtitle: "Basic Power", icon: "⚡", color: "from-amber-400 to-orange-500", price: 0, expire_days: 2, daily_income: 0.5, published: true, roi: "10%", period: "Daily", min_invest: "$0", max_invest: "$0", investors: "12050", max_rentals: 1 },
+  { id: 'pg2', name: "PG2 Generator", subtitle: "Standard Power", icon: "🔋", color: "from-green-400 to-emerald-600", price: 25, expire_days: 30, daily_income: 2.5, published: true, roi: "12%", period: "Daily", min_invest: "$25", max_invest: "$1000", investors: "8520", max_rentals: 2 },
+  { id: 'pg3', name: "PG3 Generator", subtitle: "Mega Power", icon: "💡", color: "from-blue-400 to-indigo-600", price: 100, expire_days: 45, daily_income: 10, published: true, roi: "15%", period: "Daily", min_invest: "$100", max_invest: "$5000", investors: "4310", max_rentals: 1 },
+  { id: 'pg4', name: "PG4 Generator", subtitle: "Ultra Power", icon: "🚀", color: "from-purple-500 to-pink-600", price: 500, expire_days: 30, daily_income: 55, published: true, roi: "20%", period: "Daily", min_invest: "$500", max_invest: "$20000", investors: "1250", max_rentals: 2 },
 ];
 
 
@@ -1362,14 +1364,13 @@ function DashboardContent() {
                         </div>
                       </div>
                       <div className="p-4 space-y-3">
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-3 gap-2">
                           {[
-                            { label: "Generator ID", value: g.id },
-                            { label: "Rent Price", value: `$${g.price.toLocaleString()}` },
-                            { label: "Expire Days", value: `${g.expire_days} days` },
+                            { label: "ID", value: g.id },
+                            { label: "Price", value: `$${g.price.toLocaleString()}` },
+                            { label: "Days", value: `${g.expire_days}` },
                             { label: "Daily Income", value: `$${g.daily_income}` },
-                            { label: "Min Invest", value: g.min_invest },
-                            { label: "Max Invest", value: g.max_invest },
+                            { label: "Max Rentals", value: g.max_rentals },
                           ].map(function({ label, value }) { return (
                             <div key={label} className="bg-slate-700/50 rounded-xl px-2.5 py-2">
                               <p className="text-slate-400 text-[10px]">{label}</p>
@@ -1814,18 +1815,25 @@ function DashboardContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Rent Price ($) *</label>
                   <Input type="number" value={newGen.price || ""} onChange={function(e) { return setNewGen({ ...newGen, price: parseFloat(e.target.value) || 0 }); }} placeholder="100" data-testid="input-gen-price" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                 <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Daily Income ($) *</label>
+                  <Input type="number" value={newGen.daily_income || ""} onChange={function(e) { return setNewGen({ ...newGen, daily_income: parseFloat(e.target.value) || 0 }); }} placeholder="10" data-testid="input-gen-income" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Expire Days *</label>
                   <Input type="number" value={newGen.expire_days || ""} onChange={function(e) { return setNewGen({ ...newGen, expire_days: parseInt(e.target.value) || 0 }); }} placeholder="30" data-testid="input-gen-expire" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
-                <div>
-                  <label className="text-slate-300 text-xs font-medium mb-1 block">Daily Income ($) *</label>
-                  <Input type="number" value={newGen.daily_income || ""} onChange={function(e) { return setNewGen({ ...newGen, daily_income: parseFloat(e.target.value) || 0 }); }} placeholder="10" data-testid="input-gen-income" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                 <div>
+                    <label className="text-slate-300 text-xs font-medium mb-1 block">Max Rentals *</label>
+                    <Input type="number" value={newGen.max_rentals || ""} onChange={e => setNewGen({ ...newGen, max_rentals: parseInt(e.target.value) || 1 })} placeholder="1" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
               </div>
 
@@ -1841,17 +1849,6 @@ function DashboardContent() {
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Icon (emoji)</label>
                   <Input value={newGen.icon} onChange={function(e) { return setNewGen({ ...newGen, icon: e.target.value }); }} placeholder="⚡" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500 text-center" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-slate-300 text-xs font-medium mb-1 block">Min Invest</label>
-                  <Input value={newGen.min_invest} onChange={function(e) { return setNewGen({ ...newGen, min_invest: e.target.value }); }} placeholder="$100" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
-                </div>
-                <div>
-                  <label className="text-slate-300 text-xs font-medium mb-1 block">Max Invest</label>
-                  <Input value={newGen.max_invest} onChange={function(e) { return setNewGen({ ...newGen, max_invest: e.target.value }); }} placeholder="$9,999" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
               </div>
 
@@ -1922,9 +1919,7 @@ function DashboardContent() {
                 { label: "Rent Price ($)", key: "price", type: "number" },
                 { label: "Expire Days", key: "expire_days", type: "number" },
                 { label: "Daily Income ($)", key: "daily_income", type: "number" },
-                { label: "Min Invest", key: "min_invest", type: "text" },
-                { label: "Max Invest", key: "max_invest", type: "text" },
-                { label: "Investors", key: "investors", type: "text" },
+                { label: "Max Rentals", key: "max_rentals", type: "number" },
               ].map(function({ label, key, type }) { return (
                 <div key={key}>
                   <label className="text-slate-400 text-xs font-medium mb-1 block">{label}</label>

@@ -14,7 +14,7 @@ import {
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from '@supabase/supabase-js';
-import { logout } from "@/app/login/actions";
+import { logout } from '@/app/login/actions';
 import { rentGeneratorAction } from "./actions";
 
 export type RentedGenerator = {
@@ -215,12 +215,7 @@ export default function Market() {
               const rentedCount = activeRentedCounts.get(gen.id) || 0;
               const isRented = rentedCount > 0;
               
-              const maxRentals = 
-                gen.id === 'pg1' ? 1 :
-                gen.id === 'pg2' ? 2 :
-                gen.id === 'pg3' ? 1 :
-                2; // Default for pg4 and others.
-
+              const maxRentals = gen.max_rentals ?? 1;
               const isMaxed = gen.id === 'pg1' ? hasEverRentedPg1 : rentedCount >= maxRentals;
               
               const activeUg = rentedGenerators.find(ug => ug.generator_id === gen.id && new Date(ug.expires_at).getTime() > now);
