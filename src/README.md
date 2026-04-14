@@ -282,7 +282,7 @@ DECLARE
   redeemed_amount numeric;
 BEGIN
   -- Find and lock the code row
-  SELECT * INTO code_record FROM public.gift_codes WHERE code = code_in FOR UPDATE;
+  SELECT * INTO public.gift_codes WHERE code = code_in FOR UPDATE;
 
   -- Check if code exists and is not redeemed
   IF NOT FOUND OR code_record.is_redeemed THEN
@@ -441,6 +441,38 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
+-- =================================================================
+-- 11. DAILY VISITS TABLE
+-- Stores a simple count of homepage views per day.
+-- =================================================================
+CREATE TABLE IF NOT EXISTS public.daily_visits (
+  date date NOT NULL PRIMARY KEY DEFAULT now()::date,
+  view_count integer DEFAULT 1 NOT NULL
+);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE public.daily_visits ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Allow public read access (for admin panel)
+DROP POLICY IF EXISTS "Daily visits are viewable by everyone." ON public.daily_visits;
+CREATE POLICY "Daily visits are viewable by everyone." ON public.daily_visits FOR SELECT USING (true);
+
+
+-- =================================================================
+-- 12. RPC FUNCTION FOR INCREMENTING DAILY VISITS
+-- Atomically increments the view counter for the current day.
+-- =================================================================
+CREATE OR REPLACE FUNCTION increment_daily_visit()
+RETURNS void AS $$
+BEGIN
+  INSERT INTO public.daily_visits (date, view_count)
+  VALUES (now()::date, 1)
+  ON CONFLICT (date) DO UPDATE
+  SET view_count = daily_visits.view_count + 1;
+END;
+$$ LANGUAGE plpgsql;
+
+
 ---
 
 ## 🔧 Data Repair Scripts
@@ -529,5 +561,6 @@ DELETE FROM auth.users;
     
 
     
+
 
 

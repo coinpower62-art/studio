@@ -6,6 +6,15 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default async function HomePage() {
   const supabase = createClient();
+  
+  // Increment page view count
+  try {
+    await supabase.rpc('increment_daily_visit');
+  } catch (error) {
+    // Log error but don't block page render, as the function might not exist yet.
+    console.error('Failed to increment daily visit count. This may be expected on first run:', error);
+  }
+
   const { data: mediaData } = await supabase
     .from('media')
     .select('url')

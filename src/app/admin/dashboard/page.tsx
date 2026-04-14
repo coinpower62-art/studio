@@ -233,6 +233,9 @@ function DashboardContent() {
 
   const [bonusCodes, setBonusCodes] = useState<GiftCode[]>([]);
   const [codesLoading, setCodesLoading] = useState(true);
+  
+  const [visits, setVisits] = useState<{date: string, view_count: number}[]>([]);
+  const [visitsLoading, setVisitsLoading] = useState(true);
 
 
   const fetchData = async () => {
@@ -242,6 +245,7 @@ function DashboardContent() {
       setWithdrawalsLoading(true);
       setMediaLoading(true);
       setCodesLoading(true);
+      setVisitsLoading(true);
 
       const result = await adminGetAllData();
       if (result.error || !result.data) {
@@ -286,6 +290,7 @@ function DashboardContent() {
         setWithdrawals(result.data.withdrawals as WithdrawalRecord[]);
         setMedia(result.data.media as MediaAsset[]);
         setBonusCodes(result.data.codes as GiftCode[]);
+        setVisits(result.data.visits as {date: string, view_count: number}[] || []);
       }
 
       setUsersLoading(false);
@@ -294,6 +299,7 @@ function DashboardContent() {
       setWithdrawalsLoading(false);
       setMediaLoading(false);
       setCodesLoading(false);
+      setVisitsLoading(false);
   }
 
   useEffect(() => {
@@ -791,6 +797,30 @@ function DashboardContent() {
                     <p className="text-slate-400 text-xs mt-0.5">{label}</p>
                   </div>
                 ); })}
+              </div>
+              <div className="mt-4">
+                <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2"><Eye className="w-4 h-4 text-slate-400" /> Site Traffic</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {(() => {
+                        const today = new Date().toISOString().split('T')[0];
+                        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+                        const todayVisits = visits.find(v => v.date === today)?.view_count || 0;
+                        const yesterdayVisits = visits.find(v => v.date === yesterday)?.view_count || 0;
+                        const last7DaysVisits = visits.reduce((sum, v) => sum + v.view_count, 0);
+                        
+                        return ([
+                            { label: "Today's Views", value: todayVisits.toLocaleString() },
+                            { label: "Yesterday's Views", value: yesterdayVisits.toLocaleString() },
+                            { label: "Last 7 Days", value: last7DaysVisits.toLocaleString() },
+                        ].map(({ label, value }) => (
+                            <div key={label} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
+                                <p className="text-slate-400 text-xs">{label}</p>
+                                <p className="text-xl font-black text-white mt-1">{value}</p>
+                            </div>
+                        )))
+                    })()}
+                </div>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="bg-slate-800 rounded-2xl border border-slate-700 p-5 lg:col-span-2">
