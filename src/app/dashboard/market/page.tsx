@@ -214,8 +214,15 @@ export default function Market() {
               const cm = colorMap[gen.color] || colorMap["from-amber-400 to-orange-500"];
               const rentedCount = activeRentedCounts.get(gen.id) || 0;
               const isRented = rentedCount > 0;
-              const isPg2OrPg3 = gen.id === 'pg2' || gen.id === 'pg3';
-              const isMaxed = gen.id === 'pg1' ? hasEverRentedPg1 : isPg2OrPg3 ? rentedCount >= 1 : rentedCount >= 2;
+              
+              const maxRentals = 
+                gen.id === 'pg1' ? 1 :
+                gen.id === 'pg2' ? 2 :
+                gen.id === 'pg3' ? 1 :
+                2; // Default for pg4 and others.
+
+              const isMaxed = gen.id === 'pg1' ? hasEverRentedPg1 : rentedCount >= maxRentals;
+              
               const activeUg = rentedGenerators.find(ug => ug.generator_id === gen.id && new Date(ug.expires_at).getTime() > now);
 
               return (
@@ -238,7 +245,7 @@ export default function Market() {
                           </span>
                         ) : isRented ? (
                           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" /> {rentedCount}/{isPg2OrPg3 ? 1 : 2} Active
+                            <CheckCircle className="w-3 h-3" /> {rentedCount}/{maxRentals} Active
                           </span>
                         ) : null}
                       </div>
@@ -300,7 +307,7 @@ export default function Market() {
                         <Button disabled
                           className="w-full bg-gray-100 border border-gray-300 text-gray-400 font-semibold rounded-xl h-10 sm:h-11 flex items-center gap-2 justify-center text-sm cursor-not-allowed"
                         >
-                          <CheckCircle className="w-4 h-4" /> {gen.id === 'pg1' ? 'Rented (1 only)' : `Max Reached (${isPg2OrPg3 ? '1/1' : '2/2'})`}
+                          <CheckCircle className="w-4 h-4" /> {gen.id === 'pg1' ? 'Rented (1 only)' : `Max Reached (${rentedCount}/${maxRentals})`}
                         </Button>
                          { isRented &&
                             <Button variant="outline" onClick={() => router.push("/dashboard/power")}
@@ -317,23 +324,18 @@ export default function Market() {
                           disabled={isRenting === gen.id}
                           className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-xl h-10 sm:h-11 shadow-md transition-all flex items-center gap-2 justify-center text-sm"
                         >
-                          {
-                            gen.id === 'pg4' 
-                            ? (
-                                isRenting === gen.id 
-                                ? "Purchasing..." 
-                                : isRented 
-                                    ? `Buy Again (${rentedCount}/2) — $${gen.price.toLocaleString()}`
-                                    : `Buy ${gen.name} — $${gen.price.toLocaleString()}`
-                            )
-                            : (
-                                isRenting === gen.id
-                                ? (gen.price === 0 ? "Activating..." : "Renting...")
-                                : isRented
-                                    ? `Rent Again (${rentedCount}/${isPg2OrPg3 ? 1 : 2}) — ${gen.price === 0 ? "FREE" : '$' + gen.price.toLocaleString()}`
-                                    : gen.price === 0 ? `Activate ${gen.name} — FREE` : `Rent ${gen.name} — $${gen.price.toLocaleString()}`
-                            )
-                          }
+                          {(() => {
+                            const verb = gen.id === 'pg4' ? 'Buy' : 'Rent';
+                            const verbing = gen.id === 'pg4' ? 'Purchasing' : 'Renting';
+                            
+                            if (isRenting === gen.id) {
+                              return gen.price === 0 ? "Activating..." : `${verbing}...`;
+                            }
+                            if (isRented) {
+                              return `${verb} Again (${rentedCount}/${maxRentals}) — ${gen.price === 0 ? "FREE" : '$' + gen.price.toLocaleString()}`;
+                            }
+                            return gen.price === 0 ? `Activate ${gen.name} — FREE` : `${verb} ${gen.name} — $${gen.price.toLocaleString()}`;
+                          })()}
                         </Button>
                         {isRented && (
                           <Button variant="outline" onClick={() => router.push("/dashboard/power")}
