@@ -59,7 +59,7 @@ export async function adminGetAllData() {
         supabaseAdmin.from('withdrawal_requests').select('*').order('created_at', { ascending: false }),
         supabaseAdmin.from('media').select('*'),
         supabaseAdmin.from('gift_codes').select('*').order('created_at', { ascending: false }),
-        supabaseAdmin.from('rented_generators').select('user_id, generator_id, expires_at'),
+        supabaseAdmin.from('rented_generators').select('user_id, generator_id, expires_at, rented_at'),
         supabaseAdmin.from('daily_visits').select('*').order('date', { ascending: false }).limit(7),
     ]);
 

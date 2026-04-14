@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense } from "react";
@@ -62,7 +63,7 @@ type UserRecord = {
   phone?: string | null;
   has_withdrawal_pin?: boolean;
   withdrawal_locked?: boolean;
-  rented_generators?: { id: string; name: string; expires_at: string }[];
+  rented_generators?: { id: string; name: string; expires_at: string; rented_at: string; }[];
 };
 
 type Generator = {
@@ -89,6 +90,7 @@ type RentedGeneratorRaw = {
   user_id: string;
   generator_id: string;
   expires_at: string;
+  rented_at: string;
 }
 
 const BLANK_GEN: NewGenerator = {
@@ -236,6 +238,7 @@ function DashboardContent() {
   
   const [visits, setVisits] = useState<{date: string, view_count: number}[]>([]);
   const [visitsLoading, setVisitsLoading] = useState(true);
+  const [allRentedGenerators, setAllRentedGenerators] = useState<RentedGeneratorRaw[]>([]);
 
 
   const fetchData = async () => {
@@ -253,13 +256,13 @@ function DashboardContent() {
       } else {
         const rawUsers = result.data.users as UserRecord[];
         const allGenerators = result.data.generators as Generator[];
-        // @ts-ignore
-        const allRentedGenerators = result.data.rentedGenerators as RentedGeneratorRaw[] || [];
+        const rentedGensRaw = result.data.rentedGenerators as RentedGeneratorRaw[] || [];
+        setAllRentedGenerators(rentedGensRaw);
 
         // Create a map of generator IDs to names for efficient lookup
         const generatorMap = new Map(allGenerators.map(g => [g.id, g.name]));
         
-        const rentedByUser = allRentedGenerators.reduce((acc, rg) => {
+        const rentedByUser = rentedGensRaw.reduce((acc, rg) => {
             if (!acc[rg.user_id]) {
                 acc[rg.user_id] = [];
             }
@@ -267,9 +270,10 @@ function DashboardContent() {
                 id: rg.generator_id,
                 name: generatorMap.get(rg.generator_id) || 'Unknown Gen',
                 expires_at: rg.expires_at,
+                rented_at: rg.rented_at,
             });
             return acc;
-        }, {} as Record<string, { id: string, name: string, expires_at: string }[]>);
+        }, {} as Record<string, { id: string; name: string; expires_at: string; rented_at: string; }[]>);
         
         const referralCounts = rawUsers.reduce((acc, user) => {
           if (user.referred_by) {
@@ -637,6 +641,7 @@ function DashboardContent() {
   const heroImg = media.find(function(m) { return m.id === 'hero'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'activity-hero'; })?.imageUrl;
   const teamworkImg = media.find(function(m) { return m.id === 'teamwork'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'activity-teamwork'; })?.imageUrl;
   const logoImg = media.find(function(m) { return m.id === 'app-logo'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'signup-logo'; })?.imageUrl;
+  const activeRentals = allRentedGenerators.filter(g => g && g.expires_at && new Date(g.expires_at).getTime() > Date.now()).length;
 
   const tabs: { id: Tab; label: string; icon: any; badge?: number; color: string }[] = [
     { id: "overview",     label: "Overview",    icon: BarChart3,       color: "from-blue-500 to-blue-600" },
@@ -789,7 +794,7 @@ function DashboardContent() {
                   { label: "Total Users", value: users.length.toLocaleString(), icon: Users, color: "from-blue-500 to-blue-600" },
                   { label: "Total Balance", value: `$${totalBalance.toFixed(2)}`, icon: DollarSign, color: "from-green-500 to-green-600" },
                   { label: "Pending Withdrawals", value: String(pendingWithdrawalsCount), icon: ArrowUpFromLine, color: "from-amber-500 to-amber-600" },
-                  { label: "Active Countries", value: "21", icon: Globe, color: "from-purple-500 to-purple-600" },
+                  { label: "Active Rentals", value: activeRentals.toLocaleString(), icon: Zap, color: "from-teal-500 to-cyan-600" },
                 ].map(function({ label, value, icon: Icon, color }) { return (
                   <div key={label} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
                     <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-3 shadow-lg`}><Icon className="w-4 h-4 text-white" /></div>
@@ -1071,16 +1076,23 @@ function DashboardContent() {
                                 </div>
                             </div>
                             {u.rented_generators && u.rented_generators.length > 0 && (
-                                <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
-                                    <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-1 flex items-center gap-1"><Zap className="w-3 h-3"/> Rented Generators</p>
-                                    <div className="flex flex-wrap gap-1.5">
+                                <div className="bg-slate-700/50 rounded-xl p-3 sm:col-span-2">
+                                    <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-2 flex items-center gap-1"><Zap className="w-3 h-3"/> Rented Generators ({u.rented_generators.length})</p>
+                                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-2">
                                         {u.rented_generators.map(gen => {
                                             const isExpired = new Date(gen.expires_at).getTime() < Date.now();
+                                            const rentedDate = gen.rented_at ? new Date(gen.rented_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A';
                                             return (
-                                                <Badge key={`${gen.id}-${gen.expires_at}`} className={`text-xs border font-semibold ${isExpired ? 'bg-gray-800 text-gray-400 border-gray-700' : 'bg-green-900/40 text-green-300 border-green-700'}`}>
-                                                    {gen.name}
-                                                    {isExpired && <span className="opacity-70 ml-1">(Expired)</span>}
-                                                </Badge>
+                                                <div key={`${gen.id}-${gen.expires_at}`} className={`flex items-center justify-between text-xs p-2 rounded-lg ${isExpired ? 'bg-slate-800/50' : 'bg-green-950/30'}`}>
+                                                    <div>
+                                                        <span className={`font-semibold ${isExpired ? 'text-slate-400' : 'text-green-300'}`}>{gen.name}</span>
+                                                        <span className={`ml-2 text-[10px] ${isExpired ? 'text-slate-500' : 'text-green-400/80'}`}>Rented: {rentedDate}</span>
+                                                    </div>
+                                                    {isExpired 
+                                                        ? <Badge variant="outline" className="text-[9px] border-slate-600 text-slate-500 px-1.5 py-0">Expired</Badge>
+                                                        : <Badge className="text-[9px] bg-green-500/20 border-green-500/30 text-green-300 px-1.5 py-0">Active</Badge>
+                                                    }
+                                                </div>
                                             );
                                         })}
                                     </div>
