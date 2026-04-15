@@ -4,6 +4,8 @@ import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
+export const runtime = 'edge';
+
 export default async function HomePage() {
   const supabase = createClient();
   

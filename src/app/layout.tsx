@@ -1,4 +1,4 @@
-import type {Metadata} from 'next';
+import type {Metadata, Viewport} from 'next';
 import {Toaster} from '@/components/ui/toaster';
 import './globals.css';
 import { cn } from '@/lib/utils';
@@ -9,8 +9,6 @@ export const metadata: Metadata = {
   title: "CoinPower",
   description: "Digital Energy Mining",
   manifest: "/manifest.json",
-  themeColor: "#b8860b",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -21,6 +19,14 @@ export const metadata: Metadata = {
     apple: '/icon-512x512.png',
   },
 };
+
+export const viewport: Viewport = {
+  themeColor: "#b8860b",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 
 export default function RootLayout({
   children,
