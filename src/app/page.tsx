@@ -1,30 +1,13 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { createClient } from '@/lib/supabase/server';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export const runtime = 'edge';
 
-export default async function HomePage() {
-  const supabase = createClient();
-  
-  // Increment page view count
-  try {
-    await supabase.rpc('increment_daily_visit');
-  } catch (error) {
-    // Log error but don't block page render, as the function might not exist yet.
-    console.error('Failed to increment daily visit count. This may be expected on first run:', error);
-  }
-
-  const { data: mediaData } = await supabase
-    .from('media')
-    .select('url')
-    .eq('id', 'homepage-cover')
-    .single();
-
+export default function HomePage() {
   const placeholder = PlaceHolderImages.find(p => p.id === 'homepage-cover');
-  const coverImageUrl = mediaData?.url || placeholder?.imageUrl || 'https://picsum.photos/seed/joyfulwoman/1080/1920';
+  const coverImageUrl = placeholder?.imageUrl || 'https://picsum.photos/seed/joyfulwoman/1080/1920';
   const imageHint = placeholder?.imageHint || 'woman smiling';
 
   return (
