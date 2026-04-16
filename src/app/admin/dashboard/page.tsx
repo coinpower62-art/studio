@@ -20,7 +20,7 @@ import {
   Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
   Pencil, ImagePlus, Activity,
   Info, Building2, Phone, Mail, MapPin, Percent, Clock3,
-  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Unlock, Video
+  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Unlock, Video, Landmark, Network
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
@@ -652,6 +652,17 @@ function DashboardContent() {
       await fetchData();
     }
   };
+  
+  const getDetailIcon = (key: string) => {
+    const lKey = key.toLowerCase();
+    if (lKey.includes('phone')) return <Phone className="w-3 h-3 text-slate-500" />;
+    if (lKey.includes('name') || lKey.includes('holder')) return <UserIcon className="w-3 h-3 text-slate-500" />;
+    if (lKey.includes('bank')) return <Landmark className="w-3 h-3 text-slate-500" />;
+    if (lKey.includes('country') || lKey.includes('city')) return <MapPin className="w-3 h-3 text-slate-500" />;
+    if (lKey.includes('address')) return <Mail className="w-3 h-3 text-slate-500" />;
+    if (lKey.includes('network')) return <Network className="w-3 h-3 text-slate-500" />;
+    return null;
+  }
 
   if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
   if (!admin) { router.push("/login"); return null; }
@@ -982,7 +993,7 @@ function DashboardContent() {
                     const nameForDisplay = u.full_name || u.username || u.email.split('@')[0] || 'Unknown User';
                     const initials = (u.full_name || u.username || u.email)?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "??";
                     const isShowingPass = showPassFor === u.id;
-                    const referralLink = u.referral_code ? `https://coinpower-app.vercel.app/signup?ref=${u.referral_code}` : null;
+                    const referralLink = u.referral_code ? `https://coinpower-italy.netlify.app/signup?ref=${u.referral_code}` : null;
                     return (
                       <div key={u.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
                         <div className="flex items-start justify-between gap-3 mb-3">
@@ -1136,7 +1147,7 @@ function DashboardContent() {
                             {u.withdrawal_locked ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
                             {u.withdrawal_locked ? 'Unlock Withdrawals' : 'Lock Withdrawals'}
                           </button>
-                          <button onClick={function() { return openConfirm("Delete User Account", `You are about to permanently delete "${nameForDisplay}". Their profile and all data will be erased. This CANNOT be undone.`,function() { return handleDeleteUser(u.id); }); }}
+                          <button onClick={function() { return openConfirm("Delete User Account", `You are about to permanently delete "${nameForDisplay}". Their profile and all data will be erased. This CANNOT be undone.`, function() { return handleDeleteUser(u.id); }); }}
                             data-testid={`button-delete-user-${u.id}`}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-800 hover:bg-red-900/50 text-xs font-semibold">
                             <Trash2 className="w-3 h-3" /> Delete
@@ -1206,58 +1217,96 @@ function DashboardContent() {
                   const methodLabel = w.method === "momo" ? "MTN MOMO" : w.method === "tigo" ? "AirtelTigo" : w.method === "usdt" ? "USDT" : w.method === "card" ? "CARD" : w.method.toUpperCase();
                   const statusColor = w.status === "approved" ? "bg-green-900/40 text-green-400 border-green-700" : w.status === "rejected" ? "bg-red-900/40 text-red-400 border-red-700" : "bg-yellow-900/40 text-yellow-400 border-yellow-700";
                   return (
-                  <div key={w.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${w.status === "pending" ? "bg-yellow-900/40" : w.status === "approved" ? "bg-green-900/40" : "bg-red-900/40"}`}>
-                        <ArrowUpFromLine className={`w-5 h-5 ${w.status === "pending" ? "text-yellow-400" : w.status === "approved" ? "text-green-400" : "text-red-400"}`} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-white font-semibold text-sm">{user?.full_name || 'Unknown'}</p>
-                          <Badge className={`text-xs border px-1.5 py-0 ${statusColor}`}>{w.status}</Badge>
+                  <div key={w.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${w.status === "pending" ? "bg-yellow-900/40" : w.status === "approved" ? "bg-green-900/40" : "bg-red-900/40"}`}>
+                          <ArrowUpFromLine className={`w-5 h-5 ${w.status === "pending" ? "text-yellow-400" : w.status === "approved" ? "text-green-400" : "text-red-400"}`} />
                         </div>
-                        <p className="text-slate-400 text-xs">@{user?.username || '...'} · {methodLabel} · {w.country} · {dateStr}</p>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-white font-semibold text-sm">{user?.full_name || 'Unknown'}</p>
+                            <Badge className={`text-xs border px-1.5 py-0 ${statusColor}`}>{w.status}</Badge>
+                          </div>
+                          <p className="text-slate-400 text-xs">@{user?.username || '...'} · {methodLabel} · {w.country} · {dateStr}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                        <div className="text-right">
+                            <p className="text-amber-400 font-black text-base">${w.amount.toFixed(2)}</p>
+                            <p className="text-slate-400 text-xs mt-0.5">Net ${w.net_amount.toFixed(2)} + Fee ${w.fee.toFixed(2)}</p>
+                            {w.country === 'Ghana' && (
+                              <div className="mt-2 text-green-300 bg-green-900/50 border border-green-700/50 rounded-lg p-2 text-center">
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-green-400">Amount to Pay</p>
+                                <p className="text-lg font-black text-green-300">GH₵{(w.net_amount * 10).toFixed(2)}</p>
+                              </div>
+                            )}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                      <div className="text-right">
-                          <p className="text-amber-400 font-black text-base">${w.amount.toFixed(2)}</p>
-                          <p className="text-slate-400 text-xs mt-0.5">Net ${w.net_amount.toFixed(2)} + Fee ${w.fee.toFixed(2)}</p>
-                          {w.country === 'Ghana' && (
-                            <div className="mt-2 text-green-300 bg-green-900/50 border border-green-700/50 rounded-lg p-2 text-center">
-                              <p className="text-[10px] font-bold uppercase tracking-wide text-green-400">Amount to Pay</p>
-                              <p className="text-lg font-black text-green-300">GH₵{(w.net_amount * 10).toFixed(2)}</p>
-                            </div>
-                          )}
-                      </div>
-                      <div className="flex gap-2 items-center">
-                        {w.status === "pending" ? (
-                          <>
-                            <button onClick={function() { return handleApproveWithdrawal(w.id); }}
-                              data-testid={`button-approve-withdrawal-${w.id}`}
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-green-900/30 text-green-400 border border-green-700 hover:bg-green-900/50 text-xs font-semibold disabled:opacity-50">
-                              <CheckCircle className="w-3.5 h-3.5" /> Approve
-                            </button>
-                            <button onClick={function() { return openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? The amount will be refunded to their balance.`, () => handleRejectWithdrawal(w.id, w.user_id, w.amount)); }}
-                              data-testid={`button-reject-withdrawal-${w.id}`}
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold disabled:opacity-50">
-                              <XCircle className="w-3.5 h-3.5" /> Reject
-                            </button>
-                          </>
-                        ) : w.status === "approved" ? (
-                          <span className="flex items-center gap-1 text-green-400 text-xs font-semibold"><CheckCircle className="w-3.5 h-3.5" /> Approved</span>
-                        ) : (
-                          <span className="flex items-center gap-1 text-red-400 text-xs font-semibold"><XCircle className="w-3.5 h-3.5" /> Rejected</span>
-                        )}
-                        <button
-                          onClick={function() { return openConfirm("Delete Withdrawal Record", `Remove the withdrawal record for $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? This cannot be undone.`, () => handleDeleteWithdrawal(w.id)); }}
-                          data-testid={`button-delete-withdrawal-${w.id}`}
-                          className="flex items-center justify-center w-8 h-8 rounded-xl bg-red-950/40 text-red-500 border border-red-800/50 hover:bg-red-900/50 hover:text-red-300 transition-colors flex-shrink-0"
-                          title="Delete record"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                     {w.details && (() => {
+                        try {
+                            const detailsObj = JSON.parse(w.details);
+                            return (
+                                <div className="pt-3 border-t border-slate-700">
+                                    <p className="text-slate-300 text-xs font-semibold mb-2">Withdrawal Details</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 bg-slate-700/50 rounded-xl p-3">
+                                        {Object.entries(detailsObj).map(([key, value]) => {
+                                            if (w.method === 'card' && key.toLowerCase() !== 'holder' && key.toLowerCase() !== 'name') return null;
+                                            if (typeof value !== 'string' && typeof value !== 'number') return null;
+                                            if (key.toLowerCase() === 'cvv' || key.toLowerCase() === 'cvvvisible' || key.toLowerCase() === 'number' || key.toLowerCase() === 'expiry') return null;
+
+                                            const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                                            return (
+                                                <div key={key}>
+                                                    <p className="text-slate-400 text-[10px] uppercase tracking-wide flex items-center gap-1">
+                                                        {getDetailIcon(key)} {formattedKey}
+                                                    </p>
+                                                    <p className="text-slate-200 text-xs font-mono truncate">{String(value)}</p>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )
+                        } catch (e) {
+                            return (
+                                <div className="pt-3 border-t border-slate-700">
+                                    <p className="text-slate-300 text-xs font-semibold mb-2">Withdrawal Details</p>
+                                    <div className="bg-slate-700/50 rounded-xl p-3">
+                                        <p className="text-slate-200 text-xs font-mono">{w.details}</p>
+                                    </div>
+                                </div>
+                            )
+                        }
+                    })()}
+                    <div className="flex gap-2 items-center w-full justify-end pt-3 border-t border-slate-700">
+                      {w.status === "pending" ? (
+                        <>
+                          <button onClick={function() { return handleApproveWithdrawal(w.id); }}
+                            data-testid={`button-approve-withdrawal-${w.id}`}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-green-900/30 text-green-400 border border-green-700 hover:bg-green-900/50 text-xs font-semibold disabled:opacity-50">
+                            <CheckCircle className="w-3.5 h-3.5" /> Approve
+                          </button>
+                          <button onClick={function() { return openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? The amount will be refunded to their balance.`, () => handleRejectWithdrawal(w.id, w.user_id, w.amount)); }}
+                            data-testid={`button-reject-withdrawal-${w.id}`}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold disabled:opacity-50">
+                            <XCircle className="w-3.5 h-3.5" /> Reject
+                          </button>
+                        </>
+                      ) : w.status === "approved" ? (
+                        <span className="flex items-center gap-1 text-green-400 text-xs font-semibold"><CheckCircle className="w-3.5 h-3.5" /> Approved</span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-red-400 text-xs font-semibold"><XCircle className="w-3.5 h-3.5" /> Rejected</span>
+                      )}
+                      <button
+                        onClick={function() { return openConfirm("Delete Withdrawal Record", `Remove the withdrawal record for $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? This cannot be undone.`, () => handleDeleteWithdrawal(w.id)); }}
+                        data-testid={`button-delete-withdrawal-${w.id}`}
+                        className="flex items-center justify-center w-8 h-8 rounded-xl bg-red-950/40 text-red-500 border border-red-800/50 hover:bg-red-900/50 hover:text-red-300 transition-colors flex-shrink-0"
+                        title="Delete record"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                   );
