@@ -592,15 +592,14 @@ function DashboardContent() {
                 return currentGenerators;
             });
         } else {
-            const newMediaAsset: MediaAsset = { id, url: publicUrl };
             setMedia(currentMedia => {
                 const existingIndex = currentMedia.findIndex(m => m.id === id);
                 if (existingIndex > -1) {
                     const updatedMedia = [...currentMedia];
-                    updatedMedia[existingIndex] = newMediaAsset;
+                    updatedMedia[existingIndex] = { id, url: publicUrl };
                     return updatedMedia;
                 } else {
-                    return [...currentMedia, newMediaAsset];
+                    return [...currentMedia, { id, url: publicUrl }];
                 }
             });
         }
@@ -1252,17 +1251,31 @@ function DashboardContent() {
                                     <p className="text-slate-300 text-xs font-semibold mb-2">Withdrawal Details</p>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 bg-slate-700/50 rounded-xl p-3">
                                         {Object.entries(detailsObj).map(([key, value]) => {
-                                            if (w.method === 'card' && key.toLowerCase() !== 'holder' && key.toLowerCase() !== 'name') return null;
-                                            if (typeof value !== 'string' && typeof value !== 'number') return null;
-                                            if (key.toLowerCase() === 'cvv' || key.toLowerCase() === 'cvvvisible' || key.toLowerCase() === 'number' || key.toLowerCase() === 'expiry') return null;
+                                            const lKey = key.toLowerCase();
+                                            // Security: Don't show sensitive card details
+                                            if (w.method === 'card' && (lKey === 'number' || lKey === 'expiry' || lKey === 'cvv' || lKey === 'cvvvisible')) return null;
+                                            
+                                            // Don't show internal flags
+                                            if (lKey === 'cvvvisible') return null;
 
-                                            const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                                            if (typeof value !== 'string' && typeof value !== 'number') return null;
+
+                                            const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
+                                            const isCopyable = ['name', 'holder', 'number', 'phone', 'address'].some(k => lKey.includes(k));
+
                                             return (
                                                 <div key={key}>
                                                     <p className="text-slate-400 text-[10px] uppercase tracking-wide flex items-center gap-1">
                                                         {getDetailIcon(key)} {formattedKey}
                                                     </p>
-                                                    <p className="text-slate-200 text-xs font-mono truncate">{String(value)}</p>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <p className="text-slate-200 text-xs font-mono truncate">{String(value)}</p>
+                                                        {isCopyable && (
+                                                            <button onClick={() => copyText(String(value), formattedKey)} className="text-slate-500 hover:text-amber-400 flex-shrink-0">
+                                                                <Copy className="w-3 h-3" />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )
                                         })}
