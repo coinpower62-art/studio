@@ -579,8 +579,32 @@ function DashboardContent() {
         if (dbUpdateResult.error) {
           throw new Error(dbUpdateResult.error);
         }
+        
+        // Optimistic UI Update to avoid race conditions
+        if (type === 'generator') {
+            setGenerators(currentGenerators => {
+                const genIndex = currentGenerators.findIndex(g => g.id === id);
+                if (genIndex > -1) {
+                    const updatedGenerators = [...currentGenerators];
+                    updatedGenerators[genIndex].image_url = publicUrl;
+                    return updatedGenerators;
+                }
+                return currentGenerators;
+            });
+        } else {
+            const newMediaAsset: MediaAsset = { id, url: publicUrl };
+            setMedia(currentMedia => {
+                const existingIndex = currentMedia.findIndex(m => m.id === id);
+                if (existingIndex > -1) {
+                    const updatedMedia = [...currentMedia];
+                    updatedMedia[existingIndex] = newMediaAsset;
+                    return updatedMedia;
+                } else {
+                    return [...currentMedia, newMediaAsset];
+                }
+            });
+        }
 
-        await fetchData();
         toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)} updated for ${id}!` });
 
       } catch (e: any) {
