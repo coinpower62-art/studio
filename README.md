@@ -1,43 +1,44 @@
-# 🚀 CoinPower Deployment Guide
+# 🚀 CoinPower Deployment Guide for Netlify
 
-This guide provides instructions for deploying your CoinPower application to a modern hosting platform like Vercel or Cloudflare Pages.
+This guide provides instructions for deploying your CoinPower application to Netlify.
 
 ---
 
-## 🚨 Critical: Connecting Supabase to Your Hosting Provider
+## 🚨 Critical: Connecting Supabase to Netlify
 
-For your live app to function correctly, you **must** copy your Supabase keys into your hosting provider's project settings. This allows your deployment to connect to your Supabase database.
+For your live app to function correctly, you **must** copy your Supabase keys into your Netlify site's settings. This allows your deployment to connect to your Supabase database.
 
 ### Step-by-Step Instructions:
 
-1.  **Log in to your hosting provider** (e.g., Vercel, Cloudflare) and go to your project dashboard.
-2.  Go to the **Settings** tab and find the **Environment Variables** section.
-3.  You will need to add three variables. For each one, enter the **Name** and **Value** exactly as shown below.
+1.  **Log in to Netlify** and go to your site's dashboard.
+2.  Go to **Site settings** > **Build & deploy** > **Environment**.
+3.  Under **Environment variables**, click **Edit variables**.
+4.  You will need to add three variables. For each one, enter the **Key** and **Value** exactly as shown below.
 
     ---
 
     #### Variable 1: Supabase URL
-    -   **Name**: `NEXT_PUBLIC_SUPABASE_URL`
+    -   **Key**: `NEXT_PUBLIC_SUPABASE_URL`
     -   **Value**: `https://ifdhcwsigjankvidokko.supabase.co`
     -   *This variable is public and can be exposed to the browser.*
 
     ---
 
     #### Variable 2: Public / Anon Key
-    -   **Name**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+    -   **Key**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
     -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTc0NzcsImV4cCI6MjA4OTMzMzQ3N30.Z-H5YqGo_L0Q0mJ_N23tV11Jb6W32aA2yS3R2zDAbJI`
     -   *This variable is public and can be exposed to the browser.*
 
     ---
 
     #### Variable 3: Secret Service Role Key
-    -   **Name**: `SUPABASE_SERVICE_ROLE_KEY`
+    -   **Key**: `SUPABASE_SERVICE_ROLE_KEY`
     -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzc1NzQ3NywiZXhwIjoyMDg5MzMzNDc3fQ.WYLx7zUkc0pl_02HpM1ULXTNKi_AWeXjD8EEYBbKrJc`
-    -   **Important:** You must mark this variable as a **"Secret"** or "encrypted" in your hosting provider's settings to keep it secure.
+    -   **Important:** Click **Secret** for this value to ensure it remains secure and is not exposed in your build logs or client-side code.
 
     ---
 
-4.  **Re-deploy Your Project.** After adding all three variables, trigger a new deployment. This will apply the new environment variables.
+5.  **Trigger a New Deployment.** After adding the variables, go to your site's "Deploys" tab and trigger a new deploy by selecting "Trigger deploy" > "Deploy site". This will apply the new environment variables.
 
 **Why is this necessary?**
 - Your **public** keys (`NEXT_PUBLIC_...`) are used by the browser to fetch data securely.
@@ -573,20 +574,3 @@ SET
 -- and 'withdrawal_requests' because of the database setup.
 DELETE FROM auth.users;
 ```
-    
-
-    
-
-
-
-
-    
-
-    
-
-
-
-
-
-
-

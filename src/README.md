@@ -4,17 +4,18 @@ This is a Next.js starter app built with Supabase and shadcn/ui.
 
 ## 🚨 Troubleshooting: 'Internal Server Error' or Missing Content
 
-If your deployment builds successfully but you see an "Internal Server Error," or if content like logos and images are missing on your live website, it almost always means you have not correctly set your Supabase environment variables in your hosting provider's project settings.
+If your deployment on Netlify builds successfully but you see an "Internal Server Error," or if content like logos and images are missing on your live website, it almost always means you have not correctly set your Supabase environment variables in your Netlify site settings.
 
 **To fix this, you must:**
 
-1.  Go to your hosting provider's dashboard and navigate to your project.
-2.  Find the **Environment Variables** settings.
-3.  Add the following three variables with their correct values from your Supabase project:
+1.  Go to your Netlify dashboard and navigate to your site.
+2.  Go to **Site settings** > **Build & deploy** > **Environment**.
+3.  Under **Environment variables**, click **Edit variables**.
+4.  Add the following three variables with their correct values from your Supabase project:
     -   `NEXT_PUBLIC_SUPABASE_URL`
     -   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-    -   `SUPABASE_SERVICE_ROLE_KEY` (ensure this is saved as a "secret" or "encrypted" variable).
-4.  After adding all three variables, **re-deploy your project**. A simple re-deploy (not a new commit) is usually available in your hosting provider's dashboard and is the fastest way to apply the changes.
+    -   `SUPABASE_SERVICE_ROLE_KEY` (ensure you mark this as a **"Secret"** value).
+5.  After adding all three variables, trigger a new deployment from the "Deploys" tab to apply the changes.
 
 ---
 
@@ -565,17 +566,3 @@ SET
 -- and 'withdrawal_requests' because of the database setup.
 DELETE FROM auth.users;
 ```
-    
-
-    
-
-
-
-
-    
-
-    
-
-
-
-
