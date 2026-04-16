@@ -8,7 +8,7 @@ import { useState } from "react";
 export function ReferralLink({ referralCode }: { referralCode: string | null }) {
     const { toast } = useToast();
     const [copied, setCopied] = useState(false);
-    const siteUrl = "https://coinpower-app.vercel.app";
+    const siteUrl = "https://coinpower-italy.netlify.app";
     const referralLink = referralCode ? `${siteUrl}/signup?ref=${referralCode}` : null;
 
     const copyLink = () => {

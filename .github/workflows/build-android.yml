@@ -35,7 +35,7 @@ jobs:
       # IMPORTANT: You MUST replace the placeholder value below with your app's live URL.
       - name: Bubblewrap Build
         run: |
-          bubblewrap init --manifest=https://YOUR_APP_URL/manifest.json
+          bubblewrap init --manifest=https://coinpower-italy.netlify.app/manifest.json
           bubblewrap build --skip-signing
 
       # 4. Decode and Store the Signing Key
