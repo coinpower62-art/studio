@@ -20,7 +20,7 @@ import {
   Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
   Pencil, ImagePlus, Activity,
   Info, Building2, Phone, Mail, MapPin, Percent, Clock3,
-  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Unlock, Video, Landmark, Network
+  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Unlock, Video, Landmark, Network, Hash
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
@@ -129,7 +129,7 @@ type MediaAsset = {
     url: string;
 }
 
-function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, rejectPending }: {
+function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, rejectPending, copyText }: {
   d: DepositRequest;
   user?: UserRecord;
   onApprove: () => void;
@@ -137,8 +137,25 @@ function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, re
   onDelete: () => void;
   approvePending: boolean;
   rejectPending: boolean;
+  copyText: (text: string, label: string) => void;
 }) {
-  const isCard = Boolean(d.tx_id?.includes("[CARD") || d.tx_id?.toUpperCase().includes("CARD-"));
+  const isCard = Boolean(d.tx_id?.match(/\[CARD/i));
+  let method = "Unknown";
+  let country = "Unknown";
+  let cleanTxId = d.tx_id || "";
+  let cardDetails = "";
+
+  const match = d.tx_id?.match(/^\[(.*?)\|(.*?)\]\s*(.*)$/);
+  if (match) {
+    method = match[1];
+    country = match[2];
+    cleanTxId = match[3];
+    if (method.toUpperCase() === 'CARD') {
+        cardDetails = cleanTxId;
+        cleanTxId = "";
+    }
+  }
+
   return (
     <div data-testid={`deposit-${d.id}`} className={`bg-slate-800 rounded-2xl border p-4 flex flex-col gap-3 ${isCard && d.status === "pending" ? "border-orange-500/50" : "border-slate-700"}`}>
       {isCard && d.status === "pending" && (
@@ -152,7 +169,7 @@ function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, re
           </div>
         </div>
       )}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isCard ? "bg-blue-900/40" : d.status === "pending" ? "bg-amber-900/40" : d.status === "approved" ? "bg-green-900/40" : "bg-red-900/40"}`}>
             {isCard
@@ -164,42 +181,81 @@ function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, re
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-white font-semibold text-sm">{user?.full_name || 'Unknown User'}</p>
               <span className="text-slate-400 text-xs">@{user?.username || '...'}</span>
-              {isCard && <Badge className="text-[10px] border px-1.5 py-0 bg-blue-900/40 text-blue-300 border-blue-700">CARD</Badge>}
               <Badge className={`text-xs border px-1.5 py-0 ${d.status === "pending" ? "bg-yellow-900/40 text-yellow-400 border-yellow-700" : d.status === "approved" ? "bg-green-900/40 text-green-400 border-green-700" : "bg-red-900/40 text-red-400 border-red-700"}`}>{d.status}</Badge>
             </div>
-            <p className="text-slate-400 text-xs">TX: {d.tx_id} · {new Date(d.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+            <p className="text-slate-400 text-xs">{new Date(d.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           <span className="text-green-400 font-black text-base">${d.amount.toFixed(2)}</span>
-          <div className="flex gap-2 items-center">
-            {d.status === "pending" ? (
-              <>
-                <button data-testid={`button-approve-deposit-${d.id}`} onClick={onApprove} disabled={approvePending}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-green-900/30 text-green-400 border border-green-700 hover:bg-green-900/50 text-xs font-semibold disabled:opacity-50">
-                  <CheckCircle className="w-3.5 h-3.5" /> Approve
-                </button>
-                <button data-testid={`button-reject-deposit-${d.id}`} onClick={onReject} disabled={rejectPending}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold disabled:opacity-50">
-                  <XCircle className="w-3.5 h-3.5" /> Reject
-                </button>
-              </>
-            ) : (
-              <span className={`flex items-center gap-1 text-xs font-semibold ${d.status === "approved" ? "text-green-400" : "text-red-400"}`}>
-                {d.status === "approved" ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                {d.status === "approved" ? "Approved" : "Rejected"}
-              </span>
-            )}
-            <button
-              onClick={onDelete}
-              data-testid={`button-delete-deposit-${d.id}`}
-              className="flex items-center justify-center w-8 h-8 rounded-xl bg-red-950/40 text-red-500 border border-red-800/50 hover:bg-red-900/50 hover:text-red-300 transition-colors flex-shrink-0"
-              title="Delete record"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
         </div>
+      </div>
+      
+      <div className="pt-3 border-t border-slate-700 space-y-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="bg-slate-700/50 rounded-xl px-3 py-2">
+                <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><CreditCard className="w-3 h-3" /> Method</p>
+                <p className="text-slate-200 text-xs font-semibold">{method}</p>
+            </div>
+            <div className="bg-slate-700/50 rounded-xl px-3 py-2">
+                <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><MapPin className="w-3 h-3" /> Country</p>
+                <p className="text-slate-200 text-xs font-semibold">{user?.country || country}</p>
+            </div>
+            {user?.phone && (
+                <div className="bg-slate-700/50 rounded-xl px-3 py-2">
+                    <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Phone className="w-3 h-3" /> User Phone</p>
+                    <div className="flex items-center gap-1.5">
+                        <p className="text-slate-200 text-xs font-mono truncate">{user.phone}</p>
+                        <button onClick={() => copyText(user.phone!, "Phone")} className="text-slate-500 hover:text-amber-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>
+                    </div>
+                </div>
+            )}
+            {cleanTxId && (
+                <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
+                    <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Hash className="w-3 h-3" /> Transaction ID</p>
+                    <div className="flex items-center gap-1.5">
+                        <p className="text-slate-200 text-xs font-mono truncate">{cleanTxId}</p>
+                        <button onClick={() => copyText(cleanTxId, "Transaction ID")} className="text-slate-500 hover:text-amber-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>
+                    </div>
+                </div>
+            )}
+            {cardDetails && (
+                <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
+                    <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Info className="w-3 h-3" /> Card Info</p>
+                    <div className="flex items-center gap-1.5">
+                        <p className="text-slate-200 text-xs font-mono truncate">{cardDetails}</p>
+                    </div>
+                </div>
+            )}
+        </div>
+      </div>
+
+      <div className="flex gap-2 items-center w-full justify-end pt-3 border-t border-slate-700">
+        {d.status === "pending" ? (
+          <>
+            <button data-testid={`button-approve-deposit-${d.id}`} onClick={onApprove} disabled={approvePending}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-green-900/30 text-green-400 border border-green-700 hover:bg-green-900/50 text-xs font-semibold disabled:opacity-50">
+              <CheckCircle className="w-3.5 h-3.5" /> Approve
+            </button>
+            <button data-testid={`button-reject-deposit-${d.id}`} onClick={onReject} disabled={rejectPending}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold disabled:opacity-50">
+              <XCircle className="w-3.5 h-3.5" /> Reject
+            </button>
+          </>
+        ) : (
+          <span className={`flex items-center gap-1 text-xs font-semibold ${d.status === "approved" ? "text-green-400" : "text-red-400"}`}>
+            {d.status === "approved" ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+            {d.status === "approved" ? "Approved" : "Rejected"}
+          </span>
+        )}
+        <button
+          onClick={onDelete}
+          data-testid={`button-delete-deposit-${d.id}`}
+          className="flex items-center justify-center w-8 h-8 rounded-xl bg-red-950/40 text-red-500 border border-red-800/50 hover:bg-red-900/50 hover:text-red-300 transition-colors flex-shrink-0"
+          title="Delete record"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
       </div>
     </div>
   );
@@ -580,7 +636,6 @@ function DashboardContent() {
           throw new Error(dbUpdateResult.error);
         }
         
-        // Optimistic UI Update to avoid race conditions
         if (type === 'generator') {
             setGenerators(currentGenerators => {
                 const genIndex = currentGenerators.findIndex(g => g.id === id);
@@ -660,6 +715,7 @@ function DashboardContent() {
     if (lKey.includes('country') || lKey.includes('city')) return <MapPin className="w-3 h-3 text-slate-500" />;
     if (lKey.includes('address')) return <Mail className="w-3 h-3 text-slate-500" />;
     if (lKey.includes('network')) return <Network className="w-3 h-3 text-slate-500" />;
+    if (lKey.includes('number')) return <Hash className="w-3 h-3 text-slate-500" />;
     return null;
   }
 
@@ -1189,6 +1245,7 @@ function DashboardContent() {
                       onDelete={() => openConfirm("Delete Deposit Record", `Remove the deposit record for $${d.amount.toFixed(2)} from ${user?.full_name || 'user'}? This cannot be undone.`, () => handleDeleteDeposit(d.id))}
                       approvePending={false}
                       rejectPending={false}
+                      copyText={copyText}
                     />
                   ); })}
                 </div>
@@ -1253,12 +1310,16 @@ function DashboardContent() {
                                         {Object.entries(detailsObj).map(([key, value]) => {
                                             const lKey = key.toLowerCase();
                                             // Security: Don't show sensitive card details
-                                            if (w.method === 'card' && (lKey === 'number' || lKey === 'expiry' || lKey === 'cvv' || lKey === 'cvvvisible')) return null;
+                                            if (w.method === 'card' && (lKey === 'cvv' || lKey === 'cvvvisible')) return null;
                                             
                                             // Don't show internal flags
                                             if (lKey === 'cvvvisible') return null;
 
                                             if (typeof value !== 'string' && typeof value !== 'number') return null;
+                                            
+                                            const displayValue = lKey === 'number' && w.method === 'card'
+                                                ? String(value).replace(/\d{4}(?=\d{4})/g, "•••• ")
+                                                : String(value);
 
                                             const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
                                             const isCopyable = ['name', 'holder', 'number', 'phone', 'address'].some(k => lKey.includes(k));
@@ -1269,7 +1330,7 @@ function DashboardContent() {
                                                         {getDetailIcon(key)} {formattedKey}
                                                     </p>
                                                     <div className="flex items-center gap-1.5">
-                                                        <p className="text-slate-200 text-xs font-mono truncate">{String(value)}</p>
+                                                        <p className="text-slate-200 text-xs font-mono truncate">{displayValue}</p>
                                                         {isCopyable && (
                                                             <button onClick={() => copyText(String(value), formattedKey)} className="text-slate-500 hover:text-amber-400 flex-shrink-0">
                                                                 <Copy className="w-3 h-3" />
