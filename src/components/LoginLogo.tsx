@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 export function LoginLogo({ className }: { className?: string }) {
-    const logoUrl = "https://picsum.photos/seed/coinpowerlogo/64/64";
+    const logoUrl = "/icon-512x512.png";
 
     return (
         <div className={cn("w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center", className)}>
