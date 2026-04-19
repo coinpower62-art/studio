@@ -45,27 +45,25 @@ type ReferredUser = {
     created_at: string;
 };
 
-function TeamSummary({ l1, l2, l3 }: { l1: number, l2: number, l3: number }) {
+function TeamSummary({ l1, l2, l3 }: { l1: number; l2: number; l3: number }) {
     const summaryItems = [
-        { label: "Level 1 Members", value: l1, color: "text-amber-600", iconColor: "bg-amber-100" },
-        { label: "Level 2 Members", value: l2, color: "text-blue-600", iconColor: "bg-blue-100" },
-        { label: "Level 3 Members", value: l3, color: "text-green-600", iconColor: "bg-green-100" },
+        { label: ["Level 1", "Members"], value: l1, color: "text-amber-700", borderColor: "border-amber-200", iconColor: "text-amber-500" },
+        { label: ["Level 2", "Members"], value: l2, color: "text-blue-700", borderColor: "border-blue-200", iconColor: "text-blue-500" },
+        { label: ["Level 3", "Members"], value: l3, color: "text-green-700", borderColor: "border-green-200", iconColor: "text-green-500" },
     ];
 
     return (
-         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-             <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-4">
+        <div>
+            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-3">
                 <Users className="w-5 h-5 text-gray-500" />
                 Team Summary
             </h3>
             <div className="grid grid-cols-3 gap-3">
                 {summaryItems.map(item => (
-                    <div key={item.label} className={`rounded-xl p-3 text-center border ${item.iconColor.replace('bg-', 'border-')}`}>
-                        <div className={`w-9 h-9 rounded-lg ${item.iconColor} flex items-center justify-center mx-auto mb-1.5`}>
-                           <Users className={`w-5 h-5 ${item.color}`} />
-                        </div>
-                        <p className={`font-black text-xl ${item.color}`}>{item.value}</p>
-                        <p className="text-gray-500 text-[10px] font-medium mt-0.5">{item.label}</p>
+                    <div key={item.label[0]} className={`bg-white rounded-2xl border ${item.borderColor} p-4 text-center shadow-sm`}>
+                        <Users className={`w-8 h-8 ${item.iconColor} mx-auto mb-1`} />
+                        <p className={`font-black text-2xl ${item.color}`}>{item.value}</p>
+                        <p className="text-gray-500 text-xs mt-0.5 leading-tight">{item.label[0]}<br/>{item.label[1]}</p>
                     </div>
                 ))}
             </div>
@@ -74,10 +72,10 @@ function TeamSummary({ l1, l2, l3 }: { l1: number, l2: number, l3: number }) {
 }
 
 
-function ReferralOrgChart({ referredUsers, profile, referralCount }: { referredUsers: ReferredUser[], profile: Profile | null, referralCount: number }) {
-    const Node = ({ title, subtitle, teamSize, percentage, className, isYou = false, commission }: { title: string; subtitle: string; teamSize?: number; percentage?: string; className?: string; isYou?: boolean; commission?: string }) => (
+function ReferralOrgChart({ referredUsers }: { referredUsers: ReferredUser[] }) {
+    const Node = ({ title, subtitle, className, isYou = false, commission }: { title: string; subtitle: string; className?: string; isYou?: boolean; commission?: string }) => (
         <div className={cn(
-            "border-2 w-full rounded-lg p-2.5 text-center shadow-sm mx-auto h-full flex flex-col justify-center", 
+            "border-2 w-full rounded-lg p-2.5 text-center shadow-sm mx-auto h-full flex flex-col justify-center",
             isYou ? "bg-amber-50 border-amber-200" : "bg-blue-50 border-blue-200",
             className
         )}>
@@ -89,27 +87,13 @@ function ReferralOrgChart({ referredUsers, profile, referralCount }: { referredU
                 "text-[10px] leading-tight",
                 isYou ? "text-amber-600" : "text-blue-600"
             )}>{subtitle}</p>
-            {(teamSize !== undefined || percentage !== undefined) && (
-            <div className={cn("mt-1.5 pt-1.5 border-t", isYou ? "border-amber-200" : "border-blue-200", "text-[10px] space-y-0.5")}>
-                {teamSize !== undefined && (
-                    <p className={cn(isYou ? "text-amber-700" : "text-blue-700")}>
-                        Team: <span className="font-bold">{teamSize}</span>
+             {commission && (
+                <div className={cn("mt-1.5 pt-1.5 border-t", "border-blue-200")}>
+                    <p className="text-blue-700 text-xs font-bold flex items-center justify-center gap-1">
+                        <Percent className="w-3 h-3" /> {commission}
                     </p>
-                )}
-                {percentage !== undefined && (
-                     <p className={cn("font-semibold", isYou ? "text-amber-700" : "text-blue-700")}>
-                        Bonus: <span className="font-bold">{percentage}</span>
-                    </p>
-                )}
-            </div>
-        )}
-         {commission && (
-            <div className={cn("mt-1.5 pt-1.5 border-t", "border-blue-200")}>
-                <p className="text-blue-700 text-xs font-bold flex items-center justify-center gap-1">
-                    <Percent className="w-3 h-3" /> {commission}
-                </p>
-            </div>
-        )}
+                </div>
+            )}
         </div>
     );
 
@@ -118,16 +102,16 @@ function ReferralOrgChart({ referredUsers, profile, referralCount }: { referredU
     return (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
             <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-6">
-                <Network className="w-5 h-5 text-blue-600" />
+                <Network className="w-5 h-5 text-gray-500" />
                 Your Subordinates Team
             </h3>
 
             <div className="flex flex-col items-center">
                 {/* Top Node */}
                 <div className="w-48">
-                     <Node 
+                    <Node
                         title="THE CENTRAL LEADERSHIP"
-                        subtitle="(Strategic Growth Director)" 
+                        subtitle="(Strategic Growth Director)"
                         isYou
                     />
                 </div>
@@ -139,14 +123,12 @@ function ReferralOrgChart({ referredUsers, profile, referralCount }: { referredU
                 <div className="w-full max-w-md h-px bg-gray-300" />
 
                 {/* Vertical lines to subordinates */}
-                {referralCount > 0 && (
-                    <div className="flex justify-around w-full max-w-md">
-                        <div className="w-px h-6 bg-gray-300" />
-                        <div className="w-px h-6 bg-gray-300" />
-                        <div className="w-px h-6 bg-gray-300" />
-                    </div>
-                )}
-                
+                <div className="flex justify-around w-full max-w-md">
+                    <div className="w-px h-6 bg-gray-300" />
+                    <div className="w-px h-6 bg-gray-300" />
+                    <div className="w-px h-6 bg-gray-300" />
+                </div>
+
                 {/* Subordinates Grid */}
                 <div className="grid grid-cols-3 gap-2 w-full max-w-md">
                     {Array.from({ length: 3 }).map((_, i) => {
@@ -154,8 +136,8 @@ function ReferralOrgChart({ referredUsers, profile, referralCount }: { referredU
                         return (
                             <div key={i}>
                                 {user ? (
-                                    <Node 
-                                        title={user.full_name || user.username || "Referred User"} 
+                                    <Node
+                                        title={user.full_name || user.username || "Referred User"}
                                         subtitle={roles[i]}
                                         commission="10% Commission"
                                     />
@@ -376,7 +358,7 @@ export default function DashboardPage() {
 
             <ReferralLink referralCode={profile.referral_code} />
             
-            <ReferralOrgChart referredUsers={referredUsers} profile={profile} referralCount={downlineCounts.l1} />
+            <ReferralOrgChart referredUsers={referredUsers} />
 
             <RedeemGiftCode onRedeem={fetchData} />
 
@@ -384,4 +366,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-
