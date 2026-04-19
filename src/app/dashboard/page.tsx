@@ -88,14 +88,21 @@ function ReferralBonusGoal({ referralCount, hasClaimed, onClaim }: { referralCou
     );
 }
 
-function ReferralOrgChart({ referredUsers }: { referredUsers: ReferredUser[] }) {
-    const Node = ({ title, subtitle, className }: { title: string; subtitle: string; className?: string }) => (
+function ReferralOrgChart({ referredUsers, profile }: { referredUsers: ReferredUser[], profile: Profile | null }) {
+    const Node = ({ title, subtitle, className, isYou = false }: { title: string; subtitle: string; className?: string; isYou?: boolean }) => (
         <div className={cn(
-            "bg-blue-50 border-2 border-blue-200 w-full rounded-lg p-2 text-center shadow-sm mx-auto h-full flex flex-col justify-center", 
+            "border-2 w-full rounded-lg p-2 text-center shadow-sm mx-auto h-full flex flex-col justify-center", 
+            isYou ? "bg-amber-50 border-amber-200" : "bg-blue-50 border-blue-200",
             className
         )}>
-            <p className="font-black text-xs uppercase truncate text-blue-800">{title}</p>
-            <p className="text-[10px] leading-tight text-blue-600">{subtitle}</p>
+            <p className={cn(
+                "font-black text-xs uppercase truncate",
+                isYou ? "text-amber-800" : "text-blue-800"
+            )}>{title}</p>
+            <p className={cn(
+                "text-[10px] leading-tight",
+                isYou ? "text-amber-600" : "text-blue-600"
+            )}>{subtitle}</p>
         </div>
     );
 
@@ -110,8 +117,12 @@ function ReferralOrgChart({ referredUsers }: { referredUsers: ReferredUser[] }) 
 
             <div className="flex flex-col items-center">
                 {/* Top Node */}
-                <div className="w-64">
-                    <Node title="THE CENTRAL LEADERSHIP" subtitle="(Strategic Growth Director)" className="bg-amber-50 border-amber-200 !text-amber-800" />
+                <div className="w-48">
+                     <Node 
+                        title={profile?.full_name || profile?.username || 'You'} 
+                        subtitle="(Strategic Growth Director)" 
+                        isYou
+                    />
                 </div>
 
                 {/* Connecting Line */}
@@ -366,7 +377,7 @@ export default function DashboardPage() {
 
             <ReferralBonusGoal referralCount={referralCount} hasClaimed={hasClaimedReferralBonus} onClaim={handleClaimBonus} />
             
-            <ReferralOrgChart referredUsers={referredUsers} />
+            <ReferralOrgChart referredUsers={referredUsers} profile={profile} />
 
             <RedeemGiftCode onRedeem={fetchData} />
 
