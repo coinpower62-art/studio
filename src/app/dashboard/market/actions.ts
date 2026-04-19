@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -13,7 +14,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
 
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('balance, referred_by, username, email') // Added referred_by, username, email
+        .select('balance, parent_id, username, email') // Changed from referred_by
         .eq('id', user.id)
         .single();
 
@@ -83,7 +84,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     }
     
     // START: Referral Commission Logic
-    if (generatorToRent.price > 0 && profile.referred_by) {
+    if (generatorToRent.price > 0 && profile.parent_id) {
         const { count, error: countError } = await supabase
             .from('rented_generators')
             .select('id', { count: 'exact', head: true })
@@ -96,7 +97,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
             const { data: referrerProfile, error: referrerError } = await supabase
                 .from('profiles')
                 .select('id, balance')
-                .eq('referral_code', profile.referred_by)
+                .eq('id', profile.parent_id)
                 .single();
 
             if (referrerProfile) {
@@ -120,7 +121,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
                     console.error('Failed to apply referral commission:', updateReferrerError.message);
                 }
             } else {
-                console.error('Referrer profile not found for code:', profile.referred_by);
+                console.error('Referrer profile not found for parent_id:', profile.parent_id);
             }
         }
     }

@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -40,7 +41,6 @@ export async function signup(values: any) {
         username: username,
         country: country,
         phone: phone,
-        referred_by: referralCode || null,
       }
     }
   });
@@ -59,6 +59,21 @@ export async function signup(values: any) {
 
   // Step 3: Create or update the user's profile in `public.profiles`.
   try {
+    let parentId: string | null = null;
+    if (referralCode) {
+      const { data: referrerProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('referral_code', referralCode)
+        .single();
+      
+      if (referrerProfile) {
+        parentId = referrerProfile.id;
+      } else {
+        console.warn(`Referral code "${referralCode}" was used, but no matching profile was found.`);
+      }
+    }
+
     const randomPart = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
     const generatedReferralCode = `CP-${username.toUpperCase()}${randomPart}`;
 
@@ -72,7 +87,7 @@ export async function signup(values: any) {
         country: country,
         phone: phone,
         referral_code: generatedReferralCode,
-        referred_by: referralCode || null,
+        parent_id: parentId,
         balance: 1.00,
       });
 

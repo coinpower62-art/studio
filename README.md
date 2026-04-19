@@ -1,3 +1,4 @@
+
 # 🚀 CoinPower Deployment Guide for Netlify
 
 This guide provides instructions for deploying your CoinPower application to Netlify.
@@ -74,7 +75,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   phone text UNIQUE,
   balance numeric(10, 2) DEFAULT 0.00,
   referral_code text UNIQUE,
-  referred_by text,
+  parent_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   has_withdrawal_pin boolean DEFAULT false NOT NULL,
   withdrawal_locked boolean DEFAULT false NOT NULL
 );
@@ -418,7 +419,7 @@ BEGIN
   END IF;
 
   -- 3. Count referrals
-  SELECT count(*) INTO referral_count FROM public.profiles WHERE referred_by = profile_record.referral_code;
+  SELECT count(*) INTO referral_count FROM public.profiles WHERE parent_id = user_id_in;
 
   IF referral_count < 5 THEN
     RAISE EXCEPTION 'You need at least 5 referrals to claim the bonus.';
@@ -490,18 +491,13 @@ $$ LANGUAGE plpgsql;
 -- =================================================================
 CREATE OR REPLACE FUNCTION get_referred_users(user_id_in uuid)
 RETURNS TABLE(full_name text, username text, created_at timestamp with time zone) AS $$
-DECLARE
-  user_referral_code text;
 BEGIN
-  -- Get the referral code for the input user
-  SELECT referral_code INTO user_referral_code FROM public.profiles WHERE id = user_id_in;
-
-  -- Return the list of users who were referred by this code
+  -- Return the list of users who were referred by this user
   -- NOTE: This function bypasses Row Level Security.
   RETURN QUERY
   SELECT p.full_name, p.username, p.created_at
   FROM public.profiles p
-  WHERE p.referred_by = user_referral_code
+  WHERE p.parent_id = user_id_in
   ORDER BY p.created_at DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
