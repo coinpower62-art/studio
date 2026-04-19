@@ -85,7 +85,10 @@ function TeamNetwork({ profile, l1_users, l2_users, l3_users }: { profile: Profi
                         )}>
                             <div className="flex items-center justify-center gap-2">
                                 <item.icon className={cn("w-5 h-5", item.iconColor)} />
-                                <p className="text-gray-500 font-bold">Level {item.level}</p>
+                                <div>
+                                    <p className="text-gray-500 font-semibold text-sm leading-tight">Level</p>
+                                    <p className={cn("font-black text-2xl leading-none -mt-0.5", item.iconColor)}>{item.level}</p>
+                                </div>
                             </div>
                             
                             <p className={cn("font-black text-4xl", item.iconColor)}>{item.users.length}</p>
