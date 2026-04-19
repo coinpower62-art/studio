@@ -11,7 +11,7 @@ import { claimReferralBonus } from './actions';
 import { redeemGiftCode } from '@/app/dashboard/bank/actions';
 
 // Icons and components
-import { LogOut, ChevronRight, Globe, Gift, Share2, Users, CheckCircle, User as UserIcon } from 'lucide-react';
+import { LogOut, ChevronRight, Globe, Gift, Share2, Users, CheckCircle, User as UserIcon, Info } from 'lucide-react';
 import { SiTelegram } from 'react-icons/si';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ReferralLink } from '@/components/ReferralLink';
 import { Input } from '@/components/ui/input';
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+
 
 // Define profile type
 type Profile = {
@@ -194,6 +196,7 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [hasClaimedReferralBonus, setHasClaimedReferralBonus] = useState(false);
     const [totalEarned, setTotalEarned] = useState(0);
+    const [showFeeNotice, setShowFeeNotice] = useState(false);
 
     const fetchData = useCallback(async () => {
         const supabase = createClient();
@@ -291,6 +294,21 @@ export default function DashboardPage() {
             return () => clearTimeout(timer);
         }
     }, [toast]);
+    
+    useEffect(() => {
+        const feeNoticeSeen = localStorage.getItem('coinpower_fee_notice_seen');
+        if (!feeNoticeSeen) {
+            const timer = setTimeout(() => {
+                setShowFeeNotice(true);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, []);
+
+    const handleFeeNoticeClose = () => {
+        localStorage.setItem('coinpower_fee_notice_seen', 'true');
+        setShowFeeNotice(false);
+    };
 
     const handleClaimBonus = async () => {
         const result = await claimReferralBonus();
@@ -312,6 +330,28 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-4">
+             <Dialog open={showFeeNotice} onOpenChange={(open) => { if (!open) handleFeeNoticeClose(); }}>
+                <DialogContent className="max-w-sm mx-auto rounded-2xl p-0 overflow-hidden sm:rounded-2xl">
+                    <div className="p-6 text-center">
+                        <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+                            <Info className="w-7 h-7 text-amber-500" />
+                        </div>
+                        <DialogTitle className="text-gray-900 text-lg font-bold mb-2">Important Notice: Withdrawal Fee</DialogTitle>
+                        <DialogDescription className="text-gray-500 text-sm leading-relaxed">
+                            Please be aware that a standard fee of 15% will be applied to all withdrawals. This fee helps us maintain the platform and ensure secure transactions.
+                        </DialogDescription>
+                    </div>
+                    <div className="p-4 bg-gray-50 border-t">
+                        <Button
+                            onClick={handleFeeNoticeClose}
+                            className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg"
+                        >
+                            I Understand
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-500 to-amber-700 p-4">
                     <h3 className="font-bold text-white text-sm sm:text-base">Your Profile</h3>
