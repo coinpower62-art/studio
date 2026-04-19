@@ -78,31 +78,32 @@ function TeamNetwork({ profile, l1_users, l2_users, l3_users }: { profile: Profi
                 
                 <div className="grid grid-cols-3 gap-3 w-full max-w-lg">
                     {levelData.map(item => (
-                        <div key={item.level} className={cn("rounded-2xl p-3 shadow-sm flex flex-col justify-between min-h-[220px]", item.borderColor, item.bgColor)}>
-                            <div>
-                                <div className="flex items-start justify-between w-full">
-                                    <div className="flex items-center gap-2">
-                                        <item.icon className={cn("w-5 h-5", item.iconColor)} />
-                                        <p className="text-gray-500 font-bold">Level {item.level}</p>
-                                    </div>
-                                    <p className={cn("font-black text-3xl -mt-1", item.iconColor)}>{item.users.length}</p>
-                                </div>
+                        <div key={item.level} className={cn(
+                            "rounded-2xl p-3 shadow-sm flex flex-col items-center justify-center gap-2.5 min-h-[240px] text-center",
+                            item.borderColor,
+                            item.bgColor
+                        )}>
+                            <div className="flex items-center justify-center gap-2">
+                                <item.icon className={cn("w-5 h-5", item.iconColor)} />
+                                <p className="text-gray-500 font-bold">Level {item.level}</p>
+                            </div>
+                            
+                            <p className={cn("font-black text-4xl", item.iconColor)}>{item.users.length}</p>
 
-                                <div className="mt-3 -ml-1 self-start z-10">
-                                    <div className={cn(
-                                        "bg-white shadow-md rounded-xl rounded-bl-none px-3 py-1.5 flex items-center gap-2 border",
-                                        item.borderColor
-                                    )}>
-                                        <Percent className={cn("w-4 h-4", item.iconColor)} />
-                                        <div>
-                                            <p className={cn("font-black text-sm leading-none", item.iconColor)}>{item.commission}</p>
-                                            <p className="text-[10px] font-bold text-gray-500 leading-none">Commission</p>
-                                        </div>
+                            <div className="relative">
+                                <div className={cn(
+                                    "bg-white shadow-md rounded-xl px-3 py-1.5 flex items-center gap-2 border",
+                                    item.borderColor
+                                )}>
+                                    <Percent className={cn("w-4 h-4", item.iconColor)} />
+                                    <div>
+                                        <p className={cn("font-black text-sm leading-none", item.iconColor)}>{item.commission}</p>
+                                        <p className="text-[10px] font-bold text-gray-500 leading-none">Commission</p>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div className="mt-2">
+                            <div className="w-full">
                             {item.users.length > 0 ? (
                                 <Accordion type="single" collapsible className="w-full">
                                     <AccordionItem value={`level-${item.level}`} className="border-b-0">
