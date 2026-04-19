@@ -89,25 +89,35 @@ function ReferralBonusGoal({ referralCount, hasClaimed, onClaim }: { referralCou
 }
 
 function ReferredUsersList({ users }: { users: ReferredUser[] }) {
-    const imageUrl = PlaceHolderImages.find(i => i.id === 'referral-team-illustration')?.imageUrl;
-
     return (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
             <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-3">
                 <Users className="w-5 h-5 text-purple-600" />
-                Your Referral Team ({users.length})
+                Your Subordinates Team ({users.length})
             </h3>
-            <div className="mt-2 rounded-lg overflow-hidden border border-gray-200 relative">
-                {imageUrl ? (
-                    <img src={imageUrl} alt="Referral team illustration" className={cn("w-full h-auto", users.length === 0 && "opacity-40")} data-ai-hint="team illustration" />
-                ) : <div className="h-48 bg-gray-100 rounded-lg" />}
-                 {users.length === 0 && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-                        <Users className="w-10 h-10 text-gray-500 mb-2" />
-                        <p className="text-center text-xs font-semibold text-gray-600">You haven't referred anyone yet. <br/> Share your link to start building your team!</p>
-                    </div>
-                )}
-            </div>
+            {users.length === 0 ? (
+                <div className="text-center py-8">
+                    <Users className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                    <p className="text-center text-sm font-semibold text-gray-600">You haven't referred anyone yet.</p>
+                    <p className="text-xs text-gray-500 mt-1">Share your link to start building your team!</p>
+                </div>
+            ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                    {users.map((user, index) => (
+                        <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                             <Avatar className="w-8 h-8 flex-shrink-0">
+                                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white text-xs font-bold">
+                                    {(user.full_name || user.username || 'S').slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-gray-800 text-sm truncate">{user.full_name || user.username}</p>
+                                <p className="text-xs text-gray-500">Joined: {new Date(user.created_at).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
