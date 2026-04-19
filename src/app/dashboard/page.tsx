@@ -97,9 +97,9 @@ function ReferredUsersList({ users }: { users: ReferredUser[] }) {
             </h3>
             {users.length === 0 ? (
                 <div className="text-center py-8">
-                    <Users className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                    <p className="text-center text-sm font-semibold text-gray-600">You haven't referred anyone yet.</p>
-                    <p className="text-xs text-gray-500 mt-1">Share your link to start building your team!</p>
+                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-lg font-semibold text-gray-700">You haven't referred anyone yet.</p>
+                    <p className="text-sm text-gray-500 mt-1">Share your link to start building your team!</p>
                 </div>
             ) : (
                 <div className="relative pl-5">
