@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -48,9 +47,9 @@ type ReferredUser = {
 
 function TeamNetwork({ profile, l1_users, l2_users, l3_users }: { profile: Profile; l1_users: ReferredUser[]; l2_users: ReferredUser[]; l3_users: ReferredUser[] }) {
     const levelData = [
-        { level: 1, users: l1_users, commission: "10%", icon: UserIcon, iconColor: "text-amber-500", borderColor: "border-amber-200", bgColor: "bg-amber-50" },
-        { level: 2, users: l2_users, commission: "5%", icon: Users, iconColor: "text-blue-500", borderColor: "border-blue-200", bgColor: "bg-blue-50" },
-        { level: 3, users: l3_users, commission: "2%", icon: Network, iconColor: "text-green-500", borderColor: "border-green-200", bgColor: "bg-green-50" },
+        { level: 1, users: l1_users, commission: "10%", icon: UserIcon, iconColor: "text-amber-700", borderColor: "border-amber-300", bgColor: "bg-amber-50" },
+        { level: 2, users: l2_users, commission: "5%", icon: Users, iconColor: "text-blue-700", borderColor: "border-blue-300", bgColor: "bg-blue-50" },
+        { level: 3, users: l3_users, commission: "2%", icon: Network, iconColor: "text-green-700", borderColor: "border-green-300", bgColor: "bg-green-50" },
     ];
 
     return (
@@ -70,38 +69,48 @@ function TeamNetwork({ profile, l1_users, l2_users, l3_users }: { profile: Profi
                 </div>
 
                 <div className="w-px h-6 bg-gray-300" />
-                <div className="w-full max-w-md h-px bg-gray-300" />
-                <div className="flex justify-around w-full max-w-md">
+                <div className="w-full max-w-lg h-px bg-gray-300" />
+                <div className="flex justify-around w-full max-w-lg">
                     <div className="w-px h-6 bg-gray-300" />
                     <div className="w-px h-6 bg-gray-300" />
                     <div className="w-px h-6 bg-gray-300" />
                 </div>
-
-                <div className="grid grid-cols-3 gap-3 w-full max-w-md">
+                
+                <div className="grid grid-cols-3 gap-3 w-full max-w-lg">
                     {levelData.map(item => (
-                        <div key={item.level} className={cn(
-                            "border-2 rounded-lg p-3 shadow-sm flex flex-col",
-                            item.borderColor, item.bgColor
-                        )}>
-                            <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-2">
-                                    <item.icon className={cn("w-4 h-4", item.iconColor)} />
-                                    <p className="text-gray-500 text-xs font-bold">Level {item.level}</p>
+                        <div key={item.level} className={cn("rounded-2xl p-3 shadow-sm flex flex-col justify-between min-h-[220px]", item.borderColor, item.bgColor)}>
+                            <div>
+                                <div className="flex items-start justify-between w-full">
+                                    <div className="flex items-center gap-2">
+                                        <item.icon className={cn("w-5 h-5", item.iconColor)} />
+                                        <p className="text-gray-500 font-bold">Level {item.level}</p>
+                                    </div>
+                                    <p className={cn("font-black text-3xl -mt-1", item.iconColor)}>{item.users.length}</p>
                                 </div>
-                                <p className={cn("font-black text-lg", item.iconColor.replace('500', '700'))}>{item.users.length}</p>
-                            </div>
-                            <Badge className={cn("mt-2 text-xs border self-start", item.borderColor, item.bgColor, item.iconColor.replace('500', '700'), "font-bold")}>
-                                <Percent className="w-3 h-3 mr-1" />{item.commission} Commission
-                            </Badge>
 
+                                <div className="mt-3 -ml-1 self-start z-10">
+                                    <div className={cn(
+                                        "bg-white shadow-md rounded-xl rounded-bl-none px-3 py-1.5 flex items-center gap-2 border",
+                                        item.borderColor
+                                    )}>
+                                        <Percent className={cn("w-4 h-4", item.iconColor)} />
+                                        <div>
+                                            <p className={cn("font-black text-sm leading-none", item.iconColor)}>{item.commission}</p>
+                                            <p className="text-[10px] font-bold text-gray-500 leading-none">Commission</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="mt-2">
                             {item.users.length > 0 ? (
-                                <Accordion type="single" collapsible className="w-full mt-3 border-t border-gray-200 pt-2">
+                                <Accordion type="single" collapsible className="w-full">
                                     <AccordionItem value={`level-${item.level}`} className="border-b-0">
                                         <AccordionTrigger className="text-xs font-semibold text-gray-600 hover:no-underline py-1 justify-center">
                                             <span>View {item.users.length} members</span>
                                         </AccordionTrigger>
                                         <AccordionContent>
-                                            <div className="h-32 overflow-y-auto space-y-1.5 pr-2 mt-2">
+                                            <div className="h-24 overflow-y-auto space-y-1.5 pr-2 mt-2">
                                                 {item.users.map((user: ReferredUser) => (
                                                     <div key={user.id} className="flex items-center justify-between gap-2 p-1 rounded-md hover:bg-gray-100">
                                                         <div className="flex items-center gap-2 min-w-0">
@@ -112,7 +121,7 @@ function TeamNetwork({ profile, l1_users, l2_users, l3_users }: { profile: Profi
                                                             </Avatar>
                                                             <span className="text-xs text-gray-700 font-medium truncate">{user.username || user.full_name || 'Unnamed User'}</span>
                                                         </div>
-                                                        <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0 font-bold", item.borderColor, item.iconColor.replace('500', '700'))}>
+                                                        <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0 font-bold", item.borderColor, item.iconColor)}>
                                                             L{item.level}
                                                         </Badge>
                                                     </div>
@@ -122,10 +131,9 @@ function TeamNetwork({ profile, l1_users, l2_users, l3_users }: { profile: Profi
                                     </AccordionItem>
                                 </Accordion>
                             ) : (
-                                <div className="mt-3 pt-3 border-t border-gray-200 flex-1 flex items-center justify-center">
-                                    <p className="text-xs text-gray-400 italic">No members at this level</p>
-                                </div>
+                                <p className="text-center text-gray-400 text-xs py-4">No members at this level</p>
                             )}
+                            </div>
                         </div>
                     ))}
                 </div>
