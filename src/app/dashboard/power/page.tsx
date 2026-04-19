@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, TrendingUp, CheckCircle, Gift, Timer, AlertTriangle, DollarSign, Star, Play } from "lucide-react";
+import { Zap, TrendingUp, CheckCircle, Gift, Timer, AlertTriangle, DollarSign, Star, Play, Network, User as UserIcon, Users, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -11,9 +11,25 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { createClient } from "@/lib/supabase/client";
 import type { User } from '@supabase/supabase-js';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 import { collectEarnings } from "./actions";
 import type { Generator as BaseGenerator } from '@/lib/data';
+
+type ReferredUser = {
+    id: string;
+    full_name: string | null;
+    username: string | null;
+    created_at: string;
+};
+
+type ProfileForNetwork = {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+};
 
 export type RentedGenerator = {
   id: string;
@@ -541,11 +557,103 @@ function ClaimSuccessOverlay({ amount, generatorName, onDone }: { amount: number
   );
 }
 
-const powerPlans = [
-  { name: "Bronze Power", price: "$100/mo", boost: "2x", multiplier: 2, color: "from-amber-600 to-yellow-700", features: ["2x return multiplier", "Priority processing", "Weekly reports", "Email support"] },
-  { name: "Silver Power", price: "$500/mo", boost: "5x", multiplier: 5, color: "from-gray-400 to-gray-600", features: ["5x return multiplier", "Instant processing", "Daily reports", "Phone support"], popular: true },
-  { name: "Gold Power", price: "$1,000/mo", boost: "10x", multiplier: 10, color: "from-amber-400 to-amber-600", features: ["10x return multiplier", "Dedicated manager", "Real-time analytics", "24/7 VIP support"] },
-];
+function TeamNetwork({ profile, l1_users, l2_users, l3_users }: { profile: ProfileForNetwork; l1_users: ReferredUser[]; l2_users: ReferredUser[]; l3_users: ReferredUser[] }) {
+    const levelData = [
+        { level: 1, users: l1_users, commission: "10%", icon: UserIcon, iconColor: "text-amber-700", borderColor: "border-amber-300", bgColor: "bg-amber-50" },
+        { level: 2, users: l2_users, commission: "5%", icon: Users, iconColor: "text-blue-700", borderColor: "border-blue-300", bgColor: "bg-blue-50" },
+        { level: 3, users: l3_users, commission: "2%", icon: Network, iconColor: "text-green-700", borderColor: "border-green-300", bgColor: "bg-green-50" },
+    ];
+
+    return (
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-6">
+                <Network className="w-5 h-5 text-gray-500" />
+                Your Subordinates Team
+            </h3>
+
+            <div className="flex flex-col items-center">
+                <div className="w-60">
+                     <div className="border-2 border-amber-300 w-full rounded-xl p-3 text-center shadow-lg mx-auto h-full flex flex-col justify-center bg-gradient-to-br from-amber-50 to-orange-50">
+                        <p className="font-black text-[10px] uppercase tracking-wider text-amber-800">CENTRAL LEADERSHIP</p>
+                        <p className="text-xl font-bold text-gray-900 truncate my-1">{profile.full_name || profile.username}</p>
+                        <p className="text-xs leading-tight text-amber-700 font-medium">Strategic Growth Director</p>
+                    </div>
+                </div>
+
+                <div className="w-px h-6 bg-gray-300" />
+                <div className="w-full h-px bg-gray-300" />
+                <div className="flex justify-around w-full">
+                    <div className="w-px h-6 bg-gray-300" />
+                    <div className="w-px h-6 bg-gray-300" />
+                    <div className="w-px h-6 bg-gray-300" />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                    {levelData.map(item => (
+                        <div key={item.level} className={cn(
+                            "rounded-2xl shadow-sm flex flex-col text-center border-2 overflow-hidden",
+                            item.borderColor
+                        )}>
+                            <div className={cn(
+                                "p-4 flex flex-col items-center justify-start gap-3 flex-grow",
+                                item.bgColor
+                            )}>
+                                <div className="flex items-center justify-center gap-2">
+                                    <item.icon className={cn("w-5 h-5", item.iconColor)} />
+                                    <p className={cn("font-black text-xl", item.iconColor)}>Level {item.level}</p>
+                                </div>
+                                
+                                <p className={cn("font-black text-4xl", item.iconColor)}>{item.users.length}</p>
+                        
+                                <div className="relative">
+                                    <div className={cn(
+                                        "bg-white shadow-md rounded-full px-2 py-1 flex items-center gap-1.5 border",
+                                        item.borderColor
+                                    )}>
+                                        <Percent className={cn("w-3 h-3", item.iconColor)} />
+                                        <p className={cn("font-bold text-xs leading-none whitespace-nowrap", item.iconColor)}>{item.commission} Commission</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-white p-3 min-h-[130px] flex flex-col justify-center">
+                                {item.users.length > 0 ? (
+                                    <Accordion type="single" collapsible className="w-full">
+                                        <AccordionItem value={`level-${item.level}`} className="border-b-0">
+                                            <AccordionTrigger className="text-xs font-semibold text-gray-600 hover:no-underline py-1 justify-center">
+                                                <span>View {item.users.length} members</span>
+                                            </AccordionTrigger>
+                                            <AccordionContent>
+                                                <div className="h-24 overflow-y-auto space-y-1.5 pr-2 mt-2">
+                                                    {item.users.map((user: ReferredUser) => (
+                                                        <div key={user.id} className="flex items-center justify-between gap-2 p-1 rounded-md hover:bg-gray-100">
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <Avatar className="w-5 h-5">
+                                                                    <AvatarFallback className="text-[10px] font-bold bg-gray-200 text-gray-500">
+                                                                        {(user.username || user.full_name || 'U').charAt(0).toUpperCase()}
+                                                                    </AvatarFallback>
+                                                                </Avatar>
+                                                                <span className="text-xs text-gray-700 font-medium truncate">{user.username || user.full_name || 'Unnamed User'}</span>
+                                                            </div>
+                                                            <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0 font-bold", item.borderColor, item.iconColor)}>
+                                                                L{item.level}
+                                                            </Badge>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    </Accordion>
+                                ) : (
+                                    <p className="text-center text-gray-400 text-xs py-4">No members at this level</p>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
 
 function PowerPageSkeleton() {
     return <div className="pt-12 p-4 pb-20 max-w-6xl mx-auto"><Skeleton className="h-96 rounded-2xl" /></div>;
@@ -555,6 +663,8 @@ export default function Power() {
   const router = useRouter();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<ProfileForNetwork | null>(null);
+  const [downline, setDownline] = useState<{ l1: ReferredUser[], l2: ReferredUser[], l3: ReferredUser[] }>({ l1: [], l2: [], l3: [] });
   const [rentedGenerators, setRentedGenerators] = useState<RentedGenerator[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -571,21 +681,24 @@ export default function Power() {
     }
     setUser(user);
 
-    const { data, error } = await supabase
-      .from('rented_generators')
-      .select(`
-        *,
-        generators ( * )
-      `)
-      .eq('user_id', user.id);
+    const [
+        rentedGeneratorsResult, 
+        profileResult,
+        downlineMembersResult
+    ] = await Promise.all([
+        supabase.from('rented_generators').select(`*, generators ( * )`).eq('user_id', user.id),
+        supabase.from('profiles').select('id, full_name, username').eq('id', user.id).single(),
+        supabase.rpc('get_downline_members', { user_id_in: user.id })
+    ]);
     
-    if (error) {
-      toast({ title: 'Error fetching generators', description: error.message, variant: 'destructive' });
+    const { data: rentedData, error: rentedError } = rentedGeneratorsResult;
+    if (rentedError) {
+      toast({ title: 'Error fetching generators', description: rentedError.message, variant: 'destructive' });
       setIsLoading(false);
       return;
     }
 
-    const enrichedData = data.map(function(rg) {
+    const enrichedData = rentedData.map(function(rg) {
       const baseGen = rg.generators as BaseGenerator | null;
       return {
         ...rg,
@@ -602,9 +715,27 @@ export default function Power() {
         image_url: baseGen?.image_url,
       }
     });
-
     // @ts-ignore
     setRentedGenerators(enrichedData);
+
+
+    const { data: profileData, error: profileError } = profileResult;
+    if (profileError) {
+        toast({ title: "Error fetching profile", description: profileError.message, variant: "destructive" });
+    }
+    setProfile(profileData as ProfileForNetwork | null);
+
+    const { data: downlineData, error: downlineError } = downlineMembersResult;
+    if (downlineError) {
+         console.error("Could not fetch downline members:", downlineError.message);
+         setDownline({ l1: [], l2: [], l3: [] });
+    } else {
+        const l1 = (downlineData as any[])?.filter(u => u.level === 1) || [];
+        const l2 = (downlineData as any[])?.filter(u => u.level === 2) || [];
+        const l3 = (downlineData as any[])?.filter(u => u.level === 3) || [];
+        setDownline({ l1, l2, l3 });
+    }
+
     setIsLoading(false);
   }, [supabase, router, toast]);
 
@@ -739,54 +870,13 @@ export default function Power() {
                 </div>
               </div>
             )}
+            
+            {profile && (
+              <div className="mt-6 mb-6">
+                <TeamNetwork profile={profile} l1_users={downline.l1} l2_users={downline.l2} l3_users={downline.l3} />
+              </div>
+            )}
 
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1 mt-4">Boost Power Plans</h2>
-            <p className="text-gray-500 text-center text-sm mb-5 sm:mb-8">Multiply your returns even further</p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-              {powerPlans.map(function(plan) {
-                return (
-                <div key={plan.name}
-                  data-testid={`card-power-${plan.name.toLowerCase().replace(" ", "-")}`}
-                  className={`relative bg-white rounded-2xl border-2 ${plan.popular ? "border-amber-400 shadow-xl shadow-amber-100" : "border-gray-200 shadow-sm"} p-5 sm:p-6 hover:shadow-lg transition-all duration-300`}>
-                  {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 px-3 py-1 shadow-md whitespace-nowrap">Most Popular</Badge>
-                    </div>
-                  )}
-                  <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4 shadow-lg`}>
-                    <Zap className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                  </div>
-                  <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-1">{plan.name}</h3>
-                  <div className="flex items-end gap-1 mb-3">
-                    <span className="text-3xl font-black text-gray-900">{plan.boost}</span>
-                    <span className="text-gray-500 text-sm mb-1">Return Boost</span>
-                  </div>
-                  <p className="text-amber-600 font-semibold text-base sm:text-lg mb-4 sm:mb-5">{plan.price}</p>
-                  <div className="space-y-2 mb-5">
-                    {plan.features.map(function(f) {
-                      return (
-                      <div key={f} className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        <span className="text-xs sm:text-sm text-gray-600">{f}</span>
-                      </div>
-                    ); })}
-                  </div>
-                  <div className="mb-4">
-                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                      <span>Power Level</span><span>{plan.multiplier * 10}%</span>
-                    </div>
-                    <Progress value={plan.multiplier * 10} className="h-2" />
-                  </div>
-                  <Button
-                    data-testid={`button-activate-${plan.name.toLowerCase().replace(" ", "-")}`}
-                    onClick={function() { return toast({ title: `${plan.name} Activated!`, description: "This is a demo. Your power plan has been activated." }); }}
-                    className="w-full h-10 sm:h-11 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all text-sm">
-                    Activate {plan.name}
-                  </Button>
-                </div>
-              ); })}
-            </div>
         </div>
       </div>
     </div>

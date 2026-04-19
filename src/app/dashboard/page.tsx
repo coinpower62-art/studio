@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -11,7 +10,7 @@ import { logout } from '@/app/login/actions';
 import { redeemGiftCode } from '@/app/dashboard/bank/actions';
 
 // Icons and components
-import { LogOut, ChevronRight, Globe, Gift, Share2, Users, CheckCircle, User as UserIcon, Info, Network, Percent } from 'lucide-react';
+import { LogOut, Globe, Gift, Share2, CheckCircle, User as UserIcon } from 'lucide-react';
 import { SiTelegram } from 'react-icons/si';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -20,11 +19,6 @@ import InstallButton from '@/components/InstallButton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ReferralLink } from '@/components/ReferralLink';
 import { Input } from '@/components/ui/input';
-import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { cn } from '@/lib/utils';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
 // Define profile type
@@ -38,112 +32,6 @@ type Profile = {
     balance: number;
     referral_code: string | null;
 };
-
-type ReferredUser = {
-    id: string;
-    full_name: string | null;
-    username: string | null;
-    created_at: string;
-};
-
-function TeamNetwork({ profile, l1_users, l2_users, l3_users }: { profile: Profile; l1_users: ReferredUser[]; l2_users: ReferredUser[]; l3_users: ReferredUser[] }) {
-    const levelData = [
-        { level: 1, users: l1_users, commission: "10%", icon: UserIcon, iconColor: "text-amber-700", borderColor: "border-amber-300", bgColor: "bg-amber-50" },
-        { level: 2, users: l2_users, commission: "5%", icon: Users, iconColor: "text-blue-700", borderColor: "border-blue-300", bgColor: "bg-blue-50" },
-        { level: 3, users: l3_users, commission: "2%", icon: Network, iconColor: "text-green-700", borderColor: "border-green-300", bgColor: "bg-green-50" },
-    ];
-
-    return (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-6">
-                <Network className="w-5 h-5 text-gray-500" />
-                Your Subordinates Team
-            </h3>
-
-            <div className="flex flex-col items-center">
-                <div className="w-60">
-                     <div className="border-2 border-amber-300 w-full rounded-xl p-3 text-center shadow-lg mx-auto h-full flex flex-col justify-center bg-gradient-to-br from-amber-50 to-orange-50">
-                        <p className="font-black text-[10px] uppercase tracking-wider text-amber-800">CENTRAL LEADERSHIP</p>
-                        <p className="text-xl font-bold text-gray-900 truncate my-1">{profile.full_name || profile.username}</p>
-                        <p className="text-xs leading-tight text-amber-700 font-medium">Strategic Growth Director</p>
-                    </div>
-                </div>
-
-                <div className="w-px h-6 bg-gray-300" />
-                <div className="w-full h-px bg-gray-300" />
-                <div className="flex justify-around w-full">
-                    <div className="w-px h-6 bg-gray-300" />
-                    <div className="w-px h-6 bg-gray-300" />
-                    <div className="w-px h-6 bg-gray-300" />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-                    {levelData.map(item => (
-                        <div key={item.level} className={cn(
-                            "rounded-2xl shadow-sm flex flex-col text-center border-2 overflow-hidden",
-                            item.borderColor
-                        )}>
-                            <div className={cn(
-                                "p-4 flex flex-col items-center justify-start gap-3 flex-grow",
-                                item.bgColor
-                            )}>
-                                <div className="flex items-center justify-center gap-2">
-                                    <item.icon className={cn("w-5 h-5", item.iconColor)} />
-                                    <p className={cn("font-black text-xl", item.iconColor)}>Level {item.level}</p>
-                                </div>
-                                
-                                <p className={cn("font-black text-4xl", item.iconColor)}>{item.users.length}</p>
-                        
-                                <div className="relative">
-                                    <div className={cn(
-                                        "bg-white shadow-md rounded-full px-2 py-1 flex items-center gap-1.5 border",
-                                        item.borderColor
-                                    )}>
-                                        <Percent className={cn("w-3 h-3", item.iconColor)} />
-                                        <p className={cn("font-bold text-xs leading-none whitespace-nowrap", item.iconColor)}>{item.commission} Commission</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="bg-white p-3 min-h-[130px] flex flex-col justify-center">
-                                {item.users.length > 0 ? (
-                                    <Accordion type="single" collapsible className="w-full">
-                                        <AccordionItem value={`level-${item.level}`} className="border-b-0">
-                                            <AccordionTrigger className="text-xs font-semibold text-gray-600 hover:no-underline py-1 justify-center">
-                                                <span>View {item.users.length} members</span>
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                                <div className="h-24 overflow-y-auto space-y-1.5 pr-2 mt-2">
-                                                    {item.users.map((user: ReferredUser) => (
-                                                        <div key={user.id} className="flex items-center justify-between gap-2 p-1 rounded-md hover:bg-gray-100">
-                                                            <div className="flex items-center gap-2 min-w-0">
-                                                                <Avatar className="w-5 h-5">
-                                                                    <AvatarFallback className="text-[10px] font-bold bg-gray-200 text-gray-500">
-                                                                        {(user.username || user.full_name || 'U').charAt(0).toUpperCase()}
-                                                                    </AvatarFallback>
-                                                                </Avatar>
-                                                                <span className="text-xs text-gray-700 font-medium truncate">{user.username || user.full_name || 'Unnamed User'}</span>
-                                                            </div>
-                                                            <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0 font-bold", item.borderColor, item.iconColor)}>
-                                                                L{item.level}
-                                                            </Badge>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    </Accordion>
-                                ) : (
-                                    <p className="text-center text-gray-400 text-xs py-4">No members at this level</p>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
-
 
 function RedeemGiftCode({ onRedeem }: { onRedeem: () => void }) {
     const { toast } = useToast();
@@ -213,7 +101,6 @@ export default function DashboardPage() {
     const [activeGeneratorCount, setActiveGeneratorCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [totalEarned, setTotalEarned] = useState(0);
-    const [downline, setDownline] = useState<{ l1: ReferredUser[], l2: ReferredUser[], l3: ReferredUser[] }>({ l1: [], l2: [], l3: [] });
 
     const fetchData = useCallback(async () => {
         const supabase = createClient();
@@ -230,13 +117,11 @@ export default function DashboardPage() {
             rentedGeneratorsResult, 
             depositsResult,
             withdrawalsResult,
-            downlineMembersResult
         ] = await Promise.all([
             supabase.from('profiles').select('*').eq('id', user.id).single(),
             supabase.from('rented_generators').select('id, expires_at').eq('user_id', user.id),
             supabase.from('deposit_requests').select('amount').eq('user_id', user.id).eq('status', 'approved'),
             supabase.from('withdrawal_requests').select('amount').eq('user_id', user.id).eq('status', 'approved'),
-            supabase.rpc('get_downline_members', { user_id_in: user.id })
         ]);
 
         const { data: profileData, error: profileError } = profileResult;
@@ -246,18 +131,6 @@ export default function DashboardPage() {
             return;
         }
         setProfile(profileData);
-        
-        const { data: downlineData, error: downlineError } = downlineMembersResult;
-        if (downlineError) {
-             console.error("Could not fetch downline members:", downlineError.message);
-             setDownline({ l1: [], l2: [], l3: [] });
-        } else {
-            const l1 = (downlineData as any[])?.filter(u => u.level === 1) || [];
-            const l2 = (downlineData as any[])?.filter(u => u.level === 2) || [];
-            const l3 = (downlineData as any[])?.filter(u => u.level === 3) || [];
-            setDownline({ l1, l2, l3 });
-        }
-
 
         const { data: rentedData } = rentedGeneratorsResult;
         if (rentedData) {
@@ -335,8 +208,6 @@ export default function DashboardPage() {
                     </div>
                 </div>
             </div>
-
-            <TeamNetwork profile={profile} l1_users={downline.l1} l2_users={downline.l2} l3_users={downline.l3} />
 
             <ReferralLink referralCode={profile.referral_code} />
 
