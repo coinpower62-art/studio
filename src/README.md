@@ -475,6 +475,30 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+-- =================================================================
+-- 13. RPC FUNCTION FOR GETTING REFERRED USERS
+-- Fetches the list of users referred by a specific user.
+-- This bypasses RLS to allow a user to see basic info of people they referred.
+-- =================================================================
+CREATE OR REPLACE FUNCTION get_referred_users(user_id_in uuid)
+RETURNS TABLE(full_name text, username text, created_at timestamp with time zone) AS $$
+DECLARE
+  user_referral_code text;
+BEGIN
+  -- Get the referral code for the input user
+  SELECT referral_code INTO user_referral_code FROM public.profiles WHERE id = user_id_in;
+
+  -- Return the list of users who were referred by this code
+  -- NOTE: This function bypasses Row Level Security.
+  RETURN QUERY
+  SELECT p.full_name, p.username, p.created_at
+  FROM public.profiles p
+  WHERE p.referred_by = user_referral_code
+  ORDER BY p.created_at DESC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
 ---
 
 ## 🔧 Data Repair Scripts

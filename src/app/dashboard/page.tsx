@@ -232,28 +232,17 @@ export default function DashboardPage() {
         setHasClaimedReferralBonus(!!bonusResult.data);
 
         if (profileData.referral_code) {
-             const [{ count, error: referralError }, { data: referredUsersData, error: referredUsersError }] = await Promise.all([
-                 supabase
-                    .from('profiles')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('referred_by', profileData.referral_code),
-                supabase
-                    .from('profiles')
-                    .select('full_name, username, created_at')
-                    .eq('referred_by', profileData.referral_code)
-                    .order('created_at', { ascending: false })
-            ]);
-
-            if (referralError) {
-                console.error("Could not fetch referral count:", referralError.message);
-            } else {
-                setReferralCount(count || 0);
-            }
+            const { data: referredUsersData, error: referredUsersError } = await supabase
+                .rpc('get_referred_users', { user_id_in: user.id });
 
             if (referredUsersError) {
                 console.error("Could not fetch referred users:", referredUsersError.message);
+                setReferralCount(0);
+                setReferredUsers([]);
             } else {
-                setReferredUsers(referredUsersData || []);
+                const users = referredUsersData || [];
+                setReferralCount(users.length);
+                setReferredUsers(users as ReferredUser[]);
             }
         }
 
@@ -403,19 +392,15 @@ export default function DashboardPage() {
             <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-4">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <Share2 className="w-4 h-4 text-green-600" />
+                        <Info className="w-4 h-4 text-green-600" />
                     </div>
                     <div>
                         <h3 className="font-bold text-gray-900 text-sm">
-                            Referral Bonus
+                            Important: Withdrawal Fee
                         </h3>
                         <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                            For each friend that signs up with your link, you'll earn a <span className="font-bold text-amber-600">$5.00 bonus</span> when they make their first deposit.
+                             Please be aware that a standard fee of 15% will be applied to all withdrawals. This fee helps us maintain the platform and ensure secure transactions.
                         </p>
-                        <div className="flex items-center gap-2 mt-3 bg-blue-50 text-blue-800 font-medium text-xs px-3 py-2 rounded-lg border border-blue-200">
-                            <SiTelegram className="w-4 h-4 text-blue-600" />
-                            <span>Join our <a href="https://t.me/coinpow_group" target="_blank" rel="noopener noreferrer" className="font-bold underline">Telegram group</a> for live support!</span>
-                        </div>
                     </div>
                 </div>
             </div>
