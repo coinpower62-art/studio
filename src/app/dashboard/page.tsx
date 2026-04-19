@@ -88,23 +88,22 @@ function ReferralBonusGoal({ referralCount, hasClaimed, onClaim }: { referralCou
     );
 }
 
-function ReferralOrgChart({ profile, referredUsers }: { profile: Profile; referredUsers: ReferredUser[] }) {
+function ReferralOrgChart({ referredUsers }: { referredUsers: ReferredUser[] }) {
   
-  const Node = ({ title, subtitle, variant = 'default' }: { title: string; subtitle: string; variant?: 'default' | 'user' | 'subordinate' }) => {
+  const subordinateTitles = ["Network Specialist", "Recruitment Lead", "Wealth Accelerator"];
+
+  const Node = ({ title, subtitle, variant = 'default' }: { title: string; subtitle: string; variant?: 'default' | 'subordinate' }) => {
     const baseClasses = "rounded-lg p-2 text-center shadow-sm w-44 mx-auto";
     const variantClasses = {
       default: "bg-blue-50 border-2 border-blue-200",
-      user: "bg-amber-50 border-2 border-amber-300",
       subordinate: "bg-green-50 border-2 border-green-200",
     };
     const textClasses = {
         default: "text-blue-800",
-        user: "text-amber-800",
         subordinate: "text-green-800",
     }
     const subtextClasses = {
         default: "text-blue-600",
-        user: "text-amber-600",
         subordinate: "text-green-600",
     }
 
@@ -124,45 +123,39 @@ function ReferralOrgChart({ profile, referredUsers }: { profile: Profile; referr
         </h3>
 
         <div className="flex flex-col items-center">
-            {/* Leadership */}
-            <Node title="The Coinpower Leadership" subtitle="(Strategic Oversight & Vision)" />
+            {/* Central Leadership */}
+            <Node title="THE CENTRAL LEADERSHIP" subtitle="(Strategic Growth Director)" />
             
-            {/* Connector */}
-            <div className="w-px h-6 bg-gray-200" />
-            
-            {/* Regional Head (Current User) */}
-            <Node title={profile.full_name || profile.username || 'You'} subtitle="(Centralized Growth Management)" variant="user" />
+            {referredUsers.length > 0 ? (
+              <div className="w-full relative mt-6">
+                {/* This is the line going down from the Leader and the horizontal bar */}
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-px h-6 bg-gray-200" />
+                <div className="absolute top-0 left-0 w-full h-px bg-gray-200" />
 
-            {/* Connector to Subordinates */}
-            {<div className="w-px h-6 bg-gray-200" />}
-
-            {/* Subordinates */}
-            <div className="w-full">
-                {referredUsers.length > 0 ? (
-                    <div className="relative">
-                        {/* Horizontal connecting line */}
-                        {referredUsers.length > 1 &&
-                            <div className="absolute top-0 left-1/2 h-px bg-gray-200" style={{ width: `calc(100% * ${ (referredUsers.length - 1) / referredUsers.length })`, transform: 'translateX(-50%)'}}></div>
-                        }
-
-                        <div className="flex justify-around pt-6">
-                            {referredUsers.map((user, index) => (
-                                <div key={index} className="flex flex-col items-center relative px-1">
-                                    {/* Vertical line up to horizontal line */}
-                                    <div className="absolute -top-6 w-px h-6 bg-gray-200" />
-                                    <Node title={user.full_name || user.username || 'Referral'} subtitle="(Elite Lead)" variant="subordinate" />
-                                </div>
-                            ))}
-                        </div>
+                <div className="flex justify-around pt-6">
+                  {referredUsers.map((user, index) => (
+                    <div key={index} className="flex flex-col items-center relative px-1">
+                      {/* Vertical line from subordinate up to horizontal line */}
+                      <div className="absolute -top-6 w-px h-6 bg-gray-200" />
+                      <Node 
+                        title={user.full_name || user.username || 'Referral'} 
+                        subtitle={`(${subordinateTitles[index % subordinateTitles.length]})`} 
+                        variant="subordinate" 
+                      />
                     </div>
-                ) : (
-                    <div className="text-center py-8">
-                        <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                        <p className="text-lg font-semibold text-gray-700">You haven't referred anyone yet.</p>
-                        <p className="text-sm text-gray-500 mt-1">Share your link to start building your team!</p>
-                    </div>
-                )}
-            </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+                <>
+                  <div className="w-px h-6 bg-gray-200" />
+                  <div className="text-center py-8">
+                      <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-lg font-semibold text-gray-700">You haven't referred anyone yet.</p>
+                      <p className="text-sm text-gray-500 mt-1">Share your link to start building your team!</p>
+                  </div>
+                </>
+            )}
         </div>
     </div>
   );
@@ -381,7 +374,7 @@ export default function DashboardPage() {
 
             <ReferralBonusGoal referralCount={referralCount} hasClaimed={hasClaimedReferralBonus} onClaim={handleClaimBonus} />
             
-            <ReferralOrgChart profile={profile} referredUsers={referredUsers} />
+            <ReferralOrgChart referredUsers={referredUsers} />
 
             <RedeemGiftCode onRedeem={fetchData} />
 
