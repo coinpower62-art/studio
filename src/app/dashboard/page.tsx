@@ -11,7 +11,7 @@ import { claimReferralBonus } from './actions';
 import { redeemGiftCode } from '@/app/dashboard/bank/actions';
 
 // Icons and components
-import { LogOut, ChevronRight, Globe, Gift, Share2, Users, CheckCircle, User as UserIcon, Info } from 'lucide-react';
+import { LogOut, ChevronRight, Globe, Gift, Share2, Users, CheckCircle, User as UserIcon, Info, Network } from 'lucide-react';
 import { SiTelegram } from 'react-icons/si';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -91,8 +91,8 @@ function ReferralBonusGoal({ referralCount, hasClaimed, onClaim }: { referralCou
 function ReferredUsersList({ users }: { users: ReferredUser[] }) {
     return (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-3">
-                <Users className="w-5 h-5 text-purple-600" />
+            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-4">
+                <Network className="w-5 h-5 text-blue-600" />
                 Your Subordinates Team ({users.length})
             </h3>
             {users.length === 0 ? (
@@ -102,20 +102,29 @@ function ReferredUsersList({ users }: { users: ReferredUser[] }) {
                     <p className="text-xs text-gray-500 mt-1">Share your link to start building your team!</p>
                 </div>
             ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
-                    {users.map((user, index) => (
-                        <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
-                             <Avatar className="w-8 h-8 flex-shrink-0">
-                                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white text-xs font-bold">
-                                    {(user.full_name || user.username || 'S').slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-gray-800 text-sm truncate">{user.full_name || user.username}</p>
-                                <p className="text-xs text-gray-500">Joined: {new Date(user.created_at).toLocaleDateString()}</p>
+                <div className="relative pl-5">
+                    {/* The vertical "network" line */}
+                    <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-gray-200 rounded-full" />
+                    
+                    <div className="space-y-4">
+                        {users.map((user, index) => (
+                            <div key={index} className="relative flex items-center gap-4">
+                                {/* Connector dot and line */}
+                                <div className="absolute left-[19px] top-5 w-5 h-0.5 bg-gray-200" />
+                                <div className="absolute left-[13px] top-[15px] w-3 h-3 rounded-full bg-white border-2 border-blue-500 z-10" />
+
+                                <Avatar className="w-10 h-10 flex-shrink-0 border-2 border-white ring-2 ring-blue-200 z-10 bg-white">
+                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-sm font-bold">
+                                        {(user.full_name || user.username || 'S').slice(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-gray-800 text-sm truncate">{user.full_name || user.username}</p>
+                                    <p className="text-xs text-gray-500">Joined: {new Date(user.created_at).toLocaleDateString()}</p>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
@@ -182,29 +191,6 @@ function DashboardSkeleton() {
     )
 }
 
-function ImportantNotice({ onAcknowledge }: { onAcknowledge: () => void }) {
-  return (
-    <Dialog open={true} onOpenChange={onAcknowledge}>
-      <DialogContent className="max-w-md mx-auto rounded-2xl p-0 overflow-hidden">
-        <div className="p-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
-              <Info className="w-8 h-8 text-amber-500" />
-            </div>
-            <DialogTitle className="text-xl font-bold text-gray-900">Important Withdrawal Notice</DialogTitle>
-            <DialogDescription className="text-gray-500 text-sm leading-relaxed mt-2">
-              Please be aware that a standard processing fee of <span className="font-bold text-amber-600">15%</span> will be applied to all withdrawal transactions. This fee covers network and operational costs.
-            </DialogDescription>
-        </div>
-        <div className="p-5 bg-gray-50 border-t">
-          <Button onClick={onAcknowledge} className="w-full h-11 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-lg shadow-md">
-            I Understand & Acknowledge
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export default function DashboardPage() {
     const router = useRouter();
     const { toast } = useToast();
@@ -216,7 +202,6 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [hasClaimedReferralBonus, setHasClaimedReferralBonus] = useState(false);
     const [totalEarned, setTotalEarned] = useState(0);
-    const [showNotice, setShowNotice] = useState(false);
 
     const fetchData = useCallback(async () => {
         const supabase = createClient();
@@ -285,21 +270,6 @@ export default function DashboardPage() {
         fetchData();
     }, [fetchData]);
     
-    useEffect(() => {
-        const hasSeenNotice = localStorage.getItem('seen_withdrawal_fee_notice');
-        if (!hasSeenNotice) {
-            setShowNotice(true);
-        }
-    }, []);
-    
-    const handleAcknowledgeNotice = () => {
-        localStorage.setItem('seen_withdrawal_fee_notice', 'true');
-        setShowNotice(false);
-        toast({
-            title: "Notice Acknowledged",
-            description: "The withdrawal fee notice will not be shown again.",
-        });
-    };
 
     const handleClaimBonus = async () => {
         const result = await claimReferralBonus();
@@ -321,7 +291,6 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-4">
-            {showNotice && <ImportantNotice onAcknowledge={handleAcknowledgeNotice} />}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-500 to-amber-700 p-4">
                     <h3 className="font-bold text-white text-sm sm:text-base">Your Profile</h3>
