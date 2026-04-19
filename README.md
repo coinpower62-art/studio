@@ -550,6 +550,50 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+-- =================================================================
+-- 16. RPC FUNCTION FOR GETTING DOWNLINE MEMBERS
+-- Fetches the list of referred users up to 3 levels deep, including their level.
+-- =================================================================
+CREATE OR REPLACE FUNCTION get_downline_members(user_id_in uuid)
+RETURNS TABLE(level integer, id uuid, full_name text, username text, created_at timestamp with time zone) AS $$
+BEGIN
+    WITH RECURSIVE downline AS (
+        -- Anchor member: direct referrals (Level 1)
+        SELECT 
+            p.id, 
+            p.parent_id, 
+            p.full_name, 
+            p.username, 
+            p.created_at, 
+            1 AS level
+        FROM public.profiles p
+        WHERE p.parent_id = user_id_in
+
+        UNION ALL
+
+        -- Recursive member: subsequent levels (up to level 3)
+        SELECT 
+            p_child.id, 
+            p_child.parent_id, 
+            p_child.full_name, 
+            p_child.username, 
+            p_child.created_at, 
+            d.level + 1
+        FROM public.profiles p_child
+        JOIN downline d ON p_child.parent_id = d.id
+        WHERE d.level < 3 -- Stop recursion after level 3 is found
+    )
+    SELECT
+        d.level,
+        d.id,
+        d.full_name,
+        d.username,
+        d.created_at
+    FROM downline;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
 ---
 
 ## 🔧 Data Repair Scripts
@@ -643,3 +687,6 @@ DELETE FROM auth.users;
 ```
 
 
+
+
+    

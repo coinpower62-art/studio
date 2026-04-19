@@ -45,11 +45,11 @@ type ReferredUser = {
     created_at: string;
 };
 
-function TeamNetwork({ profile, l1, l2, l3 }: { profile: Profile; l1: number; l2: number; l3: number }) {
+function TeamNetwork({ profile, l1_users, l2_users, l3_users }: { profile: Profile; l1_users: ReferredUser[]; l2_users: ReferredUser[]; l3_users: ReferredUser[] }) {
     const levelData = [
-        { level: 1, count: l1, commission: "10%", color: "amber", iconColor: "text-amber-500", borderColor: "border-amber-200", bgColor: "bg-amber-50" },
-        { level: 2, count: l2, commission: "5%", color: "blue", iconColor: "text-blue-500", borderColor: "border-blue-200", bgColor: "bg-blue-50" },
-        { level: 3, count: l3, commission: "2%", color: "green", iconColor: "text-green-500", borderColor: "border-green-200", bgColor: "bg-green-50" },
+        { level: 1, users: l1_users, commission: "10%", icon: UserIcon, iconColor: "text-amber-500", borderColor: "border-amber-200", bgColor: "bg-amber-50" },
+        { level: 2, users: l2_users, commission: "5%", icon: Users, iconColor: "text-blue-500", borderColor: "border-blue-200", bgColor: "bg-blue-50" },
+        { level: 3, users: l3_users, commission: "2%", icon: Network, iconColor: "text-green-500", borderColor: "border-green-200", bgColor: "bg-green-50" },
     ];
 
     return (
@@ -60,7 +60,6 @@ function TeamNetwork({ profile, l1, l2, l3 }: { profile: Profile; l1: number; l2
             </h3>
 
             <div className="flex flex-col items-center">
-                {/* Top Node */}
                 <div className="w-60">
                      <div className="border-2 border-amber-300 w-full rounded-xl p-3 text-center shadow-lg mx-auto h-full flex flex-col justify-center bg-gradient-to-br from-amber-50 to-orange-50">
                         <p className="font-black text-[10px] uppercase tracking-wider text-amber-800">CENTRAL LEADERSHIP</p>
@@ -69,32 +68,46 @@ function TeamNetwork({ profile, l1, l2, l3 }: { profile: Profile; l1: number; l2
                     </div>
                 </div>
 
-                {/* Connecting Line */}
                 <div className="w-px h-6 bg-gray-300" />
-
-                {/* Horizontal Line */}
                 <div className="w-full max-w-md h-px bg-gray-300" />
-
-                {/* Vertical lines to subordinates */}
                 <div className="flex justify-around w-full max-w-md">
                     <div className="w-px h-6 bg-gray-300" />
                     <div className="w-px h-6 bg-gray-300" />
                     <div className="w-px h-6 bg-gray-300" />
                 </div>
 
-                {/* Subordinates Grid with counters */}
                 <div className="grid grid-cols-3 gap-3 w-full max-w-md">
                     {levelData.map(item => (
                         <div key={item.level} className={cn(
-                            "border-2 rounded-lg p-3 text-center shadow-sm h-full flex flex-col justify-center items-center",
+                            "border-2 rounded-lg p-3 text-center shadow-sm h-full flex flex-col justify-start items-center",
                             item.borderColor, item.bgColor
                         )}>
-                            <Users className={cn("w-5 h-5 mb-1", item.iconColor)} />
-                            <p className={cn("font-black text-2xl", item.iconColor.replace('500', '700'))}>{item.count}</p>
-                            <p className="text-gray-500 text-[10px] mt-0.5">Level {item.level} Members</p>
-                            <Badge className={cn("mt-2 text-xs border", item.borderColor, item.bgColor, item.iconColor.replace('500', '700'), "font-bold")}>
-                              <Percent className="w-3 h-3 mr-1" />{item.commission}
+                            <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2">
+                                    <item.icon className={cn("w-4 h-4", item.iconColor)} />
+                                    <p className="text-gray-500 text-xs font-bold">Level {item.level}</p>
+                                </div>
+                                <p className={cn("font-black text-lg", item.iconColor.replace('500', '700'))}>{item.users.length}</p>
+                            </div>
+                            <Badge className={cn("mt-2 text-xs border self-start", item.borderColor, item.bgColor, item.iconColor.replace('500', '700'), "font-bold")}>
+                                <Percent className="w-3 h-3 mr-1" />{item.commission} Commission
                             </Badge>
+                            <div className="mt-3 pt-3 border-t border-gray-200 w-full text-left space-y-1.5 h-28 overflow-y-auto">
+                                {item.users.length > 0 ? (
+                                    item.users.map((user: ReferredUser) => (
+                                        <div key={user.id} className="flex items-center gap-2 p-1 rounded-md hover:bg-gray-100">
+                                            <Avatar className="w-5 h-5">
+                                                <AvatarFallback className="text-[10px] font-bold bg-gray-200 text-gray-500">
+                                                    {(user.username || user.full_name || 'U').charAt(0).toUpperCase()}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <span className="text-xs text-gray-700 font-medium truncate">{user.username || user.full_name || 'Unnamed User'}</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-xs text-gray-400 italic text-center pt-4">No members at this level</p>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -170,10 +183,9 @@ export default function DashboardPage() {
     const [user, setUser] = useState<SupabaseUser | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [activeGeneratorCount, setActiveGeneratorCount] = useState(0);
-    const [referredUsers, setReferredUsers] = useState<ReferredUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [totalEarned, setTotalEarned] = useState(0);
-    const [downlineCounts, setDownlineCounts] = useState({ l1: 0, l2: 0, l3: 0 });
+    const [downline, setDownline] = useState<{ l1: ReferredUser[], l2: ReferredUser[], l3: ReferredUser[] }>({ l1: [], l2: [], l3: [] });
 
     const fetchData = useCallback(async () => {
         const supabase = createClient();
@@ -190,15 +202,13 @@ export default function DashboardPage() {
             rentedGeneratorsResult, 
             depositsResult,
             withdrawalsResult,
-            referredUsersResult,
-            downlineCountsResult
+            downlineMembersResult
         ] = await Promise.all([
             supabase.from('profiles').select('*').eq('id', user.id).single(),
             supabase.from('rented_generators').select('id, expires_at').eq('user_id', user.id),
             supabase.from('deposit_requests').select('amount').eq('user_id', user.id).eq('status', 'approved'),
             supabase.from('withdrawal_requests').select('amount').eq('user_id', user.id).eq('status', 'approved'),
-            supabase.rpc('get_referred_users', { user_id_in: user.id }),
-            supabase.rpc('get_downline_counts', { user_id_in: user.id }).single()
+            supabase.rpc('get_downline_members', { user_id_in: user.id })
         ]);
 
         const { data: profileData, error: profileError } = profileResult;
@@ -209,18 +219,15 @@ export default function DashboardPage() {
         }
         setProfile(profileData);
         
-        const { data: referredUsersData, error: referredUsersError } = referredUsersResult;
-        if (referredUsersError) {
-             console.error("Could not fetch referred users:", referredUsersError.message);
+        const { data: downlineData, error: downlineError } = downlineMembersResult;
+        if (downlineError) {
+             console.error("Could not fetch downline members:", downlineError.message);
+             setDownline({ l1: [], l2: [], l3: [] });
         } else {
-            setReferredUsers((referredUsersData as ReferredUser[]) || []);
-        }
-
-        const { data: counts, error: countsError } = downlineCountsResult;
-        if (countsError) {
-            console.error("Could not fetch downline counts:", countsError.message);
-        } else if (counts) {
-            setDownlineCounts({ l1: counts.level1_count || 0, l2: counts.level2_count || 0, l3: counts.level3_count || 0 });
+            const l1 = (downlineData as any[])?.filter(u => u.level === 1) || [];
+            const l2 = (downlineData as any[])?.filter(u => u.level === 2) || [];
+            const l3 = (downlineData as any[])?.filter(u => u.level === 3) || [];
+            setDownline({ l1, l2, l3 });
         }
 
 
@@ -301,7 +308,7 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            <TeamNetwork profile={profile} l1={downlineCounts.l1} l2={downlineCounts.l2} l3={downlineCounts.l3} />
+            <TeamNetwork profile={profile} l1_users={downline.l1} l2_users={downline.l2} l3_users={downline.l3} />
 
             <ReferralLink referralCode={profile.referral_code} />
 
@@ -311,3 +318,5 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    
