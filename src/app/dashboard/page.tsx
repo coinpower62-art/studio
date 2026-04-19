@@ -22,6 +22,8 @@ import { ReferralLink } from '@/components/ReferralLink';
 import { Input } from '@/components/ui/input';
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { cn } from '@/lib/utils';
 
 
 // Define profile type
@@ -87,15 +89,7 @@ function ReferralBonusGoal({ referralCount, hasClaimed, onClaim }: { referralCou
 }
 
 function ReferredUsersList({ users }: { users: ReferredUser[] }) {
-    if (users.length === 0) {
-        return (
-            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm text-center">
-                <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <h3 className="font-bold text-gray-900 text-sm">Your Referral Team is Empty</h3>
-                <p className="text-xs text-gray-500 mt-1">You haven't referred anyone yet. Share your link to start building your leadership team and earn more.</p>
-            </div>
-        );
-    }
+    const imageUrl = PlaceHolderImages.find(i => i.id === 'referral-team-illustration')?.imageUrl;
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
@@ -103,23 +97,16 @@ function ReferredUsersList({ users }: { users: ReferredUser[] }) {
                 <Users className="w-5 h-5 text-purple-600" />
                 Your Referral Team ({users.length})
             </h3>
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                {users.map((user, index) => (
-                    <div key={index} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-100">
-                        <div className="flex items-center gap-3">
-                            <Avatar className="w-8 h-8">
-                                <AvatarFallback className="bg-purple-100 text-purple-600 text-xs font-bold">
-                                    {(user.full_name || user.username || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="text-sm font-semibold text-gray-800">{user.full_name || user.username}</p>
-                                <p className="text-xs text-gray-500">Joined: {new Date(user.created_at).toLocaleDateString()}</p>
-                            </div>
-                        </div>
-                        <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200">Level 1</Badge>
+            <div className="mt-2 rounded-lg overflow-hidden border border-gray-200 relative">
+                {imageUrl ? (
+                    <img src={imageUrl} alt="Referral team illustration" className={cn("w-full h-auto", users.length === 0 && "opacity-40")} data-ai-hint="team illustration" />
+                ) : <div className="h-48 bg-gray-100 rounded-lg" />}
+                 {users.length === 0 && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                        <Users className="w-10 h-10 text-gray-500 mb-2" />
+                        <p className="text-center text-xs font-semibold text-gray-600">You haven't referred anyone yet. <br/> Share your link to start building your team!</p>
                     </div>
-                ))}
+                )}
             </div>
         </div>
     );
