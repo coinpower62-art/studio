@@ -185,6 +185,29 @@ function DashboardSkeleton() {
     )
 }
 
+function ImportantNotice({ onAcknowledge }: { onAcknowledge: () => void }) {
+  return (
+    <Dialog open={true} onOpenChange={onAcknowledge}>
+      <DialogContent className="max-w-md mx-auto rounded-2xl p-0 overflow-hidden">
+        <div className="p-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+              <Info className="w-8 h-8 text-amber-500" />
+            </div>
+            <DialogTitle className="text-xl font-bold text-gray-900">Important Withdrawal Notice</DialogTitle>
+            <DialogDescription className="text-gray-500 text-sm leading-relaxed mt-2">
+              Please be aware that a standard processing fee of <span className="font-bold text-amber-600">15%</span> will be applied to all withdrawal transactions. This fee covers network and operational costs.
+            </DialogDescription>
+        </div>
+        <div className="p-5 bg-gray-50 border-t">
+          <Button onClick={onAcknowledge} className="w-full h-11 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-lg shadow-md">
+            I Understand & Acknowledge
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function DashboardPage() {
     const router = useRouter();
     const { toast } = useToast();
@@ -196,6 +219,7 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [hasClaimedReferralBonus, setHasClaimedReferralBonus] = useState(false);
     const [totalEarned, setTotalEarned] = useState(0);
+    const [showNotice, setShowNotice] = useState(false);
 
     const fetchData = useCallback(async () => {
         const supabase = createClient();
@@ -265,24 +289,21 @@ export default function DashboardPage() {
     }, [fetchData]);
     
     useEffect(() => {
-        const hasSeenToast = localStorage.getItem('telegram_toast_seen');
-        if (!hasSeenToast) {
-            const timer = setTimeout(() => {
-                toast({
-                    title: "Join our Community!",
-                    description: "Get live support and updates in our official Telegram group.",
-                    action: (
-                        <a href="https://t.me/coinpow_group" target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline" size="sm">Join Now</Button>
-                        </a>
-                    ),
-                });
-                localStorage.setItem('telegram_toast_seen', 'true');
-            }, 5000); // 5 seconds delay
-            return () => clearTimeout(timer);
+        const hasSeenNotice = localStorage.getItem('seen_withdrawal_fee_notice');
+        if (!hasSeenNotice) {
+            setShowNotice(true);
         }
-    }, [toast]);
+    }, []);
     
+    const handleAcknowledgeNotice = () => {
+        localStorage.setItem('seen_withdrawal_fee_notice', 'true');
+        setShowNotice(false);
+        toast({
+            title: "Notice Acknowledged",
+            description: "The withdrawal fee notice will not be shown again.",
+        });
+    };
+
     const handleClaimBonus = async () => {
         const result = await claimReferralBonus();
         if (result.error) {
@@ -303,6 +324,7 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-4">
+            {showNotice && <ImportantNotice onAcknowledge={handleAcknowledgeNotice} />}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-500 to-amber-700 p-4">
                     <h3 className="font-bold text-white text-sm sm:text-base">Your Profile</h3>
