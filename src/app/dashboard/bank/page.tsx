@@ -1076,12 +1076,12 @@ export default function BankPage() {
 
         {mode === "withdraw" && !withdrawSuccess && (
           <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-4 sm:p-6 my-4 space-y-5">
-              <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-3 py-3">
+            <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-3 py-3">
               <Hourglass className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-blue-800 text-xs font-semibold">Processing Time: 1–24 Hours</p>
+                <p className="text-blue-800 text-xs font-semibold">Withdrawal Processing Schedule</p>
                 <p className="text-blue-700 text-xs mt-0.5 leading-relaxed">
-                  Withdrawals are processed Monday to Saturday. If your withdrawal is still pending after 24 hours, please contact the manager.
+                  Withdrawals are processed Monday to Saturday within 1-24 hours. Requests on Sunday will be processed the next day.
                 </p>
               </div>
             </div>
