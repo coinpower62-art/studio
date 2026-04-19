@@ -15,7 +15,8 @@ import {
   Store,
   History,
   LayoutGrid,
-  AlertCircle
+  AlertCircle,
+  Clock
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -26,6 +27,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,12 +104,71 @@ function DashboardHeader({ user }: { user: SupabaseUser | null }) {
   );
 }
 
+function WithdrawalScheduleModal({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
+    const today = new Date().getDay();
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <div className="flex items-center justify-center mb-4">
+                        <div className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center">
+                            <Clock className="w-8 h-8 text-blue-600" />
+                        </div>
+                    </div>
+                    <DialogTitle className="text-center text-xl font-bold">Withdrawal Schedule</DialogTitle>
+                    <DialogDescription className="text-center text-sm leading-relaxed">
+                        Here are the processing times for withdrawals. Please review before making a request.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="rounded-xl border bg-blue-50 border-blue-200 p-4 my-4">
+                    <p className="text-blue-700 text-sm leading-relaxed">
+                        Withdrawals are processed from <strong>Monday to Saturday</strong> within 1–24 hours.
+                        <br /><br />
+                        On <strong>Sundays</strong>, our withdrawal accounts are closed. Any request submitted on a Sunday will be processed the following <strong>Monday</strong>.
+                    </p>
+                </div>
+                <div className="flex gap-2 mt-3 flex-wrap justify-center">
+                    {days.map((d, i) => (
+                        <span key={d} className={`text-xs font-bold px-3 py-1 rounded-full ${
+                            i === 0
+                                ? "bg-red-500 text-white"
+                                : i === today
+                                ? "bg-green-500 text-white ring-2 ring-green-400 ring-offset-1"
+                                : "bg-white border border-blue-200 text-blue-600"
+                            }`}>
+                            {d}{i === 0 ? " (Closed)" : ""}
+                        </span>
+                    ))}
+                </div>
+                <Button onClick={() => onOpenChange(false)} className="w-full mt-4">
+                    I Understand
+                </Button>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 function DashboardClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = React.useState<SupabaseUser | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [profileError, setProfileError] = React.useState(false);
+  const [showWithdrawalNote, setShowWithdrawalNote] = React.useState(false);
+
+  React.useEffect(() => {
+    const noteShown = sessionStorage.getItem('withdrawalNoteShown');
+    if (!noteShown) {
+      // Use a timeout to avoid showing the modal immediately on load, which can be jarring.
+      const timer = setTimeout(() => {
+        setShowWithdrawalNote(true);
+        sessionStorage.setItem('withdrawalNoteShown', 'true');
+      }, 1500); // 1.5 second delay
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   React.useEffect(() => {
     const supabase = createClient();
@@ -203,6 +270,7 @@ function DashboardClientLayout({ children }: { children: React.ReactNode }) {
         </aside>
         
         <div className="flex flex-col flex-1 overflow-hidden">
+             <WithdrawalScheduleModal open={showWithdrawalNote} onOpenChange={setShowWithdrawalNote} />
             <div className="sticky top-0 z-30">
               <DashboardHeader user={user} />
               
