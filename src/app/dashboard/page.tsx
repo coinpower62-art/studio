@@ -89,12 +89,17 @@ function ReferralBonusGoal({ referralCount, hasClaimed, onClaim }: { referralCou
 }
 
 function ReferralOrgChart({ referredUsers }: { referredUsers: ReferredUser[] }) {
-    const Node = ({ title, subtitle }: { title: string; subtitle: string }) => (
-        <div className="bg-blue-50 border-2 border-blue-200 w-56 rounded-lg p-2 text-center shadow-sm mx-auto">
-            <p className="font-bold text-xs uppercase truncate text-blue-800">{title}</p>
+    const Node = ({ title, subtitle, className }: { title: string; subtitle: string; className?: string }) => (
+        <div className={cn(
+            "bg-blue-50 border-2 border-blue-200 w-full rounded-lg p-2 text-center shadow-sm mx-auto h-full flex flex-col justify-center", 
+            className
+        )}>
+            <p className="font-black text-xs uppercase truncate text-blue-800">{title}</p>
             <p className="text-[10px] leading-tight text-blue-600">{subtitle}</p>
         </div>
     );
+
+    const roles = ['Network Specialist', 'Recruitment Lead', 'Wealth Accelerator'];
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
@@ -104,29 +109,45 @@ function ReferralOrgChart({ referredUsers }: { referredUsers: ReferredUser[] }) 
             </h3>
 
             <div className="flex flex-col items-center">
-                <Node title="THE CENTRAL LEADERSHIP" subtitle="(Strategic Growth Director)" />
+                {/* Top Node */}
+                <div className="w-64">
+                    <Node title="THE CENTRAL LEADERSHIP" subtitle="(Strategic Growth Director)" className="bg-amber-50 border-amber-200 !text-amber-800" />
+                </div>
 
-                {referredUsers.length > 0 ? (
-                    <div className="w-full">
-                        <div className="w-px h-6 bg-gray-200 mx-auto" />
-                        <ul className="space-y-2">
-                            {referredUsers.map((user, i) => (
-                                <li key={i} className="bg-green-50 border border-green-200 rounded-lg p-2 text-sm text-green-800 font-medium text-center">
-                                    {user.full_name || user.username}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                ) : (
-                    <>
-                        <div className="w-px h-8 bg-gray-300" />
-                        <div className="text-center py-6">
-                            <Users className="w-16 h-16 text-gray-300 mx-auto mb-3" />
-                            <p className="text-xl font-bold text-gray-800">You haven't referred anyone yet.</p>
-                            <p className="text-sm text-gray-500 mt-2">Share your link to start building your team!</p>
-                        </div>
-                    </>
-                )}
+                {/* Connecting Line */}
+                <div className="w-px h-6 bg-gray-300" />
+
+                {/* Horizontal Line */}
+                <div className="w-full max-w-md h-px bg-gray-300" />
+
+                {/* Vertical lines to subordinates */}
+                <div className="flex justify-around w-full max-w-md">
+                    <div className="w-px h-6 bg-gray-300" />
+                    <div className="w-px h-6 bg-gray-300" />
+                    <div className="w-px h-6 bg-gray-300" />
+                </div>
+                
+                {/* Subordinates Grid */}
+                <div className="grid grid-cols-3 gap-2 w-full max-w-md">
+                    {Array.from({ length: 3 }).map((_, i) => {
+                        const user = referredUsers[i];
+                        return (
+                            <div key={i}>
+                                {user ? (
+                                    <Node 
+                                        title={user.full_name || user.username || "Referred User"} 
+                                        subtitle={roles[i]} 
+                                    />
+                                ) : (
+                                    <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-2 text-center h-full flex flex-col justify-center items-center">
+                                        <Users className="w-5 h-5 text-gray-400 mb-1" />
+                                        <p className="text-[10px] text-gray-500 font-semibold">Empty Slot</p>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
