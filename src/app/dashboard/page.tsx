@@ -47,26 +47,20 @@ type ReferredUser = {
 
 function TeamSummary({ l1, l2, l3 }: { l1: number; l2: number; l3: number }) {
     const summaryItems = [
-        { label: ["Level 1", "Members"], value: l1, color: "text-amber-700", borderColor: "border-amber-200", iconColor: "text-amber-500" },
-        { label: ["Level 2", "Members"], value: l2, color: "text-blue-700", borderColor: "border-blue-200", iconColor: "text-blue-500" },
-        { label: ["Level 3", "Members"], value: l3, color: "text-green-700", borderColor: "border-green-200", iconColor: "text-green-500" },
+        { label: "Level 1 Members", value: l1, color: "text-orange-700", borderColor: "border-amber-300", iconColor: "text-amber-500" },
+        { label: "Level 2 Members", value: l2, color: "text-blue-600", borderColor: "border-blue-300", iconColor: "text-blue-500" },
+        { label: "Level 3 Members", value: l3, color: "text-green-600", borderColor: "border-green-300", iconColor: "text-green-500" },
     ];
 
     return (
-        <div>
-            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-3">
-                <Users className="w-5 h-5 text-gray-500" />
-                Team Summary
-            </h3>
-            <div className="grid grid-cols-3 gap-3">
-                {summaryItems.map(item => (
-                    <div key={item.label[0]} className={`bg-white rounded-2xl border ${item.borderColor} p-4 text-center shadow-sm`}>
-                        <Users className={`w-8 h-8 ${item.iconColor} mx-auto mb-1`} />
-                        <p className={`font-black text-2xl ${item.color}`}>{item.value}</p>
-                        <p className="text-gray-500 text-xs mt-0.5 leading-tight">{item.label[0]}<br/>{item.label[1]}</p>
-                    </div>
-                ))}
-            </div>
+        <div className="grid grid-cols-3 gap-3">
+            {summaryItems.map(item => (
+                <div key={item.label} className={`bg-white rounded-2xl border ${item.borderColor} p-4 text-center shadow-sm`}>
+                    <Users className={`w-8 h-8 ${item.iconColor} mx-auto mb-2`} />
+                    <p className={`font-black text-3xl ${item.color}`}>{item.value}</p>
+                    <p className="text-gray-500 text-xs mt-1">{item.label}</p>
+                </div>
+            ))}
         </div>
     );
 }
