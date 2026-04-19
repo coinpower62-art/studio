@@ -66,7 +66,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   referral_code text UNIQUE,
   parent_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   has_withdrawal_pin boolean DEFAULT false NOT NULL,
-  withdrawal_locked boolean DEFAULT false NOT NULL
+  withdrawal_locked boolean DEFAULT false NOT NULL,
+  device_id text
 );
 
 -- Enable Row Level Security (RLS)
@@ -654,6 +655,12 @@ UPDATE public.generators SET max_rentals = 1 WHERE id = 'pg1';
 UPDATE public.generators SET max_rentals = 2 WHERE id = 'pg2';
 UPDATE public.generators SET max_rentals = 1 WHERE id = 'pg3';
 UPDATE public.generators SET max_rentals = 2 WHERE id = 'pg4';
+```
+
+### Add Device ID Tracking to Profiles
+This adds the `device_id` column used for the "One Device, One Account" policy.
+```sql
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS device_id text;
 ```
 
 ### Reset All User Data (Use With Caution)

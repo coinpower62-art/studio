@@ -45,6 +45,7 @@ const signupSchema = z.object({
   agreedToTerms: z.boolean().refine(function(val) { return val === true; }, {
     message: "You must agree to the Terms & Privacy Policy to continue.",
   }),
+  deviceId: z.string().optional(),
 }).refine(function(d) { return d.password === d.confirmPassword; }, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -208,18 +209,45 @@ function SignUpForm() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [deviceHasAccount, setDeviceHasAccount] = useState<boolean | null>(null);
 
+  const form = useForm<SignupForm>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: { username: "", email: "", phone: "", password: "", confirmPassword: "", fullName: "", country: "", language: "English (US)", referralCode: refFromUrl, agreedToTerms: false, deviceId: "" },
+    mode: "onTouched",
+  });
+  
   useEffect(() => {
-    // This effect runs only on the client
-    const hasAccount = localStorage.getItem('coinpower_device_has_account');
-    if (hasAccount === 'true') {
-      setDeviceHasAccount(true);
-    } else {
-      setDeviceHasAccount(false);
-    }
-  }, []);
+    // This effect runs only on the client to generate the device ID
+    const generateDeviceId = () => {
+      // A simple but effective client-side device identifier
+      const ua = navigator.userAgent;
+      const screenDetails = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`;
+      const lang = navigator.language;
+      const timezone = new Date().getTimezoneOffset();
+      const sourceString = `${ua}|${screenDetails}|${lang}|${timezone}`;
+      
+      let hash = 0;
+      if (sourceString.length === 0) {
+        form.setValue('deviceId', 'unknown-device');
+        return;
+      };
+      for (let i = 0; i < sourceString.length; i++) {
+          const char = sourceString.charCodeAt(i);
+          hash = ((hash << 5) - hash) + char;
+          hash |= 0; // Convert to 32bit integer
+      }
+      form.setValue('deviceId', String(hash));
+    };
 
+    generateDeviceId();
+  }, [form]);
+  
+  useEffect(function() {
+    if (refFromUrl) {
+      form.setValue('referralCode', refFromUrl);
+    }
+  }, [refFromUrl, form]);
+  
   const handleScroll = useCallback(function() {
     const el = scrollRef.current;
     if (!el) return;
@@ -233,18 +261,6 @@ function SignUpForm() {
       scrollRef.current?.addEventListener("scroll", handleScroll, { passive: true });
     }, 100);
   };
-
-  const form = useForm<SignupForm>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: { username: "", email: "", phone: "", password: "", confirmPassword: "", fullName: "", country: "", language: "English (US)", referralCode: refFromUrl, agreedToTerms: false },
-    mode: "onTouched",
-  });
-  
-  useEffect(function() {
-    if (refFromUrl) {
-      form.setValue('referralCode', refFromUrl);
-    }
-  }, [refFromUrl, form]);
   
   async function onSubmit(values: SignupForm) {
     setIsSubmitting(true);
@@ -264,7 +280,6 @@ function SignUpForm() {
             });
             form.setError("root", { message: result.error });
         } else if (result?.success && result.message) {
-            localStorage.setItem('coinpower_device_has_account', 'true');
             router.push(`/login?message=${encodeURIComponent(result.message)}`);
         }
     } catch (e: any) {
@@ -285,37 +300,6 @@ function SignUpForm() {
   );
   
   const passwordValue = form.watch("password");
-
-  if (deviceHasAccount === null) {
-    // Loading state while checking localStorage
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4">
-          <p>Loading...</p>
-      </div>
-    );
-  }
-
-  if (deviceHasAccount) {
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-background px-4">
-            <div className="w-full max-w-sm text-center">
-                <LoginLogo />
-                <div className="bg-card rounded-2xl shadow-xl border border-gray-100 p-6 mt-6">
-                    <AlertCircle className="mx-auto h-12 w-12 text-amber-500" />
-                    <h2 className="mt-4 text-xl font-bold text-foreground">Account Limit Reached</h2>
-                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                        An account has already been created from this device. Only one account is permitted per device to ensure fairness.
-                    </p>
-                    <Link href="/login" className="mt-6 block">
-                    <Button className="w-full h-11 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-lg shadow-md transition-all">
-                        Sign In Instead
-                    </Button>
-                    </Link>
-                </div>
-            </div>
-        </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8 sm:py-12">
