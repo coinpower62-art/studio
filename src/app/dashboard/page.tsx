@@ -88,10 +88,10 @@ function ReferralBonusGoal({ referralCount, hasClaimed, onClaim }: { referralCou
     );
 }
 
-function ReferralOrgChart({ referredUsers, profile }: { referredUsers: ReferredUser[], profile: Profile | null }) {
-    const Node = ({ title, subtitle, className, isYou = false }: { title: string; subtitle: string; className?: string; isYou?: boolean }) => (
+function ReferralOrgChart({ referredUsers, profile, referralCount }: { referredUsers: ReferredUser[], profile: Profile | null, referralCount: number }) {
+    const Node = ({ title, subtitle, teamSize, percentage, className, isYou = false }: { title: string; subtitle: string; teamSize?: number; percentage?: string; className?: string; isYou?: boolean }) => (
         <div className={cn(
-            "border-2 w-full rounded-lg p-2 text-center shadow-sm mx-auto h-full flex flex-col justify-center", 
+            "border-2 w-full rounded-lg p-3 text-center shadow-sm mx-auto h-full flex flex-col justify-center", 
             isYou ? "bg-amber-50 border-amber-200" : "bg-blue-50 border-blue-200",
             className
         )}>
@@ -103,10 +103,25 @@ function ReferralOrgChart({ referredUsers, profile }: { referredUsers: ReferredU
                 "text-[10px] leading-tight",
                 isYou ? "text-amber-600" : "text-blue-600"
             )}>{subtitle}</p>
+            {(teamSize !== undefined || percentage !== undefined) && (
+            <div className={cn("mt-1.5 pt-1.5 border-t", isYou ? "border-amber-200" : "border-blue-200", "text-[10px] space-y-0.5")}>
+                {teamSize !== undefined && (
+                    <p className={cn(isYou ? "text-amber-700" : "text-blue-700")}>
+                        Team: <span className="font-bold">{teamSize}</span>
+                    </p>
+                )}
+                {percentage !== undefined && (
+                    <p className={cn(isYou ? "text-amber-700" : "text-blue-700")}>
+                        Bonus Progress: <span className="font-bold">{percentage}</span>
+                    </p>
+                )}
+            </div>
+        )}
         </div>
     );
 
     const roles = ['Network Specialist', 'Recruitment Lead', 'Wealth Accelerator'];
+    const progressPercentage = `${Math.min((referralCount / 5) * 100, 100).toFixed(0)}%`;
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
@@ -121,6 +136,8 @@ function ReferralOrgChart({ referredUsers, profile }: { referredUsers: ReferredU
                      <Node 
                         title={profile?.full_name || profile?.username || 'You'} 
                         subtitle="(Strategic Growth Director)" 
+                        teamSize={referralCount}
+                        percentage={progressPercentage}
                         isYou
                     />
                 </div>
@@ -377,7 +394,7 @@ export default function DashboardPage() {
 
             <ReferralBonusGoal referralCount={referralCount} hasClaimed={hasClaimedReferralBonus} onClaim={handleClaimBonus} />
             
-            <ReferralOrgChart referredUsers={referredUsers} profile={profile} />
+            <ReferralOrgChart referredUsers={referredUsers} profile={profile} referralCount={referralCount} />
 
             <RedeemGiftCode onRedeem={fetchData} />
 
