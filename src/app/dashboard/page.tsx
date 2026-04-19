@@ -77,36 +77,30 @@ function TeamNetwork({ profile, l1_users, l2_users, l3_users }: { profile: Profi
                     <div className="w-px h-6 bg-gray-300" />
                 </div>
                 
-                <div className="grid grid-cols-3 gap-4 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
                     {levelData.map(item => (
                         <div key={item.level} className={cn(
                             "rounded-2xl shadow-sm flex flex-col text-center border-2 overflow-hidden",
                             item.borderColor
                         )}>
                             <div className={cn(
-                                "p-4 flex flex-col items-center justify-between gap-3 flex-grow",
+                                "p-4 flex flex-col items-center justify-start gap-3 flex-grow",
                                 item.bgColor
                             )}>
                                 <div className="flex items-center justify-center gap-2">
                                     <item.icon className={cn("w-5 h-5", item.iconColor)} />
-                                    <div>
-                                        <p className="text-gray-500 font-semibold text-sm leading-tight">Level</p>
-                                        <p className={cn("font-black text-2xl leading-none -mt-0.5", item.iconColor)}>{item.level}</p>
-                                    </div>
+                                    <p className={cn("font-black text-xl", item.iconColor)}>Level {item.level}</p>
                                 </div>
                                 
                                 <p className={cn("font-black text-4xl", item.iconColor)}>{item.users.length}</p>
                         
                                 <div className="relative">
                                     <div className={cn(
-                                        "bg-white shadow-md rounded-xl px-3 py-1.5 flex items-center gap-2 border",
+                                        "bg-white shadow-md rounded-full px-2 py-1 flex items-center gap-1.5 border",
                                         item.borderColor
                                     )}>
-                                        <Percent className={cn("w-4 h-4", item.iconColor)} />
-                                        <div>
-                                            <p className={cn("font-black text-sm leading-none", item.iconColor)}>{item.commission}</p>
-                                            <p className="text-[10px] font-bold text-gray-500 leading-none">Commission</p>
-                                        </div>
+                                        <Percent className={cn("w-3 h-3", item.iconColor)} />
+                                        <p className={cn("font-bold text-xs leading-none whitespace-nowrap", item.iconColor)}>{item.commission} Commission</p>
                                     </div>
                                 </div>
                             </div>
