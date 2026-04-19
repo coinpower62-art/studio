@@ -45,53 +45,12 @@ type ReferredUser = {
     created_at: string;
 };
 
-function TeamSummary({ l1, l2, l3 }: { l1: number; l2: number; l3: number }) {
-    const summaryItems = [
-        { label: "Level 1 Members", value: l1, color: "text-orange-700", borderColor: "border-amber-300", iconColor: "text-amber-500" },
-        { label: "Level 2 Members", value: l2, color: "text-blue-600", borderColor: "border-blue-300", iconColor: "text-blue-500" },
-        { label: "Level 3 Members", value: l3, color: "text-green-600", borderColor: "border-green-300", iconColor: "text-green-500" },
+function TeamNetwork({ l1, l2, l3 }: { l1: number; l2: number; l3: number }) {
+    const levelData = [
+        { level: 1, count: l1, color: "amber", iconColor: "text-amber-500", borderColor: "border-amber-200", bgColor: "bg-amber-50" },
+        { level: 2, count: l2, color: "blue", iconColor: "text-blue-500", borderColor: "border-blue-200", bgColor: "bg-blue-50" },
+        { level: 3, count: l3, color: "green", iconColor: "text-green-500", borderColor: "border-green-200", bgColor: "bg-green-50" },
     ];
-
-    return (
-        <div className="grid grid-cols-3 gap-3">
-            {summaryItems.map(item => (
-                <div key={item.label} className={`bg-white rounded-2xl border ${item.borderColor} p-4 text-center shadow-sm`}>
-                    <Users className={`w-8 h-8 ${item.iconColor} mx-auto mb-2`} />
-                    <p className={`font-black text-3xl ${item.color}`}>{item.value}</p>
-                    <p className="text-gray-500 text-xs mt-1">{item.label}</p>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-
-function ReferralOrgChart({ referredUsers }: { referredUsers: ReferredUser[] }) {
-    const Node = ({ title, subtitle, className, isYou = false, commission }: { title: string; subtitle: string; className?: string; isYou?: boolean; commission?: string }) => (
-        <div className={cn(
-            "border-2 w-full rounded-lg p-2.5 text-center shadow-sm mx-auto h-full flex flex-col justify-center",
-            isYou ? "bg-amber-50 border-amber-200" : "bg-blue-50 border-blue-200",
-            className
-        )}>
-            <p className={cn(
-                "font-black text-xs uppercase truncate",
-                isYou ? "text-amber-800" : "text-blue-800"
-            )}>{title}</p>
-            <p className={cn(
-                "text-[10px] leading-tight",
-                isYou ? "text-amber-600" : "text-blue-600"
-            )}>{subtitle}</p>
-             {commission && (
-                <div className={cn("mt-1.5 pt-1.5 border-t", "border-blue-200")}>
-                    <p className="text-blue-700 text-xs font-bold flex items-center justify-center gap-1">
-                        <Percent className="w-3 h-3" /> {commission}
-                    </p>
-                </div>
-            )}
-        </div>
-    );
-
-    const roles = ['Network Specialist', 'Recruitment Lead', 'Wealth Accelerator'];
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
@@ -103,11 +62,10 @@ function ReferralOrgChart({ referredUsers }: { referredUsers: ReferredUser[] }) 
             <div className="flex flex-col items-center">
                 {/* Top Node */}
                 <div className="w-48">
-                    <Node
-                        title="THE CENTRAL LEADERSHIP"
-                        subtitle="(Strategic Growth Director)"
-                        isYou
-                    />
+                     <div className="border-2 w-full rounded-lg p-2.5 text-center shadow-sm mx-auto h-full flex flex-col justify-center bg-amber-50 border-amber-200">
+                        <p className="font-black text-xs uppercase truncate text-amber-800">THE CENTRAL LEADERSHIP</p>
+                        <p className="text-[10px] leading-tight text-amber-600">(Strategic Growth Director)</p>
+                    </div>
                 </div>
 
                 {/* Connecting Line */}
@@ -123,27 +81,19 @@ function ReferralOrgChart({ referredUsers }: { referredUsers: ReferredUser[] }) 
                     <div className="w-px h-6 bg-gray-300" />
                 </div>
 
-                {/* Subordinates Grid */}
+                {/* Subordinates Grid with counters */}
                 <div className="grid grid-cols-3 gap-2 w-full max-w-md">
-                    {Array.from({ length: 3 }).map((_, i) => {
-                        const user = referredUsers[i];
-                        return (
-                            <div key={i}>
-                                {user ? (
-                                    <Node
-                                        title={user.full_name || user.username || "Referred User"}
-                                        subtitle={roles[i]}
-                                        commission="10% Commission"
-                                    />
-                                ) : (
-                                    <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-2 text-center h-full flex flex-col justify-center items-center">
-                                        <Users className="w-5 h-5 text-gray-400 mb-1" />
-                                        <p className="text-[11px] text-gray-500 font-semibold">Empty Slot</p>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
+                    {levelData.map(item => (
+                        <div key={item.level} className={cn(
+                            "border-2 rounded-lg p-3 text-center shadow-sm h-full flex flex-col justify-center items-center",
+                            item.borderColor, item.bgColor
+                        )}>
+                            <Users className={cn("w-6 h-6 mb-1", item.iconColor)} />
+                            <p className={cn("font-black text-2xl", item.iconColor.replace('500', '600'))}>{item.count}</p>
+                            <p className="text-gray-500 text-[10px] mt-0.5">Level {item.level}</p>
+                             <p className="text-gray-500 text-[10px]">Members</p>
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>
@@ -348,11 +298,9 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            <TeamSummary l1={downlineCounts.l1} l2={downlineCounts.l2} l3={downlineCounts.l3} />
+            <TeamNetwork l1={downlineCounts.l1} l2={downlineCounts.l2} l3={downlineCounts.l3} />
 
             <ReferralLink referralCode={profile.referral_code} />
-            
-            <ReferralOrgChart referredUsers={referredUsers} />
 
             <RedeemGiftCode onRedeem={fetchData} />
 
