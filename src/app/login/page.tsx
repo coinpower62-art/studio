@@ -15,7 +15,7 @@ function LoginComponent() {
   const isSuccessMessage = message && (message.toLowerCase().includes('success') || message.toLowerCase().includes('bonus'));
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm">
             <div className="text-center mb-8">
                <LoginLogo />

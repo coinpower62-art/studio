@@ -289,7 +289,7 @@ function SignUpForm() {
   if (deviceHasAccount === null) {
     // Loading state while checking localStorage
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
           <p>Loading...</p>
       </div>
     );
@@ -297,7 +297,7 @@ function SignUpForm() {
 
   if (deviceHasAccount) {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-background px-4">
             <div className="w-full max-w-sm text-center">
                 <LoginLogo />
                 <div className="bg-card rounded-2xl shadow-xl border border-gray-100 p-6 mt-6">
@@ -318,7 +318,7 @@ function SignUpForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8 sm:py-12">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8 sm:py-12">
       <div className="w-full max-w-lg">
         <div className="text-center mb-6">
            <LoginLogo />
