@@ -11,7 +11,8 @@ import { claimReferralBonus } from './actions';
 import { redeemGiftCode } from '@/app/dashboard/bank/actions';
 
 // Icons and components
-import { LogOut, ChevronRight, Globe, Gift, Share2, Users, CheckCircle, User as UserIcon, Info } from 'lucide-react';
+import { LogOut, ChevronRight, Globe, Gift, Share2, Users, CheckCircle, User as UserIcon } from 'lucide-react';
+import { SiTelegram } from 'react-icons/si';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -129,7 +130,7 @@ function RedeemGiftCode({ onRedeem }: { onRedeem: () => void }) {
 
     const handleRedeem = async () => {
         if (!giftCode.trim()) {
-            toast({ title: "Please enter a gift code.", variant: "destructive" });
+            toast({ title: "Enter a gift code", variant: "destructive" });
             return;
         }
         setIsRedeeming(true);
@@ -271,6 +272,25 @@ export default function DashboardPage() {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+    
+    useEffect(() => {
+        const hasSeenToast = localStorage.getItem('telegram_toast_seen');
+        if (!hasSeenToast) {
+            const timer = setTimeout(() => {
+                toast({
+                    title: "Join our Community!",
+                    description: "Get live support and updates in our official Telegram group.",
+                    action: (
+                        <a href="https://t.me/coinpow_group" target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" size="sm">Join Now</Button>
+                        </a>
+                    ),
+                });
+                localStorage.setItem('telegram_toast_seen', 'true');
+            }, 5000); // 5 seconds delay
+            return () => clearTimeout(timer);
+        }
+    }, [toast]);
 
     const handleClaimBonus = async () => {
         const result = await claimReferralBonus();
@@ -343,7 +363,7 @@ export default function DashboardPage() {
             <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-4">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <Share2 className="w-5 h-5 text-green-600" />
+                        <Share2 className="w-4 h-4 text-green-600" />
                     </div>
                     <div>
                         <h3 className="font-bold text-gray-900 text-sm">
@@ -352,9 +372,9 @@ export default function DashboardPage() {
                         <p className="text-xs text-gray-600 mt-1 leading-relaxed">
                             For each friend that signs up with your link, you'll earn a <span className="font-bold text-amber-600">$5.00 bonus</span> when they make their first deposit.
                         </p>
-                        <div className="inline-flex items-center gap-2 mt-3 bg-amber-50 text-amber-800 font-medium text-xs px-3 py-2 rounded-lg border border-amber-200">
-                            <Info className="w-4 h-4 text-amber-600" />
-                            <span>Note: A 15% fee applies to all withdrawals.</span>
+                        <div className="flex items-center gap-2 mt-3 bg-blue-50 text-blue-800 font-medium text-xs px-3 py-2 rounded-lg border border-blue-200">
+                            <SiTelegram className="w-4 h-4 text-blue-600" />
+                            <span>Join our <a href="https://t.me/coinpow_group" target="_blank" rel="noopener noreferrer" className="font-bold underline">Telegram group</a> for live support!</span>
                         </div>
                     </div>
                 </div>
