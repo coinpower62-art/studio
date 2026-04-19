@@ -24,6 +24,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { cn } from '@/lib/utils';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
 // Define profile type
@@ -79,7 +80,7 @@ function TeamNetwork({ profile, l1_users, l2_users, l3_users }: { profile: Profi
                 <div className="grid grid-cols-3 gap-3 w-full max-w-md">
                     {levelData.map(item => (
                         <div key={item.level} className={cn(
-                            "border-2 rounded-lg p-3 text-center shadow-sm h-full flex flex-col justify-start items-center",
+                            "border-2 rounded-lg p-3 shadow-sm flex flex-col",
                             item.borderColor, item.bgColor
                         )}>
                             <div className="flex items-center justify-between w-full">
@@ -92,22 +93,39 @@ function TeamNetwork({ profile, l1_users, l2_users, l3_users }: { profile: Profi
                             <Badge className={cn("mt-2 text-xs border self-start", item.borderColor, item.bgColor, item.iconColor.replace('500', '700'), "font-bold")}>
                                 <Percent className="w-3 h-3 mr-1" />{item.commission} Commission
                             </Badge>
-                            <div className="mt-3 pt-3 border-t border-gray-200 w-full text-left space-y-1.5 h-28 overflow-y-auto">
-                                {item.users.length > 0 ? (
-                                    item.users.map((user: ReferredUser) => (
-                                        <div key={user.id} className="flex items-center gap-2 p-1 rounded-md hover:bg-gray-100">
-                                            <Avatar className="w-5 h-5">
-                                                <AvatarFallback className="text-[10px] font-bold bg-gray-200 text-gray-500">
-                                                    {(user.username || user.full_name || 'U').charAt(0).toUpperCase()}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <span className="text-xs text-gray-700 font-medium truncate">{user.username || user.full_name || 'Unnamed User'}</span>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="text-xs text-gray-400 italic text-center pt-4">No members at this level</p>
-                                )}
-                            </div>
+
+                            {item.users.length > 0 ? (
+                                <Accordion type="single" collapsible className="w-full mt-3 border-t border-gray-200 pt-2">
+                                    <AccordionItem value={`level-${item.level}`} className="border-b-0">
+                                        <AccordionTrigger className="text-xs font-semibold text-gray-600 hover:no-underline py-1 justify-center">
+                                            <span>View {item.users.length} members</span>
+                                        </AccordionTrigger>
+                                        <AccordionContent>
+                                            <div className="h-32 overflow-y-auto space-y-1.5 pr-2 mt-2">
+                                                {item.users.map((user: ReferredUser) => (
+                                                    <div key={user.id} className="flex items-center justify-between gap-2 p-1 rounded-md hover:bg-gray-100">
+                                                        <div className="flex items-center gap-2 min-w-0">
+                                                            <Avatar className="w-5 h-5">
+                                                                <AvatarFallback className="text-[10px] font-bold bg-gray-200 text-gray-500">
+                                                                    {(user.username || user.full_name || 'U').charAt(0).toUpperCase()}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <span className="text-xs text-gray-700 font-medium truncate">{user.username || user.full_name || 'Unnamed User'}</span>
+                                                        </div>
+                                                        <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0 font-bold", item.borderColor, item.iconColor.replace('500', '700'))}>
+                                                            L{item.level}
+                                                        </Badge>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                </Accordion>
+                            ) : (
+                                <div className="mt-3 pt-3 border-t border-gray-200 flex-1 flex items-center justify-center">
+                                    <p className="text-xs text-gray-400 italic">No members at this level</p>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>
@@ -318,5 +336,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-
-    
