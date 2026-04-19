@@ -88,48 +88,86 @@ function ReferralBonusGoal({ referralCount, hasClaimed, onClaim }: { referralCou
     );
 }
 
-function ReferredUsersList({ users }: { users: ReferredUser[] }) {
-    return (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-4">
-                <Network className="w-5 h-5 text-blue-600" />
-                Your Subordinates Team ({users.length})
-            </h3>
-            {users.length === 0 ? (
-                <div className="text-center py-8">
-                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-lg font-semibold text-gray-700">You haven't referred anyone yet.</p>
-                    <p className="text-sm text-gray-500 mt-1">Share your link to start building your team!</p>
-                </div>
-            ) : (
-                <div className="relative pl-5">
-                    {/* The vertical "network" line */}
-                    <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-gray-200 rounded-full" />
-                    
-                    <div className="space-y-4">
-                        {users.map((user, index) => (
-                            <div key={index} className="relative flex items-center gap-4">
-                                {/* Connector dot and line */}
-                                <div className="absolute left-[19px] top-5 w-5 h-0.5 bg-gray-200" />
-                                <div className="absolute left-[13px] top-[15px] w-3 h-3 rounded-full bg-white border-2 border-blue-500 z-10" />
+function ReferralOrgChart({ profile, referredUsers }: { profile: Profile; referredUsers: ReferredUser[] }) {
+  
+  const Node = ({ title, subtitle, variant = 'default' }: { title: string; subtitle: string; variant?: 'default' | 'user' | 'subordinate' }) => {
+    const baseClasses = "rounded-lg p-2 text-center shadow-sm w-44 mx-auto";
+    const variantClasses = {
+      default: "bg-blue-50 border-2 border-blue-200",
+      user: "bg-amber-50 border-2 border-amber-300",
+      subordinate: "bg-green-50 border-2 border-green-200",
+    };
+    const textClasses = {
+        default: "text-blue-800",
+        user: "text-amber-800",
+        subordinate: "text-green-800",
+    }
+    const subtextClasses = {
+        default: "text-blue-600",
+        user: "text-amber-600",
+        subordinate: "text-green-600",
+    }
 
-                                <Avatar className="w-10 h-10 flex-shrink-0 border-2 border-white ring-2 ring-blue-200 z-10 bg-white">
-                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-sm font-bold">
-                                        {(user.full_name || user.username || 'S').slice(0, 2).toUpperCase()}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-gray-800 text-sm truncate">{user.full_name || user.username}</p>
-                                    <p className="text-xs text-gray-500">Joined: {new Date(user.created_at).toLocaleDateString()}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+    return (
+        <div className={cn(baseClasses, variantClasses[variant])}>
+            <p className={cn("font-bold text-xs uppercase truncate", textClasses[variant])}>{title}</p>
+            <p className={cn("text-[10px] leading-tight", subtextClasses[variant])}>{subtitle}</p>
         </div>
     );
+  };
+  
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-6">
+            <Network className="w-5 h-5 text-blue-600" />
+            Your Subordinates Team ({referredUsers.length})
+        </h3>
+
+        <div className="flex flex-col items-center">
+            {/* Leadership */}
+            <Node title="The Coinpower Leadership" subtitle="(Strategic Oversight & Vision)" />
+            
+            {/* Connector */}
+            <div className="w-px h-6 bg-gray-200" />
+            
+            {/* Regional Head (Current User) */}
+            <Node title={profile.full_name || profile.username || 'You'} subtitle="(Centralized Growth Management)" variant="user" />
+
+            {/* Connector to Subordinates */}
+            {<div className="w-px h-6 bg-gray-200" />}
+
+            {/* Subordinates */}
+            <div className="w-full">
+                {referredUsers.length > 0 ? (
+                    <div className="relative">
+                        {/* Horizontal connecting line */}
+                        {referredUsers.length > 1 &&
+                            <div className="absolute top-0 left-1/2 h-px bg-gray-200" style={{ width: `calc(100% * ${ (referredUsers.length - 1) / referredUsers.length })`, transform: 'translateX(-50%)'}}></div>
+                        }
+
+                        <div className="flex justify-around pt-6">
+                            {referredUsers.map((user, index) => (
+                                <div key={index} className="flex flex-col items-center relative px-1">
+                                    {/* Vertical line up to horizontal line */}
+                                    <div className="absolute -top-6 w-px h-6 bg-gray-200" />
+                                    <Node title={user.full_name || user.username || 'Referral'} subtitle="(Elite Lead)" variant="subordinate" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="text-center py-8">
+                        <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                        <p className="text-lg font-semibold text-gray-700">You haven't referred anyone yet.</p>
+                        <p className="text-sm text-gray-500 mt-1">Share your link to start building your team!</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    </div>
+  );
 }
+
 
 function RedeemGiftCode({ onRedeem }: { onRedeem: () => void }) {
     const { toast } = useToast();
@@ -343,7 +381,7 @@ export default function DashboardPage() {
 
             <ReferralBonusGoal referralCount={referralCount} hasClaimed={hasClaimedReferralBonus} onClaim={handleClaimBonus} />
             
-            <ReferredUsersList users={referredUsers} />
+            <ReferralOrgChart profile={profile} referredUsers={referredUsers} />
 
             <RedeemGiftCode onRedeem={fetchData} />
 
