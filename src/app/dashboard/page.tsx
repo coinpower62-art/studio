@@ -402,22 +402,6 @@ export default function DashboardPage() {
 
             <RedeemGiftCode onRedeem={fetchData} />
 
-            <Link href="/dashboard/video-tutorial" className="block group">
-                <div className="bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl p-5 text-white shadow-lg group-hover:shadow-xl transition-all h-full flex flex-col justify-center">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h3 className="font-bold text-base flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                                    <Play className="w-4 h-4 text-white ml-0.5" fill="white" />
-                                </div>
-                                Watch Tutorial
-                            </h3>
-                            <p className="text-xs text-amber-100 mt-2">Learn how to operate the app and start earning.</p>
-                        </div>
-                        <ChevronRight className="w-6 h-6 text-amber-200 transition-transform group-hover:translate-x-1" />
-                    </div>
-                </div>
-            </Link>
             <InstallButton />
         </div>
     );
