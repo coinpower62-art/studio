@@ -196,7 +196,6 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [hasClaimedReferralBonus, setHasClaimedReferralBonus] = useState(false);
     const [totalEarned, setTotalEarned] = useState(0);
-    const [showFeeNotice, setShowFeeNotice] = useState(false);
 
     const fetchData = useCallback(async () => {
         const supabase = createClient();
@@ -284,21 +283,6 @@ export default function DashboardPage() {
         }
     }, [toast]);
     
-    useEffect(() => {
-        const feeNoticeSeen = localStorage.getItem('coinpower_fee_notice_seen');
-        if (!feeNoticeSeen) {
-            const timer = setTimeout(() => {
-                setShowFeeNotice(true);
-            }, 3000);
-            return () => clearTimeout(timer);
-        }
-    }, []);
-
-    const handleFeeNoticeClose = () => {
-        localStorage.setItem('coinpower_fee_notice_seen', 'true');
-        setShowFeeNotice(false);
-    };
-
     const handleClaimBonus = async () => {
         const result = await claimReferralBonus();
         if (result.error) {
@@ -319,28 +303,6 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-4">
-             <Dialog open={showFeeNotice} onOpenChange={(open) => { if (!open) handleFeeNoticeClose(); }}>
-                <DialogContent className="max-w-sm mx-auto rounded-2xl p-0 overflow-hidden sm:rounded-2xl">
-                    <div className="p-6 text-center">
-                        <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
-                            <Info className="w-7 h-7 text-amber-500" />
-                        </div>
-                        <DialogTitle className="text-gray-900 text-lg font-bold mb-2">Important Notice: Withdrawal Fee</DialogTitle>
-                        <DialogDescription className="text-gray-500 text-sm leading-relaxed">
-                            Please be aware that a standard fee of 15% will be applied to all withdrawals. This fee helps us maintain the platform and ensure secure transactions.
-                        </DialogDescription>
-                    </div>
-                    <div className="p-4 bg-gray-50 border-t">
-                        <Button
-                            onClick={handleFeeNoticeClose}
-                            className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg"
-                        >
-                            I Understand
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-500 to-amber-700 p-4">
                     <h3 className="font-bold text-white text-sm sm:text-base">Your Profile</h3>
@@ -388,23 +350,6 @@ export default function DashboardPage() {
                     </div>
                 </div>
             </div>
-
-            <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-4">
-                <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <Info className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-gray-900 text-sm">
-                            Important: Withdrawal Fee
-                        </h3>
-                        <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                             Please be aware that a standard fee of 15% will be applied to all withdrawals. This fee helps us maintain the platform and ensure secure transactions.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
 
             <ReferralLink referralCode={profile.referral_code} />
 
