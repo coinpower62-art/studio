@@ -14,7 +14,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
 
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('balance, parent_id, username, email') // Changed from referred_by
+        .select('balance, parent_id, username, email')
         .eq('id', user.id)
         .single();
 
@@ -33,7 +33,6 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         return { error: 'Generator not found or is not available for rent.' };
     }
     
-    // PG1 is free and can only be rented once
     if (generatorToRent.id === 'pg1') {
         const { count, error: countError } = await supabase
             .from('rented_generators')
@@ -83,46 +82,48 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         return { error: 'Could not rent the generator. Your balance has not been changed.' };
     }
     
-    // START: Referral Commission Logic
+    // START: 3-Level Referral Commission Logic
     if (generatorToRent.price > 0 && profile.parent_id) {
-        const { count, error: countError } = await supabase
-            .from('rented_generators')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .neq('generator_id', 'pg1');
+        const commissionRates = [0.10, 0.05, 0.02]; // L1, L2, L3
+        let currentParentId: string | null = profile.parent_id;
 
-        if (countError) {
-            console.error('Referral commission check failed:', countError.message);
-        } else if (count === 1) { // This is the first paid generator for this user
-            const { data: referrerProfile, error: referrerError } = await supabase
+        for (let level = 0; level < 3; level++) {
+            if (!currentParentId) break;
+
+            const { data: referrer, error: referrerError } = await supabase
                 .from('profiles')
-                .select('id, balance')
-                .eq('id', profile.parent_id)
+                .select('id, parent_id, username, email')
+                .eq('id', currentParentId)
                 .single();
-
-            if (referrerProfile) {
-                const commission = generatorToRent.price * 0.10;
-                const { error: updateReferrerError } = await supabase
-                    .from('profiles')
-                    .update({ balance: referrerProfile.balance + commission })
-                    .eq('id', referrerProfile.id);
-
-                if (!updateReferrerError) {
-                    // Log the commission payment for record-keeping. It's okay if this fails.
-                    await supabase.from('gift_codes').insert({
-                        code: `COMM-${user.id.slice(0, 4)}-${generatorToRent.id}`,
-                        amount: commission,
-                        note: `10% commission from ${profile.username || profile.email} renting ${generatorToRent.name}`,
-                        is_redeemed: true,
-                        redeemed_at: new Date().toISOString(),
-                        redeemed_by_user_id: referrerProfile.id
-                    });
-                } else {
-                    console.error('Failed to apply referral commission:', updateReferrerError.message);
-                }
-            } else {
-                console.error('Referrer profile not found for parent_id:', profile.parent_id);
+            
+            if (referrerError || !referrer) {
+                console.error(`Commission Error: Could not find referrer at level ${level + 1}. Parent ID: ${currentParentId}`);
+                break;
             }
+
+            const commission = generatorToRent.price * commissionRates[level];
+            
+            // Use RPC to atomically update balance to prevent race conditions
+            const { error: updateReferrerError } = await supabase.rpc('increment_balance', {
+                user_id_in: referrer.id,
+                amount_in: commission
+            });
+
+            if (updateReferrerError) {
+                console.error(`Failed to apply L${level + 1} commission for user ${referrer.id}:`, updateReferrerError.message);
+            } else {
+                 // Log commission payment for record-keeping
+                await supabase.from('gift_codes').insert({
+                    code: `COMM-L${level+1}-${user.id.slice(0,4)}-${generatorToRent.id}`,
+                    amount: commission,
+                    note: `${commissionRates[level]*100}% L${level+1} comm from ${profile.username || profile.email} renting ${generatorToRent.name}`,
+                    is_redeemed: true,
+                    redeemed_at: new Date().toISOString(),
+                    redeemed_by_user_id: referrer.id
+                });
+            }
+
+            currentParentId = referrer.parent_id; // Move to the next level up
         }
     }
     // END: Referral Commission Logic
@@ -132,3 +133,4 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     revalidatePath('/dashboard');
     return {};
 }
+

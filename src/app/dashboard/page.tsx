@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -10,7 +11,7 @@ import { logout } from '@/app/login/actions';
 import { redeemGiftCode } from '@/app/dashboard/bank/actions';
 
 // Icons and components
-import { LogOut, ChevronRight, Globe, Gift, Share2, Users, CheckCircle, User as UserIcon, Info, Network } from 'lucide-react';
+import { LogOut, ChevronRight, Globe, Gift, Share2, Users, CheckCircle, User as UserIcon, Info, Network, Percent } from 'lucide-react';
 import { SiTelegram } from 'react-icons/si';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -38,16 +39,45 @@ type Profile = {
 };
 
 type ReferredUser = {
+    id: string;
     full_name: string | null;
     username: string | null;
     created_at: string;
 };
 
+function TeamSummary({ l1, l2, l3 }: { l1: number, l2: number, l3: number }) {
+    const summaryItems = [
+        { label: "Level 1 Members", value: l1, color: "text-amber-600", iconColor: "bg-amber-100" },
+        { label: "Level 2 Members", value: l2, color: "text-blue-600", iconColor: "bg-blue-100" },
+        { label: "Level 3 Members", value: l3, color: "text-green-600", iconColor: "bg-green-100" },
+    ];
+
+    return (
+         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+             <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-4">
+                <Users className="w-5 h-5 text-gray-500" />
+                Team Summary
+            </h3>
+            <div className="grid grid-cols-3 gap-3">
+                {summaryItems.map(item => (
+                    <div key={item.label} className={`rounded-xl p-3 text-center border ${item.iconColor.replace('bg-', 'border-')}`}>
+                        <div className={`w-9 h-9 rounded-lg ${item.iconColor} flex items-center justify-center mx-auto mb-1.5`}>
+                           <Users className={`w-5 h-5 ${item.color}`} />
+                        </div>
+                        <p className={`font-black text-xl ${item.color}`}>{item.value}</p>
+                        <p className="text-gray-500 text-[10px] font-medium mt-0.5">{item.label}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 
 function ReferralOrgChart({ referredUsers, profile, referralCount }: { referredUsers: ReferredUser[], profile: Profile | null, referralCount: number }) {
-    const Node = ({ title, subtitle, teamSize, percentage, className, isYou = false }: { title: string; subtitle: string; teamSize?: number; percentage?: string; className?: string; isYou?: boolean }) => (
+    const Node = ({ title, subtitle, teamSize, percentage, className, isYou = false, commission }: { title: string; subtitle: string; teamSize?: number; percentage?: string; className?: string; isYou?: boolean; commission?: string }) => (
         <div className={cn(
-            "border-2 w-full rounded-lg p-3 text-center shadow-sm mx-auto h-full flex flex-col justify-center", 
+            "border-2 w-full rounded-lg p-2.5 text-center shadow-sm mx-auto h-full flex flex-col justify-center", 
             isYou ? "bg-amber-50 border-amber-200" : "bg-blue-50 border-blue-200",
             className
         )}>
@@ -67,33 +97,37 @@ function ReferralOrgChart({ referredUsers, profile, referralCount }: { referredU
                     </p>
                 )}
                 {percentage !== undefined && (
-                    <p className={cn(isYou ? "text-amber-700" : "text-blue-700")}>
-                        Bonus Progress: <span className="font-bold">{percentage}</span>
+                     <p className={cn("font-semibold", isYou ? "text-amber-700" : "text-blue-700")}>
+                        Bonus: <span className="font-bold">{percentage}</span>
                     </p>
                 )}
+            </div>
+        )}
+         {commission && (
+            <div className={cn("mt-1.5 pt-1.5 border-t", "border-blue-200")}>
+                <p className="text-blue-700 text-xs font-bold flex items-center justify-center gap-1">
+                    <Percent className="w-3 h-3" /> {commission}
+                </p>
             </div>
         )}
         </div>
     );
 
     const roles = ['Network Specialist', 'Recruitment Lead', 'Wealth Accelerator'];
-    const progressPercentage = `${Math.min((referralCount / 5) * 100, 100).toFixed(0)}%`;
 
     return (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
             <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-6">
                 <Network className="w-5 h-5 text-blue-600" />
-                Your Subordinates Team ({referredUsers.length})
+                Your Subordinates Team
             </h3>
 
             <div className="flex flex-col items-center">
                 {/* Top Node */}
                 <div className="w-48">
                      <Node 
-                        title={profile?.full_name || profile?.username || 'You'} 
+                        title="THE CENTRAL LEADERSHIP"
                         subtitle="(Strategic Growth Director)" 
-                        teamSize={referralCount}
-                        percentage={progressPercentage}
                         isYou
                     />
                 </div>
@@ -105,11 +139,13 @@ function ReferralOrgChart({ referredUsers, profile, referralCount }: { referredU
                 <div className="w-full max-w-md h-px bg-gray-300" />
 
                 {/* Vertical lines to subordinates */}
-                <div className="flex justify-around w-full max-w-md">
-                    <div className="w-px h-6 bg-gray-300" />
-                    <div className="w-px h-6 bg-gray-300" />
-                    <div className="w-px h-6 bg-gray-300" />
-                </div>
+                {referralCount > 0 && (
+                    <div className="flex justify-around w-full max-w-md">
+                        <div className="w-px h-6 bg-gray-300" />
+                        <div className="w-px h-6 bg-gray-300" />
+                        <div className="w-px h-6 bg-gray-300" />
+                    </div>
+                )}
                 
                 {/* Subordinates Grid */}
                 <div className="grid grid-cols-3 gap-2 w-full max-w-md">
@@ -120,12 +156,13 @@ function ReferralOrgChart({ referredUsers, profile, referralCount }: { referredU
                                 {user ? (
                                     <Node 
                                         title={user.full_name || user.username || "Referred User"} 
-                                        subtitle={roles[i]} 
+                                        subtitle={roles[i]}
+                                        commission="10% Commission"
                                     />
                                 ) : (
-                                    <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-2 text-center h-full flex flex-col justify-center items-center">
+                                    <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-2 text-center h-full flex flex-col justify-center items-center">
                                         <Users className="w-5 h-5 text-gray-400 mb-1" />
-                                        <p className="text-[10px] text-gray-500 font-semibold">Empty Slot</p>
+                                        <p className="text-[11px] text-gray-500 font-semibold">Empty Slot</p>
                                     </div>
                                 )}
                             </div>
@@ -204,10 +241,10 @@ export default function DashboardPage() {
     const [user, setUser] = useState<SupabaseUser | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [activeGeneratorCount, setActiveGeneratorCount] = useState(0);
-    const [referralCount, setReferralCount] = useState(0);
     const [referredUsers, setReferredUsers] = useState<ReferredUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [totalEarned, setTotalEarned] = useState(0);
+    const [downlineCounts, setDownlineCounts] = useState({ l1: 0, l2: 0, l3: 0 });
 
     const fetchData = useCallback(async () => {
         const supabase = createClient();
@@ -223,12 +260,16 @@ export default function DashboardPage() {
             profileResult, 
             rentedGeneratorsResult, 
             depositsResult,
-            withdrawalsResult
+            withdrawalsResult,
+            referredUsersResult,
+            downlineCountsResult
         ] = await Promise.all([
             supabase.from('profiles').select('*').eq('id', user.id).single(),
             supabase.from('rented_generators').select('id, expires_at').eq('user_id', user.id),
             supabase.from('deposit_requests').select('amount').eq('user_id', user.id).eq('status', 'approved'),
-            supabase.from('withdrawal_requests').select('amount').eq('user_id', user.id).eq('status', 'approved')
+            supabase.from('withdrawal_requests').select('amount').eq('user_id', user.id).eq('status', 'approved'),
+            supabase.rpc('get_referred_users', { user_id_in: user.id }),
+            supabase.rpc('get_downline_counts', { user_id_in: user.id }).single()
         ]);
 
         const { data: profileData, error: profileError } = profileResult;
@@ -238,21 +279,21 @@ export default function DashboardPage() {
             return;
         }
         setProfile(profileData);
-
-        if (profileData.referral_code) {
-            const { data: referredUsersData, error: referredUsersError } = await supabase
-                .rpc('get_referred_users', { user_id_in: user.id });
-
-            if (referredUsersError) {
-                console.error("Could not fetch referred users:", referredUsersError.message);
-                setReferralCount(0);
-                setReferredUsers([]);
-            } else {
-                const users = referredUsersData || [];
-                setReferralCount(users.length);
-                setReferredUsers(users as ReferredUser[]);
-            }
+        
+        const { data: referredUsersData, error: referredUsersError } = referredUsersResult;
+        if (referredUsersError) {
+             console.error("Could not fetch referred users:", referredUsersError.message);
+        } else {
+            setReferredUsers((referredUsersData as ReferredUser[]) || []);
         }
+
+        const { data: counts, error: countsError } = downlineCountsResult;
+        if (countsError) {
+            console.error("Could not fetch downline counts:", countsError.message);
+        } else if (counts) {
+            setDownlineCounts({ l1: counts.level1_count || 0, l2: counts.level2_count || 0, l3: counts.level3_count || 0 });
+        }
+
 
         const { data: rentedData } = rentedGeneratorsResult;
         if (rentedData) {
@@ -331,9 +372,11 @@ export default function DashboardPage() {
                 </div>
             </div>
 
+            <TeamSummary l1={downlineCounts.l1} l2={downlineCounts.l2} l3={downlineCounts.l3} />
+
             <ReferralLink referralCode={profile.referral_code} />
             
-            <ReferralOrgChart referredUsers={referredUsers} profile={profile} referralCount={referralCount} />
+            <ReferralOrgChart referredUsers={referredUsers} profile={profile} referralCount={downlineCounts.l1} />
 
             <RedeemGiftCode onRedeem={fetchData} />
 
@@ -341,3 +384,4 @@ export default function DashboardPage() {
         </div>
     );
 }
+

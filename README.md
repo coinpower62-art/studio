@@ -490,17 +490,64 @@ $$ LANGUAGE plpgsql;
 -- This bypasses RLS to allow a user to see basic info of people they referred.
 -- =================================================================
 CREATE OR REPLACE FUNCTION get_referred_users(user_id_in uuid)
-RETURNS TABLE(full_name text, username text, created_at timestamp with time zone) AS $$
+RETURNS TABLE(id uuid, full_name text, username text, created_at timestamp with time zone) AS $$
 BEGIN
   -- Return the list of users who were referred by this user
   -- NOTE: This function bypasses Row Level Security.
   RETURN QUERY
-  SELECT p.full_name, p.username, p.created_at
+  SELECT p.id, p.full_name, p.username, p.created_at
   FROM public.profiles p
   WHERE p.parent_id = user_id_in
   ORDER BY p.created_at DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =================================================================
+-- 14. RPC FUNCTION FOR ATOMIC BALANCE INCREMENT
+-- Atomically increments a user's balance. Used for commissions.
+-- =================================================================
+CREATE OR REPLACE FUNCTION increment_balance(user_id_in uuid, amount_in numeric)
+RETURNS void AS $$
+BEGIN
+  UPDATE public.profiles
+  SET balance = balance + amount_in
+  WHERE id = user_id_in;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- =================================================================
+-- 15. RPC FUNCTION FOR GETTING DOWNLINE COUNTS
+-- Fetches the count of referrals up to 3 levels deep.
+-- =================================================================
+CREATE OR REPLACE FUNCTION get_downline_counts(user_id_in uuid)
+RETURNS TABLE(level1_count bigint, level2_count bigint, level3_count bigint) AS $$
+DECLARE
+    l1_ids uuid[];
+    l2_ids uuid[];
+BEGIN
+    -- Level 1
+    SELECT array_agg(id) INTO l1_ids FROM public.profiles WHERE parent_id = user_id_in;
+    level1_count := COALESCE(array_length(l1_ids, 1), 0);
+
+    -- Level 2
+    IF level1_count > 0 THEN
+        SELECT array_agg(id) INTO l2_ids FROM public.profiles WHERE parent_id = ANY(l1_ids);
+        level2_count := COALESCE(array_length(l2_ids, 1), 0);
+    ELSE
+        level2_count := 0;
+    END IF;
+
+    -- Level 3
+    IF level2_count > 0 THEN
+        SELECT count(*) INTO level3_count FROM public.profiles WHERE parent_id = ANY(l2_ids);
+    ELSE
+        level3_count := 0;
+    END IF;
+
+    RETURN QUERY SELECT level1_count, level2_count, level3_count;
+END;
+$$ LANGUAGE plpgsql;
 
 
 ---
@@ -594,3 +641,5 @@ SET
 -- and 'withdrawal_requests' because of the database setup.
 DELETE FROM auth.users;
 ```
+
+
