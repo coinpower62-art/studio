@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -69,74 +70,77 @@ function TeamNetwork({ profile, l1_users, l2_users, l3_users }: { profile: Profi
                 </div>
 
                 <div className="w-px h-6 bg-gray-300" />
-                <div className="w-full max-w-lg h-px bg-gray-300" />
-                <div className="flex justify-around w-full max-w-lg">
+                <div className="w-full h-px bg-gray-300" />
+                <div className="flex justify-around w-full">
                     <div className="w-px h-6 bg-gray-300" />
                     <div className="w-px h-6 bg-gray-300" />
                     <div className="w-px h-6 bg-gray-300" />
                 </div>
                 
-                <div className="grid grid-cols-3 gap-3 w-full max-w-lg">
+                <div className="grid grid-cols-3 gap-4 w-full">
                     {levelData.map(item => (
                         <div key={item.level} className={cn(
-                            "rounded-2xl p-3 shadow-sm flex flex-col items-center justify-center gap-2.5 min-h-[240px] text-center",
-                            item.borderColor,
-                            item.bgColor
+                            "rounded-2xl shadow-sm flex flex-col text-center border-2 overflow-hidden",
+                            item.borderColor
                         )}>
-                            <div className="flex items-center justify-center gap-2">
-                                <item.icon className={cn("w-5 h-5", item.iconColor)} />
-                                <div>
-                                    <p className="text-gray-500 font-semibold text-sm leading-tight">Level</p>
-                                    <p className={cn("font-black text-2xl leading-none -mt-0.5", item.iconColor)}>{item.level}</p>
-                                </div>
-                            </div>
-                            
-                            <p className={cn("font-black text-4xl", item.iconColor)}>{item.users.length}</p>
-
-                            <div className="relative">
-                                <div className={cn(
-                                    "bg-white shadow-md rounded-xl px-3 py-1.5 flex items-center gap-2 border",
-                                    item.borderColor
-                                )}>
-                                    <Percent className={cn("w-4 h-4", item.iconColor)} />
+                            <div className={cn(
+                                "p-4 flex flex-col items-center justify-between gap-3 flex-grow",
+                                item.bgColor
+                            )}>
+                                <div className="flex items-center justify-center gap-2">
+                                    <item.icon className={cn("w-5 h-5", item.iconColor)} />
                                     <div>
-                                        <p className={cn("font-black text-sm leading-none", item.iconColor)}>{item.commission}</p>
-                                        <p className="text-[10px] font-bold text-gray-500 leading-none">Commission</p>
+                                        <p className="text-gray-500 font-semibold text-sm leading-tight">Level</p>
+                                        <p className={cn("font-black text-2xl leading-none -mt-0.5", item.iconColor)}>{item.level}</p>
+                                    </div>
+                                </div>
+                                
+                                <p className={cn("font-black text-4xl", item.iconColor)}>{item.users.length}</p>
+                        
+                                <div className="relative">
+                                    <div className={cn(
+                                        "bg-white shadow-md rounded-xl px-3 py-1.5 flex items-center gap-2 border",
+                                        item.borderColor
+                                    )}>
+                                        <Percent className={cn("w-4 h-4", item.iconColor)} />
+                                        <div>
+                                            <p className={cn("font-black text-sm leading-none", item.iconColor)}>{item.commission}</p>
+                                            <p className="text-[10px] font-bold text-gray-500 leading-none">Commission</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div className="w-full">
-                            {item.users.length > 0 ? (
-                                <Accordion type="single" collapsible className="w-full">
-                                    <AccordionItem value={`level-${item.level}`} className="border-b-0">
-                                        <AccordionTrigger className="text-xs font-semibold text-gray-600 hover:no-underline py-1 justify-center">
-                                            <span>View {item.users.length} members</span>
-                                        </AccordionTrigger>
-                                        <AccordionContent>
-                                            <div className="h-24 overflow-y-auto space-y-1.5 pr-2 mt-2">
-                                                {item.users.map((user: ReferredUser) => (
-                                                    <div key={user.id} className="flex items-center justify-between gap-2 p-1 rounded-md hover:bg-gray-100">
-                                                        <div className="flex items-center gap-2 min-w-0">
-                                                            <Avatar className="w-5 h-5">
-                                                                <AvatarFallback className="text-[10px] font-bold bg-gray-200 text-gray-500">
-                                                                    {(user.username || user.full_name || 'U').charAt(0).toUpperCase()}
-                                                                </AvatarFallback>
-                                                            </Avatar>
-                                                            <span className="text-xs text-gray-700 font-medium truncate">{user.username || user.full_name || 'Unnamed User'}</span>
+                            <div className="bg-white p-3 min-h-[130px] flex flex-col justify-center">
+                                {item.users.length > 0 ? (
+                                    <Accordion type="single" collapsible className="w-full">
+                                        <AccordionItem value={`level-${item.level}`} className="border-b-0">
+                                            <AccordionTrigger className="text-xs font-semibold text-gray-600 hover:no-underline py-1 justify-center">
+                                                <span>View {item.users.length} members</span>
+                                            </AccordionTrigger>
+                                            <AccordionContent>
+                                                <div className="h-24 overflow-y-auto space-y-1.5 pr-2 mt-2">
+                                                    {item.users.map((user: ReferredUser) => (
+                                                        <div key={user.id} className="flex items-center justify-between gap-2 p-1 rounded-md hover:bg-gray-100">
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <Avatar className="w-5 h-5">
+                                                                    <AvatarFallback className="text-[10px] font-bold bg-gray-200 text-gray-500">
+                                                                        {(user.username || user.full_name || 'U').charAt(0).toUpperCase()}
+                                                                    </AvatarFallback>
+                                                                </Avatar>
+                                                                <span className="text-xs text-gray-700 font-medium truncate">{user.username || user.full_name || 'Unnamed User'}</span>
+                                                            </div>
+                                                            <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0 font-bold", item.borderColor, item.iconColor)}>
+                                                                L{item.level}
+                                                            </Badge>
                                                         </div>
-                                                        <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0 font-bold", item.borderColor, item.iconColor)}>
-                                                            L{item.level}
-                                                        </Badge>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                </Accordion>
-                            ) : (
-                                <p className="text-center text-gray-400 text-xs py-4">No members at this level</p>
-                            )}
+                                                    ))}
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    </Accordion>
+                                ) : (
+                                    <p className="text-center text-gray-400 text-xs py-4">No members at this level</p>
+                                )}
                             </div>
                         </div>
                     ))}
