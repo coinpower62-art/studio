@@ -11,8 +11,7 @@ import { claimReferralBonus } from './actions';
 import { redeemGiftCode } from '@/app/dashboard/bank/actions';
 
 // Icons and components
-import { LogOut, Play, ChevronRight, Globe, Gift, Share2, Users, CheckCircle, User as UserIcon } from 'lucide-react';
-import { SiTelegram } from 'react-icons/si';
+import { LogOut, ChevronRight, Globe, Gift, Share2, Users, CheckCircle, User as UserIcon, Info } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,13 +20,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ReferralLink } from '@/components/ReferralLink';
 import { Input } from '@/components/ui/input';
 import { Progress } from "@/components/ui/progress";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 
 // Define profile type
 type Profile = {
@@ -199,7 +191,6 @@ export default function DashboardPage() {
     const [referralCount, setReferralCount] = useState(0);
     const [referredUsers, setReferredUsers] = useState<ReferredUser[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showTelegramPopup, setShowTelegramPopup] = useState(false);
     const [hasClaimedReferralBonus, setHasClaimedReferralBonus] = useState(false);
     const [totalEarned, setTotalEarned] = useState(0);
 
@@ -279,10 +270,6 @@ export default function DashboardPage() {
 
     useEffect(() => {
         fetchData();
-        const timer = setTimeout(() => {
-            setShowTelegramPopup(true);
-        }, 1500); // 1.5s delay
-        return () => clearTimeout(timer);
     }, [fetchData]);
 
     const handleClaimBonus = async () => {
@@ -305,26 +292,6 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-4">
-             <Dialog open={showTelegramPopup} onOpenChange={setShowTelegramPopup}>
-                <DialogContent className="sm:max-w-md rounded-2xl">
-                    <DialogHeader className="text-center items-center">
-                        <div className="w-16 h-16 rounded-2xl bg-sky-100 flex items-center justify-center mb-2">
-                           <SiTelegram className="w-8 h-8 text-sky-500" />
-                        </div>
-                        <DialogTitle className="text-xl font-bold">Join our Community!</DialogTitle>
-                        <DialogDescription className="text-gray-500 text-sm pt-1">
-                            Click below to join our official Telegram group for live support, announcements, and to connect with other investors.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <a href="https://t.me/coinpowerofficial" target="_blank" rel="noopener noreferrer" onClick={() => setShowTelegramPopup(false)}>
-                        <Button className="w-full h-11 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-lg text-base">
-                            <SiTelegram className="w-5 h-5 mr-2" />
-                            Join Telegram Group
-                        </Button>
-                    </a>
-                </DialogContent>
-            </Dialog>
-
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-500 to-amber-700 p-4">
                     <h3 className="font-bold text-white text-sm sm:text-base">Your Profile</h3>
@@ -385,10 +352,10 @@ export default function DashboardPage() {
                         <p className="text-xs text-gray-600 mt-1 leading-relaxed">
                             For each friend that signs up with your link, you'll earn a <span className="font-bold text-amber-600">$5.00 bonus</span> when they make their first deposit.
                         </p>
-                        <a href="https://t.me/coinpowerofficial" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-3 bg-sky-100 text-sky-700 font-bold text-xs px-3 py-2 rounded-lg hover:bg-sky-200 transition-colors">
-                            <SiTelegram className="w-4 h-4" />
-                            Join our Telegram Group
-                        </a>
+                        <div className="inline-flex items-center gap-2 mt-3 bg-amber-50 text-amber-800 font-medium text-xs px-3 py-2 rounded-lg border border-amber-200">
+                            <Info className="w-4 h-4 text-amber-600" />
+                            <span>Note: A 15% fee applies to all withdrawals.</span>
+                        </div>
                     </div>
                 </div>
             </div>
