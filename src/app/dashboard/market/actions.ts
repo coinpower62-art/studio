@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -14,7 +13,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
 
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('balance')
+        .select('balance, referred_by, username, email') // Added referred_by, username, email
         .eq('id', user.id)
         .single();
 
@@ -82,6 +81,50 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         await supabase.from('profiles').update({ balance: profile.balance }).eq('id', user.id);
         return { error: 'Could not rent the generator. Your balance has not been changed.' };
     }
+    
+    // START: Referral Commission Logic
+    if (generatorToRent.price > 0 && profile.referred_by) {
+        const { count, error: countError } = await supabase
+            .from('rented_generators')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .neq('generator_id', 'pg1');
+
+        if (countError) {
+            console.error('Referral commission check failed:', countError.message);
+        } else if (count === 1) { // This is the first paid generator for this user
+            const { data: referrerProfile, error: referrerError } = await supabase
+                .from('profiles')
+                .select('id, balance')
+                .eq('referral_code', profile.referred_by)
+                .single();
+
+            if (referrerProfile) {
+                const commission = generatorToRent.price * 0.10;
+                const { error: updateReferrerError } = await supabase
+                    .from('profiles')
+                    .update({ balance: referrerProfile.balance + commission })
+                    .eq('id', referrerProfile.id);
+
+                if (!updateReferrerError) {
+                    // Log the commission payment for record-keeping. It's okay if this fails.
+                    await supabase.from('gift_codes').insert({
+                        code: `COMM-${user.id.slice(0, 4)}-${generatorToRent.id}`,
+                        amount: commission,
+                        note: `10% commission from ${profile.username || profile.email} renting ${generatorToRent.name}`,
+                        is_redeemed: true,
+                        redeemed_at: new Date().toISOString(),
+                        redeemed_by_user_id: referrerProfile.id
+                    });
+                } else {
+                    console.error('Failed to apply referral commission:', updateReferrerError.message);
+                }
+            } else {
+                console.error('Referrer profile not found for code:', profile.referred_by);
+            }
+        }
+    }
+    // END: Referral Commission Logic
     
     revalidatePath('/dashboard/market');
     revalidatePath('/dashboard/power');
