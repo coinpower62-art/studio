@@ -89,76 +89,47 @@ function ReferralBonusGoal({ referralCount, hasClaimed, onClaim }: { referralCou
 }
 
 function ReferralOrgChart({ referredUsers }: { referredUsers: ReferredUser[] }) {
-  
-  const subordinateTitles = ["Network Specialist", "Recruitment Lead", "Wealth Accelerator"];
-
-  const Node = ({ title, subtitle, variant = 'default' }: { title: string; subtitle: string; variant?: 'default' | 'subordinate' }) => {
-    const baseClasses = "rounded-lg p-2 text-center shadow-sm w-44 mx-auto";
-    const variantClasses = {
-      default: "bg-blue-50 border-2 border-blue-200",
-      subordinate: "bg-green-50 border-2 border-green-200",
-    };
-    const textClasses = {
-        default: "text-blue-800",
-        subordinate: "text-green-800",
-    }
-    const subtextClasses = {
-        default: "text-blue-600",
-        subordinate: "text-green-600",
-    }
-
-    return (
-        <div className={cn(baseClasses, variantClasses[variant])}>
-            <p className={cn("font-bold text-xs uppercase truncate", textClasses[variant])}>{title}</p>
-            <p className={cn("text-[10px] leading-tight", subtextClasses[variant])}>{subtitle}</p>
+    const Node = ({ title, subtitle }: { title: string; subtitle: string }) => (
+        <div className="bg-blue-50 border-2 border-blue-200 w-56 rounded-lg p-2 text-center shadow-sm mx-auto">
+            <p className="font-bold text-xs uppercase truncate text-blue-800">{title}</p>
+            <p className="text-[10px] leading-tight text-blue-600">{subtitle}</p>
         </div>
     );
-  };
-  
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-        <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-6">
-            <Network className="w-5 h-5 text-blue-600" />
-            Your Subordinates Team ({referredUsers.length})
-        </h3>
 
-        <div className="flex flex-col items-center">
-            {/* Central Leadership */}
-            <Node title="THE CENTRAL LEADERSHIP" subtitle="(Strategic Growth Director)" />
-            
-            {referredUsers.length > 0 ? (
-              <div className="w-full relative mt-6">
-                {/* This is the line going down from the Leader and the horizontal bar */}
-                <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-px h-6 bg-gray-200" />
-                <div className="absolute top-0 left-0 w-full h-px bg-gray-200" />
+    return (
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-6">
+                <Network className="w-5 h-5 text-blue-600" />
+                Your Subordinates Team ({referredUsers.length})
+            </h3>
 
-                <div className="flex justify-around pt-6">
-                  {referredUsers.map((user, index) => (
-                    <div key={index} className="flex flex-col items-center relative px-1">
-                      {/* Vertical line from subordinate up to horizontal line */}
-                      <div className="absolute -top-6 w-px h-6 bg-gray-200" />
-                      <Node 
-                        title={user.full_name || user.username || 'Referral'} 
-                        subtitle={`(${subordinateTitles[index % subordinateTitles.length]})`} 
-                        variant="subordinate" 
-                      />
+            <div className="flex flex-col items-center">
+                <Node title="THE CENTRAL LEADERSHIP" subtitle="(Strategic Growth Director)" />
+
+                {referredUsers.length > 0 ? (
+                    <div className="w-full">
+                        <div className="w-px h-6 bg-gray-200 mx-auto" />
+                        <ul className="space-y-2">
+                            {referredUsers.map((user, i) => (
+                                <li key={i} className="bg-green-50 border border-green-200 rounded-lg p-2 text-sm text-green-800 font-medium text-center">
+                                    {user.full_name || user.username}
+                                </li>
+                            ))}
+                        </ul>
                     </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-                <>
-                  <div className="w-px h-6 bg-gray-200" />
-                  <div className="text-center py-8">
-                      <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                      <p className="text-lg font-semibold text-gray-700">You haven't referred anyone yet.</p>
-                      <p className="text-sm text-gray-500 mt-1">Share your link to start building your team!</p>
-                  </div>
-                </>
-            )}
+                ) : (
+                    <>
+                        <div className="w-px h-8 bg-gray-300" />
+                        <div className="text-center py-6">
+                            <Users className="w-16 h-16 text-gray-300 mx-auto mb-3" />
+                            <p className="text-xl font-bold text-gray-800">You haven't referred anyone yet.</p>
+                            <p className="text-sm text-gray-500 mt-2">Share your link to start building your team!</p>
+                        </div>
+                    </>
+                )}
+            </div>
         </div>
-    </div>
-  );
+    );
 }
 
 
