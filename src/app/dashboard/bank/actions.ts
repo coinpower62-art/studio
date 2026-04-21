@@ -78,6 +78,10 @@ export async function createWithdrawalRequest(formData: {
     return { error: 'Your account withdrawal is locked. Please contact support.' }
   }
 
+  if (formData.amount < 1) {
+    return { error: 'Minimum withdrawal is $1.00.' }
+  }
+
   if (formData.amount > profile.balance) {
     return { error: 'Insufficient balance.' }
   }

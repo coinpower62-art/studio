@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -376,6 +377,11 @@ export default function BankPage() {
     if (!amount || parseFloat(amount) <= 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
     if (!withdrawMethod) { toast({ title: "Select a payment method", variant: "destructive" }); return; }
     const amt = parseFloat(amount);
+    
+    if (amt < 1) {
+      toast({ title: "Minimum withdrawal is $1.00", variant: "destructive" });
+      return;
+    }
 
     if (amt > profile.balance) {
       toast({ title: "Insufficient balance", description: `Your balance is $${profile.balance.toFixed(2)}`, variant: "destructive" });

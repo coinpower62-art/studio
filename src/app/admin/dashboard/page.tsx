@@ -1856,7 +1856,7 @@ function DashboardContent() {
                 <div className="space-y-4">
                   <div>
                     <label className="text-slate-400 text-xs font-semibold">Minimum Withdrawal ($)</label>
-                    <Input type="number" defaultValue="10" className="mt-1 h-9 bg-slate-700 border-slate-600 text-white" />
+                    <Input type="number" defaultValue="1" className="mt-1 h-9 bg-slate-700 border-slate-600 text-white" />
                   </div>
                   <div>
                     <label className="text-slate-400 text-xs font-semibold">Withdrawal Fee (%)</label>
