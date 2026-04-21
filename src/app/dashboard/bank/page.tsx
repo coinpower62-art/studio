@@ -64,6 +64,11 @@ type Generator = {
   name: string;
 };
 
+type RentedGeneratorRecord = {
+    generator_id: string;
+    expires_at: string;
+}
+
 type WithdrawRecord = {
   id: string;
   user_id: string;
@@ -216,7 +221,7 @@ export default function BankPage() {
         supabase.from('deposit_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('withdrawal_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('media').select('*'),
-        supabase.from('rented_generators').select('generator_id').eq('user_id', user.id),
+        supabase.from('rented_generators').select('generator_id, expires_at').eq('user_id', user.id),
         supabase.from('generators').select('id, name, price').order('price', { ascending: true })
     ]);
     
@@ -255,7 +260,7 @@ export default function BankPage() {
         }
     }
 
-    const { data: rentedData, error: rentedError } = rentedResult;
+    const { data: rentedData, error: rentedError } = rentedResult as { data: RentedGeneratorRecord[] | null, error: any };
     if (rentedError) {
       toast({
         title: 'Error fetching rental status',
@@ -265,11 +270,13 @@ export default function BankPage() {
       setCanWithdraw(false);
       setUserHasPg1Only(false);
     } else {
-      const hasPaidGenerator =
-        rentedData?.some((g) => g.generator_id !== 'pg1') ?? false;
-      setCanWithdraw(hasPaidGenerator);
-      const hasAnyGenerator = rentedData && rentedData.length > 0;
-      setUserHasPg1Only(hasAnyGenerator && !hasPaidGenerator);
+      const now = Date.now();
+      const hasActivePaidGenerator =
+        rentedData?.some((g) => g.generator_id !== 'pg1' && new Date(g.expires_at).getTime() > now) ?? false;
+      setCanWithdraw(hasActivePaidGenerator);
+
+      const hasAnyActiveGenerator = rentedData?.some(g => new Date(g.expires_at).getTime() > now) ?? false;
+      setUserHasPg1Only(hasAnyActiveGenerator && !hasActivePaidGenerator);
     }
 
     const { data: generatorsData, error: generatorsError } = generatorsResult;

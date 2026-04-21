@@ -78,6 +78,28 @@ export async function createWithdrawalRequest(formData: {
     return { error: 'Your account withdrawal is locked. Please contact support.' }
   }
 
+  // Check for active paid generator
+  const { data: rentedGenerators, error: rentedError } = await supabase
+    .from('rented_generators')
+    .select('generator_id, expires_at')
+    .eq('user_id', user.id)
+
+  if (rentedError) {
+    return { error: 'Could not verify your generator rentals.' }
+  }
+
+  const hasActivePaidGenerator =
+    rentedGenerators?.some(
+      (g) => g.generator_id !== 'pg1' && new Date(g.expires_at).getTime() > Date.now()
+    ) ?? false
+
+  if (!hasActivePaidGenerator) {
+    return {
+      error:
+        'You must have at least one active paid generator (PG2 or higher) to make a withdrawal.',
+    }
+  }
+
   if (formData.amount < 1) {
     return { error: 'Minimum withdrawal is $1.00.' }
   }
@@ -89,20 +111,24 @@ export async function createWithdrawalRequest(formData: {
   const fee = formData.amount * 0.15
   const netAmount = formData.amount - fee
 
-  const { error: insertError } = await supabase.from('withdrawal_requests').insert({
-    user_id: user.id,
-    country: profile.country,
-    method: formData.method,
-    amount: formData.amount,
-    net_amount: netAmount,
-    fee: fee,
-    details: JSON.stringify(formData.details),
-    status: 'pending',
-  })
+  const { error: insertError } = await supabase
+    .from('withdrawal_requests')
+    .insert({
+      user_id: user.id,
+      country: profile.country,
+      method: formData.method,
+      amount: formData.amount,
+      net_amount: netAmount,
+      fee: fee,
+      details: JSON.stringify(formData.details),
+      status: 'pending',
+    })
 
   if (insertError) {
     console.error('Supabase withdrawal insert error:', insertError)
-    return { error: `Could not create withdrawal request. DB Error: ${insertError.message}` }
+    return {
+      error: `Could not create withdrawal request. DB Error: ${insertError.message}`,
+    }
   }
 
   const { error: updateError } = await supabase
@@ -117,7 +143,10 @@ export async function createWithdrawalRequest(formData: {
   }
 
   revalidatePath('/dashboard/bank')
-  return { success: true, txId: 'W' + Math.floor(100000 + Math.random() * 900000) };
+  return {
+    success: true,
+    txId: 'W' + Math.floor(100000 + Math.random() * 900000),
+  }
 }
 
 export async function setWithdrawalPin() {
