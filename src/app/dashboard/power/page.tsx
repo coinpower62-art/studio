@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -557,6 +558,7 @@ export default function Power() {
   const [user, setUser] = useState<User | null>(null);
   const [rentedGenerators, setRentedGenerators] = useState<RentedGenerator[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [media, setMedia] = useState<any[]>([]);
 
   const [claimedInfo, setClaimedInfo] = useState<{ amount: number; generatorName: string } | null>(null);
   const [isClaimingId, setIsClaimingId] = useState<string | null>(null);
@@ -571,13 +573,18 @@ export default function Power() {
     }
     setUser(user);
 
-    const { data, error } = await supabase
-      .from('rented_generators')
-      .select(`
-        *,
-        generators ( * )
-      `)
-      .eq('user_id', user.id);
+    const [rentedResult, mediaResult] = await Promise.all([
+      supabase
+        .from('rented_generators')
+        .select(`
+          *,
+          generators ( * )
+        `)
+        .eq('user_id', user.id),
+      supabase.from('media').select('*')
+    ]);
+
+    const { data, error } = rentedResult;
     
     if (error) {
       toast({ title: 'Error fetching generators', description: error.message, variant: 'destructive' });
@@ -605,6 +612,14 @@ export default function Power() {
 
     // @ts-ignore
     setRentedGenerators(enrichedData);
+    
+    const { data: mediaData, error: mediaError } = mediaResult;
+    if (mediaError) {
+      toast({ title: 'Error fetching media', description: mediaError.message, variant: 'destructive' });
+    } else {
+      setMedia(mediaData || []);
+    }
+
     setIsLoading(false);
   }, [supabase, router, toast]);
 
@@ -646,6 +661,8 @@ export default function Power() {
   const expiredGenerators = rentedGenerators.filter(function(ug) {
     return !activeGenerators.some(ag => ag.id === ug.id);
   });
+  
+  const powerHeaderBanner = media.find(m => m.id === 'power-header-banner')?.url;
 
   return (
     <div className="pb-20 min-h-screen">
@@ -659,7 +676,11 @@ export default function Power() {
       )}
       <div className="max-w-6xl mx-auto">
 
-        <div className="relative overflow-hidden bg-gradient-to-br from-orange-400 to-yellow-500 rounded-b-2xl sm:rounded-b-3xl p-5 sm:p-8 text-white shadow-2xl -mt-6 -mx-6 sm:mb-6">
+        <div
+          className="relative overflow-hidden bg-gradient-to-br from-orange-400 to-yellow-500 rounded-b-2xl sm:rounded-b-3xl p-5 sm:p-8 text-white shadow-2xl -mt-6 -mx-6 sm:mb-6"
+          style={powerHeaderBanner ? { backgroundImage: `url(${powerHeaderBanner})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+        >
+            {powerHeaderBanner && <div className="absolute inset-0 bg-black/50" />}
             <div className="absolute inset-0 opacity-10">
                 <div className="absolute w-[200px] h-[200px] rounded-full border border-white -top-12 -left-12" />
                 <div className="absolute w-[300px] h-[300px] rounded-full border border-white -bottom-20 -right-16" />
@@ -667,9 +688,6 @@ export default function Power() {
             </div>
             <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-6">
-                    <div className="p-2 bg-white/20 rounded-lg">
-                        <Zap className="w-5 h-5 text-white" />
-                    </div>
                     <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium text-white">Power Center</span>
                 </div>
                 

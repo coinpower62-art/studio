@@ -1560,6 +1560,23 @@ function DashboardContent() {
               <div><h1 className="text-xl font-black text-white">Media Management</h1><p className="text-slate-400 text-sm">Update images, videos, and icons for the app.</p></div>
 
               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Power Page Header</h3>
+                  <p className="text-sm text-slate-400">This is the background image for the header on the Power Center page.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                           <img src={media.find(m => m.id === 'power-header-banner')?.url || 'https://picsum.photos/seed/powerheader/1200/400'} alt="Power Page Header" className="w-full h-auto rounded-lg aspect-[16/9] object-cover bg-slate-700" />
+                           <label htmlFor={`act-upload-power-header-banner`} className={`mt-2 text-xs cursor-pointer hover:underline ${uploading === 'activity-power-header-banner' ? 'text-slate-400' : 'text-amber-400'}`}>
+                              {uploading === 'activity-power-header-banner' ? 'Uploading...' : 'Upload new header image'}
+                           </label>
+                           <input type="file" id={`act-upload-power-header-banner`} className="hidden" accept="image/*" disabled={uploading === 'activity-power-header-banner'} onChange={async (e) => {
+                               const file = e.target.files?.[0];
+                               if (file) await handleFileUpload('activity', 'power-header-banner', file);
+                           }}/>
+                      </div>
+                  </div>
+              </div>
+              
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
                   <h3 className="font-bold text-white">Homepage Cover Image</h3>
                   <p className="text-sm text-slate-400">This is the main background image on the public homepage.</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1571,6 +1588,23 @@ function DashboardContent() {
                            <input type="file" id={`act-upload-homepage-cover`} className="hidden" accept="image/*" disabled={uploading === 'activity-homepage-cover'} onChange={async (e) => {
                                const file = e.target.files?.[0];
                                if (file) await handleFileUpload('activity', 'homepage-cover', file);
+                           }}/>
+                      </div>
+                  </div>
+              </div>
+
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">About Page Hero</h3>
+                  <p className="text-sm text-slate-400">This is the main background image on the 'About' page.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                          <img src={media.find(m => m.id === 'about-page-hero')?.url || 'https://picsum.photos/seed/about-hero/1200/400'} alt="About Page Hero" className="w-full h-auto rounded-lg aspect-video object-cover bg-slate-700" />
+                           <label htmlFor={`act-upload-about-page-hero`} className={`mt-2 text-xs cursor-pointer hover:underline ${uploading === 'activity-about-page-hero' ? 'text-slate-400' : 'text-amber-400'}`}>
+                              {uploading === 'activity-about-page-hero' ? 'Uploading...' : 'Upload new hero image'}
+                           </label>
+                           <input type="file" id={`act-upload-about-page-hero`} className="hidden" accept="image/*" disabled={uploading === 'activity-about-page-hero'} onChange={async (e) => {
+                               const file = e.target.files?.[0];
+                               if (file) await handleFileUpload('activity', 'about-page-hero', file);
                            }}/>
                       </div>
                   </div>
