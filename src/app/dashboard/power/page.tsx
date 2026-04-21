@@ -574,99 +574,101 @@ function TeamMemberCard({ member }: { member: TeamMember }) {
   const totalCommission = member.rentals.reduce((sum, rental) => sum + rental.commission_earned, 0);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <Avatar className="w-10 h-10">
-            <AvatarFallback className="bg-gray-100 text-gray-500 text-sm font-bold">
-              {(member.full_name || member.username || '??').charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-bold text-gray-800 text-sm">{member.full_name || member.username}</p>
-            <p className="text-xs text-gray-400">Joined: {new Date(member.created_at).toLocaleDateString()}</p>
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="font-bold text-green-600 text-sm">${totalCommission.toFixed(2)}</p>
-          <p className="text-xs text-gray-400">Commission</p>
-        </div>
-      </div>
-      {member.rentals.length > 0 ? (
-        <div className="mt-3 space-y-2 pt-3 border-t border-gray-100">
-          {member.rentals.map((rental, index) => (
-            <div key={index} className="flex justify-between items-center bg-gray-50 rounded-lg p-2 text-xs">
-              <span className="font-medium text-gray-600">{rental.generator_name}</span>
-              <span className="font-semibold text-green-700">+${rental.commission_earned.toFixed(2)}</span>
+    <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-100">
+        <div className="flex items-center gap-2 min-w-0">
+            <Avatar className="w-8 h-8 flex-shrink-0">
+                <AvatarFallback className="bg-gray-200 text-gray-500 text-xs font-bold">
+                    {(member.full_name || member.username || '??').charAt(0).toUpperCase()}
+                </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+                <p className="font-semibold text-gray-800 text-xs truncate">{member.full_name || member.username}</p>
+                <p className="text-[10px] text-gray-400">Joined: {new Date(member.created_at).toLocaleDateString()}</p>
             </div>
-          ))}
         </div>
-      ) : (
-        <div className="mt-3 text-center text-xs text-gray-400 bg-gray-50 rounded-lg py-3">
-          No commission earned yet.
-        </div>
-      )}
+        {totalCommission > 0 && (
+             <div className="text-right flex-shrink-0 ml-2">
+                <p className="font-bold text-green-600 text-xs">${totalCommission.toFixed(2)}</p>
+            </div>
+        )}
     </div>
   )
 }
 
 function ReferralTeam({ team, isLoading }: { team: TeamMember[], isLoading: boolean }) {
   if (isLoading) {
-    return <Skeleton className="h-64 rounded-2xl" />;
+    return <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"><Skeleton className="h-96 rounded-2xl" /><Skeleton className="h-96 rounded-2xl" /><Skeleton className="h-96 rounded-2xl" /></div>;
   }
 
   const level1 = team.filter(m => m.referral_level === 1);
   const level2 = team.filter(m => m.referral_level === 2);
   const level3 = team.filter(m => m.referral_level === 3);
 
+  const levelData = [
+    { level: 1, commission: 10, members: level1, color: "from-blue-500 to-indigo-600" },
+    { level: 2, commission: 5, members: level2, color: "from-green-500 to-emerald-600" },
+    { level: 3, commission: 2, members: level3, color: "from-purple-500 to-pink-600" },
+  ];
+  
   const totalCommission = team.reduce((sum, member) => {
     return sum + member.rentals.reduce((rentalSum, rental) => rentalSum + rental.commission_earned, 0);
   }, 0);
-
+  
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-        <div>
-            <h2 className="font-bold text-gray-900 text-base flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-600" />
-                My Subordinates Team
-            </h2>
-            <p className="text-xs text-gray-500 mt-1">Earn commissions from your multi-level referral team.</p>
-        </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center mt-3 sm:mt-0">
-            <p className="text-xs text-blue-700 font-semibold">Total Commission Earned</p>
-            <p className="text-2xl font-black text-blue-800">${totalCommission.toFixed(2)}</p>
-        </div>
+      <div className="space-y-6">
+          <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1">My Subordinates Team</h2>
+              <p className="text-gray-500 text-center text-sm mb-5 sm:mb-8">Earn commissions when your referrals rent generators.</p>
+          </div>
+  
+          {team.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-gray-100 p-10 shadow-sm text-center">
+                  <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-gray-500 text-sm">Your referral team is empty.</p>
+                  <p className="text-gray-400 text-xs mt-1">Share your referral link to start building your team.</p>
+              </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                  {levelData.map(levelInfo => {
+                      const levelCommission = levelInfo.members.reduce((sum, member) => sum + member.rentals.reduce((rSum, r) => rSum + r.commission_earned, 0), 0);
+                      
+                      return (
+                          <div key={levelInfo.level} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex flex-col">
+                              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${levelInfo.color} flex items-center justify-center mb-4 shadow-lg`}>
+                                  <Users className="w-6 h-6 text-white" />
+                              </div>
+                              <h3 className="font-bold text-gray-900 text-base">Level {levelInfo.level}</h3>
+                              <p className="text-sm font-semibold text-green-600">{levelInfo.commission}% Commission</p>
+                              <p className="text-xs text-gray-500 mb-4">{levelInfo.members.length} Members</p>
+  
+                              <div className="border-t border-gray-100 my-4"></div>
+  
+                              <div className="flex-1 space-y-2 max-h-[300px] overflow-y-auto pr-2 -mr-3">
+                                  {levelInfo.members.length > 0 ? (
+                                      levelInfo.members.map(member => <TeamMemberCard key={member.user_id} member={member} />)
+                                  ) : (
+                                      <p className="text-center text-xs text-gray-400 py-4">No members at this level.</p>
+                                  )}
+                              </div>
+                              
+                              <div className="mt-4 pt-4 border-t border-gray-100">
+                                  <p className="text-xs text-gray-500">Level {levelInfo.level} Commission</p>
+                                  <p className="text-lg font-black text-green-700">${levelCommission.toFixed(2)}</p>
+                              </div>
+                          </div>
+                      )
+                  })}
+              </div>
+
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 text-center mt-6">
+                  <p className="text-sm text-blue-700 font-semibold">Total Commission from All Levels</p>
+                  <p className="text-3xl font-black text-blue-800 mt-1">${totalCommission.toFixed(2)}</p>
+              </div>
+            </>
+          )}
       </div>
-      
-      {team.length === 0 ? (
-        <div className="text-center py-8">
-            <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-500 text-sm">Your referral team is empty.</p>
-            <p className="text-gray-400 text-xs mt-1">Share your referral link to start building your team.</p>
-        </div>
-      ) : (
-        <div className="border-2 border-blue-200 bg-blue-50/30 rounded-xl mt-4 p-3 sm:p-4">
-            <Tabs defaultValue="level1">
-              <TabsList className="grid w-full grid-cols-3 bg-blue-100/60">
-                <TabsTrigger value="level1" className="data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-md">Level 1 (10%) <Badge className="ml-2 bg-blue-100 text-blue-700">{level1.length}</Badge></TabsTrigger>
-                <TabsTrigger value="level2" className="data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-md">Level 2 (5%) <Badge className="ml-2 bg-blue-100 text-blue-700">{level2.length}</Badge></TabsTrigger>
-                <TabsTrigger value="level3" className="data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-md">Level 3 (2%) <Badge className="ml-2 bg-blue-100 text-blue-700">{level3.length}</Badge></TabsTrigger>
-              </TabsList>
-              <TabsContent value="level1" className="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
-                {level1.length > 0 ? level1.map(m => <TeamMemberCard key={m.user_id} member={m} />) : <p className="text-center text-sm text-gray-400 py-4">No users at this level.</p>}
-              </TabsContent>
-              <TabsContent value="level2" className="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
-                {level2.length > 0 ? level2.map(m => <TeamMemberCard key={m.user_id} member={m} />) : <p className="text-center text-sm text-gray-400 py-4">No users at this level.</p>}
-              </TabsContent>
-              <TabsContent value="level3" className="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
-                {level3.length > 0 ? level3.map(m => <TeamMemberCard key={m.user_id} member={m} />) : <p className="text-center text-sm text-gray-400 py-4">No users at this level.</p>}
-              </TabsContent>
-            </Tabs>
-        </div>
-      )}
-    </div>
-  )
+    )
 }
 
 export default function Power() {
