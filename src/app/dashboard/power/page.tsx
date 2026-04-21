@@ -646,22 +646,24 @@ function ReferralTeam({ team, isLoading }: { team: TeamMember[], isLoading: bool
             <p className="text-gray-400 text-xs mt-1">Share your referral link to start building your team.</p>
         </div>
       ) : (
-        <Tabs defaultValue="level1">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="level1">Level 1 (10%) <Badge className="ml-2 bg-blue-100 text-blue-700">{level1.length}</Badge></TabsTrigger>
-            <TabsTrigger value="level2">Level 2 (5%) <Badge className="ml-2 bg-blue-100 text-blue-700">{level2.length}</Badge></TabsTrigger>
-            <TabsTrigger value="level3">Level 3 (2%) <Badge className="ml-2 bg-blue-100 text-blue-700">{level3.length}</Badge></TabsTrigger>
-          </TabsList>
-          <TabsContent value="level1" className="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
-            {level1.length > 0 ? level1.map(m => <TeamMemberCard key={m.user_id} member={m} />) : <p className="text-center text-sm text-gray-400 py-4">No users at this level.</p>}
-          </TabsContent>
-          <TabsContent value="level2" className="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
-            {level2.length > 0 ? level2.map(m => <TeamMemberCard key={m.user_id} member={m} />) : <p className="text-center text-sm text-gray-400 py-4">No users at this level.</p>}
-          </TabsContent>
-          <TabsContent value="level3" className="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
-            {level3.length > 0 ? level3.map(m => <TeamMemberCard key={m.user_id} member={m} />) : <p className="text-center text-sm text-gray-400 py-4">No users at this level.</p>}
-          </TabsContent>
-        </Tabs>
+        <div className="border-2 border-blue-200 bg-blue-50/30 rounded-xl mt-4 p-3 sm:p-4">
+            <Tabs defaultValue="level1">
+              <TabsList className="grid w-full grid-cols-3 bg-blue-100/60">
+                <TabsTrigger value="level1" className="data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-md">Level 1 (10%) <Badge className="ml-2 bg-blue-100 text-blue-700">{level1.length}</Badge></TabsTrigger>
+                <TabsTrigger value="level2" className="data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-md">Level 2 (5%) <Badge className="ml-2 bg-blue-100 text-blue-700">{level2.length}</Badge></TabsTrigger>
+                <TabsTrigger value="level3" className="data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-md">Level 3 (2%) <Badge className="ml-2 bg-blue-100 text-blue-700">{level3.length}</Badge></TabsTrigger>
+              </TabsList>
+              <TabsContent value="level1" className="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
+                {level1.length > 0 ? level1.map(m => <TeamMemberCard key={m.user_id} member={m} />) : <p className="text-center text-sm text-gray-400 py-4">No users at this level.</p>}
+              </TabsContent>
+              <TabsContent value="level2" className="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
+                {level2.length > 0 ? level2.map(m => <TeamMemberCard key={m.user_id} member={m} />) : <p className="text-center text-sm text-gray-400 py-4">No users at this level.</p>}
+              </TabsContent>
+              <TabsContent value="level3" className="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
+                {level3.length > 0 ? level3.map(m => <TeamMemberCard key={m.user_id} member={m} />) : <p className="text-center text-sm text-gray-400 py-4">No users at this level.</p>}
+              </TabsContent>
+            </Tabs>
+        </div>
       )}
     </div>
   )
@@ -941,3 +943,5 @@ export default function Power() {
     </div>
   );
 }
+
+    
