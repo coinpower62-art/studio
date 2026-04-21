@@ -1,13 +1,8 @@
--- This script creates a database function to fetch a user's multi-level referral team (up to 3 levels)
--- and calculate the commission earned from each subordinate's generator rentals.
---
--- How it works:
--- 1. It uses a recursive query (WITH RECURSIVE) to traverse the referral chain.
--- 2. It calculates the commission based on the referral level (10% for L1, 5% for L2, 2% for L3).
--- 3. It aggregates the data into a clean JSON structure for the application to display.
---
--- Run this entire script once in your Supabase SQL Editor.
+-- Fix historical referral data by converting to uppercase
+UPDATE public.profiles SET referred_by = UPPER(referred_by) WHERE referred_by IS NOT NULL;
+UPDATE public.profiles SET referral_code = UPPER(referral_code) WHERE referral_code IS NOT NULL;
 
+-- Recreate the function to be case-insensitive
 CREATE OR REPLACE FUNCTION get_referral_team_details(p_user_id uuid)
 RETURNS TABLE(
     user_id uuid,
@@ -28,19 +23,19 @@ BEGIN
         FROM
             public.profiles p
         WHERE
-            p.referred_by = (SELECT referral_code FROM public.profiles WHERE id = p_user_id)
+            UPPER(p.referred_by) = (SELECT UPPER(referral_code) FROM public.profiles WHERE id = p_user_id)
 
         UNION ALL
 
         -- Recursive step: referrals of referrals (Levels 2 and 3)
         SELECT
-            p.id,
-            p.referral_code,
+            p_child.id,
+            p_child.referral_code,
             rc.level + 1
         FROM
-            public.profiles p
+            public.profiles p_child
         JOIN
-            referral_chain rc ON p.referred_by = rc.referral_code
+            referral_chain rc ON UPPER(p_child.referred_by) = UPPER(rc.referral_code)
         WHERE
             rc.level < 3
     )

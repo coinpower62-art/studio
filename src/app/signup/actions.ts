@@ -40,7 +40,7 @@ export async function signup(values: any) {
         username: username,
         country: country,
         phone: phone,
-        referred_by: referralCode || null,
+        referred_by: referralCode ? referralCode.toUpperCase() : null,
       }
     }
   });
@@ -72,7 +72,7 @@ export async function signup(values: any) {
         country: country,
         phone: phone,
         referral_code: generatedReferralCode,
-        referred_by: referralCode || null,
+        referred_by: referralCode ? referralCode.toUpperCase() : null,
         balance: 1.00,
       });
 
