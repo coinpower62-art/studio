@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, TrendingUp, CheckCircle, Gift, Timer, AlertTriangle, DollarSign, Star, Play } from "lucide-react";
+import { Zap, TrendingUp, CheckCircle, Gift, Timer, AlertTriangle, DollarSign, Star, Play, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -12,8 +12,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { createClient } from "@/lib/supabase/client";
 import type { User } from '@supabase/supabase-js';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { collectEarnings } from "./actions";
+import { collectEarnings, getReferralTeamData } from "./actions";
 import type { Generator as BaseGenerator } from '@/lib/data';
 
 export type RentedGenerator = {
@@ -36,6 +38,22 @@ export type RentedGenerator = {
   investors: string;
   image_url?: string;
 };
+
+type TeamMemberRental = {
+  generator_name: string;
+  rental_price: number;
+  commission_earned: number;
+  rented_at: string;
+}
+
+type TeamMember = {
+  user_id: string;
+  full_name: string | null;
+  username: string | null;
+  created_at: string;
+  referral_level: number;
+  rentals: TeamMemberRental[];
+}
 
 const CHART_PAIRS_P = [
   "BTC/USDT","ETH/USDT","BNB/USDT","SOL/USDT","XRP/USDT",
@@ -552,11 +570,110 @@ function PowerPageSkeleton() {
     return <div className="pt-12 p-4 pb-20 max-w-6xl mx-auto"><Skeleton className="h-96 rounded-2xl" /></div>;
 }
 
+function TeamMemberCard({ member }: { member: TeamMember }) {
+  const totalCommission = member.rentals.reduce((sum, rental) => sum + rental.commission_earned, 0);
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 p-4">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <Avatar className="w-10 h-10">
+            <AvatarFallback className="bg-gray-100 text-gray-500 text-sm font-bold">
+              {(member.full_name || member.username || '??').charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-bold text-gray-800 text-sm">{member.full_name || member.username}</p>
+            <p className="text-xs text-gray-400">Joined: {new Date(member.created_at).toLocaleDateString()}</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="font-bold text-green-600 text-sm">${totalCommission.toFixed(2)}</p>
+          <p className="text-xs text-gray-400">Commission</p>
+        </div>
+      </div>
+      {member.rentals.length > 0 ? (
+        <div className="mt-3 space-y-2 pt-3 border-t border-gray-100">
+          {member.rentals.map((rental, index) => (
+            <div key={index} className="flex justify-between items-center bg-gray-50 rounded-lg p-2 text-xs">
+              <span className="font-medium text-gray-600">{rental.generator_name}</span>
+              <span className="font-semibold text-green-700">+${rental.commission_earned.toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-3 text-center text-xs text-gray-400 bg-gray-50 rounded-lg py-3">
+          No commission earned yet.
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ReferralTeam({ team, isLoading }: { team: TeamMember[], isLoading: boolean }) {
+  if (isLoading) {
+    return <Skeleton className="h-64 rounded-2xl" />;
+  }
+
+  const level1 = team.filter(m => m.referral_level === 1);
+  const level2 = team.filter(m => m.referral_level === 2);
+  const level3 = team.filter(m => m.referral_level === 3);
+
+  const totalCommission = team.reduce((sum, member) => {
+    return sum + member.rentals.reduce((rentalSum, rental) => rentalSum + rental.commission_earned, 0);
+  }, 0);
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+        <div>
+            <h2 className="font-bold text-gray-900 text-base flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                My Subordinates Team
+            </h2>
+            <p className="text-xs text-gray-500 mt-1">Earn commissions from your multi-level referral team.</p>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center mt-3 sm:mt-0">
+            <p className="text-xs text-blue-700 font-semibold">Total Commission Earned</p>
+            <p className="text-2xl font-black text-blue-800">${totalCommission.toFixed(2)}</p>
+        </div>
+      </div>
+      
+      {team.length === 0 ? (
+        <div className="text-center py-8">
+            <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+            <p className="text-gray-500 text-sm">Your referral team is empty.</p>
+            <p className="text-gray-400 text-xs mt-1">Share your referral link to start building your team.</p>
+        </div>
+      ) : (
+        <Tabs defaultValue="level1">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="level1">Level 1 (10%) <Badge className="ml-2 bg-blue-100 text-blue-700">{level1.length}</Badge></TabsTrigger>
+            <TabsTrigger value="level2">Level 2 (5%) <Badge className="ml-2 bg-blue-100 text-blue-700">{level2.length}</Badge></TabsTrigger>
+            <TabsTrigger value="level3">Level 3 (2%) <Badge className="ml-2 bg-blue-100 text-blue-700">{level3.length}</Badge></TabsTrigger>
+          </TabsList>
+          <TabsContent value="level1" className="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
+            {level1.length > 0 ? level1.map(m => <TeamMemberCard key={m.user_id} member={m} />) : <p className="text-center text-sm text-gray-400 py-4">No users at this level.</p>}
+          </TabsContent>
+          <TabsContent value="level2" className="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
+            {level2.length > 0 ? level2.map(m => <TeamMemberCard key={m.user_id} member={m} />) : <p className="text-center text-sm text-gray-400 py-4">No users at this level.</p>}
+          </TabsContent>
+          <TabsContent value="level3" className="mt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
+            {level3.length > 0 ? level3.map(m => <TeamMemberCard key={m.user_id} member={m} />) : <p className="text-center text-sm text-gray-400 py-4">No users at this level.</p>}
+          </TabsContent>
+        </Tabs>
+      )}
+    </div>
+  )
+}
+
 export default function Power() {
   const router = useRouter();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [rentedGenerators, setRentedGenerators] = useState<RentedGenerator[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [isTeamLoading, setIsTeamLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [media, setMedia] = useState<any[]>([]);
 
@@ -572,8 +689,9 @@ export default function Power() {
       return;
     }
     setUser(user);
+    setIsTeamLoading(true);
 
-    const [rentedResult, mediaResult] = await Promise.all([
+    const [rentedResult, mediaResult, teamResult] = await Promise.all([
       supabase
         .from('rented_generators')
         .select(`
@@ -581,7 +699,8 @@ export default function Power() {
           generators ( * )
         `)
         .eq('user_id', user.id),
-      supabase.from('media').select('*')
+      supabase.from('media').select('*'),
+      getReferralTeamData()
     ]);
 
     const { data, error } = rentedResult;
@@ -620,7 +739,15 @@ export default function Power() {
       setMedia(mediaData || []);
     }
 
+    const { data: teamData, error: teamError } = teamResult;
+    if (teamError) {
+        toast({ title: 'Error fetching referral team', description: teamError, variant: 'destructive' });
+    } else {
+        setTeam(teamData || []);
+    }
+
     setIsLoading(false);
+    setIsTeamLoading(false);
   }, [supabase, router, toast]);
 
   useEffect(function() {
@@ -757,6 +884,10 @@ export default function Power() {
                 </div>
               </div>
             )}
+            
+            <div className="mb-6 mt-6">
+                <ReferralTeam team={team} isLoading={isTeamLoading} />
+            </div>
 
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1 mt-4">Boost Power Plans</h2>
             <p className="text-gray-500 text-center text-sm mb-5 sm:mb-8">Multiply your returns even further</p>

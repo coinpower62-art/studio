@@ -34,3 +34,28 @@ export async function collectEarnings(rentedGeneratorId: string): Promise<{ succ
     return { success: false, message: 'An unexpected error occurred during collection.' };
   }
 }
+
+export async function getReferralTeamData() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: 'Authentication required.' };
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('get_referral_team_details', {
+      p_user_id: user.id
+    });
+
+    if (error) {
+      console.error("Error fetching referral team:", error);
+      throw new Error(error.message);
+    }
+
+    return { data };
+
+  } catch (e: any) {
+    return { error: 'An unexpected error occurred while fetching your team.' };
+  }
+}

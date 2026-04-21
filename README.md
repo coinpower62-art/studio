@@ -1,5 +1,7 @@
 # 🚀 CoinPower Deployment Guide for Netlify
 
+> **IMPORTANT:** A new database function is required for the multi-level referral system. Please copy the SQL code from the `run_this.sql` file in your project and run it in your Supabase SQL Editor. This is a one-time setup.
+
 This guide provides instructions for deploying your CoinPower application to Netlify.
 
 ---
