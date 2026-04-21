@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, TrendingUp, CheckCircle, Gift, Timer, AlertTriangle, DollarSign, Star, Play, Users } from "lucide-react";
+import { Zap, TrendingUp, CheckCircle, Gift, Timer, AlertTriangle, DollarSign, Star, Play, Users, BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -574,22 +574,27 @@ function TeamMemberCard({ member }: { member: TeamMember }) {
   const totalCommission = member.rentals.reduce((sum, rental) => sum + rental.commission_earned, 0);
 
   return (
-    <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-100">
-        <div className="flex items-center gap-2 min-w-0">
-            <Avatar className="w-8 h-8 flex-shrink-0">
+    <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-100">
+        <div className="flex items-center gap-3 min-w-0">
+            <Avatar className="w-9 h-9 flex-shrink-0">
                 <AvatarFallback className="bg-gray-200 text-gray-500 text-xs font-bold">
                     {(member.full_name || member.username || '??').charAt(0).toUpperCase()}
                 </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-                <p className="font-semibold text-gray-800 text-xs truncate">{member.full_name || member.username}</p>
+                <p className="font-semibold text-gray-800 text-sm truncate">{member.full_name || member.username}</p>
                 <p className="text-[10px] text-gray-400">Joined: {new Date(member.created_at).toLocaleDateString()}</p>
             </div>
         </div>
-        {totalCommission > 0 && (
+        {totalCommission > 0 ? (
              <div className="text-right flex-shrink-0 ml-2">
-                <p className="font-bold text-green-600 text-xs">${totalCommission.toFixed(2)}</p>
+                <p className="font-bold text-green-600 text-sm">${totalCommission.toFixed(2)}</p>
+                <p className="text-[10px] text-gray-400">Earned</p>
             </div>
+        ) : (
+             <div className="text-right flex-shrink-0 ml-2">
+                <p className="font-semibold text-gray-400 text-xs">No commission</p>
+             </div>
         )}
     </div>
   )
@@ -605,9 +610,9 @@ function ReferralTeam({ team, isLoading }: { team: TeamMember[], isLoading: bool
   const level3 = team.filter(m => m.referral_level === 3);
 
   const levelData = [
-    { level: 1, commission: 10, members: level1, color: "from-blue-500 to-indigo-600" },
-    { level: 2, commission: 5, members: level2, color: "from-green-500 to-emerald-600" },
-    { level: 3, commission: 2, members: level3, color: "from-purple-500 to-pink-600" },
+    { level: 1, commission: 10, members: level1, color: "from-blue-500 to-indigo-600", popular: true },
+    { level: 2, commission: 5, members: level2, color: "from-green-500 to-emerald-600", popular: false },
+    { level: 3, commission: 2, members: level3, color: "from-purple-500 to-pink-600", popular: false },
   ];
   
   const totalCommission = team.reduce((sum, member) => {
@@ -634,29 +639,36 @@ function ReferralTeam({ team, isLoading }: { team: TeamMember[], isLoading: bool
                       const levelCommission = levelInfo.members.reduce((sum, member) => sum + member.rentals.reduce((rSum, r) => rSum + r.commission_earned, 0), 0);
                       
                       return (
-                          <div key={levelInfo.level} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex flex-col">
-                              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${levelInfo.color} flex items-center justify-center mb-4 shadow-lg`}>
-                                  <Users className="w-6 h-6 text-white" />
-                              </div>
-                              <h3 className="font-bold text-gray-900 text-base">Level {levelInfo.level}</h3>
-                              <p className="text-sm font-semibold text-green-600">{levelInfo.commission}% Commission</p>
-                              <p className="text-xs text-gray-500 mb-4">{levelInfo.members.length} Members</p>
-  
-                              <div className="border-t border-gray-100 my-4"></div>
-  
-                              <div className="flex-1 space-y-2 max-h-[300px] overflow-y-auto pr-2 -mr-3">
-                                  {levelInfo.members.length > 0 ? (
-                                      levelInfo.members.map(member => <TeamMemberCard key={member.user_id} member={member} />)
-                                  ) : (
-                                      <p className="text-center text-xs text-gray-400 py-4">No members at this level.</p>
-                                  )}
-                              </div>
-                              
-                              <div className="mt-4 pt-4 border-t border-gray-100">
-                                  <p className="text-xs text-gray-500">Level {levelInfo.level} Commission</p>
-                                  <p className="text-lg font-black text-green-700">${levelCommission.toFixed(2)}</p>
-                              </div>
+                        <div key={levelInfo.level} className={`relative bg-white rounded-2xl border-2 p-5 sm:p-6 shadow-sm transition-all duration-300 flex flex-col ${levelInfo.popular ? 'border-amber-400 shadow-xl shadow-amber-100' : 'border-gray-200'}`}>
+                          {levelInfo.popular && (
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                              <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 px-3 py-1 shadow-md whitespace-nowrap">
+                                Primary Team
+                              </Badge>
+                            </div>
+                          )}
+                          <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${levelInfo.color} flex items-center justify-center mb-4 shadow-lg`}>
+                            <Users className="w-6 h-6 text-white" />
                           </div>
+                          <h3 className="font-bold text-gray-900 text-base">Level {levelInfo.level}</h3>
+                          <p className="text-sm font-semibold text-green-600">{levelInfo.commission}% Commission</p>
+                          <p className="text-xs text-gray-500 mb-4">{levelInfo.members.length} Members</p>
+                          
+                          <div className="border-t border-gray-100 my-4"></div>
+
+                          <div className="flex-1 space-y-2 max-h-[200px] overflow-y-auto pr-2 -mr-3 mb-4">
+                            {levelInfo.members.length > 0 ? (
+                                levelInfo.members.map(member => <TeamMemberCard key={member.user_id} member={member} />)
+                            ) : (
+                                <p className="text-center text-xs text-gray-400 py-4 h-full flex items-center justify-center">No members at this level.</p>
+                            )}
+                          </div>
+                          
+                          <div className="mt-auto pt-4 border-t border-gray-100">
+                              <p className="text-xs text-gray-500">Level {levelInfo.level} Commission</p>
+                              <p className="text-lg font-black text-green-700">${levelCommission.toFixed(2)}</p>
+                          </div>
+                        </div>
                       )
                   })}
               </div>
@@ -945,5 +957,3 @@ export default function Power() {
     </div>
   );
 }
-
-    
