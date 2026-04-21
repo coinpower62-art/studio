@@ -901,57 +901,10 @@ export default function Power() {
               </div>
             )}
             
-            <div className="mb-6 mt-6">
+            <div className="my-6">
                 <ReferralTeam team={team} isLoading={isTeamLoading} />
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1 mt-4">Boost Power Plans</h2>
-            <p className="text-gray-500 text-center text-sm mb-5 sm:mb-8">Multiply your returns even further</p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-              {powerPlans.map(function(plan) {
-                return (
-                <div key={plan.name}
-                  data-testid={`card-power-${plan.name.toLowerCase().replace(" ", "-")}`}
-                  className={`relative bg-white rounded-2xl border-2 ${plan.popular ? "border-amber-400 shadow-xl shadow-amber-100" : "border-gray-200 shadow-sm"} p-5 sm:p-6 hover:shadow-lg transition-all duration-300`}>
-                  {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 px-3 py-1 shadow-md whitespace-nowrap">Most Popular</Badge>
-                    </div>
-                  )}
-                  <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4 shadow-lg`}>
-                    <Zap className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                  </div>
-                  <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-1">{plan.name}</h3>
-                  <div className="flex items-end gap-1 mb-3">
-                    <span className="text-3xl font-black text-gray-900">{plan.boost}</span>
-                    <span className="text-gray-500 text-sm mb-1">Return Boost</span>
-                  </div>
-                  <p className="text-amber-600 font-semibold text-base sm:text-lg mb-4 sm:mb-5">{plan.price}</p>
-                  <div className="space-y-2 mb-5">
-                    {plan.features.map(function(f) {
-                      return (
-                      <div key={f} className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        <span className="text-xs sm:text-sm text-gray-600">{f}</span>
-                      </div>
-                    ); })}
-                  </div>
-                  <div className="mb-4">
-                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                      <span>Power Level</span><span>{plan.multiplier * 10}%</span>
-                    </div>
-                    <Progress value={plan.multiplier * 10} className="h-2" />
-                  </div>
-                  <Button
-                    data-testid={`button-activate-${plan.name.toLowerCase().replace(" ", "-")}`}
-                    onClick={function() { return toast({ title: `${plan.name} Activated!`, description: "This is a demo. Your power plan has been activated." }); }}
-                    className="w-full h-10 sm:h-11 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all text-sm">
-                    Activate {plan.name}
-                  </Button>
-                </div>
-              ); })}
-            </div>
         </div>
       </div>
     </div>
