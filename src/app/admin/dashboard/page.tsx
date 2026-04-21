@@ -1145,12 +1145,16 @@ function DashboardContent() {
                                 {u.has_withdrawal_pin ? "Yes" : "No"}
                                 </p>
                             </div>
-                            <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
+                            <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Link2 className="w-3 h-3"/> Referral Code</p>
                                 <div className="flex items-center gap-1.5">
                                 <p className="text-amber-400 text-xs font-mono font-bold">{u.referral_code || '—'}</p>
                                 {u.referral_code && <button onClick={() => copyText(u.referral_code!, "Referral code")} className="text-slate-500 hover:text-amber-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>}
                                 </div>
+                            </div>
+                             <div className="bg-slate-700/50 rounded-xl px-3 py-2">
+                                <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Users className="w-3 h-3"/> Referred By</p>
+                                <p className="text-slate-200 text-xs truncate font-mono">{u.referred_by || '—'}</p>
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><ExternalLink className="w-3 h-3"/> Referral Link</p>
@@ -1443,7 +1447,7 @@ function DashboardContent() {
                                         <p className="text-slate-500 text-xs">@{referrer.username}</p>
                                     </div>
                                 ) : (
-                                    <span className="text-slate-500">—</span>
+                                    <span className="text-slate-500">{u.referred_by || '—'}</span>
                                 )}
                             </td>
                             <td className="px-4 py-3 text-right"><span className="text-green-400 font-bold text-sm">${(u.balance || 0).toFixed(2)}</span></td>

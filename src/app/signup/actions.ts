@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -40,7 +41,7 @@ export async function signup(values: any) {
         username: username,
         country: country,
         phone: phone,
-        referred_by: referralCode ? referralCode.toUpperCase() : null,
+        referred_by: referralCode && referralCode.trim() ? referralCode.trim().toUpperCase() : null,
       }
     }
   });
@@ -72,7 +73,7 @@ export async function signup(values: any) {
         country: country,
         phone: phone,
         referral_code: generatedReferralCode,
-        referred_by: referralCode ? referralCode.toUpperCase() : null,
+        referred_by: referralCode && referralCode.trim() ? referralCode.trim().toUpperCase() : null,
         balance: 1.00,
       });
 
