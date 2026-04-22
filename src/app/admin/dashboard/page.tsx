@@ -803,7 +803,7 @@ function DashboardContent() {
   if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
   if (!admin) { router.push("/login"); return null; }
 
-  const filteredUsers = users.filter(function(u) { return [u.full_name, u.username, u.email, u.country, u.referred_by].some(function(f) { return f?.toLowerCase().includes(search.toLowerCase()); }); });
+  const filteredUsers = users.filter(function(u) { return [u.full_name, u.username, u.email, u.country].some(function(f) { return f?.toLowerCase().includes(search.toLowerCase()); }); });
   const totalBalance = users.reduce(function(s, u) { return s + (u.balance || 0); }, 0);
   const pendingWithdrawalsCount = withdrawals.filter(function(w) { return w.status === "pending" || w.status === "processing"; }).length;
   const pendingDepositsCount = deposits.filter(function(d) { return d.status === "pending"; }).length;
@@ -1130,6 +1130,7 @@ function DashboardContent() {
                     const initials = (u.full_name || u.username || u.email)?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "??";
                     const isShowingPass = showPassFor === u.id;
                     const referralLink = u.referral_code ? `https://coinpower-italy.netlify.app/signup?ref=${u.referral_code}` : null;
+                    const referrer = u.parent_id ? idToUserMap.get(u.parent_id) : null;
                     return (
                       <div key={u.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
                         <div className="flex items-start justify-between gap-3 mb-3">
@@ -1235,7 +1236,7 @@ function DashboardContent() {
                             </div>
                              <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Users className="w-3 h-3"/> Referred By</p>
-                                <p className="text-slate-200 text-xs truncate font-mono">{u.referred_by || '—'}</p>
+                                <p className="text-slate-200 text-xs truncate font-mono">{referrer?.username || '—'}</p>
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><ExternalLink className="w-3 h-3"/> Referral Link</p>
@@ -1546,7 +1547,7 @@ function DashboardContent() {
                                         <p className="text-slate-500 text-xs">@{referrer.username}</p>
                                     </div>
                                 ) : (
-                                    <span className="text-slate-500">{u.referred_by || '—'}</span>
+                                    <span className="text-slate-500">{'—'}</span>
                                 )}
                             </td>
                             <td className="px-4 py-3 text-right"><span className="text-green-400 font-bold text-sm">${(u.balance || 0).toFixed(2)}</span></td>
