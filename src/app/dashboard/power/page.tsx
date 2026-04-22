@@ -15,7 +15,7 @@ import type { User } from '@supabase/supabase-js';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { collectEarnings, getReferralTeamData } from "./actions";
+import { collectEarnings } from "./actions";
 import type { Generator as BaseGenerator } from '@/lib/data';
 
 export type RentedGenerator = {
@@ -38,22 +38,6 @@ export type RentedGenerator = {
   investors: string;
   image_url?: string;
 };
-
-type TeamMemberRental = {
-  generator_name: string;
-  rental_price: number;
-  commission_earned: number;
-  rented_at: string;
-}
-
-type TeamMember = {
-  user_id: string;
-  full_name: string | null;
-  username: string | null;
-  created_at: string;
-  referral_level: number;
-  rentals: TeamMemberRental[];
-}
 
 const CHART_PAIRS_P = [
   "BTC/USDT","ETH/USDT","BNB/USDT","SOL/USDT","XRP/USDT",
@@ -570,126 +554,12 @@ function PowerPageSkeleton() {
     return <div className="pt-12 p-4 pb-20 max-w-6xl mx-auto"><Skeleton className="h-96 rounded-2xl" /></div>;
 }
 
-function TeamMemberCard({ member }: { member: TeamMember }) {
-  const totalCommission = member.rentals.reduce((sum, rental) => sum + rental.commission_earned, 0);
-
-  return (
-    <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-100">
-        <div className="flex items-center gap-3 min-w-0">
-            <Avatar className="w-9 h-9 flex-shrink-0">
-                <AvatarFallback className="bg-gray-200 text-gray-500 text-xs font-bold">
-                    {(member.full_name || member.username || '??').charAt(0).toUpperCase()}
-                </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0">
-                <p className="font-semibold text-gray-800 text-sm truncate">{member.full_name || member.username}</p>
-                <p className="text-[10px] text-gray-400">Joined: {new Date(member.created_at).toLocaleDateString()}</p>
-            </div>
-        </div>
-        {totalCommission > 0 ? (
-             <div className="text-right flex-shrink-0 ml-2">
-                <p className="font-bold text-green-600 text-sm">${totalCommission.toFixed(2)}</p>
-                <p className="text-[10px] text-gray-400">Earned</p>
-            </div>
-        ) : (
-             <div className="text-right flex-shrink-0 ml-2">
-                <p className="font-semibold text-gray-400 text-xs">No commission</p>
-             </div>
-        )}
-    </div>
-  )
-}
-
-function ReferralTeam({ team, isLoading }: { team: TeamMember[], isLoading: boolean }) {
-  if (isLoading) {
-    return <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"><Skeleton className="h-96 rounded-2xl" /><Skeleton className="h-96 rounded-2xl" /><Skeleton className="h-96 rounded-2xl" /></div>;
-  }
-
-  const level1 = team.filter(m => m.referral_level === 1);
-  const level2 = team.filter(m => m.referral_level === 2);
-  const level3 = team.filter(m => m.referral_level === 3);
-
-  const levelData = [
-    { level: 1, commission: 10, members: level1, color: "from-blue-500 to-indigo-600", popular: true },
-    { level: 2, commission: 5, members: level2, color: "from-green-500 to-emerald-600", popular: false },
-    { level: 3, commission: 2, members: level3, color: "from-purple-500 to-pink-600", popular: false },
-  ];
-  
-  const totalCommission = team.reduce((sum, member) => {
-    return sum + member.rentals.reduce((rentalSum, rental) => rentalSum + rental.commission_earned, 0);
-  }, 0);
-  
-  return (
-      <div className="space-y-6">
-          <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1">My Subordinates Team</h2>
-              <p className="text-gray-500 text-center text-sm mb-5 sm:mb-8">Earn commissions when your referrals rent generators.</p>
-          </div>
-  
-          {team.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-100 p-10 shadow-sm text-center">
-                  <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-gray-500 text-sm">Your referral team is empty.</p>
-                  <p className="text-gray-400 text-xs mt-1">Share your referral link to start building your team.</p>
-              </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                  {levelData.map(levelInfo => {
-                      const levelCommission = levelInfo.members.reduce((sum, member) => sum + member.rentals.reduce((rSum, r) => rSum + r.commission_earned, 0), 0);
-                      
-                      return (
-                        <div key={levelInfo.level} className={`relative bg-white rounded-2xl border-2 p-5 sm:p-6 shadow-sm transition-all duration-300 flex flex-col ${levelInfo.popular ? 'border-amber-400 shadow-xl shadow-amber-100' : 'border-gray-200'}`}>
-                          {levelInfo.popular && (
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                              <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 px-3 py-1 shadow-md whitespace-nowrap">
-                                Primary Team
-                              </Badge>
-                            </div>
-                          )}
-                          <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${levelInfo.color} flex items-center justify-center mb-4 shadow-lg`}>
-                            <Users className="w-6 h-6 text-white" />
-                          </div>
-                          <h3 className="font-bold text-gray-900 text-base">Level {levelInfo.level}</h3>
-                          <p className="text-sm font-semibold text-green-600">{levelInfo.commission}% Commission</p>
-                          <p className="text-xs text-gray-500 mb-4">{levelInfo.members.length} Members</p>
-                          
-                          <div className="border-t border-gray-100 my-4"></div>
-
-                          <div className="flex-1 space-y-2 max-h-[200px] overflow-y-auto pr-2 -mr-3 mb-4">
-                            {levelInfo.members.length > 0 ? (
-                                levelInfo.members.map(member => <TeamMemberCard key={member.user_id} member={member} />)
-                            ) : (
-                                <p className="text-center text-xs text-gray-400 py-4 h-full flex items-center justify-center">No members at this level.</p>
-                            )}
-                          </div>
-                          
-                          <div className="mt-auto pt-4 border-t border-gray-100">
-                              <p className="text-xs text-gray-500">Level {levelInfo.level} Commission</p>
-                              <p className="text-lg font-black text-green-700">${levelCommission.toFixed(2)}</p>
-                          </div>
-                        </div>
-                      )
-                  })}
-              </div>
-
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 text-center mt-6">
-                  <p className="text-sm text-blue-700 font-semibold">Total Commission from All Levels</p>
-                  <p className="text-3xl font-black text-blue-800 mt-1">${totalCommission.toFixed(2)}</p>
-              </div>
-            </>
-          )}
-      </div>
-    )
-}
 
 export default function Power() {
   const router = useRouter();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [rentedGenerators, setRentedGenerators] = useState<RentedGenerator[]>([]);
-  const [team, setTeam] = useState<TeamMember[]>([]);
-  const [isTeamLoading, setIsTeamLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [media, setMedia] = useState<any[]>([]);
 
@@ -705,9 +575,8 @@ export default function Power() {
       return;
     }
     setUser(user);
-    setIsTeamLoading(true);
 
-    const [rentedResult, mediaResult, teamResult] = await Promise.all([
+    const [rentedResult, mediaResult] = await Promise.all([
       supabase
         .from('rented_generators')
         .select(`
@@ -716,7 +585,6 @@ export default function Power() {
         `)
         .eq('user_id', user.id),
       supabase.from('media').select('*'),
-      getReferralTeamData()
     ]);
 
     const { data, error } = rentedResult;
@@ -755,15 +623,7 @@ export default function Power() {
       setMedia(mediaData || []);
     }
 
-    const { data: teamData, error: teamError } = teamResult;
-    if (teamError) {
-        toast({ title: 'Error fetching referral team', description: teamError, variant: 'destructive' });
-    } else {
-        setTeam(teamData || []);
-    }
-
     setIsLoading(false);
-    setIsTeamLoading(false);
   }, [supabase, router, toast]);
 
   useEffect(function() {
@@ -900,11 +760,6 @@ export default function Power() {
                 </div>
               </div>
             )}
-            
-            <div className="my-6">
-                <ReferralTeam team={team} isLoading={isTeamLoading} />
-            </div>
-
         </div>
       </div>
     </div>
