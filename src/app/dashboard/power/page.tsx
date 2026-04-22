@@ -13,6 +13,8 @@ import { createClient } from "@/lib/supabase/client";
 import type { User } from '@supabase/supabase-js';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 import { collectEarnings } from "./actions";
 import type { Generator as BaseGenerator } from '@/lib/data';
@@ -767,7 +769,10 @@ export default function Power() {
     return !activeGenerators.some(ag => ag.id === ug.id);
   });
   
-  const powerHeaderBanner = media.find(m => m.id === 'power-header-banner')?.url;
+  const sliderImage1 = media.find(m => m.id === 'power-slider-1')?.url || 'https://picsum.photos/seed/power-slider-1/1200/800';
+  const sliderImage2 = media.find(m => m.id === 'power-slider-2')?.url || 'https://picsum.photos/seed/power-slider-2/1200/800';
+  const sliderImage3 = media.find(m => m.id === 'power-slider-3')?.url || 'https://picsum.photos/seed/power-slider-3/1200/800';
+  const sliderImages = [sliderImage1, sliderImage2, sliderImage3];
 
   return (
     <div className="pb-20 min-h-screen">
@@ -781,33 +786,35 @@ export default function Power() {
       )}
       <div className="max-w-6xl mx-auto">
 
-        <div
-          className="relative overflow-hidden bg-gradient-to-br from-orange-400 to-yellow-500 rounded-b-2xl sm:rounded-b-3xl p-5 sm:p-8 text-white shadow-2xl -mt-6 -mx-6 sm:mb-6"
-          style={powerHeaderBanner ? { backgroundImage: `url(${powerHeaderBanner})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+        <Carousel
+          plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
+          className="relative overflow-hidden rounded-b-2xl sm:rounded-b-3xl -mt-6 -mx-6 sm:mb-6 shadow-2xl"
         >
-            {powerHeaderBanner && <div className="absolute inset-0 bg-black/50" />}
-            <div className="absolute inset-0 opacity-10">
-                <div className="absolute w-[200px] h-[200px] rounded-full border border-white -top-12 -left-12" />
-                <div className="absolute w-[300px] h-[300px] rounded-full border border-white -bottom-20 -right-16" />
-                <div className="absolute w-[150px] h-[150px] rounded-full border border-white top-1/4 right-1/4" />
-            </div>
-            <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-6">
-                    <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium text-white">Power Center</span>
+          <CarouselContent>
+            {sliderImages.map((src, index) => (
+              <CarouselItem key={index}>
+                <div className="relative h-[60vh] max-h-[500px] bg-black">
+                  <img src={src} alt={`Power banner ${index + 1}`} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/50" />
                 </div>
-                
-                <h1 className="text-3xl font-bold text-white mb-4">Your Active Generators</h1>
-                <p className="text-white/90 mb-8 leading-relaxed max-w-md">
-                    You must click 'Collect' on each generator every 24 hours to add its income to your balance.
-                </p>
-
-                <div className="bg-white/20 backdrop-blur-md rounded-2xl p-8 text-center border border-white/10">
-                    <p className="text-white/80 text-sm uppercase tracking-wider">Active Generators</p>
-                    <div className="text-6xl font-bold text-white my-2">{activeGenerators.length}</div>
-                    <p className="text-white/70 italic">running now</p>
-                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <div className="absolute inset-0 flex flex-col justify-between p-5 sm:p-8 text-white z-10">
+            <div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium self-start inline-block">Power Center</div>
+              <h1 className="text-4xl font-bold text-white mt-4">Your Active Generators</h1>
+              <p className="text-white/90 mt-2 leading-relaxed max-w-md">
+                  You must click 'Collect' on each generator every 24 hours to add its income to your balance.
+              </p>
             </div>
-        </div>
+            <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 text-center border border-white/10">
+                <p className="text-white/80 text-sm uppercase tracking-wider">Active Generators</p>
+                <div className="text-6xl font-bold text-white my-2">{activeGenerators.length}</div>
+                <p className="text-white/70 italic">running now</p>
+            </div>
+          </div>
+        </Carousel>
         
         <div className="px-3 sm:px-6">
             {activeGenerators.length > 0 && (

@@ -1645,19 +1645,30 @@ function DashboardContent() {
               <div><h1 className="text-xl font-black text-white">Media Management</h1><p className="text-slate-400 text-sm">Update images, videos, and icons for the app.</p></div>
 
               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
-                  <h3 className="font-bold text-white">Power Page Header</h3>
-                  <p className="text-sm text-slate-400">This is the background image for the header on the Power Center page.</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                           <img src={media.find(m => m.id === 'power-header-banner')?.url || 'https://picsum.photos/seed/powerheader/1200/400'} alt="Power Page Header" className="w-full h-auto rounded-lg aspect-[16/9] object-cover bg-slate-700" />
-                           <label htmlFor={`act-upload-power-header-banner`} className={`mt-2 text-xs cursor-pointer hover:underline ${uploading === 'activity-power-header-banner' ? 'text-slate-400' : 'text-amber-400'}`}>
-                              {uploading === 'activity-power-header-banner' ? 'Uploading...' : 'Upload new header image'}
-                           </label>
-                           <input type="file" id={`act-upload-power-header-banner`} className="hidden" accept="image/*" disabled={uploading === 'activity-power-header-banner'} onChange={async (e) => {
-                               const file = e.target.files?.[0];
-                               if (file) await handleFileUpload('activity', 'power-header-banner', file);
-                           }}/>
-                      </div>
+                  <h3 className="font-bold text-white">Power Page Slider</h3>
+                  <p className="text-sm text-slate-400">These three images will create an automatic slideshow in the Power Center header.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {[
+                          { id: 'power-slider-1', name: 'Slider Image 1', default: 'https://picsum.photos/seed/power-slider-1/1200/800' },
+                          { id: 'power-slider-2', name: 'Slider Image 2', default: 'https://picsum.photos/seed/power-slider-2/1200/800' },
+                          { id: 'power-slider-3', name: 'Slider Image 3', default: 'https://picsum.photos/seed/power-slider-3/1200/800' },
+                      ].map(({ id, name, default: defaultUrl }) => {
+                          const imageUrl = media.find(m => m.id === id)?.url || defaultUrl;
+                          const isUploading = uploading === `activity-${id}`;
+                          return (
+                              <div key={id} className="text-center">
+                                  <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-video object-cover bg-slate-700" />
+                                  <p className="text-white text-sm font-semibold mt-2">{name}</p>
+                                  <label htmlFor={`act-upload-${id}`} className={`mt-1 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                      {isUploading ? 'Uploading...' : 'Upload new image'}
+                                  </label>
+                                  <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) await handleFileUpload('activity', id, file);
+                                  }}/>
+                              </div>
+                          )
+                      })}
                   </div>
               </div>
               
