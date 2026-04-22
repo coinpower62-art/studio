@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 const team = [
   { id: 'ceo-portrait', name: "Alessandro Romano", role: "CEO & Founder", country: "Italy", avatar: "AR", color: "from-amber-400 to-amber-600" },
@@ -155,21 +156,51 @@ export default function AboutPage() {
           ))}
         </div>
 
-        {/* ── Free $1 Welcome Bonus ── */}
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-5 sm:p-7 mb-8 sm:mb-10 text-white shadow-xl">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0 shadow-lg">
-              <Gift className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+        <div className="mb-8 sm:mb-12">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1">Welcome to the CoinPower Community! ⚡️</h2>
+            <p className="text-gray-500 text-center text-xs sm:text-sm mb-5 sm:mb-8">
+                CoinPower is a premier investment technology company from Italy, dedicated to bringing professional-grade crypto solutions to the global market. 🇮🇹
+            </p>
+
+            <div className="bg-gradient-to-r from-amber-500 to-yellow-500 rounded-2xl p-5 sm:p-7 mb-8 sm:mb-10 text-white shadow-xl">
+                <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0 shadow-lg">
+                        <Gift className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                    </div>
+                    <div>
+                        <h2 className="text-lg sm:text-xl font-black">🎁 EXCLUSIVE NEW MEMBER OFFER</h2>
+                        <ul className="mt-2 space-y-1">
+                            <li className="flex items-center gap-2"><span className="text-xl">💰</span> <span className="text-amber-100">$1.00 Instant Bonus just for signing up!</span></li>
+                            <li className="flex items-center gap-2"><span className="text-xl">📈</span> <span className="text-amber-100">Free Daily Income: Start earning every day at no cost.</span></li>
+                        </ul>
+                        <a href="https://coinpower-italy.netlify.app/signup?ref=CP-PRINCESS021422" target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" className="mt-4 bg-white/90 text-amber-700 font-bold hover:bg-white">
+                                🚀 Get Started Here
+                            </Button>
+                        </a>
+                    </div>
+                </div>
             </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-lg sm:text-xl font-black">Get Started with a Free $1! 🎁</h2>
-              </div>
-              <p className="text-green-100 text-sm sm:text-base leading-relaxed">
-                Join CoinPower and receive a complimentary <span className="font-bold text-white">$1</span> to kickstart your investment journey. Create an account and you'll be eligible to earn daily income without any initial deposit. As you grow with us, upgrade to higher levels and unlock greater rewards.
-              </p>
+            
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1 mt-8">Why Join CoinPower?</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 mt-5">
+                {[
+                    { icon: '📊', title: "Expert Tracking", desc: "High-level accuracy in monitoring crypto trading activity." },
+                    { icon: '🌍', title: "Global Vision", desc: "An Italian-born platform designed for investors in every corner of the world." },
+                    { icon: '🛡️', title: "Built for Trust", desc: "We empower you with the data and the tools to grow your digital assets." },
+                ].map(({ icon, title, desc }) => (
+                    <div key={title} className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-amber-100/60 flex flex-col items-center text-center gap-3">
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 shadow-inner">
+                            <span className="text-2xl">{icon}</span>
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-gray-900 text-sm sm:text-base leading-tight">{title}</h3>
+                            <p className="text-gray-500 text-xs sm:text-sm leading-relaxed mt-1">{desc}</p>
+                        </div>
+                    </div>
+                ))}
             </div>
-          </div>
+            <p className="text-gray-500 text-center text-xs sm:text-sm mt-5">From Italy to the world — powering the next generation of global investing. 🔋🌎</p>
         </div>
 
         {/* ── Multiple Ways to Earn ── */}
@@ -189,30 +220,6 @@ export default function AboutPage() {
                   </div>
                 </div>
                 <p className="text-gray-500 text-xs sm:text-sm leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Why Choose CoinPower ── */}
-        <div className="mb-8 sm:mb-12">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1">Why Choose CoinPower?</h2>
-          <p className="text-gray-500 text-center text-xs sm:text-sm mb-5 sm:mb-8">The principles that guide everything we do</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
-            {[
-              { icon: Star, title: "Proven Track Record", desc: "5+ years of reliable investment platform experience — trusted by 26,000+ investors worldwide.", color: "from-amber-400 to-amber-600" },
-              { icon: Shield, title: "Secure & Transparent", desc: "Your investments are protected with top-notch security measures and full transparency at every step.", color: "from-green-400 to-green-600" },
-              { icon: Globe, title: "Global Community", desc: "Join a vibrant community of like-minded investors across 21 countries, with Italy as our home base.", color: "from-blue-400 to-blue-600" },
-              { icon: TrendingUp, title: "Consistent Growth", desc: "Our algorithms ensure consistent, predictable returns across all plans — from beginner to expert level.", color: "from-purple-400 to-purple-600" },
-            ].map(({ icon: Icon, title, desc, color }) => (
-              <div key={title} className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-amber-100/60 flex items-start gap-3 sm:gap-4">
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center flex-shrink-0 shadow-md`}>
-                  <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 mb-1 text-sm sm:text-base">{title}</h3>
-                  <p className="text-gray-500 text-xs sm:text-sm leading-relaxed">{desc}</p>
-                </div>
               </div>
             ))}
           </div>
