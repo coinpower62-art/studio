@@ -125,6 +125,12 @@
       "description": "Icon for Card payment method.",
       "imageUrl": "https://picsum.photos/seed/paymentcard/100/100",
       "imageHint": "credit card"
+    },
+    {
+      "id": "referral-team-illustration",
+      "description": "An illustration of a group of people for the referral team section.",
+      "imageUrl": "https://picsum.photos/seed/teamillo/800/300",
+      "imageHint": "team illustration"
     }
   ]
 }

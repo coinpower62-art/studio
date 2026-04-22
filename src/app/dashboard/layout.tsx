@@ -26,6 +26,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -203,6 +210,7 @@ function DashboardClientLayout({ children }: { children: React.ReactNode }) {
         </aside>
         
         <div className="flex flex-col flex-1 overflow-hidden">
+             
             <div className="sticky top-0 z-30">
               <DashboardHeader user={user} />
               

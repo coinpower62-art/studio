@@ -776,42 +776,6 @@ export default function BankPage() {
           </div>
         </div>
 
-        {function() {
-          const today = new Date().getDay();
-          const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-          return (
-            <div className="rounded-2xl border bg-blue-50 border-blue-200 p-4 mb-4">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm bg-blue-500">
-                  <span className="text-white text-lg">📢</span>
-                </div>
-                <div className="flex-1">
-                  <p className="font-bold text-sm mb-1 text-blue-800">
-                    Withdrawal Processing Schedule
-                  </p>
-                  <p className="text-blue-700 text-xs leading-relaxed">
-                    Withdrawals are processed <strong>Monday to Saturday</strong> within 1–24 hours. On <strong>Sundays</strong>, the platform is active but withdrawal accounts are closed — any request submitted on Sunday will be processed the following <strong>Monday</strong>.
-                  </p>
-                  <div className="flex gap-1.5 mt-3 flex-wrap">
-                    {days.map(function(d, i) {
-                      return (
-                      <span key={d} className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        i === 0
-                          ? "bg-red-500 text-white"
-                          : i === today
-                          ? "bg-green-500 text-white ring-2 ring-green-400 ring-offset-1"
-                          : "bg-white border border-blue-200 text-blue-600"
-                      }`}>
-                        {d}{i === 0 ? " ✕" : ""}
-                      </span>
-                    )})}
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        }()}
-
         <div className="space-y-3">
             <div 
               data-testid="button-deposit" 
@@ -1178,12 +1142,12 @@ export default function BankPage() {
 
         {mode === "withdraw" && !withdrawSuccess && (
           <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-4 sm:p-6 my-4 space-y-5">
-              <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-3 py-3">
+            <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-3 py-3">
               <Hourglass className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-blue-800 text-xs font-semibold">Processing Time: 1–24 Hours</p>
+                <p className="text-blue-800 text-xs font-semibold">Withdrawal Processing Schedule</p>
                 <p className="text-blue-700 text-xs mt-0.5 leading-relaxed">
-                  Withdrawals are processed Monday to Saturday. If your withdrawal is still pending after 24 hours, please contact the manager.
+                  Withdrawals are processed Monday to Saturday within 1-24 hours. Requests on Sunday will be processed the next day.
                 </p>
               </div>
             </div>

@@ -1,3 +1,4 @@
+
 # 🚀 CoinPower Deployment Guide for Netlify
 
 > **IMPORTANT:** A new database function is required for the multi-level referral system. Please copy the SQL code from the `run_this.sql` file in your project and run it in your Supabase SQL Editor. This is a one-time setup.
@@ -76,9 +77,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   phone text UNIQUE,
   balance numeric(10, 2) DEFAULT 0.00,
   referral_code text UNIQUE,
-  referred_by text,
+  parent_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
   has_withdrawal_pin boolean DEFAULT false NOT NULL,
-  withdrawal_locked boolean DEFAULT false NOT NULL
+  withdrawal_locked boolean DEFAULT false NOT NULL,
+  device_id text
 );
 
 -- Enable Row Level Security (RLS)
@@ -420,7 +422,7 @@ BEGIN
   END IF;
 
   -- 3. Count referrals
-  SELECT count(*) INTO referral_count FROM public.profiles WHERE referred_by = profile_record.referral_code;
+  SELECT count(*) INTO referral_count FROM public.profiles WHERE parent_id = user_id_in;
 
   IF referral_count < 5 THEN
     RAISE EXCEPTION 'You need at least 5 referrals to claim the bonus.';
@@ -483,6 +485,116 @@ BEGIN
   SET view_count = daily_visits.view_count + 1;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- =================================================================
+-- 13. RPC FUNCTION FOR GETTING REFERRED USERS
+-- Fetches the list of users referred by a specific user.
+-- This bypasses RLS to allow a user to see basic info of people they referred.
+-- =================================================================
+CREATE OR REPLACE FUNCTION get_referred_users(user_id_in uuid)
+RETURNS TABLE(id uuid, full_name text, username text, created_at timestamp with time zone) AS $$
+BEGIN
+  -- Return the list of users who were referred by this user
+  -- NOTE: This function bypasses Row Level Security.
+  RETURN QUERY
+  SELECT p.id, p.full_name, p.username, p.created_at
+  FROM public.profiles p
+  WHERE p.parent_id = user_id_in
+  ORDER BY p.created_at DESC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =================================================================
+-- 14. RPC FUNCTION FOR ATOMIC BALANCE INCREMENT
+-- Atomically increments a user's balance. Used for commissions.
+-- =================================================================
+CREATE OR REPLACE FUNCTION increment_balance(user_id_in uuid, amount_in numeric)
+RETURNS void AS $$
+BEGIN
+  UPDATE public.profiles
+  SET balance = balance + amount_in
+  WHERE id = user_id_in;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- =================================================================
+-- 15. RPC FUNCTION FOR GETTING DOWNLINE COUNTS
+-- Fetches the count of referrals up to 3 levels deep.
+-- =================================================================
+CREATE OR REPLACE FUNCTION get_downline_counts(user_id_in uuid)
+RETURNS TABLE(level1_count bigint, level2_count bigint, level3_count bigint) AS $$
+DECLARE
+    l1_ids uuid[];
+    l2_ids uuid[];
+BEGIN
+    -- Level 1
+    SELECT array_agg(id) INTO l1_ids FROM public.profiles WHERE parent_id = user_id_in;
+    level1_count := COALESCE(array_length(l1_ids, 1), 0);
+
+    -- Level 2
+    IF level1_count > 0 THEN
+        SELECT array_agg(id) INTO l2_ids FROM public.profiles WHERE parent_id = ANY(l1_ids);
+        level2_count := COALESCE(array_length(l2_ids, 1), 0);
+    ELSE
+        level2_count := 0;
+    END IF;
+
+    -- Level 3
+    IF level2_count > 0 THEN
+        SELECT count(*) INTO level3_count FROM public.profiles WHERE parent_id = ANY(l2_ids);
+    ELSE
+        level3_count := 0;
+    END IF;
+
+    RETURN QUERY SELECT level1_count, level2_count, level3_count;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- =================================================================
+-- 16. RPC FUNCTION FOR GETTING DOWNLINE MEMBERS
+-- Fetches the list of referred users up to 3 levels deep, including their level.
+-- =================================================================
+CREATE OR REPLACE FUNCTION get_downline_members(user_id_in uuid)
+RETURNS TABLE(level integer, id uuid, full_name text, username text, created_at timestamp with time zone) AS $$
+BEGIN
+    WITH RECURSIVE downline AS (
+        -- Anchor member: direct referrals (Level 1)
+        SELECT 
+            p.id, 
+            p.parent_id, 
+            p.full_name, 
+            p.username, 
+            p.created_at, 
+            1 AS level
+        FROM public.profiles p
+        WHERE p.parent_id = user_id_in
+
+        UNION ALL
+
+        -- Recursive member: subsequent levels (up to level 3)
+        SELECT 
+            p_child.id, 
+            p_child.parent_id, 
+            p_child.full_name, 
+            p_child.username, 
+            p_child.created_at, 
+            d.level + 1
+        FROM public.profiles p_child
+        JOIN downline d ON p_child.parent_id = d.id
+        WHERE d.level < 3 -- Stop recursion after level 3 is found
+    )
+    SELECT
+        d.level,
+        d.id,
+        d.full_name,
+        d.username,
+        d.created_at
+    FROM downline;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 ---
@@ -553,6 +665,12 @@ UPDATE public.generators SET max_rentals = 1 WHERE id = 'pg3';
 UPDATE public.generators SET max_rentals = 2 WHERE id = 'pg4';
 ```
 
+### Add Device ID Tracking to Profiles
+This adds the `device_id` column used for the "One Device, One Account" policy.
+```sql
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS device_id text;
+```
+
 ### Reset All User Data (Use With Caution)
 
 If you need to completely clear all user accounts and their associated data to start fresh, you can run the following script. **WARNING: This is a destructive and irreversible action.**
@@ -576,4 +694,3 @@ SET
 -- and 'withdrawal_requests' because of the database setup.
 DELETE FROM auth.users;
 ```
-

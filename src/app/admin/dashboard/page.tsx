@@ -60,7 +60,7 @@ type UserRecord = {
   country: string | null;
   balance: number;
   referral_code: string | null;
-  referred_by: string | null;
+  parent_id: string | null;
   referral_count?: number;
   phone?: string | null;
   has_withdrawal_pin?: boolean;
@@ -389,15 +389,15 @@ function DashboardContent() {
         }, {} as Record<string, { id: string; name: string; expires_at: string; rented_at: string; }[]>);
         
         const referralCounts = rawUsers.reduce((acc, user) => {
-          if (user.referred_by) {
-            acc[user.referred_by] = (acc[user.referred_by] || 0) + 1;
+          if (user.parent_id) {
+            acc[user.parent_id] = (acc[user.parent_id] || 0) + 1;
           }
           return acc;
         }, {} as Record<string, number>);
 
         const usersWithData = rawUsers.map(user => ({
           ...user,
-          referral_count: user.referral_code ? referralCounts[user.referral_code] || 0 : 0,
+          referral_count: referralCounts[user.id] || 0,
           rented_generators: (rentedByUser[user.id] || []).sort((a, b) => new Date(b.expires_at).getTime() - new Date(a.expires_at).getTime()),
         }));
 
@@ -809,7 +809,7 @@ function DashboardContent() {
   const pendingDepositsCount = deposits.filter(function(d) { return d.status === "pending"; }).length;
   const copyText = (text: string, label: string) => navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!` }));
   const totalReferrals = users.reduce(function(s, u) { return s + (u.referral_count || 0); }, 0);
-  const codeToUserMap = new Map(users.map(u => u.referral_code ? [u.referral_code, u] : [null, null]));
+  const idToUserMap = new Map(users.map(u => [u.id, u]));
 
   const heroImg = media.find(function(m) { return m.id === 'hero'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'activity-hero'; })?.imageUrl;
   const teamworkImg = media.find(function(m) { return m.id === 'teamwork'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'activity-teamwork'; })?.imageUrl;
@@ -1523,12 +1523,12 @@ function DashboardContent() {
                         <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">User</th>
                         <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referral Code</th>
                         <th className="text-center px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referred</th>
-                        <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referred By</th>
+                        <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referred By (Parent)</th>
                         <th className="text-right px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Balance</th>
                       </tr></thead>
                       <tbody className="divide-y divide-slate-700">
                         {users.map((u: UserRecord) => { 
-                          const referrer = u.referred_by ? codeToUserMap.get(u.referred_by) : null;
+                          const referrer = u.parent_id ? idToUserMap.get(u.parent_id) : null;
                           return (
                           <tr key={u.id} className="hover:bg-slate-700/40 transition-colors">
                             <td className="px-4 py-3"><p className="text-white font-medium text-sm">{u.full_name}</p><p className="text-slate-400 text-xs">@{u.username}</p></td>

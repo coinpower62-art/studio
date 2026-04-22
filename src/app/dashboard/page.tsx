@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
@@ -10,7 +11,7 @@ import { logout } from '@/app/login/actions';
 import { redeemGiftCode } from '@/app/dashboard/bank/actions';
 
 // Icons and components
-import { LogOut, Play, ChevronRight, Globe, Gift, Share2, User as UserIcon, Clock } from 'lucide-react';
+import { LogOut, Play, ChevronRight, Globe, Gift, Share2, User as UserIcon, Clock, CheckCircle } from 'lucide-react';
 import { SiTelegram } from 'react-icons/si';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -46,7 +47,7 @@ function RedeemGiftCode({ onRedeem }: { onRedeem: () => void }) {
 
     const handleRedeem = async () => {
         if (!giftCode.trim()) {
-            toast({ title: "Please enter a gift code.", variant: "destructive" });
+            toast({ title: "Enter a gift code", variant: "destructive" });
             return;
         }
         setIsRedeeming(true);
@@ -123,12 +124,12 @@ function DashboardContent() {
             profileResult, 
             rentedGeneratorsResult, 
             depositsResult,
-            withdrawalsResult
+            withdrawalsResult,
         ] = await Promise.all([
             supabase.from('profiles').select('*').eq('id', user.id).single(),
             supabase.from('rented_generators').select('id, expires_at').eq('user_id', user.id),
             supabase.from('deposit_requests').select('amount').eq('user_id', user.id).eq('status', 'approved'),
-            supabase.from('withdrawal_requests').select('amount').eq('user_id', user.id).eq('status', 'approved')
+            supabase.from('withdrawal_requests').select('amount').eq('user_id', user.id).eq('status', 'approved'),
         ]);
 
         const { data: profileData, error: profileError } = profileResult;
