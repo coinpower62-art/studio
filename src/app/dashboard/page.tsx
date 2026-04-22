@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { useToast } from "@/hooks/use-toast";
@@ -192,7 +193,6 @@ function DashboardSkeleton() {
 
 function DashboardContent() {
     const router = useRouter();
-    const searchParams = useSearchParams();
     const { toast } = useToast();
     const [user, setUser] = useState<SupabaseUser | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
@@ -279,14 +279,12 @@ function DashboardContent() {
     }, [router, toast]);
 
     useEffect(() => {
-        const showInfo = searchParams.get('show_withdrawal_info');
-        if (showInfo === 'true') {
+        const hasBeenShown = sessionStorage.getItem('withdrawal_info_shown');
+        if (hasBeenShown !== 'true') {
             setShowWithdrawalInfo(true);
-            const nextUrl = new URL(window.location.href);
-            nextUrl.searchParams.delete('show_withdrawal_info');
-            window.history.replaceState({}, '', nextUrl.toString());
+            sessionStorage.setItem('withdrawal_info_shown', 'true');
         }
-    }, [searchParams]);
+    }, []);
 
     useEffect(() => {
         fetchData();
