@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -544,11 +543,105 @@ function ClaimSuccessOverlay({ amount, generatorName, onDone }: { amount: number
   );
 }
 
-const powerPlans = [
-  { name: "Bronze Power", price: "$100/mo", boost: "2x", multiplier: 2, color: "from-amber-600 to-yellow-700", features: ["2x return multiplier", "Priority processing", "Weekly reports", "Email support"] },
-  { name: "Silver Power", price: "$500/mo", boost: "5x", multiplier: 5, color: "from-gray-400 to-gray-600", features: ["5x return multiplier", "Instant processing", "Daily reports", "Phone support"], popular: true },
-  { name: "Gold Power", price: "$1,000/mo", boost: "10x", multiplier: 10, color: "from-amber-400 to-amber-600", features: ["10x return multiplier", "Dedicated manager", "Real-time analytics", "24/7 VIP support"] },
-];
+function SubordinatesTeam({ team, isLoading }: { team: any[], isLoading: boolean }) {
+    if (isLoading) {
+        return (
+            <div className="grid grid-cols-1 gap-4 mt-6">
+                {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-48 rounded-2xl" />)}
+            </div>
+        )
+    }
+
+    const levelDetails = [
+        { level: 1, commission: 10, color: "yellow", icon: Users },
+        { level: 2, commission: 5, color: "blue", icon: Users },
+        { level: 3, commission: 2, color: "green", icon: Users },
+    ];
+
+    const cardColors = {
+        yellow: {
+            border: "border-amber-300",
+            bg: "bg-amber-50",
+            text: "text-amber-700",
+            title: "text-amber-800",
+        },
+        blue: {
+            border: "border-blue-300",
+            bg: "bg-blue-50",
+            text: "text-blue-700",
+            title: "text-blue-800",
+        },
+        green: {
+            border: "border-green-300",
+            bg: "bg-green-50",
+            text: "text-green-700",
+            title: "text-green-800",
+        },
+    };
+
+    return (
+        <div className="space-y-4 mt-8">
+             <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                <Users className="w-5 h-5 text-gray-400" />
+                My Subordinates Team
+            </h2>
+            {levelDetails.map(ld => {
+                const members = team.filter(m => m.referral_level === ld.level);
+                const colors = cardColors[ld.color as keyof typeof cardColors];
+                const totalCommission = members.reduce((sum, member) => {
+                    const memberCommission = member.rentals?.reduce((cSum: number, r: any) => cSum + (r.commission_earned || 0), 0) || 0;
+                    return sum + memberCommission;
+                }, 0);
+
+                return (
+                    <div key={ld.level} className={`rounded-2xl border-2 ${colors.border} ${colors.bg} overflow-hidden shadow-sm`}>
+                        <div className="p-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <ld.icon className={`w-6 h-6 ${colors.title}`} />
+                                    <span className={`font-black text-lg ${colors.title}`}>Level {ld.level}</span>
+                                </div>
+                                <span className={`font-bold text-3xl ${colors.title}`}>{members.length}</span>
+                            </div>
+                            <div className="text-center my-2">
+                                <Badge className="bg-white text-gray-600 border border-gray-200 shadow-sm text-sm font-semibold">
+                                    <span className={`font-bold ${colors.text}`}>{ld.commission}%</span>&nbsp;Commission
+                                </Badge>
+                            </div>
+
+                            {members.length === 0 ? (
+                                <p className="text-center text-gray-500 text-sm py-4">No members at this level</p>
+                            ) : (
+                                <div className="space-y-2 max-h-48 overflow-y-auto pr-2 mt-4">
+                                    {members.map(m => {
+                                         const memberCommission = m.rentals?.reduce((cSum: number, r: any) => cSum + (r.commission_earned || 0), 0) || 0;
+                                        return (
+                                            <div key={m.user_id} className="flex items-center justify-between bg-white/70 p-2 rounded-lg">
+                                                <div>
+                                                    <p className="text-xs font-semibold text-gray-800">{m.full_name || m.username}</p>
+                                                    <p className="text-[10px] text-gray-500">Joined: {new Date(m.created_at).toLocaleDateString()}</p>
+                                                </div>
+                                                <div className={`text-xs font-bold text-right ${memberCommission > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                                                    {memberCommission > 0 ? `+ $${memberCommission.toFixed(2)}` : '$0.00'}
+                                                    <p className="text-[9px] font-medium text-gray-400">Commission</p>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                        <div className={`border-t ${colors.border} px-4 py-2 flex justify-between items-center bg-white/50`}>
+                            <span className="text-xs font-semibold text-gray-600">Total Level {ld.level} Commission:</span>
+                            <span className={`font-black text-base ${colors.text}`}>${totalCommission.toFixed(2)}</span>
+                        </div>
+                    </div>
+                )
+            })}
+        </div>
+    )
+}
+
 
 function PowerPageSkeleton() {
     return <div className="pt-12 p-4 pb-20 max-w-6xl mx-auto"><Skeleton className="h-96 rounded-2xl" /></div>;
@@ -562,6 +655,7 @@ export default function Power() {
   const [rentedGenerators, setRentedGenerators] = useState<RentedGenerator[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [media, setMedia] = useState<any[]>([]);
+  const [referralTeam, setReferralTeam] = useState<any[]>([]);
 
   const [claimedInfo, setClaimedInfo] = useState<{ amount: number; generatorName: string } | null>(null);
   const [isClaimingId, setIsClaimingId] = useState<string | null>(null);
@@ -576,7 +670,7 @@ export default function Power() {
     }
     setUser(user);
 
-    const [rentedResult, mediaResult] = await Promise.all([
+    const [rentedResult, mediaResult, teamResult] = await Promise.all([
       supabase
         .from('rented_generators')
         .select(`
@@ -585,6 +679,7 @@ export default function Power() {
         `)
         .eq('user_id', user.id),
       supabase.from('media').select('*'),
+      supabase.rpc('get_referral_team_details', { p_user_id: user.id }),
     ]);
 
     const { data, error } = rentedResult;
@@ -621,6 +716,13 @@ export default function Power() {
       toast({ title: 'Error fetching media', description: mediaError.message, variant: 'destructive' });
     } else {
       setMedia(mediaData || []);
+    }
+
+    const { data: teamData, error: teamError } = teamResult;
+    if (teamError) {
+        toast({ title: 'Error fetching referral team', description: teamError.message, variant: 'destructive' });
+    } else {
+        setReferralTeam(teamData || []);
     }
 
     setIsLoading(false);
@@ -726,6 +828,8 @@ export default function Power() {
                 </div>
               </div>
             )}
+            
+            <SubordinatesTeam team={referralTeam} isLoading={isLoading} />
 
             {rentedGenerators.length === 0 && !isLoading && (
               <div className="bg-white rounded-2xl border border-amber-100/60 shadow-sm p-10 text-center mb-6 mt-6">
