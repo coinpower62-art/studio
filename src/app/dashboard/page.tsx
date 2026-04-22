@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
@@ -311,19 +310,21 @@ function DashboardContent() {
     return (
         <div className="space-y-4">
              <Dialog open={showWithdrawalInfo} onOpenChange={setShowWithdrawalInfo}>
-                <DialogContent className="sm:max-w-md rounded-2xl">
-                    <DialogHeader className="text-center items-center">
-                        <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mb-2">
-                           <Clock className="w-8 h-8 text-amber-500" />
+                <DialogContent className="sm:max-w-md rounded-2xl p-0 overflow-hidden">
+                    <div className="bg-gradient-to-br from-amber-500 to-amber-700 p-5 text-white text-center">
+                        <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-2">
+                            <Clock className="w-8 h-8 text-white" />
                         </div>
-                        <DialogTitle className="text-xl font-bold">Withdrawal Information</DialogTitle>
-                        <DialogDescription className="text-gray-500 text-sm pt-1">
+                        <DialogTitle className="text-white text-xl font-bold">Withdrawal Information</DialogTitle>
+                    </div>
+                    <div className="p-6">
+                        <DialogDescription className="text-gray-600 text-sm pt-1 text-center leading-relaxed">
                             Welcome! Please note that withdrawals are processed Monday to Saturday, typically within <strong>1 to 24 hours</strong>.
                         </DialogDescription>
-                    </DialogHeader>
-                    <Button onClick={() => setShowWithdrawalInfo(false)} className="w-full h-11 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-lg text-base">
-                        Okay, I understand
-                    </Button>
+                        <Button onClick={() => setShowWithdrawalInfo(false)} className="w-full h-11 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-lg text-base mt-5">
+                            Okay, I understand
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
 
@@ -374,27 +375,6 @@ function DashboardContent() {
                     </div>
                 </div>
             </div>
-
-            <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-4">
-                <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <Share2 className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-gray-900 text-sm">
-                            Referral Bonus
-                        </h3>
-                        <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                            For each friend that signs up with your link, you'll earn a <span className="font-bold text-amber-600">$5.00 bonus</span> when they make their first deposit.
-                        </p>
-                        <a href="https://t.me/coinpowerofficial" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-3 bg-sky-100 text-sky-700 font-bold text-xs px-3 py-2 rounded-lg hover:bg-sky-200 transition-colors">
-                            <SiTelegram className="w-4 h-4" />
-                            Join our Telegram Group
-                        </a>
-                    </div>
-                </div>
-            </div>
-
 
             <ReferralLink referralCode={profile.referral_code} />
 
