@@ -39,6 +39,8 @@ import {
   adminDeleteGiftCode,
   adminResetUserPassword,
   adminToggleWithdrawalLock,
+  adminDeleteMedia,
+  adminDeleteGeneratorImage,
 } from "./actions";
 import { Switch } from "@/components/ui/switch";
 
@@ -729,6 +731,22 @@ function DashboardContent() {
       } finally {
         setUploading(null);
       }
+  };
+
+  const handleDeleteMedia = async (type: 'generator' | 'activity' | 'video' | 'license', id: string) => {
+    let result;
+    if (type === 'generator') {
+        result = await adminDeleteGeneratorImage(id);
+    } else {
+        result = await adminDeleteMedia(id);
+    }
+
+    if (result?.error) {
+        toast({ title: 'Error Deleting Asset', description: result.error, variant: 'destructive' });
+    } else {
+        toast({ title: 'Asset Deleted', description: 'The asset has been successfully removed.' });
+        await fetchData();
+    }
   };
 
   const handleSeedGenerators = async () => {
@@ -1659,13 +1677,19 @@ function DashboardContent() {
                               <div key={id} className="text-center">
                                   <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-video object-cover bg-slate-700" />
                                   <p className="text-white text-sm font-semibold mt-2">{name}</p>
-                                  <label htmlFor={`act-upload-${id}`} className={`mt-1 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
-                                      {isUploading ? 'Uploading...' : 'Upload new image'}
-                                  </label>
-                                  <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file) await handleFileUpload('activity', id, file);
-                                  }}/>
+                                  <div className="flex items-center justify-center gap-3 mt-1">
+                                    <label htmlFor={`act-upload-${id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                        {isUploading ? 'Uploading...' : 'Upload new image'}
+                                    </label>
+                                    <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) await handleFileUpload('activity', id, file);
+                                    }}/>
+                                    <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                        onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the image for "${name}"?`, () => handleDeleteMedia('activity', id))}>
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
                               </div>
                           )
                       })}
@@ -1678,13 +1702,19 @@ function DashboardContent() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                            <img src={media.find(m => m.id === 'homepage-cover')?.url || 'https://picsum.photos/seed/joyfulwoman/1080/1920'} alt="Homepage Cover" className="w-full h-auto rounded-lg aspect-[9/16] object-cover bg-slate-700" />
-                           <label htmlFor={`act-upload-homepage-cover`} className={`mt-2 text-xs cursor-pointer hover:underline ${uploading === 'activity-homepage-cover' ? 'text-slate-400' : 'text-amber-400'}`}>
-                              {uploading === 'activity-homepage-cover' ? 'Uploading...' : 'Upload new cover image'}
-                           </label>
-                           <input type="file" id={`act-upload-homepage-cover`} className="hidden" accept="image/*" disabled={uploading === 'activity-homepage-cover'} onChange={async (e) => {
-                               const file = e.target.files?.[0];
-                               if (file) await handleFileUpload('activity', 'homepage-cover', file);
-                           }}/>
+                           <div className="flex items-center justify-center gap-3 mt-2">
+                                <label htmlFor={`act-upload-homepage-cover`} className={`text-xs cursor-pointer hover:underline ${uploading === 'activity-homepage-cover' ? 'text-slate-400' : 'text-amber-400'}`}>
+                                  {uploading === 'activity-homepage-cover' ? 'Uploading...' : 'Upload new cover image'}
+                                </label>
+                                <input type="file" id={`act-upload-homepage-cover`} className="hidden" accept="image/*" disabled={uploading === 'activity-homepage-cover'} onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) await handleFileUpload('activity', 'homepage-cover', file);
+                                }}/>
+                                <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                    onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the homepage cover image?`, () => handleDeleteMedia('activity', 'homepage-cover'))}>
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                           </div>
                       </div>
                   </div>
               </div>
@@ -1695,13 +1725,19 @@ function DashboardContent() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                           <img src={media.find(m => m.id === 'about-page-hero')?.url || 'https://picsum.photos/seed/about-hero/1200/400'} alt="About Page Hero" className="w-full h-auto rounded-lg aspect-video object-cover bg-slate-700" />
-                           <label htmlFor={`act-upload-about-page-hero`} className={`mt-2 text-xs cursor-pointer hover:underline ${uploading === 'activity-about-page-hero' ? 'text-slate-400' : 'text-amber-400'}`}>
-                              {uploading === 'activity-about-page-hero' ? 'Uploading...' : 'Upload new hero image'}
-                           </label>
-                           <input type="file" id={`act-upload-about-page-hero`} className="hidden" accept="image/*" disabled={uploading === 'activity-about-page-hero'} onChange={async (e) => {
-                               const file = e.target.files?.[0];
-                               if (file) await handleFileUpload('activity', 'about-page-hero', file);
-                           }}/>
+                           <div className="flex items-center justify-center gap-3 mt-2">
+                                <label htmlFor={`act-upload-about-page-hero`} className={`text-xs cursor-pointer hover:underline ${uploading === 'activity-about-page-hero' ? 'text-slate-400' : 'text-amber-400'}`}>
+                                  {uploading === 'activity-about-page-hero' ? 'Uploading...' : 'Upload new hero image'}
+                                </label>
+                                <input type="file" id={`act-upload-about-page-hero`} className="hidden" accept="image/*" disabled={uploading === 'activity-about-page-hero'} onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) await handleFileUpload('activity', 'about-page-hero', file);
+                                }}/>
+                                <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                    onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the about page hero image?`, () => handleDeleteMedia('activity', 'about-page-hero'))}>
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                           </div>
                       </div>
                   </div>
               </div>
@@ -1724,13 +1760,21 @@ function DashboardContent() {
                                 <span className="text-xs font-semibold">No video uploaded</span>
                             </div>
                           )}
-                           <label htmlFor={`vid-upload-tutorial-video`} className={`mt-2 text-xs cursor-pointer hover:underline ${uploading === 'video-tutorial-video' ? 'text-slate-400' : 'text-amber-400'}`}>
-                              {uploading === 'video-tutorial-video' ? 'Uploading...' : 'Upload new video'}
-                           </label>
-                           <input type="file" id={`vid-upload-tutorial-video`} className="hidden" accept="video/mp4,video/webm" disabled={uploading === 'video-tutorial-video'} onChange={async (e) => {
-                               const file = e.target.files?.[0];
-                               if (file) await handleFileUpload('video', 'tutorial-video', file);
-                           }}/>
+                           <div className="flex items-center justify-center gap-3 mt-2">
+                             <label htmlFor={`vid-upload-tutorial-video`} className={`text-xs cursor-pointer hover:underline ${uploading === 'video-tutorial-video' ? 'text-slate-400' : 'text-amber-400'}`}>
+                                {uploading === 'video-tutorial-video' ? 'Uploading...' : 'Upload new video'}
+                             </label>
+                             <input type="file" id={`vid-upload-tutorial-video`} className="hidden" accept="video/mp4,video/webm" disabled={uploading === 'video-tutorial-video'} onChange={async (e) => {
+                                 const file = e.target.files?.[0];
+                                 if (file) await handleFileUpload('video', 'tutorial-video', file);
+                             }}/>
+                              {media.find(m => m.id === 'tutorial-video') && (
+                                <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Video"
+                                    onClick={() => openConfirm('Delete Video?', `Are you sure you want to delete the tutorial video?`, () => handleDeleteMedia('video', 'tutorial-video'))}>
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                           </div>
                       </div>
                   </div>
               </div>
@@ -1741,13 +1785,19 @@ function DashboardContent() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div className="text-center">
                           <img src={logoImg} alt="App Logo" className="w-full h-auto rounded-lg aspect-square object-cover bg-slate-700 p-4" />
-                           <label htmlFor={`act-upload-app-logo`} className={`mt-2 text-xs cursor-pointer hover:underline ${uploading === 'activity-app-logo' ? 'text-slate-400' : 'text-amber-400'}`}>
-                              {uploading === 'activity-app-logo' ? 'Uploading...' : 'Upload new logo'}
-                           </label>
-                           <input type="file" id={`act-upload-app-logo`} className="hidden" accept="image/*" disabled={uploading === 'activity-app-logo'} onChange={async function(e) {
-                               const file = e.target.files?.[0];
-                               if (file) await handleFileUpload('activity', 'app-logo', file);
-                           }}/>
+                           <div className="flex items-center justify-center gap-3 mt-2">
+                             <label htmlFor={`act-upload-app-logo`} className={`text-xs cursor-pointer hover:underline ${uploading === 'activity-app-logo' ? 'text-slate-400' : 'text-amber-400'}`}>
+                                {uploading === 'activity-app-logo' ? 'Uploading...' : 'Upload new logo'}
+                             </label>
+                             <input type="file" id={`act-upload-app-logo`} className="hidden" accept="image/*" disabled={uploading === 'activity-app-logo'} onChange={async function(e) {
+                                 const file = e.target.files?.[0];
+                                 if (file) await handleFileUpload('activity', 'app-logo', file);
+                             }}/>
+                              <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Logo"
+                                onClick={() => openConfirm('Delete Logo?', `Are you sure you want to delete the app logo?`, () => handleDeleteMedia('activity', 'app-logo'))}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                           </div>
                       </div>
                   </div>
               </div>
@@ -1763,13 +1813,21 @@ function DashboardContent() {
                       return (
                         <div key={id} className="text-center">
                           <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-square object-contain bg-slate-700" />
-                           <label htmlFor={`gen-upload-${id}`} className={`mt-2 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
-                              {isUploading ? 'Uploading...' : `Upload for ${id.toUpperCase()}`}
-                           </label>
-                           <input type="file" id={`gen-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
-                             const file = e.target.files?.[0];
-                             if (file) await handleFileUpload('generator', id, file);
-                           }}/>
+                           <div className="flex items-center justify-center gap-3 mt-2">
+                             <label htmlFor={`gen-upload-${id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                {isUploading ? 'Uploading...' : `Upload for ${id.toUpperCase()}`}
+                             </label>
+                             <input type="file" id={`gen-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
+                               const file = e.target.files?.[0];
+                               if (file) await handleFileUpload('generator', id, file);
+                             }}/>
+                              {g?.image_url && (
+                                <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                    onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the image for "${name}"?`, () => handleDeleteMedia('generator', id))}>
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                           </div>
                         </div>
                       );
                     })}
@@ -1778,13 +1836,21 @@ function DashboardContent() {
                       return (
                         <div key={g.id} className="text-center">
                           <img src={g.image_url || PlaceHolderImages.find(function(i) { return i.id === `gen-${g.id}`; })?.imageUrl} alt={g.name} className="w-full h-auto rounded-lg aspect-square object-contain bg-slate-700" />
-                           <label htmlFor={`gen-upload-${g.id}`} className={`mt-2 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
-                              {isUploading ? 'Uploading...' : `Upload for ${g.id.toUpperCase()}`}
-                           </label>
-                           <input type="file" id={`gen-upload-${g.id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
-                             const file = e.target.files?.[0];
-                             if (file) await handleFileUpload('generator', g.id, file);
-                           }}/>
+                           <div className="flex items-center justify-center gap-3 mt-2">
+                             <label htmlFor={`gen-upload-${g.id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                {isUploading ? 'Uploading...' : `Upload for ${g.id.toUpperCase()}`}
+                             </label>
+                             <input type="file" id={`gen-upload-${g.id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
+                               const file = e.target.files?.[0];
+                               if (file) await handleFileUpload('generator', g.id, file);
+                             }}/>
+                             {g.image_url && (
+                                <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                    onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the image for "${g.name}"?`, () => handleDeleteMedia('generator', g.id))}>
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                             )}
+                           </div>
                         </div>
                       );
                     })}
@@ -1807,13 +1873,21 @@ function DashboardContent() {
                             <div key={id} className="text-center">
                                 <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-[3/2] object-cover bg-slate-700" />
                                 <p className="text-white text-sm font-semibold mt-2">{name}</p>
-                                <label htmlFor={`lic-upload-${id}`} className={`mt-1 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
-                                    {isUploading ? 'Uploading...' : 'Upload new image'}
-                                </label>
-                                <input type="file" id={`lic-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) await handleFileUpload('license', id, file);
-                                }}/>
+                                <div className="flex items-center justify-center gap-3 mt-1">
+                                    <label htmlFor={`lic-upload-${id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                        {isUploading ? 'Uploading...' : 'Upload new image'}
+                                    </label>
+                                    <input type="file" id={`lic-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) await handleFileUpload('license', id, file);
+                                    }}/>
+                                    {media.find(m => m.id === id) && (
+                                        <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                            onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the image for "${name}"?`, () => handleDeleteMedia('license', id))}>
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         )
                     })}
@@ -1836,13 +1910,21 @@ function DashboardContent() {
                               <div key={id} className="text-center">
                                   <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-square object-cover bg-slate-700" />
                                   <p className="text-white text-sm font-semibold mt-2">{name}</p>
-                                  <label htmlFor={`act-upload-${id}`} className={`mt-1 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
-                                      {isUploading ? 'Uploading...' : 'Upload new photo'}
-                                  </label>
-                                  <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file) await handleFileUpload('activity', id, file);
-                                  }}/>
+                                  <div className="flex items-center justify-center gap-3 mt-1">
+                                    <label htmlFor={`act-upload-${id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                        {isUploading ? 'Uploading...' : 'Upload new photo'}
+                                    </label>
+                                    <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) await handleFileUpload('activity', id, file);
+                                    }}/>
+                                    {media.find(m => m.id === id) && (
+                                        <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                            onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the image for "${name}"?`, () => handleDeleteMedia('activity', id))}>
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    )}
+                                  </div>
                               </div>
                           )
                       })}
@@ -1867,13 +1949,21 @@ function DashboardContent() {
                                       {imageUrl ? <img src={imageUrl} alt={name} className="w-full h-full object-contain" /> : <div className="w-full h-full bg-slate-600 rounded-md" />}
                                   </div>
                                   <p className="text-white text-sm font-semibold mt-2">{name}</p>
-                                  <label htmlFor={`act-upload-${id}`} className={`mt-1 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
-                                      {isUploading ? 'Uploading...' : 'Upload new icon'}
-                                  </label>
-                                  <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file) await handleFileUpload('activity', id, file);
-                                  }}/>
+                                   <div className="flex items-center justify-center gap-3 mt-1">
+                                    <label htmlFor={`act-upload-${id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                        {isUploading ? 'Uploading...' : 'Upload new icon'}
+                                    </label>
+                                    <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) await handleFileUpload('activity', id, file);
+                                    }}/>
+                                     {media.find(m => m.id === id) && (
+                                        <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Icon"
+                                            onClick={() => openConfirm('Delete Icon?', `Are you sure you want to delete the icon for "${name}"?`, () => handleDeleteMedia('activity', id))}>
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    )}
+                                  </div>
                               </div>
                           )
                       })}
@@ -1887,13 +1977,21 @@ function DashboardContent() {
                         return (
                           <div key={id} className="text-center">
                             <img src={id === 'hero' ? heroImg : teamworkImg} alt={id} className="w-full h-auto rounded-lg aspect-[16/9] object-cover" />
-                             <label htmlFor={`act-upload-${id}`} className={`mt-2 text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
-                                {isUploading ? 'Uploading...' : `Upload ${id} image`}
-                             </label>
-                             <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
-                               const file = e.target.files?.[0];
-                               if (file) await handleFileUpload('activity', id, file);
-                             }} />
+                             <div className="flex items-center justify-center gap-3 mt-2">
+                                <label htmlFor={`act-upload-${id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                  {isUploading ? 'Uploading...' : `Upload ${id} image`}
+                                </label>
+                                <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
+                                  const file = e.target.files?.[0];
+                                  if (file) await handleFileUpload('activity', id, file);
+                                }} />
+                                {media.find(m => m.id === id) && (
+                                    <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                        onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the ${id} image?`, () => handleDeleteMedia('activity', id))}>
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                )}
+                             </div>
                           </div>
                         );
                       })}

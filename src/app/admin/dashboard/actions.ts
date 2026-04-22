@@ -321,6 +321,23 @@ export async function adminUpsertMedia(id: string, url: string) {
   }
 }
 
+export async function adminDeleteMedia(id: string) {
+  const cookieStore = cookies()
+  if (cookieStore.get('admin_logged_in')?.value !== 'true') {
+    return { error: 'Unauthorized' }
+  }
+  if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
+  try {
+    const supabaseAdmin = await getSupabaseAdminClient()
+    const { error } = await supabaseAdmin.from('media').delete().eq('id', id);
+    if (error) return { error: error.message }
+    revalidatePath('/', 'layout');
+    return { success: true }
+  } catch (e: any) {
+    return { error: e.message }
+  }
+}
+
 export async function adminUpdateGeneratorImage(id: string, imageUrl: string) {
     const cookieStore = cookies()
     if (cookieStore.get('admin_logged_in')?.value !== 'true') {
@@ -341,6 +358,23 @@ export async function adminUpdateGeneratorImage(id: string, imageUrl: string) {
     } catch (e: any) {
         console.error('Admin Action Exception:', e);
         return { error: e.message };
+    }
+}
+
+export async function adminDeleteGeneratorImage(id: string) {
+    const cookieStore = cookies()
+    if (cookieStore.get('admin_logged_in')?.value !== 'true') {
+        return { error: 'Unauthorized' }
+    }
+    if (!isServiceRoleKeyAvailable) return ADMIN_DISABLED_ERROR;
+    try {
+        const supabaseAdmin = await getSupabaseAdminClient()
+        const { error } = await supabaseAdmin.from('generators').update({ image_url: null }).eq('id', id);
+        if (error) return { error: error.message }
+        revalidatePath('/', 'layout');
+        return { success: true }
+    } catch (e: any) {
+        return { error: e.message }
     }
 }
 
