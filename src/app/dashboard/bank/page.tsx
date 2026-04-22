@@ -1,18 +1,17 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useRouter } from 'next/navigation';
 import {
   Landmark, ArrowDownToLine, ArrowUpFromLine, Wallet, Shield, Clock,
   CheckCircle, Copy, CreditCard, Smartphone, Coins, AlertCircle,
   PartyPopper, PhoneCall, Hash, Network, User, MapPin, CalendarDays,
-  Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X, LogOut, Gift
+  Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X, LogOut, Gift, XCircle
 } from "lucide-react";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -151,6 +150,60 @@ function PinBoxes({ value, onChange, testId }: { value: string; onChange: (v: st
       )})}
     </div>
   );
+}
+
+function WithdrawalStatusStepper({ status }: { status: "pending" | "processing" | "complete" | "rejected" }) {
+    const stages = [
+        { id: "pending", label: "Pending" },
+        { id: "processing", label: "Processing" },
+        { id: "complete", label: "Complete" },
+    ];
+
+    if (status === 'rejected') {
+        return (
+            <div className="flex items-center gap-1.5 text-red-600 bg-red-50 border border-red-200 rounded-full px-2 py-1 mt-2">
+                <XCircle className="w-3.5 h-3.5" />
+                <span className="text-xs font-bold">Rejected</span>
+            </div>
+        )
+    }
+
+    const currentStageIndex = stages.findIndex(s => s.id === status);
+
+    return (
+        <div className="flex items-center gap-2 mt-2 w-full">
+            {stages.map((stage, index) => {
+                const isCompleted = index < currentStageIndex;
+                const isActive = index === currentStageIndex;
+                
+                return (
+                    <Suspense key={stage.id}>
+                        {index > 0 && (
+                             <div className={`flex-1 h-0.5 rounded-full ${index <= currentStageIndex ? 'bg-green-500' : 'bg-gray-200'}`} />
+                        )}
+                        <div className="flex flex-col items-center gap-1">
+                            {isCompleted ? (
+                                <CheckCircle className="w-4 h-4 text-green-500" />
+                            ) : isActive ? (
+                                <div className="w-4 h-4 flex items-center justify-center">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                                </div>
+                            ) : (
+                                <div className="w-4 h-4 flex items-center justify-center">
+                                     <div className="w-2 h-2 rounded-full bg-gray-300" />
+                                </div>
+                            )}
+                            <span className={`text-[10px] font-semibold ${
+                                isCompleted ? "text-gray-400" : isActive ? "text-amber-600" : "text-gray-400"
+                            }`}>
+                                {stage.label}
+                            </span>
+                        </div>
+                    </Suspense>
+                );
+            })}
+        </div>
+    );
 }
 
 function BankPageSkeleton() {
@@ -1371,25 +1424,26 @@ export default function BankPage() {
                 .map(function(tx) {
                   const isDeposit = 'tx_id' in tx;
                   const statusColor = 
-                    tx.status === 'approved' || tx.status === 'complete' ? 'bg-green-100 text-green-700' 
+                    tx.status === 'approved' ? 'bg-green-100 text-green-700' 
                     : tx.status === 'rejected' ? 'bg-red-100 text-red-700' 
-                    : tx.status === 'processing' ? 'bg-blue-100 text-blue-700' 
                     : 'bg-yellow-100 text-yellow-700';
 
                   const Icon = isDeposit ? ArrowDownToLine : ArrowUpFromLine;
                   return (
-                    <div key={tx.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${statusColor.replace('text-', 'bg-').replace('700', '100')}`}>
-                        <Icon className={`w-4 h-4 ${statusColor.replace('bg-','text-').replace('100','600')}`} />
+                    <div key={tx.id} className="flex flex-col p-2.5 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${statusColor.replace('text-', 'bg-').replace('700', '100')}`}>
+                            <Icon className={`w-4 h-4 ${statusColor.replace('bg-','text-').replace('100','600')}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-800">{isDeposit ? 'Deposit' : 'Withdrawal'} Request</p>
+                            <p className="text-xs text-gray-400 truncate">{(isDeposit && tx.tx_id) ? tx.tx_id : (tx as WithdrawRecord).method} · {new Date(tx.created_at).toLocaleDateString()}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-sm font-bold ${isDeposit ? 'text-green-600' : 'text-gray-800'}`}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>
+                          </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-800">{isDeposit ? 'Deposit' : 'Withdrawal'} Request</p>
-                        <p className="text-xs text-gray-400 truncate">{(isDeposit && tx.tx_id) ? tx.tx_id : (tx as WithdrawRecord).method} · {new Date(tx.created_at).toLocaleDateString()}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-sm font-bold ${isDeposit ? 'text-green-600' : 'text-gray-800'}`}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>
-                        <Badge className={`text-xs mt-0.5 ${statusColor} border-0`}>{tx.status}</Badge>
-                      </div>
+                      {!isDeposit && <WithdrawalStatusStepper status={(tx as WithdrawRecord).status} />}
                     </div>
                   );
                 })

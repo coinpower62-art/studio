@@ -261,6 +261,59 @@ function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, re
   );
 }
 
+function AdminWithdrawalStepper({ status }: { status: "pending" | "processing" | "complete" | "rejected" }) {
+    const stages = [
+        { id: "pending", label: "Pending" },
+        { id: "processing", label: "Processing" },
+        { id: "complete", label: "Complete" },
+    ];
+
+    if (status === 'rejected') {
+        return (
+            <div className="flex items-center gap-1.5 text-red-400 bg-red-900/30 border border-red-700 rounded-full px-2.5 py-1 w-full justify-center">
+                <XCircle className="w-3.5 h-3.5" />
+                <span className="text-xs font-bold">Rejected</span>
+            </div>
+        )
+    }
+
+    const currentStageIndex = stages.findIndex(s => s.id === status);
+
+    return (
+        <div className="flex items-center gap-2 mt-2 bg-slate-900/50 p-2 rounded-lg w-full">
+            {stages.map((stage, index) => {
+                const isCompleted = index < currentStageIndex;
+                const isActive = index === currentStageIndex;
+                
+                return (
+                    <Suspense key={stage.id}>
+                        {index > 0 && (
+                             <div className={`flex-1 h-0.5 rounded-full ${index <= currentStageIndex ? 'bg-green-500' : 'bg-slate-700'}`} />
+                        )}
+                        <div className="flex items-center gap-1.5">
+                            {isCompleted ? (
+                                <CheckCircle className="w-4 h-4 text-green-400" />
+                            ) : isActive ? (
+                                <div className="w-4 h-4 flex items-center justify-center">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse" />
+                                </div>
+                            ) : (
+                                <div className="w-4 h-4 flex items-center justify-center">
+                                     <div className="w-2 h-2 rounded-full bg-slate-600" />
+                                </div>
+                            )}
+                            <span className={`text-xs font-semibold ${
+                                isCompleted ? "text-slate-500" : isActive ? "text-blue-400" : "text-slate-600"
+                            }`}>
+                                {stage.label}
+                            </span>
+                        </div>
+                    </Suspense>
+                );
+            })}
+        </div>
+    );
+}
 
 function DashboardContent() {
   const router = useRouter();
@@ -1301,7 +1354,6 @@ function DashboardContent() {
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-white font-semibold text-sm">{user?.full_name || 'Unknown'}</p>
-                            <Badge className={`text-xs border px-1.5 py-0 ${statusColor}`}>{w.status}</Badge>
                           </div>
                           <p className="text-slate-400 text-xs">@{user?.username || '...'} · {methodLabel} · {w.country} · {dateStr}</p>
                         </div>
@@ -1319,6 +1371,9 @@ function DashboardContent() {
                         </div>
                       </div>
                     </div>
+                    
+                    <AdminWithdrawalStepper status={w.status} />
+
                      {w.details && (() => {
                         try {
                             const detailsObj = JSON.parse(w.details);
@@ -1402,8 +1457,6 @@ function DashboardContent() {
                               </button>
                           </>
                       )}
-                      {w.status === 'complete' && <span className="flex items-center gap-1 text-green-400 text-xs font-semibold"><CheckCircle className="w-3.5 h-3.5" /> Completed</span>}
-                      {w.status === 'rejected' && <span className="flex items-center gap-1 text-red-400 text-xs font-semibold"><XCircle className="w-3.5 h-3.5" /> Rejected</span>}
 
                       <button
                         onClick={() => openConfirm("Delete Withdrawal Record", `Remove the withdrawal record for $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? This cannot be undone.`, () => handleDeleteWithdrawal(w.id))}
