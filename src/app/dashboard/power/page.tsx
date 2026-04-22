@@ -800,18 +800,13 @@ export default function Power() {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <div className="absolute inset-0 flex flex-col justify-between p-5 sm:p-8 text-white z-10">
+          <div className="absolute inset-0 flex flex-col justify-start p-5 sm:p-8 text-white z-10">
             <div>
               <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium self-start inline-block">Power Center</div>
               <h1 className="text-4xl font-bold text-white mt-4">Your Active Generators</h1>
               <p className="text-white/90 mt-2 leading-relaxed max-w-md">
                   You must click 'Collect' on each generator every 24 hours to add its income to your balance.
               </p>
-            </div>
-            <div className="bg-white/20 backdrop-blur-md rounded-2xl p-6 text-center border border-white/10">
-                <p className="text-white/80 text-sm uppercase tracking-wider">Active Generators</p>
-                <div className="text-6xl font-bold text-white my-2">{activeGenerators.length}</div>
-                <p className="text-white/70 italic">running now</p>
             </div>
           </div>
         </Carousel>
