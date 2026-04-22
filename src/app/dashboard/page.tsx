@@ -7,11 +7,10 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 import { logout } from '@/app/login/actions';
-import { claimReferralBonus } from './actions';
 import { redeemGiftCode } from '@/app/dashboard/bank/actions';
 
 // Icons and components
-import { LogOut, Play, ChevronRight, Globe, Gift, Share2, Users, CheckCircle, User as UserIcon, Clock } from 'lucide-react';
+import { LogOut, Play, ChevronRight, Globe, Gift, Share2, User as UserIcon, Clock } from 'lucide-react';
 import { SiTelegram } from 'react-icons/si';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,6 @@ import InstallButton from '@/components/InstallButton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ReferralLink } from '@/components/ReferralLink';
 import { Input } from '@/components/ui/input';
-import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -40,95 +38,6 @@ type Profile = {
     balance: number;
     referral_code: string | null;
 };
-
-type ReferredUser = {
-    full_name: string | null;
-    username: string | null;
-    created_at: string;
-};
-
-
-function ReferralBonusGoal({ referralCount, hasClaimed, onClaim }: { referralCount: number; hasClaimed: boolean; onClaim: () => Promise<any> }) {
-    const maxReferrals = 5;
-    const progress = Math.min((referralCount / maxReferrals) * 100, 100);
-    const canClaim = referralCount >= maxReferrals && !hasClaimed;
-    const [isClaiming, setIsClaiming] = useState(false);
-
-    const handleClaim = async () => {
-        setIsClaiming(true);
-        await onClaim();
-        setIsClaiming(false);
-    }
-
-    return (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-2">
-                <Users className="w-5 h-5 text-blue-600" />
-                Referral Bonus Goal
-            </h3>
-            <p className="text-xs text-gray-500 mb-3">
-                Refer {maxReferrals} users to unlock a <span className="font-bold text-amber-600">$3.00 bonus!</span> You have referred {referralCount} so far.
-            </p>
-            <Progress value={progress} className="h-3 [&>div]:bg-blue-500" />
-            <div className="flex justify-between text-xs text-gray-500 mt-2">
-                <span className="font-medium">{referralCount} / {maxReferrals} Referrals</span>
-                <span className="font-bold">{progress.toFixed(0)}%</span>
-            </div>
-            
-            {canClaim && (
-                 <Button onClick={handleClaim} disabled={isClaiming} className="w-full mt-3 h-10 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-lg text-sm">
-                    {isClaiming ? 'Claiming...' : 'Claim $3.00 Bonus'}
-                </Button>
-            )}
-
-            {hasClaimed && (
-                <div className="mt-3 text-center bg-green-50 border border-green-200 text-green-700 rounded-lg p-2 text-xs font-semibold flex items-center justify-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
-                    Congratulations! You've claimed your referral bonus.
-                </div>
-            )}
-        </div>
-    );
-}
-
-function ReferredUsersList({ users }: { users: ReferredUser[] }) {
-    if (users.length === 0) {
-        return (
-            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm text-center">
-                <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <h3 className="font-bold text-gray-900 text-sm">Your Referral Team is Empty</h3>
-                <p className="text-xs text-gray-500 mt-1">You haven't referred anyone yet. Share your link to start building your leadership team and earn more.</p>
-            </div>
-        );
-    }
-
-    return (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-3">
-                <Users className="w-5 h-5 text-purple-600" />
-                Your Referral Team ({users.length})
-            </h3>
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                {users.map((user, index) => (
-                    <div key={index} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-100">
-                        <div className="flex items-center gap-3">
-                            <Avatar className="w-8 h-8">
-                                <AvatarFallback className="bg-purple-100 text-purple-600 text-xs font-bold">
-                                    {(user.full_name || user.username || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="text-sm font-semibold text-gray-800">{user.full_name || user.username}</p>
-                                <p className="text-xs text-gray-500">Joined: {new Date(user.created_at).toLocaleDateString()}</p>
-                            </div>
-                        </div>
-                        <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200">Level 1</Badge>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
 
 function RedeemGiftCode({ onRedeem }: { onRedeem: () => void }) {
     const { toast } = useToast();
@@ -196,10 +105,7 @@ function DashboardContent() {
     const [user, setUser] = useState<SupabaseUser | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [activeGeneratorCount, setActiveGeneratorCount] = useState(0);
-    const [referralCount, setReferralCount] = useState(0);
-    const [referredUsers, setReferredUsers] = useState<ReferredUser[]>([]);
     const [loading, setLoading] = useState(true);
-    const [hasClaimedReferralBonus, setHasClaimedReferralBonus] = useState(false);
     const [totalEarned, setTotalEarned] = useState(0);
     const [showWithdrawalInfo, setShowWithdrawalInfo] = useState(false);
 
@@ -216,13 +122,11 @@ function DashboardContent() {
         const [
             profileResult, 
             rentedGeneratorsResult, 
-            bonusResult,
             depositsResult,
             withdrawalsResult
         ] = await Promise.all([
             supabase.from('profiles').select('*').eq('id', user.id).single(),
             supabase.from('rented_generators').select('id, expires_at').eq('user_id', user.id),
-            supabase.from('gift_codes').select('id').eq('code', `REF-BONUS-5-${user.id}`).maybeSingle(),
             supabase.from('deposit_requests').select('amount').eq('user_id', user.id).eq('status', 'approved'),
             supabase.from('withdrawal_requests').select('amount').eq('user_id', user.id).eq('status', 'approved')
         ]);
@@ -234,33 +138,6 @@ function DashboardContent() {
             return;
         }
         setProfile(profileData);
-        setHasClaimedReferralBonus(!!bonusResult.data);
-
-        if (profileData.referral_code) {
-             const [{ count, error: referralError }, { data: referredUsersData, error: referredUsersError }] = await Promise.all([
-                 supabase
-                    .from('profiles')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('referred_by', profileData.referral_code),
-                supabase
-                    .from('profiles')
-                    .select('full_name, username, created_at')
-                    .eq('referred_by', profileData.referral_code)
-                    .order('created_at', { ascending: false })
-            ]);
-
-            if (referralError) {
-                console.error("Could not fetch referral count:", referralError.message);
-            } else {
-                setReferralCount(count || 0);
-            }
-
-            if (referredUsersError) {
-                console.error("Could not fetch referred users:", referredUsersError.message);
-            } else {
-                setReferredUsers(referredUsersData || []);
-            }
-        }
 
         const { data: rentedData } = rentedGeneratorsResult;
         if (rentedData) {
@@ -288,17 +165,6 @@ function DashboardContent() {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
-
-    const handleClaimBonus = async () => {
-        const result = await claimReferralBonus();
-        if (result.error) {
-            toast({ title: "Bonus Claim Failed", description: result.error, variant: "destructive" });
-        } else {
-            const bonusAmount = result.amount ? parseFloat(String(result.amount)) : 0;
-            toast({ title: "Bonus Claimed!", description: `You have received $${bonusAmount.toFixed(2)}.` });
-            fetchData(); // to refresh balance and claimed status
-        }
-    }
 
     if (loading || !profile || !user) {
         return <DashboardSkeleton />;
@@ -377,10 +243,6 @@ function DashboardContent() {
             </div>
 
             <ReferralLink referralCode={profile.referral_code} />
-
-            <ReferralBonusGoal referralCount={referralCount} hasClaimed={hasClaimedReferralBonus} onClaim={handleClaimBonus} />
-            
-            <ReferredUsersList users={referredUsers} />
 
             <RedeemGiftCode onRedeem={fetchData} />
 
