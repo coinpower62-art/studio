@@ -543,7 +543,7 @@ function ClaimSuccessOverlay({ amount, generatorName, onDone }: { amount: number
   );
 }
 
-function SubordinatesTeam({ team, isLoading }: { team: any[], isLoading: boolean }) {
+function InverterTeam({ team, isLoading }: { team: any[], isLoading: boolean }) {
     if (isLoading) {
         return (
             <div className="grid grid-cols-1 gap-4 mt-6">
@@ -583,7 +583,7 @@ function SubordinatesTeam({ team, isLoading }: { team: any[], isLoading: boolean
         <div className="space-y-4 mt-8">
              <h2 className="font-bold text-gray-900 flex items-center gap-2">
                 <Users className="w-5 h-5 text-gray-400" />
-                My Subordinates Team
+                Inverter Team
             </h2>
             {levelDetails.map(ld => {
                 const members = team.filter(m => m.referral_level === ld.level);
@@ -599,7 +599,7 @@ function SubordinatesTeam({ team, isLoading }: { team: any[], isLoading: boolean
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <ld.icon className={`w-6 h-6 ${colors.title}`} />
-                                    <span className={`font-black text-lg ${colors.title}`}>Level {ld.level}</span>
+                                    <span className={`font-black text-lg ${colors.title}`}>VIP {ld.level}</span>
                                 </div>
                                 <span className={`font-bold text-3xl ${colors.title}`}>{members.length}</span>
                             </div>
@@ -632,7 +632,7 @@ function SubordinatesTeam({ team, isLoading }: { team: any[], isLoading: boolean
                             )}
                         </div>
                         <div className={`border-t ${colors.border} px-4 py-2 flex justify-between items-center bg-white/50`}>
-                            <span className="text-xs font-semibold text-gray-600">Total Level {ld.level} Commission:</span>
+                            <span className="text-xs font-semibold text-gray-600">Total VIP {ld.level} Commission:</span>
                             <span className={`font-black text-base ${colors.text}`}>${totalCommission.toFixed(2)}</span>
                         </div>
                     </div>
@@ -829,7 +829,7 @@ export default function Power() {
               </div>
             )}
             
-            <SubordinatesTeam team={referralTeam} isLoading={isLoading} />
+            <InverterTeam team={referralTeam} isLoading={isLoading} />
 
             {rentedGenerators.length === 0 && !isLoading && (
               <div className="bg-white rounded-2xl border border-amber-100/60 shadow-sm p-10 text-center mb-6 mt-6">
