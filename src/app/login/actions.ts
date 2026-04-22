@@ -45,7 +45,7 @@ export async function login(formData: FormData) {
   }
 
   revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  redirect('/dashboard?show_withdrawal_info=true')
 }
 
 export async function logout() {

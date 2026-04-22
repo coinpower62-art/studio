@@ -1,7 +1,8 @@
+
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { useToast } from "@/hooks/use-toast";
@@ -11,7 +12,7 @@ import { claimReferralBonus } from './actions';
 import { redeemGiftCode } from '@/app/dashboard/bank/actions';
 
 // Icons and components
-import { LogOut, Play, ChevronRight, Globe, Gift, Share2, Users, CheckCircle, User as UserIcon } from 'lucide-react';
+import { LogOut, Play, ChevronRight, Globe, Gift, Share2, Users, CheckCircle, User as UserIcon, Clock } from 'lucide-react';
 import { SiTelegram } from 'react-icons/si';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -190,8 +191,9 @@ function DashboardSkeleton() {
     )
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { toast } = useToast();
     const [user, setUser] = useState<SupabaseUser | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
@@ -202,6 +204,7 @@ export default function DashboardPage() {
     const [showTelegramPopup, setShowTelegramPopup] = useState(false);
     const [hasClaimedReferralBonus, setHasClaimedReferralBonus] = useState(false);
     const [totalEarned, setTotalEarned] = useState(0);
+    const [showWithdrawalInfo, setShowWithdrawalInfo] = useState(false);
 
     const fetchData = useCallback(async () => {
         const supabase = createClient();
@@ -278,6 +281,16 @@ export default function DashboardPage() {
     }, [router, toast]);
 
     useEffect(() => {
+        const showInfo = searchParams.get('show_withdrawal_info');
+        if (showInfo === 'true') {
+            setShowWithdrawalInfo(true);
+            const nextUrl = new URL(window.location.href);
+            nextUrl.searchParams.delete('show_withdrawal_info');
+            window.history.replaceState({}, '', nextUrl.toString());
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
         fetchData();
         const timer = setTimeout(() => {
             setShowTelegramPopup(true);
@@ -305,6 +318,23 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-4">
+             <Dialog open={showWithdrawalInfo} onOpenChange={setShowWithdrawalInfo}>
+                <DialogContent className="sm:max-w-md rounded-2xl">
+                    <DialogHeader className="text-center items-center">
+                        <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mb-2">
+                           <Clock className="w-8 h-8 text-blue-500" />
+                        </div>
+                        <DialogTitle className="text-xl font-bold">Withdrawal Information</DialogTitle>
+                        <DialogDescription className="text-gray-500 text-sm pt-1">
+                            Welcome! Please note that withdrawals are processed Monday to Saturday, typically within <strong>1 to 24 hours</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Button onClick={() => setShowWithdrawalInfo(false)} className="w-full h-11 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg text-base">
+                        Okay, I understand
+                    </Button>
+                </DialogContent>
+            </Dialog>
+
              <Dialog open={showTelegramPopup} onOpenChange={setShowTelegramPopup}>
                 <DialogContent className="sm:max-w-md rounded-2xl">
                     <DialogHeader className="text-center items-center">
@@ -405,4 +435,13 @@ export default function DashboardPage() {
             <InstallButton />
         </div>
     );
+}
+
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={<DashboardSkeleton />}>
+            <DashboardContent />
+        </Suspense>
+    )
 }
