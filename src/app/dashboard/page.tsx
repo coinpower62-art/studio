@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
@@ -201,7 +200,6 @@ function DashboardContent() {
     const [referralCount, setReferralCount] = useState(0);
     const [referredUsers, setReferredUsers] = useState<ReferredUser[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showTelegramPopup, setShowTelegramPopup] = useState(false);
     const [hasClaimedReferralBonus, setHasClaimedReferralBonus] = useState(false);
     const [totalEarned, setTotalEarned] = useState(0);
     const [showWithdrawalInfo, setShowWithdrawalInfo] = useState(false);
@@ -292,10 +290,6 @@ function DashboardContent() {
 
     useEffect(() => {
         fetchData();
-        const timer = setTimeout(() => {
-            setShowTelegramPopup(true);
-        }, 1500); // 1.5s delay
-        return () => clearTimeout(timer);
     }, [fetchData]);
 
     const handleClaimBonus = async () => {
@@ -332,26 +326,6 @@ function DashboardContent() {
                     <Button onClick={() => setShowWithdrawalInfo(false)} className="w-full h-11 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg text-base">
                         Okay, I understand
                     </Button>
-                </DialogContent>
-            </Dialog>
-
-             <Dialog open={showTelegramPopup} onOpenChange={setShowTelegramPopup}>
-                <DialogContent className="sm:max-w-md rounded-2xl">
-                    <DialogHeader className="text-center items-center">
-                        <div className="w-16 h-16 rounded-2xl bg-sky-100 flex items-center justify-center mb-2">
-                           <SiTelegram className="w-8 h-8 text-sky-500" />
-                        </div>
-                        <DialogTitle className="text-xl font-bold">Join our Community!</DialogTitle>
-                        <DialogDescription className="text-gray-500 text-sm pt-1">
-                            Click below to join our official Telegram group for live support, announcements, and to connect with other investors.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <a href="https://t.me/coinpowerofficial" target="_blank" rel="noopener noreferrer" onClick={() => setShowTelegramPopup(false)}>
-                        <Button className="w-full h-11 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-lg text-base">
-                            <SiTelegram className="w-5 h-5 mr-2" />
-                            Join Telegram Group
-                        </Button>
-                    </a>
                 </DialogContent>
             </Dialog>
 
