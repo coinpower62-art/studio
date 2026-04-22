@@ -78,7 +78,7 @@ type WithdrawRecord = {
   net_amount: number;
   fee: number;
   details: string;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "processing" | "complete" | "rejected";
   created_at: string;
 };
 
@@ -1370,7 +1370,12 @@ export default function BankPage() {
                 })
                 .map(function(tx) {
                   const isDeposit = 'tx_id' in tx;
-                  const statusColor = tx.status === 'approved' ? 'bg-green-100 text-green-700' : tx.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700';
+                  const statusColor = 
+                    tx.status === 'approved' || tx.status === 'complete' ? 'bg-green-100 text-green-700' 
+                    : tx.status === 'rejected' ? 'bg-red-100 text-red-700' 
+                    : tx.status === 'processing' ? 'bg-blue-100 text-blue-700' 
+                    : 'bg-yellow-100 text-yellow-700';
+
                   const Icon = isDeposit ? ArrowDownToLine : ArrowUpFromLine;
                   return (
                     <div key={tx.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition-colors">

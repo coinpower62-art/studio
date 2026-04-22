@@ -121,7 +121,7 @@ const DEFAULT_GENERATORS: Generator[] = [
 type WithdrawalRecord = {
   id: string; user_id: string; country: string;
   method: string; amount: number; net_amount: number; fee: number;
-  details: string; status: "pending" | "approved" | "rejected"; created_at: string;
+  details: string; status: "pending" | "processing" | "complete" | "rejected"; created_at: string;
 };
 
 type MediaAsset = {
@@ -518,12 +518,22 @@ function DashboardContent() {
     }
   }
 
-  const handleApproveWithdrawal = async (id: string) => {
-    const result = await adminHandleWithdrawal(id, 'approve');
+  const handleProcessWithdrawal = async (id: string) => {
+    const result = await adminHandleWithdrawal(id, 'process');
     if (result.error) {
-      toast({ title: "Error approving withdrawal", description: result.error, variant: "destructive" });
+      toast({ title: "Error processing withdrawal", description: result.error, variant: "destructive" });
     } else {
-      toast({ title: "Withdrawal approved!" });
+      toast({ title: "Withdrawal is now processing!" });
+      await fetchData();
+    }
+  }
+
+  const handleCompleteWithdrawal = async (id: string) => {
+    const result = await adminHandleWithdrawal(id, 'complete');
+    if (result.error) {
+      toast({ title: "Error completing withdrawal", description: result.error, variant: "destructive" });
+    } else {
+      toast({ title: "Withdrawal marked as complete!" });
       await fetchData();
     }
   }
@@ -722,9 +732,9 @@ function DashboardContent() {
   if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
   if (!admin) { router.push("/login"); return null; }
 
-  const filteredUsers = users.filter(function(u) { return [u.full_name, u.username, u.email, u.country].some(function(f) { return f?.toLowerCase().includes(search.toLowerCase()); }); });
+  const filteredUsers = users.filter(function(u) { return [u.full_name, u.username, u.email, u.country, u.referred_by].some(function(f) { return f?.toLowerCase().includes(search.toLowerCase()); }); });
   const totalBalance = users.reduce(function(s, u) { return s + (u.balance || 0); }, 0);
-  const pendingWithdrawalsCount = withdrawals.filter(function(w) { return w.status === "pending"; }).length;
+  const pendingWithdrawalsCount = withdrawals.filter(function(w) { return w.status === "pending" || w.status === "processing"; }).length;
   const pendingDepositsCount = deposits.filter(function(d) { return d.status === "pending"; }).length;
   const copyText = (text: string, label: string) => navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!` }));
   const totalReferrals = users.reduce(function(s, u) { return s + (u.referral_count || 0); }, 0);
@@ -1275,13 +1285,18 @@ function DashboardContent() {
                   const user = users.find(u => u.id === w.user_id);
                   const dateStr = new Date(w.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
                   const methodLabel = w.method === "momo" ? "MTN MOMO" : w.method === "tigo" ? "AirtelTigo" : w.method === "usdt" ? "USDT" : w.method === "card" ? "CARD" : w.method.toUpperCase();
-                  const statusColor = w.status === "approved" ? "bg-green-900/40 text-green-400 border-green-700" : w.status === "rejected" ? "bg-red-900/40 text-red-400 border-red-700" : "bg-yellow-900/40 text-yellow-400 border-yellow-700";
+                  const statusColor = 
+                    w.status === "complete" ? "bg-green-900/40 text-green-400 border-green-700" 
+                    : w.status === "rejected" ? "bg-red-900/40 text-red-400 border-red-700" 
+                    : w.status === "processing" ? "bg-blue-900/40 text-blue-400 border-blue-700" 
+                    : "bg-yellow-900/40 text-yellow-400 border-yellow-700";
+
                   return (
                   <div key={w.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4 space-y-3">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${w.status === "pending" ? "bg-yellow-900/40" : w.status === "approved" ? "bg-green-900/40" : "bg-red-900/40"}`}>
-                          <ArrowUpFromLine className={`w-5 h-5 ${w.status === "pending" ? "text-yellow-400" : w.status === "approved" ? "text-green-400" : "text-red-400"}`} />
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${statusColor.replace('text-', 'bg-').replace('-400', '-900/40')}`}>
+                          <ArrowUpFromLine className={`w-5 h-5 ${statusColor.replace('bg-', 'text-').replace('border-', 'text-').replace('-900/40', '-400').replace('-700', '-400')}`} />
                         </div>
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
@@ -1359,26 +1374,39 @@ function DashboardContent() {
                         }
                     })()}
                     <div className="flex gap-2 items-center w-full justify-end pt-3 border-t border-slate-700">
-                      {w.status === "pending" ? (
-                        <>
-                          <button onClick={function() { return handleApproveWithdrawal(w.id); }}
-                            data-testid={`button-approve-withdrawal-${w.id}`}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-green-900/30 text-green-400 border border-green-700 hover:bg-green-900/50 text-xs font-semibold disabled:opacity-50">
-                            <CheckCircle className="w-3.5 h-3.5" /> Approve
-                          </button>
-                          <button onClick={function() { return openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? The amount will be refunded to their balance.`, () => handleRejectWithdrawal(w.id, w.user_id, w.amount)); }}
-                            data-testid={`button-reject-withdrawal-${w.id}`}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold disabled:opacity-50">
-                            <XCircle className="w-3.5 h-3.5" /> Reject
-                          </button>
-                        </>
-                      ) : w.status === "approved" ? (
-                        <span className="flex items-center gap-1 text-green-400 text-xs font-semibold"><CheckCircle className="w-3.5 h-3.5" /> Approved</span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-red-400 text-xs font-semibold"><XCircle className="w-3.5 h-3.5" /> Rejected</span>
+                      {w.status === 'pending' && (
+                          <>
+                              <button onClick={() => handleProcessWithdrawal(w.id)}
+                                  data-testid={`button-process-withdrawal-${w.id}`}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-900/30 text-blue-400 border border-blue-700 hover:bg-blue-900/50 text-xs font-semibold">
+                                  <RefreshCw className="w-3.5 h-3.5" /> Process
+                              </button>
+                              <button onClick={() => openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? The amount will be refunded to their balance.`, () => handleRejectWithdrawal(w.id, w.user_id, w.amount))}
+                                  data-testid={`button-reject-withdrawal-${w.id}`}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold">
+                                  <XCircle className="w-3.5 h-3.5" /> Reject
+                              </button>
+                          </>
                       )}
+                      {w.status === 'processing' && (
+                          <>
+                              <button onClick={() => handleCompleteWithdrawal(w.id)}
+                                  data-testid={`button-complete-withdrawal-${w.id}`}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-green-900/30 text-green-400 border border-green-700 hover:bg-green-900/50 text-xs font-semibold">
+                                  <CheckCircle className="w-3.5 h-3.5" /> Complete
+                              </button>
+                              <button onClick={() => openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? The amount will be refunded to their balance.`, () => handleRejectWithdrawal(w.id, w.user_id, w.amount))}
+                                  data-testid={`button-reject-withdrawal-${w.id}`}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold">
+                                  <XCircle className="w-3.5 h-3.5" /> Reject
+                              </button>
+                          </>
+                      )}
+                      {w.status === 'complete' && <span className="flex items-center gap-1 text-green-400 text-xs font-semibold"><CheckCircle className="w-3.5 h-3.5" /> Completed</span>}
+                      {w.status === 'rejected' && <span className="flex items-center gap-1 text-red-400 text-xs font-semibold"><XCircle className="w-3.5 h-3.5" /> Rejected</span>}
+
                       <button
-                        onClick={function() { return openConfirm("Delete Withdrawal Record", `Remove the withdrawal record for $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? This cannot be undone.`, () => handleDeleteWithdrawal(w.id)); }}
+                        onClick={() => openConfirm("Delete Withdrawal Record", `Remove the withdrawal record for $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? This cannot be undone.`, () => handleDeleteWithdrawal(w.id))}
                         data-testid={`button-delete-withdrawal-${w.id}`}
                         className="flex items-center justify-center w-8 h-8 rounded-xl bg-red-950/40 text-red-500 border border-red-800/50 hover:bg-red-900/50 hover:text-red-300 transition-colors flex-shrink-0"
                         title="Delete record"

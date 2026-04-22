@@ -122,7 +122,7 @@ export async function adminHandleDeposit(depositId: string, action: 'approve' | 
     }
 }
 
-export async function adminHandleWithdrawal(withdrawalId: string, action: 'approve' | 'reject' | 'delete', userId?: string, amount?: number) {
+export async function adminHandleWithdrawal(withdrawalId: string, action: 'process' | 'complete' | 'reject' | 'delete', userId?: string, amount?: number) {
     const cookieStore = cookies();
     if (cookieStore.get('admin_logged_in')?.value !== 'true') {
         return { error: 'Unauthorized' };
@@ -131,8 +131,11 @@ export async function adminHandleWithdrawal(withdrawalId: string, action: 'appro
 
     try {
         const supabaseAdmin = await getSupabaseAdminClient();
-        if (action === 'approve') {
-            const { error } = await supabaseAdmin.from('withdrawal_requests').update({ status: 'approved' }).eq('id', withdrawalId);
+        if (action === 'process') {
+            const { error } = await supabaseAdmin.from('withdrawal_requests').update({ status: 'processing' }).eq('id', withdrawalId);
+            if (error) return { error: error.message };
+        } else if (action === 'complete') {
+            const { error } = await supabaseAdmin.from('withdrawal_requests').update({ status: 'complete' }).eq('id', withdrawalId);
             if (error) return { error: error.message };
         } else if (action === 'reject') {
             if (!userId || amount === undefined) return { error: 'User ID and amount required for rejection.' };
