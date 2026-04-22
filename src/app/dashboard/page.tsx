@@ -313,15 +313,15 @@ function DashboardContent() {
              <Dialog open={showWithdrawalInfo} onOpenChange={setShowWithdrawalInfo}>
                 <DialogContent className="sm:max-w-md rounded-2xl">
                     <DialogHeader className="text-center items-center">
-                        <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mb-2">
-                           <Clock className="w-8 h-8 text-blue-500" />
+                        <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mb-2">
+                           <Clock className="w-8 h-8 text-amber-500" />
                         </div>
                         <DialogTitle className="text-xl font-bold">Withdrawal Information</DialogTitle>
                         <DialogDescription className="text-gray-500 text-sm pt-1">
                             Welcome! Please note that withdrawals are processed Monday to Saturday, typically within <strong>1 to 24 hours</strong>.
                         </DialogDescription>
                     </DialogHeader>
-                    <Button onClick={() => setShowWithdrawalInfo(false)} className="w-full h-11 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg text-base">
+                    <Button onClick={() => setShowWithdrawalInfo(false)} className="w-full h-11 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-lg text-base">
                         Okay, I understand
                     </Button>
                 </DialogContent>
