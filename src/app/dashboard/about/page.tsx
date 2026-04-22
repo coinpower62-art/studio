@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -157,27 +156,21 @@ export default function AboutPage() {
         </div>
 
         <div className="mb-8 sm:mb-12">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1">Welcome to the CoinPower Community! ⚡️</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-1">Welcome to the Official CoinPower Community! ⚡️</h2>
             <p className="text-gray-500 text-center text-xs sm:text-sm mb-5 sm:mb-8">
                 CoinPower is a premier investment technology company from Italy, dedicated to bringing professional-grade crypto solutions to the global market. 🇮🇹
             </p>
 
-            <div className="bg-gradient-to-r from-amber-500 to-yellow-500 rounded-2xl p-5 sm:p-7 mb-8 sm:mb-10 text-white shadow-xl">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-5 sm:p-7 mb-8 sm:mb-10 text-white shadow-xl">
                 <div className="flex items-start gap-4">
                     <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0 shadow-lg">
                         <Gift className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                     </div>
                     <div>
-                        <h2 className="text-lg sm:text-xl font-black">🎁 EXCLUSIVE NEW MEMBER OFFER</h2>
-                        <ul className="mt-2 space-y-1">
-                            <li className="flex items-center gap-2"><span className="text-xl">💰</span> <span className="text-amber-100">$1.00 Instant Bonus just for signing up!</span></li>
-                            <li className="flex items-center gap-2"><span className="text-xl">📈</span> <span className="text-amber-100">Free Daily Income: Start earning every day at no cost.</span></li>
-                        </ul>
-                        <a href="https://coinpower-italy.netlify.app/signup?ref=CP-PRINCESS021422" target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline" className="mt-4 bg-white/90 text-amber-700 font-bold hover:bg-white">
-                                🚀 Get Started Here
-                            </Button>
-                        </a>
+                        <h2 className="text-lg sm:text-xl font-black flex items-center">Get Started with a Free $1! <span className="text-2xl ml-2">🎁</span></h2>
+                        <p className="mt-2 text-green-100 leading-relaxed">
+                            Join CoinPower and receive a complimentary $1 to kickstart your investment journey. Create an account and you'll be eligible to earn daily income without any initial deposit. As you grow with us, upgrade to higher levels and unlock greater rewards.
+                        </p>
                     </div>
                 </div>
             </div>
