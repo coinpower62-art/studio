@@ -1,22 +1,22 @@
-
 # CoinPower Project
 
 This is a Next.js starter app built with Supabase and shadcn/ui.
 
 ## 🚨 Troubleshooting: 'Internal Server Error' or Missing Content
 
-If your deployment on Netlify builds successfully but you see an "Internal Server Error," or if content like logos and images are missing on your live website, it almost always means you have not correctly set your Supabase environment variables in your Netlify site settings.
+If your deployment on Cloudflare Pages builds successfully but you see an "Internal Server Error," or if content like logos and images are missing on your live website, it almost always means you have not correctly set your Supabase environment variables in your Cloudflare Pages project settings.
 
 **To fix this, you must:**
 
-1.  Go to your Netlify dashboard and navigate to your site.
-2.  Go to **Site settings** > **Build & deploy** > **Environment**.
-3.  Under **Environment variables**, click **Edit variables**.
-4.  Add the following three variables with their correct values from your Supabase project:
+1.  Go to your Cloudflare dashboard and navigate to your Pages project.
+2.  Go to **Settings** > **Environment variables**.
+3.  Under **Production**, click **Add variable**.
+4.  Add the following variables with their correct values from your Supabase project:
     -   `NEXT_PUBLIC_SUPABASE_URL`
     -   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-    -   `SUPABASE_SERVICE_ROLE_KEY` (ensure you mark this as a **"Secret"** value).
-5.  After adding all three variables, trigger a new deployment from the "Deploys" tab to apply the changes.
+    -   `SUPABASE_SERVICE_ROLE_KEY` (ensure you **Encrypt** this value).
+    -   `NODE_VERSION` (set this to `20`)
+5.  After adding the variables, trigger a new deployment from the "Deployments" tab to apply the changes.
 
 ---
 

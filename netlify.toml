@@ -1,15 +1,2 @@
-# This file configures the build settings for Netlify.
-# The @netlify/plugin-nextjs plugin automatically handles the complex parts
-# of deploying a Next.js application, including server-side rendering,
-# API routes, and image optimization.
-
-[build]
-  # This command tells Netlify to run the "build" script from your package.json
-  command = "npm run build"
-
-  # This is the directory that Next.js builds your site to.
-  publish = ".next"
-
-# This plugin is essential for deploying Next.js on Netlify.
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+# This file is no longer used as the project has been configured for Cloudflare Pages.
+# You can safely delete this file if you are only using Cloudflare for deployment.
