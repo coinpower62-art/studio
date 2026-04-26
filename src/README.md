@@ -2,6 +2,24 @@
 
 This is a Next.js starter app built with Supabase and shadcn/ui.
 
+## ✅ How to Deploy to Cloudflare Pages
+
+The recommended way to deploy this app is by connecting your Git repository to Cloudflare Pages.
+
+### Step-by-Step Instructions:
+
+1.  **Log in to Cloudflare** and navigate to **Workers & Pages**.
+2.  Click **Create application**, then go to the **Pages** tab and click **Connect to Git**.
+3.  Select the Git provider where your project is hosted (e.g., GitHub) and choose the correct repository for this project.
+4.  In the **Set up builds and deployments** section, Cloudflare should automatically detect that this is a Next.js project. The build settings should be pre-filled like this:
+    *   **Framework preset**: `Next.js`
+    *   **Build command**: `npm run build`
+    *   **Build output directory**: `.next`
+5.  Click **Save and Deploy**. Cloudflare will now start building and deploying your site.
+6.  **IMPORTANT:** Your first deployment will likely fail or show errors. This is expected! Continue to the next section to add your Supabase environment variables, which will fix it.
+
+---
+
 ## 🚨 Troubleshooting: 'Internal Server Error' or Missing Content
 
 If your deployment on Cloudflare Pages builds successfully but you see an "Internal Server Error," or if content like logos and images are missing on your live website, it almost always means you have not correctly set your Supabase environment variables in your Cloudflare Pages project settings.
@@ -20,7 +38,7 @@ If your deployment on Cloudflare Pages builds successfully but you see an "Inter
 
 ---
 
-## Getting Started
+## Getting Started (Local Development)
 
 Your Supabase credentials have been added to the `.env` file for local development. To get started:
 

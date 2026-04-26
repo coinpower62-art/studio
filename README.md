@@ -1,8 +1,26 @@
 # 🚀 CoinPower Deployment Guide for Cloudflare Pages
 
-> **IMPORTANT:** Before deploying, ensure you have run the database setup SQL provided below in your Supabase SQL Editor. This is a one-time setup required for all app features to work correctly.
-
 This guide provides instructions for deploying your CoinPower application to Cloudflare Pages.
+
+---
+
+## ✅ How to Deploy
+
+The error you're seeing is because a Next.js application needs to be "built" before it can be deployed. The drag-and-drop uploader on Cloudflare is only for simple, static websites that don't need a build step.
+
+To deploy this app correctly, you must **connect your Git repository** to Cloudflare Pages.
+
+### Step-by-Step Instructions:
+
+1.  **Log in to Cloudflare** and navigate to **Workers & Pages**.
+2.  Click **Create application**, then go to the **Pages** tab and click **Connect to Git**.
+3.  Select the Git provider where your project is hosted (e.g., GitHub) and choose the correct repository for this project.
+4.  In the **Set up builds and deployments** section, Cloudflare should automatically detect that this is a Next.js project. The build settings should be pre-filled like this:
+    *   **Framework preset**: `Next.js`
+    *   **Build command**: `npm run build`
+    *   **Build output directory**: `.next`
+5.  Click **Save and Deploy**. Cloudflare will now start building and deploying your site.
+6.  **IMPORTANT:** Your first deployment will likely fail or show errors. This is expected! Continue to the next section to add your Supabase environment variables, which will fix it.
 
 ---
 
