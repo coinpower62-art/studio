@@ -1,32 +1,46 @@
 # 🚀 CoinPower Deployment Guide for Cloudflare Pages
 
-This guide provides instructions for deploying your CoinPower application to Cloudflare Pages.
+This guide provides instructions for deploying your CoinPower application to Cloudflare Pages using the Wrangler command-line tool.
 
 ---
 
-## ✅ How to Deploy
+## ✅ How to Deploy with Wrangler
 
-The error you're seeing is because a Next.js application needs to be "built" before it can be deployed. The drag-and-drop uploader on Cloudflare is only for simple, static websites that don't need a build step.
-
-To deploy this app correctly, you must **connect your Git repository** to Cloudflare Pages.
+This project is configured for one-command deployment using Wrangler.
 
 ### Step-by-Step Instructions:
 
-1.  **Log in to Cloudflare** and navigate to **Workers & Pages**.
-2.  Click **Create application**, then go to the **Pages** tab and click **Connect to Git**.
-3.  Select the Git provider where your project is hosted (e.g., GitHub) and choose the correct repository for this project.
-4.  In the **Set up builds and deployments** section, Cloudflare should automatically detect that this is a Next.js project. The build settings should be pre-filled like this:
-    *   **Framework preset**: `Next.js`
-    *   **Build command**: `npm run build`
-    *   **Build output directory**: `.next`
-5.  Click **Save and Deploy**. Cloudflare will now start building and deploying your site.
-6.  **IMPORTANT:** Your first deployment will likely fail or show errors. This is expected! Continue to the next section to add your Supabase environment variables, which will fix it.
+1.  **Install Project Dependencies**
+    Open your terminal in the project directory and run:
+    ```bash
+    npm install
+    ```
+
+2.  **Log in to Cloudflare**
+    Authorize Wrangler with your Cloudflare account. This will open a browser window for you to log in.
+    ```bash
+    npx wrangler login
+    ```
+
+3.  **Set Up Environment Variables**
+    This is a critical step. You must add your Supabase keys to your Cloudflare Pages project for it to work. Wrangler will create the project on the first deploy.
+    - Go to the **Cloudflare dashboard**.
+    - Select **Workers & Pages** and find your new `coinpower` project.
+    - Go to **Settings** > **Environment variables**.
+    - Under **Production**, click **Add variable** and add the four variables listed in the "Critical: Connecting Supabase" section below.
+
+4.  **Deploy Your Application**
+    Run the deploy command from your terminal:
+    ```bash
+    npm run deploy
+    ```
+    Wrangler will build your project and deploy it to Cloudflare Pages. After it's done, you'll get a live URL.
 
 ---
 
 ## 🚨 Critical: Connecting Supabase to Cloudflare Pages
 
-For your live app to function correctly, you **must** copy your Supabase keys into your Cloudflare Pages project's settings. This allows your deployment to connect to your Supabase database.
+For your live app to function correctly, you **must** copy your Supabase keys into your Cloudflare Pages project's settings.
 
 ### Step-by-Step Instructions:
 
@@ -60,15 +74,7 @@ For your live app to function correctly, you **must** copy your Supabase keys in
     -   **Value**: `20`
 
     ---
-
-4.  **Trigger a New Deployment.** After adding the variables, go to the "Deployments" tab and trigger a new deployment. This will apply the new environment variables and build your site.
-
-**Why is this necessary?**
-- Your **public** keys (`NEXT_PUBLIC_...`) are used by the browser to fetch data securely.
-- Your **secret** key (`SUPABASE_SERVICE_ROLE_KEY`) is used by the server-side part of your app to perform administrative tasks. It must be kept secret.
-- `NODE_VERSION` ensures Cloudflare uses a compatible version of Node.js to build your app.
-
-By following these steps, your app will be able to communicate with your Supabase database, and all features, including the Admin Panel, will work correctly.
+After setting these variables, you may need to trigger a new deployment from your Cloudflare dashboard or by running `npm run deploy` again for the changes to take effect.
 
 ---
 
@@ -78,7 +84,7 @@ If you plan to build the Android app bundle using the provided GitHub Actions wo
 
 1. Open the file `.github/workflows/build-android.yml`.
 2. Find the line with `bubblewrap init --manifest=...`.
-3. Replace `https://YOUR_CLOUDFLARE_URL/manifest.json` with your actual Cloudflare Pages URL (e.g., `https://your-project.pages.dev/manifest.json`).
+3. Replace `https://YOUR_CLOUDFLARE_URL/manifest.json` with your actual Cloudflare Pages URL (e.g., `https://coinpower.pages.dev/manifest.json`).
 
 ---
 

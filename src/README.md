@@ -2,29 +2,43 @@
 
 This is a Next.js starter app built with Supabase and shadcn/ui.
 
-## ✅ How to Deploy to Cloudflare Pages
+## ✅ How to Deploy to Cloudflare Pages with Wrangler
 
-The recommended way to deploy this app is by connecting your Git repository to Cloudflare Pages.
+The recommended way to deploy this app is by using the Wrangler CLI.
 
 ### Step-by-Step Instructions:
 
-1.  **Log in to Cloudflare** and navigate to **Workers & Pages**.
-2.  Click **Create application**, then go to the **Pages** tab and click **Connect to Git**.
-3.  Select the Git provider where your project is hosted (e.g., GitHub) and choose the correct repository for this project.
-4.  In the **Set up builds and deployments** section, Cloudflare should automatically detect that this is a Next.js project. The build settings should be pre-filled like this:
-    *   **Framework preset**: `Next.js`
-    *   **Build command**: `npm run build`
-    *   **Build output directory**: `.next`
-5.  Click **Save and Deploy**. Cloudflare will now start building and deploying your site.
-6.  **IMPORTANT:** Your first deployment will likely fail or show errors. This is expected! Continue to the next section to add your Supabase environment variables, which will fix it.
+1.  **Install Project Dependencies**
+    Open your terminal in the project directory and run:
+    ```bash
+    npm install
+    ```
+
+2.  **Log in to Cloudflare**
+    Authorize Wrangler with your Cloudflare account. This will open a browser window for you to log in.
+    ```bash
+    npx wrangler login
+    ```
+
+3.  **Set Up Environment Variables**
+    This is a critical step. You must add your Supabase keys to your Cloudflare Pages project for it to work. Wrangler will create the project on the first deploy.
+    - Go to the **Cloudflare dashboard**.
+    - Select **Workers & Pages** and find your new `coinpower` project.
+    - Go to **Settings** > **Environment variables**.
+    - Under **Production**, click **Add variable** and add the four variables listed below.
+
+4.  **Deploy Your Application**
+    Run the deploy command from your terminal:
+    ```bash
+    npm run deploy
+    ```
+    Wrangler will build your project and deploy it to Cloudflare Pages. After it's done, you'll get a live URL.
 
 ---
 
-## 🚨 Troubleshooting: 'Internal Server Error' or Missing Content
+## 🚨 Critical: Connecting Supabase to Cloudflare Pages
 
-If your deployment on Cloudflare Pages builds successfully but you see an "Internal Server Error," or if content like logos and images are missing on your live website, it almost always means you have not correctly set your Supabase environment variables in your Cloudflare Pages project settings.
-
-**To fix this, you must:**
+For your live app to function correctly, you **must** copy your Supabase keys into your Cloudflare Pages project's settings.
 
 1.  Go to your Cloudflare dashboard and navigate to your Pages project.
 2.  Go to **Settings** > **Environment variables**.
@@ -34,7 +48,7 @@ If your deployment on Cloudflare Pages builds successfully but you see an "Inter
     -   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
     -   `SUPABASE_SERVICE_ROLE_KEY` (ensure you **Encrypt** this value).
     -   `NODE_VERSION` (set this to `20`)
-5.  After adding the variables, trigger a new deployment from the "Deployments" tab to apply the changes.
+5.  After adding the variables, you may need to trigger a new deployment for the changes to take effect.
 
 ---
 
