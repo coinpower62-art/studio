@@ -1,20 +1,37 @@
 # 🚀 CoinPower Deployment Guide for Cloudflare Pages
 
-> **IMPORTANT:** Before deploying, ensure you have run the database setup SQL provided below in your Supabase SQL Editor. This is a one-time setup required for all app features to work correctly.
-
-This guide provides instructions for deploying your CoinPower application to Cloudflare Pages.
+This guide provides step-by-step instructions for deploying your CoinPower application to Cloudflare Pages.
 
 ---
 
-## 🚨 Critical: Connecting Supabase to Cloudflare Pages
+## 1. Connect Your GitHub Repository
 
-For your live app to function correctly, you **must** copy your Supabase keys into your Cloudflare Pages project's settings. This allows your deployment to connect to your Supabase database.
+1.  Log in to your Cloudflare dashboard.
+2.  Go to **Workers & Pages** and click **Create application**.
+3.  Select the **Pages** tab and click **Connect to Git**.
+4.  Choose the GitHub repository for your CoinPower project and click **Begin setup**.
 
-### Step-by-Step Instructions:
+---
 
-1.  **Log in to Cloudflare** and go to your Pages project dashboard.
-2.  Go to **Settings** > **Environment variables**.
-3.  Under **Production**, click **Add variable**. You will need to add four variables.
+## 2. Configure Your Build Settings
+
+This is the most important step. On the "Set up builds and deployments" screen, you **MUST** use the following settings:
+
+-   **Framework preset**: Select `Next.js`.
+-   **Build command**: Enter `next build`
+-   **Build output directory**: Leave this field **EMPTY**.
+
+> **Warning:** Do NOT use `npx @cloudflare/next-on-pages` as the build command. Cloudflare's Next.js preset handles this automatically. Setting the output directory will also cause errors.
+
+---
+
+## 3. Add Environment Variables
+
+For your live app to connect to the database, you must add your Supabase keys to your Cloudflare project.
+
+1.  After configuring the build, click **Save and Deploy**.
+2.  Go to your new project's **Settings** > **Environment Variables**.
+3.  Under **Production**, add the following four variables:
 
     ---
 
@@ -33,7 +50,7 @@ For your live app to function correctly, you **must** copy your Supabase keys in
     #### Variable 3: Secret Service Role Key
     -   **Variable name**: `SUPABASE_SERVICE_ROLE_KEY`
     -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzc1NzQ3NywiZXhwIjoyMDg5MzMzNDc3fQ.WYLx7zUkc0pl_02HpM1ULXTNKi_AWeXjD8EEYBbKrJc`
-    -   **Important:** Click the **Encrypt** button for this value to ensure it remains secure.
+    -   **Important:** Click the **Encrypt** button for this value.
 
     ---
 
@@ -41,24 +58,21 @@ For your live app to function correctly, you **must** copy your Supabase keys in
     -   **Variable name**: `NODE_VERSION`
     -   **Value**: `20`
 
-    ---
+---
 
-4.  **Trigger a New Deployment.** After adding the variables, go to the "Deployments" tab and trigger a new deployment. This will apply the new environment variables and build your site.
+## 4. Trigger a New Deployment
 
-**Why is this necessary?**
-- Your **public** keys (`NEXT_PUBLIC_...`) are used by the browser to fetch data securely.
-- Your **secret** key (`SUPABASE_SERVICE_ROLE_KEY`) is used by the server-side part of your app to perform administrative tasks. It must be kept secret.
-- `NODE_VERSION` ensures Cloudflare uses a compatible version of Node.js to build your app.
+After adding the variables, go to the **Deployments** tab and **retry the deployment**. This will apply your new environment variables and build the site correctly.
 
-By following these steps, your app will be able to communicate with your Supabase database, and all features, including the Admin Panel, will work correctly.
+Your site will now be live!
 
 ---
 
 ## 📱 Android App Build (Optional)
 
-If you plan to build the Android app bundle using the provided GitHub Actions workflow, you must update the deployment URL in the workflow file.
+If you plan to build the Android app bundle, you must update the deployment URL in the workflow file.
 
-1. Open the file `.github/workflows/build-android.yml`.
+1. Open `.github/workflows/build-android.yml`.
 2. Find the line with `bubblewrap init --manifest=...`.
 3. Replace `https://YOUR_CLOUDFLARE_URL/manifest.json` with your actual Cloudflare Pages URL (e.g., `https://your-project.pages.dev/manifest.json`).
 
@@ -66,7 +80,7 @@ If you plan to build the Android app bundle using the provided GitHub Actions wo
 
 ## Supabase Database Setup
 
-Run the following SQL in your Supabase SQL Editor to set up the necessary tables and policies for the application.
+If you haven't already, run the SQL script below in your Supabase SQL Editor to set up the necessary tables and functions for the application.
 
 ```sql
 -- =================================================================
@@ -608,102 +622,4 @@ BEGIN
     FROM downline;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
-
----
-
-## 🔧 Data Repair Scripts
-
-If you have users who signed up before the registration process was fixed, their profile information (like username and full name) might be missing. You can run the following SQL script in your Supabase SQL Editor to repair this missing data.
-
-### Fix Missing User Profile Details
-
-This script will update any user profiles that are missing a username, full name, or email. It safely populates these fields using information from the main authentication table. It will not overwrite any data that already exists.
-
-```sql
--- This script updates existing user profiles that have missing information.
--- It safely populates username, full_name, email, phone, and country fields.
-UPDATE public.profiles p
-SET
-  email = COALESCE(p.email, u.email),
-  username = COALESCE(p.username, u.raw_user_meta_data->>'username', split_part(u.email, '@', 1)),
-  full_name = COALESCE(p.full_name, u.raw_user_meta_data->>'full_name', split_part(u.email, '@', 1)),
-  country = COALESCE(p.country, u.raw_user_meta_data->>'country'),
-  phone = COALESCE(p.phone, u.raw_user_meta_data->>'phone')
-FROM auth.users u
-WHERE
-  p.id = u.id
-  AND (
-    p.username IS NULL OR p.username = '' OR
-    p.full_name IS NULL OR p.full_name = '' OR
-    p.email IS NULL OR p.email = '' OR
-    p.country IS NULL OR p.country = '' OR
-    p.phone IS NULL OR p.phone = ''
-  );
-```
-
-### Fix Missing Phone Number Uniqueness
-
-If you set up your database before the phone number uniqueness rule was added, run the following command to enforce it. This prevents multiple accounts from using the same phone number.
-
-```sql
--- Add a UNIQUE constraint to the phone column if it doesn't exist
-ALTER TABLE public.profiles ADD CONSTRAINT profiles_phone_unique_constraint UNIQUE (phone);
-```
-
-**Important:** This command will fail if you already have duplicate phone numbers in your database. It will **not** delete any data, but it will show an error. To fix this, you must find and either delete or update the duplicate entries.
-
-You can find duplicate phone numbers by running this query in your Supabase SQL Editor:
-
-```sql
--- Find duplicate phone numbers
-SELECT phone, COUNT(*)
-FROM public.profiles
-WHERE phone IS NOT NULL AND phone <> ''
-GROUP BY phone
-HAVING COUNT(*) > 1;
-```
-Once you have resolved the duplicates, you can run the `ALTER TABLE` command again.
-
-### Add Max Rentals to Existing Generators
-If you already have generators in your database, run this script to add the `max_rentals` column.
-```sql
--- Add the max_rentals column to the generators table if it doesn't exist
-ALTER TABLE public.generators ADD COLUMN IF NOT EXISTS max_rentals integer DEFAULT 1;
-
--- Update existing default generators with the new limits
-UPDATE public.generators SET max_rentals = 1 WHERE id = 'pg1';
-UPDATE public.generators SET max_rentals = 2 WHERE id = 'pg2';
-UPDATE public.generators SET max_rentals = 1 WHERE id = 'pg3';
-UPDATE public.generators SET max_rentals = 2 WHERE id = 'pg4';
-```
-
-### Add Device ID Tracking to Profiles
-This adds the `device_id` column used for the "One Device, One Account" policy.
-```sql
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS device_id text;
-```
-
-### Reset All User Data (Use With Caution)
-
-If you need to completely clear all user accounts and their associated data to start fresh, you can run the following script. **WARNING: This is a destructive and irreversible action.**
-
-```sql
--- WARNING: This script permanently deletes ALL user accounts and their associated data.
--- This action cannot be undone.
-
--- Step 1: Remove records from tables that would prevent user deletion.
-TRUNCATE public.rented_generators RESTART IDENTITY;
-
--- Step 2: Un-redeem all gift codes so they can be used again.
-UPDATE public.gift_codes
-SET 
-  is_redeemed = false,
-  redeemed_at = NULL,
-  redeemed_by_user_id = NULL;
-
--- Step 3: Delete all users from the core authentication table.
--- This will automatically cascade to delete all linked records in 'profiles', 'deposit_requests',
--- and 'withdrawal_requests' because of the database setup.
-DELETE FROM auth.users;
 ```

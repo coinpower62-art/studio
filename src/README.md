@@ -1,26 +1,74 @@
-# CoinPower Project
+# 🚀 CoinPower Deployment Guide for Cloudflare Pages
 
-This is a Next.js starter app built with Supabase and shadcn/ui.
-
-## 🚨 Troubleshooting: 'Internal Server Error' or Missing Content
-
-If your deployment on Cloudflare Pages builds successfully but you see an "Internal Server Error," or if content like logos and images are missing on your live website, it almost always means you have not correctly set your Supabase environment variables in your Cloudflare Pages project settings.
-
-**To fix this, you must:**
-
-1.  Go to your Cloudflare dashboard and navigate to your Pages project.
-2.  Go to **Settings** > **Environment variables**.
-3.  Under **Production**, click **Add variable**.
-4.  Add the following variables with their correct values from your Supabase project:
-    -   `NEXT_PUBLIC_SUPABASE_URL`
-    -   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-    -   `SUPABASE_SERVICE_ROLE_KEY` (ensure you **Encrypt** this value).
-    -   `NODE_VERSION` (set this to `20`)
-5.  After adding the variables, trigger a new deployment from the "Deployments" tab to apply the changes.
+This guide provides step-by-step instructions for deploying your CoinPower application to Cloudflare Pages.
 
 ---
 
-## Getting Started
+## 1. Connect Your GitHub Repository
+
+1.  Log in to your Cloudflare dashboard.
+2.  Go to **Workers & Pages** and click **Create application**.
+3.  Select the **Pages** tab and click **Connect to Git**.
+4.  Choose the GitHub repository for your CoinPower project and click **Begin setup**.
+
+---
+
+## 2. Configure Your Build Settings
+
+This is the most important step. On the "Set up builds and deployments" screen, you **MUST** use the following settings:
+
+-   **Framework preset**: Select `Next.js`.
+-   **Build command**: Enter `next build`
+-   **Build output directory**: Leave this field **EMPTY**.
+
+> **Warning:** Do NOT use `npx @cloudflare/next-on-pages` as the build command. Cloudflare's Next.js preset handles this automatically. Setting the output directory will also cause errors.
+
+---
+
+## 3. Add Environment Variables
+
+For your live app to connect to the database, you must add your Supabase keys to your Cloudflare project.
+
+1.  After configuring the build, click **Save and Deploy**.
+2.  Go to your new project's **Settings** > **Environment Variables**.
+3.  Under **Production**, add the following four variables:
+
+    ---
+
+    #### Variable 1: Supabase URL
+    -   **Variable name**: `NEXT_PUBLIC_SUPABASE_URL`
+    -   **Value**: `https://ifdhcwsigjankvidokko.supabase.co`
+
+    ---
+
+    #### Variable 2: Public / Anon Key
+    -   **Variable name**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+    -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTc0NzcsImV4cCI6MjA4OTMzMzQ3N30.Z-H5YqGo_L0Q0mJ_N23tV11Jb6W32aA2yS3R2zDAbJI`
+
+    ---
+
+    #### Variable 3: Secret Service Role Key
+    -   **Variable name**: `SUPABASE_SERVICE_ROLE_KEY`
+    -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzc1NzQ3NywiZXhwIjoyMDg5MzMzNDc3fQ.WYLx7zUkc0pl_02HpM1ULXTNKi_AWeXjD8EEYBbKrJc`
+    -   **Important:** Click the **Encrypt** button for this value.
+
+    ---
+
+    #### Variable 4: Node.js Version
+    -   **Variable name**: `NODE_VERSION`
+    -   **Value**: `20`
+
+---
+
+## 4. Trigger a New Deployment
+
+After adding the variables, go to the **Deployments** tab and **retry the deployment**. This will apply your new environment variables and build the site correctly.
+
+Your site will now be live!
+
+---
+
+## Local Development
 
 Your Supabase credentials have been added to the `.env` file for local development. To get started:
 
@@ -40,7 +88,7 @@ Your app should now be running on [http://localhost:9002](http://localhost:9002)
 
 ## Supabase Database Setup
 
-Run the following SQL in your Supabase SQL Editor to set up the necessary tables and policies for the application.
+If you haven't already, run the SQL script below in your Supabase SQL Editor to set up the necessary tables and functions for the application.
 
 ```sql
 -- =================================================================
@@ -587,106 +635,4 @@ BEGIN
     FROM downline;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
-
----
-
-## 🔧 Data Repair Scripts
-
-If you have users who signed up before the registration process was fixed, their profile information (like username and full name) might be missing. You can run the following SQL script in your Supabase SQL Editor to repair this missing data.
-
-### Fix Missing User Profile Details
-
-This script will update any user profiles that are missing a username, full name, or email. It safely populates these fields using information from the main authentication table. It will not overwrite any data that already exists.
-
-```sql
--- This script updates existing user profiles that have missing information.
--- It safely populates username, full_name, email, phone, and country fields.
-UPDATE public.profiles p
-SET
-  email = COALESCE(p.email, u.email),
-  username = COALESCE(p.username, u.raw_user_meta_data->>'username', split_part(u.email, '@', 1)),
-  full_name = COALESCE(p.full_name, u.raw_user_meta_data->>'full_name', split_part(u.email, '@', 1)),
-  country = COALESCE(p.country, u.raw_user_meta_data->>'country'),
-  phone = COALESCE(p.phone, u.raw_user_meta_data->>'phone')
-FROM auth.users u
-WHERE
-  p.id = u.id
-  AND (
-    p.username IS NULL OR p.username = '' OR
-    p.full_name IS NULL OR p.full_name = '' OR
-    p.email IS NULL OR p.email = '' OR
-    p.country IS NULL OR p.country = '' OR
-    p.phone IS NULL OR p.phone = ''
-  );
-```    
-
-### Fix Missing Phone Number Uniqueness
-
-If you set up your database before the phone number uniqueness rule was added, run the following command to enforce it. This prevents multiple accounts from using the same phone number.
-
-```sql
--- Add a UNIQUE constraint to the phone column if it doesn't exist
-ALTER TABLE public.profiles ADD CONSTRAINT profiles_phone_unique_constraint UNIQUE (phone);
 ```
-
-**Important:** This command will fail if you already have duplicate phone numbers in your database. It will **not** delete any data, but it will show an error. To fix this, you must find and either delete or update the duplicate entries.
-
-You can find duplicate phone numbers by running this query in your Supabase SQL Editor:
-
-```sql
--- Find duplicate phone numbers
-SELECT phone, COUNT(*)
-FROM public.profiles
-WHERE phone IS NOT NULL AND phone <> ''
-GROUP BY phone
-HAVING COUNT(*) > 1;
-```
-Once you have resolved the duplicates, you can run the `ALTER TABLE` command again.
-
-### Add Max Rentals to Existing Generators
-If you already have generators in your database, run this script to add the `max_rentals` column.
-```sql
--- Add the max_rentals column to the generators table if it doesn't exist
-ALTER TABLE public.generators ADD COLUMN IF NOT EXISTS max_rentals integer DEFAULT 1;
-
--- Update existing default generators with the new limits
-UPDATE public.generators SET max_rentals = 1 WHERE id = 'pg1';
-UPDATE public.generators SET max_rentals = 2 WHERE id = 'pg2';
-UPDATE public.generators SET max_rentals = 1 WHERE id = 'pg3';
-UPDATE public.generators SET max_rentals = 2 WHERE id = 'pg4';
-```
-
-### Add Device ID Tracking to Profiles
-This adds the `device_id` column used for the "One Device, One Account" policy.
-```sql
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS device_id text;
-```
-
-### Reset All User Data (Use With Caution)
-
-If you need to completely clear all user accounts and their associated data to start fresh, you can run the following script. **WARNING: This is a destructive and irreversible action.**
-
-```sql
--- WARNING: This script permanently deletes ALL user accounts and their associated data.
--- This action cannot be undone.
-
--- Step 1: Remove records from tables that would prevent user deletion.
-TRUNCATE public.rented_generators RESTART IDENTITY;
-
--- Step 2: Un-redeem all gift codes so they can be used again.
-UPDATE public.gift_codes
-SET 
-  is_redeemed = false,
-  redeemed_at = NULL,
-  redeemed_by_user_id = NULL;
-
--- Step 3: Delete all users from the core authentication table.
--- This will automatically cascade to delete all linked records in 'profiles', 'deposit_requests',
--- and 'withdrawal_requests' because of the database setup.
-DELETE FROM auth.users;
-```
-
-
-
-    
