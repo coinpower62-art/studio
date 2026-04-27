@@ -18,10 +18,10 @@ This guide provides step-by-step instructions for deploying your CoinPower appli
 This is the most important step. On the "Set up builds and deployments" screen, you **MUST** use the following settings:
 
 -   **Framework preset**: Select `Next.js`.
--   **Build command**: Enter `next build`
+-   **Build command**: Enter `npm run build`
 -   **Build output directory**: Leave this field **EMPTY**.
 
-> **Warning:** Do NOT use `npx @cloudflare/next-on-pages` as the build command. Cloudflare's Next.js preset handles this automatically. Setting the output directory will also cause errors.
+> **Warning:** Do NOT use `npx @cloudflare/next-on-pages` or `next build` as the build command. Cloudflare's Next.js preset handles this automatically. Setting the output directory will also cause errors.
 
 ---
 
