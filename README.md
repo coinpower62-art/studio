@@ -18,16 +18,16 @@ This guide provides step-by-step instructions for deploying your CoinPower appli
 This is the most important step. On the "Set up builds and deployments" screen, you **MUST** use the following settings:
 
 -   **Framework preset**: Select `Next.js`.
--   **Build command**: Enter `npm run build`
+-   **Build command**: Enter `npx @cloudflare/next-on-pages@1`
 -   **Build output directory**: Leave this field **EMPTY**.
 
-> **Warning:** Do NOT use `npx @cloudflare/next-on-pages` or `next build` as the build command. Cloudflare's Next.js preset handles this automatically. Setting the output directory will also cause errors.
+> **CRITICAL:** Using these exact settings is essential. The `npx @cloudflare/next-on-pages@1` command is the official way to build Next.js apps for Cloudflare Pages and will prevent errors.
 
 ---
 
 ## 3. Add Environment Variables
 
-After configuring the build settings, click the **Save and Deploy** button. The first build will likely fail, but that's okay. We need to add your environment variables next.
+After configuring the build settings, click the **Save and Deploy** button. The first build may fail, but that's expected. We need to add your environment variables next.
 
 1.  Go to your new project's **Settings** > **Environment Variables**.
 2.  Under **Production**, click **Add variable** and add the following four variables.
