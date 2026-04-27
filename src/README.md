@@ -27,11 +27,10 @@ This is the most important step. On the "Set up builds and deployments" screen, 
 
 ## 3. Add Environment Variables
 
-For your live app to connect to the database, you must add your Supabase keys to your Cloudflare project.
+After configuring the build settings, click the **Save and Deploy** button. The first build will likely fail, but that's okay. We need to add your environment variables next.
 
-1.  After configuring the build, click **Save and Deploy**.
-2.  Go to your new project's **Settings** > **Environment Variables**.
-3.  Under **Production**, add the following four variables:
+1.  Go to your new project's **Settings** > **Environment Variables**.
+2.  Under **Production**, click **Add variable** and add the following four variables.
 
     ---
 
@@ -43,7 +42,7 @@ For your live app to connect to the database, you must add your Supabase keys to
 
     #### Variable 2: Public / Anon Key
     -   **Variable name**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-    -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTc0NzcsImV4cCI6MjA4OTMzMzQ3N30.Z-H5qGo_L0Q0mJ_N23tV11Jb6W32aA2yS3R2zDAbJI`
+    -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTc0NzcsImV4cCI6MjA4OTMzMzQ3N30.Z-H5YqGo_L0Q0mJ_N23tV11Jb6W32aA2yS3R2zDAbJI`
 
     ---
 
@@ -57,6 +56,8 @@ For your live app to connect to the database, you must add your Supabase keys to
     #### Variable 4: Node.js Version
     -   **Variable name**: `NODE_VERSION`
     -   **Value**: `20`
+    
+    > **CRITICAL:** The `NODE_VERSION` variable is essential for a successful build. Make sure it is added here, in the **Environment Variables** section, and NOT in the "Build command" field.
 
 ---
 

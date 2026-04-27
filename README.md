@@ -27,11 +27,10 @@ This is the most important step. On the "Set up builds and deployments" screen, 
 
 ## 3. Add Environment Variables
 
-For your live app to connect to the database, you must add your Supabase keys to your Cloudflare project.
+After configuring the build settings, click the **Save and Deploy** button. The first build will likely fail, but that's okay. We need to add your environment variables next.
 
-1.  After configuring the build, click **Save and Deploy**.
-2.  Go to your new project's **Settings** > **Environment Variables**.
-3.  Under **Production**, add the following four variables:
+1.  Go to your new project's **Settings** > **Environment Variables**.
+2.  Under **Production**, click **Add variable** and add the following four variables.
 
     ---
 
@@ -57,6 +56,8 @@ For your live app to connect to the database, you must add your Supabase keys to
     #### Variable 4: Node.js Version
     -   **Variable name**: `NODE_VERSION`
     -   **Value**: `20`
+    
+    > **CRITICAL:** The `NODE_VERSION` variable is essential for a successful build. Make sure it is added here, in the **Environment Variables** section, and NOT in the "Build command" field.
 
 ---
 
@@ -65,16 +66,6 @@ For your live app to connect to the database, you must add your Supabase keys to
 After adding the variables, go to the **Deployments** tab and **retry the deployment**. This will apply your new environment variables and build the site correctly.
 
 Your site will now be live!
-
----
-
-## 📱 Android App Build (Optional)
-
-If you plan to build the Android app bundle, you must update the deployment URL in the workflow file.
-
-1. Open `.github/workflows/build-android.yml`.
-2. Find the line with `bubblewrap init --manifest=...`.
-3. Replace `https://YOUR_CLOUDFLARE_URL/manifest.json` with your actual Cloudflare Pages URL (e.g., `https://your-project.pages.dev/manifest.json`).
 
 ---
 
@@ -531,6 +522,7 @@ BEGIN
   ORDER BY p.created_at DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
 
 -- =================================================================
 -- 14. RPC FUNCTION FOR ATOMIC BALANCE INCREMENT
