@@ -27,7 +27,7 @@ This is the most important step. On the "Set up builds and deployments" screen, 
 
 ## 3. Add Environment Variables
 
-After configuring the build settings, click the **Save and Deploy** button. The first build will likely fail, but that's okay. We need to add your environment variables next.
+After configuring the build settings, click the **Save and Deploy** button. The first build may fail, but that's expected. We need to add your environment variables next.
 
 1.  Go to your new project's **Settings** > **Environment Variables**.
 2.  Under **Production**, click **Add variable** and add the following four variables.
@@ -634,4 +634,5 @@ BEGIN
     FROM downline;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
 
