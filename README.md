@@ -13,59 +13,57 @@ This guide provides step-by-step instructions for deploying your CoinPower appli
 
 ---
 
-## 2. Configure Your Build Settings
+## 2. Add Environment Variables (Critical Step)
 
-This is the most important step. On the "Set up builds and deployments" screen, you **MUST** use the following settings:
+This is the most important step to ensure your application can connect to the database. On the "Set up builds and deployments" screen, before clicking "Save and Deploy", you must add your Supabase credentials.
 
--   **Framework preset**: Select `Next.js`.
+1.  Scroll down to the **Environment Variables (advanced)** section.
+2.  Click **Add variable** for each of the four variables below.
+
+> **CRITICAL:** Double-check that you have copied these values exactly. Even a small typo will cause your application to fail.
+
+---
+
+#### Variable 1: Supabase URL
+-   **Variable name**: `NEXT_PUBLIC_SUPABASE_URL`
+-   **Value**: `https://ifdhcwsigjankvidokko.supabase.co`
+
+---
+
+#### Variable 2: Public / Anon Key
+-   **Variable name**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+-   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTc0NzcsImV4cCI6MjA4OTMzMzQ3N30.Z-H5YqGo_L0Q0mJ_N23tV11Jb6W32aA2yS3R2zDAbJI`
+
+---
+
+#### Variable 3: Secret Service Role Key
+-   **Variable name**: `SUPABASE_SERVICE_ROLE_KEY`
+-   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzc1NzQ3NywiZXhwIjoyMDg5MzMzNDc3fQ.WYLx7zUkc0pl_02HpM1ULXTNKi_AWeXjD8EEYBbKrJc`
+-   **Important:** Click the **Encrypt** button for this value.
+
+---
+
+#### Variable 4: Node.js Version
+-   **Variable name**: `NODE_VERSION`
+-   **Value**: `20`
+
+---
+
+## 3. Configure Your Build Settings
+
+Now, scroll back up to the **Build settings** section and ensure they are set as follows:
+
+-   **Framework preset**: `Next.js`
 -   **Build command**: `npx @cloudflare/next-on-pages@1`
 -   **Build output directory**: `.vercel/output/static`
 
-> **CRITICAL:** Using these exact settings is essential. The `npx @cloudflare/next-on-pages@1` command and the correct output directory are required to build Next.js apps for Cloudflare Pages and will prevent errors.
-
 ---
 
-## 3. Add Environment Variables
+## 4. Deploy
 
-After configuring the build settings, click the **Save and Deploy** button. The first build may fail, but that's expected. We need to add your environment variables next.
+Click **Save and Deploy**. Your application should now build and deploy successfully.
 
-1.  Go to your new project's **Settings** > **Environment Variables**.
-2.  Under **Production**, click **Add variable** and add the following four variables.
-
-    ---
-
-    #### Variable 1: Supabase URL
-    -   **Variable name**: `NEXT_PUBLIC_SUPABASE_URL`
-    -   **Value**: `https://ifdhcwsigjankvidokko.supabase.co`
-
-    ---
-
-    #### Variable 2: Public / Anon Key
-    -   **Variable name**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-    -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTc0NzcsImV4cCI6MjA4OTMzMzQ3N30.Z-H5YqGo_L0Q0mJ_N23tV11Jb6W32aA2yS3R2zDAbJI`
-
-    ---
-
-    #### Variable 3: Secret Service Role Key
-    -   **Variable name**: `SUPABASE_SERVICE_ROLE_KEY`
-    -   **Value**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGhjd3NpZ2phbmt2aWRva2tvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzc1NzQ3NywiZXhwIjoyMDg5MzMzNDc3fQ.WYLx7zUkc0pl_02HpM1ULXTNKi_AWeXjD8EEYBbKrJc`
-    -   **Important:** Click the **Encrypt** button for this value.
-
-    ---
-
-    #### Variable 4: Node.js Version
-    -   **Variable name**: `NODE_VERSION`
-    -   **Value**: `20`
-    
-    > **CRITICAL:** The `NODE_VERSION` variable is essential for a successful build. Make sure it is added here, in the **Environment Variables** section, and NOT in the "Build command" field.
-
----
-
-## 4. Trigger a New Deployment
-
-After adding the variables, go to the **Deployments** tab and **retry the deployment**. This will apply your new environment variables and build the site correctly.
-
-Your site will now be live!
+Your site will be live!
 
 ---
 
