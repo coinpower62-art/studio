@@ -1236,7 +1236,7 @@ function DashboardContent() {
                             </div>
                              <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Users className="w-3 h-3"/> Referred By</p>
-                                <p className="text-slate-200 text-xs truncate font-mono">{referrer?.username || '—'}</p>
+                                <p className="text-slate-200 text-xs truncate font-mono">{referrer?.full_name || referrer?.username || '—'}</p>
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><ExternalLink className="w-3 h-3"/> Referral Link</p>
@@ -1819,8 +1819,8 @@ function DashboardContent() {
                                 {isUploading ? 'Uploading...' : `Upload for ${id.toUpperCase()}`}
                              </label>
                              <input type="file" id={`gen-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
-                               const file = e.target.files?.[0];
-                               if (file) await handleFileUpload('generator', id, file);
+                                 const file = e.target.files?.[0];
+                                 if (file) await handleFileUpload('generator', id, file);
                              }}/>
                               {g?.image_url && (
                                 <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
@@ -1842,8 +1842,8 @@ function DashboardContent() {
                                 {isUploading ? 'Uploading...' : `Upload for ${g.id.toUpperCase()}`}
                              </label>
                              <input type="file" id={`gen-upload-${g.id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
-                               const file = e.target.files?.[0];
-                               if (file) await handleFileUpload('generator', g.id, file);
+                                 const file = e.target.files?.[0];
+                                 if (file) await handleFileUpload('generator', g.id, file);
                              }}/>
                              {g.image_url && (
                                 <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
