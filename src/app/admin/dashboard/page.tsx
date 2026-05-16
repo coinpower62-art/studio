@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -130,7 +130,18 @@ type MediaAsset = {
     url: string;
 }
 
-function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, rejectPending, copyText, getUserDisplayName }: {
+// Helper to get a consistent display name for a user with robust fallbacks
+const getUserDisplayName = (u: UserRecord | null | undefined) => {
+  if (!u) return '—';
+  // Use trim to catch empty strings that aren't null
+  const fullName = u.full_name?.trim();
+  const username = u.username?.trim();
+  const email = u.email?.trim();
+  
+  return fullName || username || email || 'Unknown User';
+};
+
+function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, rejectPending, copyText }: {
   d: DepositRequest;
   user?: UserRecord;
   onApprove: () => void;
@@ -139,7 +150,6 @@ function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, re
   approvePending: boolean;
   rejectPending: boolean;
   copyText: (text: string, label: string) => void;
-  getUserDisplayName: (u: UserRecord | null | undefined) => string;
 }) {
   const isCard = Boolean(d.tx_id?.match(/\[CARD/i));
   let method = "Unknown";
@@ -354,7 +364,7 @@ function DashboardContent() {
   const [allRentedGenerators, setAllRentedGenerators] = useState<RentedGeneratorRaw[]>([]);
 
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
       setUsersLoading(true);
       setGensLoading(true);
       setDepositsLoading(true);
@@ -388,8 +398,9 @@ function DashboardContent() {
             return acc;
         }, {} as Record<string, { id: string; name: string; expires_at: string; rented_at: string; }[]>);
         
+        // Accurate Referral Counts Calculation
         const referralCounts = rawUsers.reduce((acc, user) => {
-          if (user.parent_id) {
+          if (user.parent_id && user.parent_id.trim() !== '') {
             acc[user.parent_id] = (acc[user.parent_id] || 0) + 1;
           }
           return acc;
@@ -417,7 +428,7 @@ function DashboardContent() {
       setMediaLoading(false);
       setCodesLoading(false);
       setVisitsLoading(false);
-  }
+  }, [toast]);
 
   useEffect(() => {
     // Auth check
@@ -429,8 +440,7 @@ function DashboardContent() {
     setAdmin({ name: 'Admin' });
     setAdminLoading(false);
     fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
+  }, [router, fetchData]);
 
 
   const switchTab = (id: Tab) => {
@@ -800,12 +810,6 @@ function DashboardContent() {
     return null;
   }
 
-  // Helper to get a consistent display name for a user with robust fallbacks
-  const getUserDisplayName = (u: UserRecord | null | undefined) => {
-    if (!u) return '—';
-    return u.full_name || u.username || u.email || 'Unknown User';
-  };
-
   if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
   if (!admin) { router.push("/login"); return null; }
 
@@ -815,6 +819,7 @@ function DashboardContent() {
   const pendingDepositsCount = deposits.filter(function(d) { return d.status === "pending"; }).length;
   const copyText = (text: string, label: string) => navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!` }));
   const totalReferrals = users.reduce(function(s, u) { return s + (u.referral_count || 0); }, 0);
+  
   const idToUserMap = new Map(users.map(u => [u.id, u]));
 
   const heroImg = media.find(function(m) { return m.id === 'hero'; })?.url || PlaceHolderImages.find(function(i) { return i.id === 'activity-hero'; })?.imageUrl;
@@ -1133,9 +1138,10 @@ function DashboardContent() {
                 <div className="space-y-3">
                   {filteredUsers.map(function(u) {
                     const nameForDisplay = getUserDisplayName(u);
-                    const initials = (u.full_name || u.username || u.email)?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "??";
+                    const initials = nameForDisplay.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "??";
                     const isShowingPass = showPassFor === u.id;
-                    const referralLink = u.referral_code ? `https://coinpower-italy.netlify.app/signup?ref=${u.referral_code}` : null;
+                    const siteUrl = "https://coinpower-italy.netlify.app";
+                    const referralLink = u.referral_code ? `${siteUrl}/signup?ref=${u.referral_code}` : null;
                     const referrer = u.parent_id ? idToUserMap.get(u.parent_id) : null;
                     return (
                       <div key={u.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
@@ -1201,7 +1207,7 @@ function DashboardContent() {
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1">@ Username</p>
-                                <p className="text-slate-200 text-xs truncate">{u.username || u.email?.split('@')[0] || '—'}</p>
+                                <p className="text-slate-200 text-xs truncate">{u.username || '—'}</p>
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Mail className="w-3 h-3"/> Email</p>
@@ -1341,7 +1347,6 @@ function DashboardContent() {
                       approvePending={false}
                       rejectPending={false}
                       copyText={copyText}
-                      getUserDisplayName={getUserDisplayName}
                     />
                   ); })}
                 </div>
@@ -1552,7 +1557,11 @@ function DashboardContent() {
                                 {u.referral_code && <button onClick={() => copyText(u.referral_code!, "Referral code")} className="text-slate-500 hover:text-amber-400"><Copy className="w-3 h-3" /></button>}
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-center"><Badge className={`text-xs border ${(u.referral_count || 0) > 0 ? "bg-green-900/40 text-green-400 border-green-700" : "bg-slate-700 text-slate-400 border-slate-600"}`}>{u.referral_count || 0} users</Badge></td>
+                            <td className="px-4 py-3 text-center">
+                              <Badge className={`text-xs border ${(u.referral_count || 0) > 0 ? "bg-green-900/40 text-green-400 border-green-700" : "bg-slate-700 text-slate-400 border-slate-600"}`}>
+                                {u.referral_count || 0} users
+                              </Badge>
+                            </td>
                             <td className="px-4 py-3">
                                 {referrer ? (
                                     <div className="flex flex-col">
