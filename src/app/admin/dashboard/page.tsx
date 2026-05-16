@@ -1609,7 +1609,7 @@ function DashboardContent() {
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="font-black text-white text-sm">{g.name}</p>
-                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${g.published ? "bg-green-500 text-white" : "bg-black/30 text-white/70"}`}>
+                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${g.published ? "bg-green-50 text-white" : "bg-black/30 text-white/70"}`}>
                                 {g.published ? "LIVE" : "DRAFT"}
                               </span>
                             </div>
@@ -1647,7 +1647,7 @@ function DashboardContent() {
                             data-testid={`button-publish-gen-${g.id}`}
                             className={`flex-1 flex items-center justify-center gap-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all duration-200 ${g.published ? "bg-green-900/30 border-green-600 text-green-300 shadow-[0_0_8px_rgba(34,197,94,0.25)]" : "bg-slate-700/60 border-slate-600 text-slate-400 hover:border-slate-500"}`}
                           >
-                            <div className={`relative w-9 h-5 rounded-full transition-colors duration-300 flex-shrink-0 ${g.published ? "bg-green-500" : "bg-slate-600"}`}>
+                            <div className={`relative w-9 h-5 rounded-full transition-colors duration-300 flex-shrink-0 ${g.published ? "bg-green-50" : "bg-slate-600"}`}>
                               <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-300 ${g.published ? "translate-x-[18px]" : "translate-x-0.5"}`} />
                             </div>
                             <span className="tracking-widest text-[11px]">{g.published ? "ON" : "OFF"}</span>
@@ -2254,7 +2254,7 @@ function DashboardContent() {
                 </div>
                 <button onClick={function() { return setNewGen({ ...newGen, published: !newGen.published }); }}
                   data-testid="toggle-gen-published"
-                  className={`w-12 h-6 rounded-full transition-colors relative ${newGen.published ? "bg-green-500" : "bg-slate-600"}`}>
+                  className={`w-12 h-6 rounded-full transition-colors relative ${newGen.published ? "bg-green-50" : "bg-slate-600"}`}>
                   <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${newGen.published ? "translate-x-6" : "translate-x-0.5"}`} />
                 </button>
               </div>
@@ -2267,7 +2267,7 @@ function DashboardContent() {
                     <p className="text-white font-black text-sm">{newGen.name}</p>
                     <p className="text-white/70 text-xs">${newGen.price}/rent · ${newGen.daily_income}/day · {newGen.expire_days}d</p>
                   </div>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${newGen.published ? "bg-green-500 text-white" : "bg-black/30 text-white/70"}`}>{newGen.published ? "LIVE" : "DRAFT"}</span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${newGen.published ? "bg-green-50 text-white" : "bg-black/30 text-white/70"}`}>{newGen.published ? "LIVE" : "DRAFT"}</span>
                 </div>
               )}
             </div>
