@@ -130,7 +130,7 @@ type MediaAsset = {
     url: string;
 }
 
-function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, rejectPending, copyText }: {
+function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, rejectPending, copyText, getUserDisplayName }: {
   d: DepositRequest;
   user?: UserRecord;
   onApprove: () => void;
@@ -139,6 +139,7 @@ function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, re
   approvePending: boolean;
   rejectPending: boolean;
   copyText: (text: string, label: string) => void;
+  getUserDisplayName: (u: UserRecord | null | undefined) => string;
 }) {
   const isCard = Boolean(d.tx_id?.match(/\[CARD/i));
   let method = "Unknown";
@@ -180,7 +181,7 @@ function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, re
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-white font-semibold text-sm">{user?.full_name || user?.username || user?.email || 'Unknown User'}</p>
+              <p className="text-white font-semibold text-sm">{getUserDisplayName(user)}</p>
               <span className="text-slate-400 text-xs">@{user?.username || '...'}</span>
               <Badge className={`text-xs border px-1.5 py-0 ${d.status === "pending" ? "bg-yellow-900/40 text-yellow-400 border-yellow-700" : d.status === "approved" ? "bg-green-900/40 text-green-400 border-green-700" : "bg-red-900/40 text-red-400 border-red-700"}`}>{d.status}</Badge>
             </div>
@@ -799,7 +800,7 @@ function DashboardContent() {
     return null;
   }
 
-  // Helper to get a consistent display name for a user
+  // Helper to get a consistent display name for a user with robust fallbacks
   const getUserDisplayName = (u: UserRecord | null | undefined) => {
     if (!u) return '—';
     return u.full_name || u.username || u.email || 'Unknown User';
@@ -920,7 +921,7 @@ function DashboardContent() {
                 </div>
                 <span className="flex-1 text-left">{label}</span>
                 {badge !== undefined && badge > 0 && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${isActive ? "bg-amber-500 text-white" : "bg-slate-600 text-slate-300"}`}>{badge}</span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${isActive ? "bg-amber-50 text-white" : "bg-slate-600 text-slate-300"}`}>{badge}</span>
                 )}
               </button>
             );
@@ -953,7 +954,7 @@ function DashboardContent() {
         </p>
         <div className="flex items-center gap-2">
           {(pendingDepositsCount > 0 || pendingWithdrawalsCount > 0) && (
-            <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 rounded-lg px-2 py-1">
+            <div className="flex items-center gap-1 bg-amber-50/20 border border-amber-500/40 rounded-lg px-2 py-1">
               <span className="text-amber-400 text-[10px] font-bold">{pendingDepositsCount + pendingWithdrawalsCount} pending</span>
             </div>
           )}
@@ -1241,7 +1242,10 @@ function DashboardContent() {
                             </div>
                              <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Users className="w-3 h-3"/> Referred By</p>
-                                <p className="text-slate-200 text-xs truncate font-mono">{getUserDisplayName(referrer)}</p>
+                                <div className="flex flex-col">
+                                    <p className="text-slate-200 text-xs truncate font-mono">{getUserDisplayName(referrer)}</p>
+                                    {referrer && <p className="text-[9px] text-slate-500 truncate">{referrer.email}</p>}
+                                </div>
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><ExternalLink className="w-3 h-3"/> Referral Link</p>
@@ -1337,6 +1341,7 @@ function DashboardContent() {
                       approvePending={false}
                       rejectPending={false}
                       copyText={copyText}
+                      getUserDisplayName={getUserDisplayName}
                     />
                   ); })}
                 </div>
@@ -1526,9 +1531,9 @@ function DashboardContent() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead><tr className="border-b border-slate-700 bg-slate-700/50">
-                        <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">User</th>
-                        <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referral Code</th>
-                        <th className="text-center px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referred</th>
+                        <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">User (Referred)</th>
+                        <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Used Code</th>
+                        <th className="text-center px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Downline</th>
                         <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referred By (Parent)</th>
                         <th className="text-right px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Balance</th>
                       </tr></thead>
@@ -1537,7 +1542,10 @@ function DashboardContent() {
                           const referrer = u.parent_id ? idToUserMap.get(u.parent_id) : null;
                           return (
                           <tr key={u.id} className="hover:bg-slate-700/40 transition-colors">
-                            <td className="px-4 py-3"><p className="text-white font-medium text-sm">{getUserDisplayName(u)}</p><p className="text-slate-400 text-xs">@{u.username}</p></td>
+                            <td className="px-4 py-3">
+                              <p className="text-white font-medium text-sm">{getUserDisplayName(u)}</p>
+                              <p className="text-slate-500 text-[10px]">{u.email}</p>
+                            </td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
                                 <span className="text-amber-400 font-bold font-mono text-xs bg-amber-900/30 border border-amber-700 px-2 py-0.5 rounded-lg">{u.referral_code || "—"}</span>
@@ -1547,9 +1555,9 @@ function DashboardContent() {
                             <td className="px-4 py-3 text-center"><Badge className={`text-xs border ${(u.referral_count || 0) > 0 ? "bg-green-900/40 text-green-400 border-green-700" : "bg-slate-700 text-slate-400 border-slate-600"}`}>{u.referral_count || 0} users</Badge></td>
                             <td className="px-4 py-3">
                                 {referrer ? (
-                                    <div>
+                                    <div className="flex flex-col">
                                         <p className="text-slate-300 text-sm font-medium">{getUserDisplayName(referrer)}</p>
-                                        {referrer.username && <p className="text-slate-500 text-xs">@{referrer.username}</p>}
+                                        <p className="text-slate-500 text-[10px] font-mono">{referrer.email}</p>
                                     </div>
                                 ) : (
                                     <span className="text-slate-500">{'—'}</span>
