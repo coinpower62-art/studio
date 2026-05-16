@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense } from "react";
@@ -181,7 +180,7 @@ function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, re
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-white font-semibold text-sm">{user?.full_name || 'Unknown User'}</p>
+              <p className="text-white font-semibold text-sm">{user?.full_name || user?.username || user?.email || 'Unknown User'}</p>
               <span className="text-slate-400 text-xs">@{user?.username || '...'}</span>
               <Badge className={`text-xs border px-1.5 py-0 ${d.status === "pending" ? "bg-yellow-900/40 text-yellow-400 border-yellow-700" : d.status === "approved" ? "bg-green-900/40 text-green-400 border-green-700" : "bg-red-900/40 text-red-400 border-red-700"}`}>{d.status}</Badge>
             </div>
@@ -800,6 +799,12 @@ function DashboardContent() {
     return null;
   }
 
+  // Helper to get a consistent display name for a user
+  const getUserDisplayName = (u: UserRecord | null | undefined) => {
+    if (!u) return '—';
+    return u.full_name || u.username || u.email || 'Unknown User';
+  };
+
   if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
   if (!admin) { router.push("/login"); return null; }
 
@@ -1011,7 +1016,7 @@ function DashboardContent() {
                       const user = users.find(u => u.id === w.user_id);
                       return (
                       <div key={w.id} className="flex items-center justify-between gap-2">
-                        <div className="min-w-0"><p className="text-white text-sm font-medium truncate">{user?.full_name || 'Unknown'}</p><p className="text-slate-400 text-xs">@{user?.username || '...'}</p></div>
+                        <div className="min-w-0"><p className="text-white text-sm font-medium truncate">{getUserDisplayName(user)}</p><p className="text-slate-400 text-xs">@{user?.username || '...'}</p></div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <span className="text-amber-400 text-sm font-bold">${w.amount.toFixed(2)}</span>
                           <Badge className="text-xs bg-yellow-900/40 text-yellow-400 border border-yellow-700 px-1.5">pending</Badge>
@@ -1126,7 +1131,7 @@ function DashboardContent() {
               ) : (
                 <div className="space-y-3">
                   {filteredUsers.map(function(u) {
-                    const nameForDisplay = u.full_name || u.username || u.email.split('@')[0] || 'Unknown User';
+                    const nameForDisplay = getUserDisplayName(u);
                     const initials = (u.full_name || u.username || u.email)?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "??";
                     const isShowingPass = showPassFor === u.id;
                     const referralLink = u.referral_code ? `https://coinpower-italy.netlify.app/signup?ref=${u.referral_code}` : null;
@@ -1236,7 +1241,7 @@ function DashboardContent() {
                             </div>
                              <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Users className="w-3 h-3"/> Referred By</p>
-                                <p className="text-slate-200 text-xs truncate font-mono">{referrer?.username || '—'}</p>
+                                <p className="text-slate-200 text-xs truncate font-mono">{getUserDisplayName(referrer)}</p>
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><ExternalLink className="w-3 h-3"/> Referral Link</p>
@@ -1328,7 +1333,7 @@ function DashboardContent() {
                       user={user}
                       onApprove={() => handleApproveDeposit(d.id, d.user_id, d.amount)}
                       onReject={() => handleRejectDeposit(d.id, d.user_id, d.amount)}
-                      onDelete={() => openConfirm("Delete Deposit Record", `Remove the deposit record for $${d.amount.toFixed(2)} from ${user?.full_name || 'user'}? This cannot be undone.`, () => handleDeleteDeposit(d.id))}
+                      onDelete={() => openConfirm("Delete Deposit Record", `Remove the deposit record for $${d.amount.toFixed(2)} from ${getUserDisplayName(user)}? This cannot be undone.`, () => handleDeleteDeposit(d.id))}
                       approvePending={false}
                       rejectPending={false}
                       copyText={copyText}
@@ -1372,7 +1377,7 @@ function DashboardContent() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-white font-semibold text-sm">{user?.full_name || 'Unknown'}</p>
+                            <p className="text-white font-semibold text-sm">{getUserDisplayName(user)}</p>
                           </div>
                           <p className="text-slate-400 text-xs">@{user?.username || '...'} · {methodLabel} · {w.country} · {dateStr}</p>
                         </div>
@@ -1455,7 +1460,7 @@ function DashboardContent() {
                                   className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-900/30 text-blue-400 border border-blue-700 hover:bg-blue-900/50 text-xs font-semibold">
                                   <RefreshCw className="w-3.5 h-3.5" /> Process
                               </button>
-                              <button onClick={() => openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? The amount will be refunded to their balance.`, () => handleRejectWithdrawal(w.id, w.user_id, w.amount))}
+                              <button onClick={() => openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${getUserDisplayName(user)}? The amount will be refunded to their balance.`, () => handleRejectWithdrawal(w.id, w.user_id, w.amount))}
                                   data-testid={`button-reject-withdrawal-${w.id}`}
                                   className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold">
                                   <XCircle className="w-3.5 h-3.5" /> Reject
@@ -1469,7 +1474,7 @@ function DashboardContent() {
                                   className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-green-900/30 text-green-400 border border-green-700 hover:bg-green-900/50 text-xs font-semibold">
                                   <CheckCircle className="w-3.5 h-3.5" /> Complete
                               </button>
-                              <button onClick={() => openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? The amount will be refunded to their balance.`, () => handleRejectWithdrawal(w.id, w.user_id, w.amount))}
+                              <button onClick={() => openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${getUserDisplayName(user)}? The amount will be refunded to their balance.`, () => handleRejectWithdrawal(w.id, w.user_id, w.amount))}
                                   data-testid={`button-reject-withdrawal-${w.id}`}
                                   className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold">
                                   <XCircle className="w-3.5 h-3.5" /> Reject
@@ -1478,7 +1483,7 @@ function DashboardContent() {
                       )}
 
                       <button
-                        onClick={() => openConfirm("Delete Withdrawal Record", `Remove the withdrawal record for $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? This cannot be undone.`, () => handleDeleteWithdrawal(w.id))}
+                        onClick={() => openConfirm("Delete Withdrawal Record", `Remove the withdrawal record for $${w.amount.toFixed(2)} from ${getUserDisplayName(user)}? This cannot be undone.`, () => handleDeleteWithdrawal(w.id))}
                         data-testid={`button-delete-withdrawal-${w.id}`}
                         className="flex items-center justify-center w-8 h-8 rounded-xl bg-red-950/40 text-red-500 border border-red-800/50 hover:bg-red-900/50 hover:text-red-300 transition-colors flex-shrink-0"
                         title="Delete record"
@@ -1532,7 +1537,7 @@ function DashboardContent() {
                           const referrer = u.parent_id ? idToUserMap.get(u.parent_id) : null;
                           return (
                           <tr key={u.id} className="hover:bg-slate-700/40 transition-colors">
-                            <td className="px-4 py-3"><p className="text-white font-medium text-sm">{u.full_name}</p><p className="text-slate-400 text-xs">@{u.username}</p></td>
+                            <td className="px-4 py-3"><p className="text-white font-medium text-sm">{getUserDisplayName(u)}</p><p className="text-slate-400 text-xs">@{u.username}</p></td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
                                 <span className="text-amber-400 font-bold font-mono text-xs bg-amber-900/30 border border-amber-700 px-2 py-0.5 rounded-lg">{u.referral_code || "—"}</span>
@@ -1543,8 +1548,8 @@ function DashboardContent() {
                             <td className="px-4 py-3">
                                 {referrer ? (
                                     <div>
-                                        <p className="text-slate-300 text-sm font-medium">{referrer.full_name}</p>
-                                        <p className="text-slate-500 text-xs">@{referrer.username}</p>
+                                        <p className="text-slate-300 text-sm font-medium">{getUserDisplayName(referrer)}</p>
+                                        {referrer.username && <p className="text-slate-500 text-xs">@{referrer.username}</p>}
                                     </div>
                                 ) : (
                                     <span className="text-slate-500">{'—'}</span>
@@ -2145,7 +2150,7 @@ function DashboardContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
           <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
             <div className="flex items-center justify-between mb-4"><h3 className="text-white font-bold">Edit User Balance</h3><button onClick={function() { return setEditingUser(null); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button></div>
-            <p className="text-slate-300 text-sm font-medium">{editingUser.full_name}</p>
+            <p className="text-slate-300 text-sm font-medium">{getUserDisplayName(editingUser)}</p>
             <p className="text-slate-500 text-xs mb-1">@{editingUser.username} · {editingUser.country}</p>
             <p className="text-green-400 text-sm mb-4">Current: ${(editingUser.balance || 0).toFixed(2)}</p>
             <div className="mb-4">
