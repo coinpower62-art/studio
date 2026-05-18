@@ -133,11 +133,11 @@ type MediaAsset = {
 // Helper to get a consistent display name for a user with robust fallbacks
 const getUserDisplayName = (u: UserRecord | null | undefined) => {
   if (!u) return '—';
-  // Use trim to catch empty strings that aren't null
   const fullName = u.full_name?.trim();
   const username = u.username?.trim();
   const email = u.email?.trim();
   
+  // Robust identity logic: Name -> Username -> Email
   return fullName || username || email || 'Unknown User';
 };
 
@@ -624,7 +624,23 @@ function DashboardContent() {
   }
 
   const handleCreateGenerator = async () => {
-    const result = await adminMutateGenerator('create', newGen);
+    if (!newGen.name) {
+      toast({ title: "Name is required", variant: "destructive" });
+      return;
+    }
+
+    // Generate a unique ID for the generator based on its name
+    const genId = newGen.name.toLowerCase()
+      .replace(/\s+/g, '-')           // Replace spaces with -
+      .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+      .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+      .replace(/^-+/, '')             // Trim - from start
+      .replace(/-+$/, '');            // Trim - from end
+    
+    // Add a random suffix to ensure it never violates the database's unique id constraint
+    const finalId = `${genId || 'gen'}-${Math.random().toString(36).substring(2, 6)}`;
+    
+    const result = await adminMutateGenerator('create', { ...newGen, id: finalId });
     if(result.error || !result.data) {
       toast({ title: "Error creating generator", description: result.error, variant: "destructive" });
     } else {
@@ -1974,7 +1990,7 @@ function DashboardContent() {
                                   <p className="text-white text-sm font-semibold mt-2">{name}</p>
                                    <div className="flex items-center justify-center gap-3 mt-1">
                                     <label htmlFor={`act-upload-${id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
-                                        {isUploading ? 'Uploading...' : 'Upload new icon'}
+                                        {isUploading ? 'Upload new icon' : 'Upload new icon'}
                                     </label>
                                     <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
                                         const file = e.target.files?.[0];
@@ -2284,7 +2300,7 @@ function DashboardContent() {
             <div className="flex gap-2 mt-5">
               <Button onClick={() => setShowCreateGen(false)} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
               <Button
-                onClick={function() { if (!newGen.name) { toast({ title: "Name is required", variant: "destructive" }); return; } handleCreateGenerator(); }}
+                onClick={handleCreateGenerator}
                 data-testid="button-save-new-generator"
                 className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold">
                 <Plus className="w-4 h-4 mr-1" /> Create Generator
