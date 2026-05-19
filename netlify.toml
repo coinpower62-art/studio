@@ -1,2 +1,6 @@
-# This file is no longer used as the project has been configured for Cloudflare Pages.
-# You can safely delete this file if you are only using Cloudflare for deployment.
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
