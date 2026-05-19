@@ -33,7 +33,9 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         return { error: 'Generator not found or is not available for rent.' };
     }
     
+    // ENFORCE LIMITS
     if (generatorToRent.id === 'pg1') {
+        // PG1 is a lifetime limit of 1
         const { count, error: countError } = await supabase
             .from('rented_generators')
             .select('*', { count: 'exact', head: true })
@@ -45,6 +47,24 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         }
         if (count && count > 0) {
             return { error: 'You can only rent the free PG1 Generator once.' };
+        }
+    } else {
+        // Other generators have an ACTIVE rental limit
+        const now = new Date().toISOString();
+        const { count: activeCount, error: activeCountError } = await supabase
+            .from('rented_generators')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('generator_id', generatorId)
+            .gt('expires_at', now);
+
+        if (activeCountError) {
+            return { error: 'Could not verify your active rentals.' };
+        }
+
+        const limit = generatorToRent.max_rentals || 1;
+        if (activeCount !== null && activeCount >= limit) {
+            return { error: `Maximum active rental limit reached (${limit}). Please wait for an existing plan to expire.` };
         }
     }
 
@@ -133,4 +153,3 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     revalidatePath('/dashboard');
     return {};
 }
-
