@@ -1,30 +1,20 @@
-# CoinPower Project
+# CoinPower Project - Netlify Configuration
 
-This is a Next.js starter app built with Supabase and shadcn/ui, configured for deployment on **Netlify**.
+This application is built with Next.js and Supabase, specifically optimized for **Netlify**.
 
-## 🚨 Troubleshooting: 'Internal Server Error'
+## 🚨 Deployment Requirements
 
-If your deployment on Netlify builds successfully but you see an "Internal Server Error," it almost always means you have not correctly set your Supabase environment variables in your Netlify Site Settings.
+To avoid "Internal Server Error" or "Not Responding" messages on your live site, you must configure the following environment variables in your Netlify dashboard:
 
-**To fix this, you must:**
-
-1.  Go to your Netlify dashboard and navigate to your Site.
-2.  Go to **Site settings** > **Environment variables**.
-3.  Add the following variables:
-    -   `NEXT_PUBLIC_SUPABASE_URL`
-    -   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-    -   `SUPABASE_SERVICE_ROLE_KEY`
-    -   `NODE_VERSION` (set to `20`)
-4.  Trigger a new deploy to apply the changes.
-
----
+1.  `NEXT_PUBLIC_SUPABASE_URL`
+2.  `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3.  `SUPABASE_SERVICE_ROLE_KEY` (Required for Admin Dashboard)
+4.  `NODE_VERSION` set to `20`
 
 ## Local Development
 
-1.  **Create a `.env.local` file** by making a copy of the `.env` file.
-2.  **Run the development server**:
-    ```bash
-    npm run dev
-    ```
+1.  Install dependencies: `npm install`
+2.  Create a `.env.local` file with your keys.
+3.  Run the development server: `npm run dev`
 
-Your app should now be running on [http://localhost:9002](http://localhost:9002).
+Your app will be available at [http://localhost:3000](http://localhost:3000).

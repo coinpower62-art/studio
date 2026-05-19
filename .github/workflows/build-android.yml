@@ -21,32 +21,28 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      # 2. Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # 2. Install the Bubblewrap CLI
-      # This is the tool that wraps your PWA into an Android app.
+      # 3. Install the Bubblewrap CLI
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      # 3. Initialize and Build the Android Project with Bubblewrap
-      # IMPORTANT: You MUST replace the placeholder value below with your app's live URL.
+      # 4. Initialize and Build the Android Project with Bubblewrap
+      # IMPORTANT: Replace the placeholder below with your live Netlify URL.
       - name: Bubblewrap Build
         run: |
-          bubblewrap init --manifest=https://YOUR_CLOUDFLARE_URL/manifest.json
+          bubblewrap init --manifest=https://YOUR_NETLIFY_APP_URL/manifest.json
           bubblewrap build --skip-signing
 
-      # 4. Decode and Store the Signing Key
-      # This step takes your signing key (stored as a secret) and makes it available for the build.
-      # You need to generate this key and add it to your repository's secrets.
+      # 5. Decode and Store the Signing Key
       - name: Decode Signing Key
         run: echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > release.keystore
 
-      # 5. Sign the App Bundle
-      # This signs your app using the key and passwords you stored in GitHub Secrets.
-      # This is a critical step for publishing on the Google Play Store.
+      # 6. Sign the App Bundle
       - name: Sign AAB
         run: |
           jarsigner -keystore release.keystore \
@@ -54,8 +50,7 @@ jobs:
                     -keypass "${{ secrets.KEY_PASSWORD }}" \
                     app-release-bundle.aab "${{ secrets.KEY_ALIAS }}"
 
-      # 6. Upload the Signed App Bundle as an Artifact
-      # This makes the final .aab file available for you to download from the GitHub Actions run page.
+      # 7. Upload the Signed App Bundle as an Artifact
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
