@@ -96,7 +96,7 @@ type RentedGeneratorRaw = {
 }
 
 const BLANK_GEN: NewGenerator = {
-  name: "", subtitle: "", icon: "⚡", color: "from-amber-400 to-orange-500",
+  name: "", subtitle: "", icon: "⚡", color: "from-amber-400 to-orange-50",
   price: 0, expire_days: 30, daily_income: 0, published: false,
   roi: "", period: "Daily", min_invest: "", max_invest: "", investors: "0",
   max_rentals: 1,
@@ -141,6 +141,8 @@ const getUserDisplayName = (u: UserRecord | null | undefined) => {
   return fullName || username || email || 'Unknown User';
 };
 
+const GHS_RATE = 10;
+
 function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, rejectPending, copyText }: {
   d: DepositRequest;
   user?: UserRecord;
@@ -167,6 +169,8 @@ function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, re
         cleanTxId = "";
     }
   }
+
+  const isGhana = user?.country === 'Ghana' || country === 'Ghana';
 
   return (
     <div data-testid={`deposit-${d.id}`} className={`bg-slate-800 rounded-2xl border p-4 flex flex-col gap-3 ${isCard && d.status === "pending" ? "border-orange-500/50" : "border-slate-700"}`}>
@@ -199,7 +203,12 @@ function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, re
           </div>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-          <span className="text-green-400 font-black text-base">${d.amount.toFixed(2)}</span>
+          <div className="text-right">
+             <span className="text-green-400 font-black text-base">${d.amount.toFixed(2)}</span>
+             {isGhana && (
+                <p className="text-amber-400 text-[11px] font-bold mt-0.5">GH₵ {(d.amount * GHS_RATE).toFixed(2)}</p>
+             )}
+          </div>
         </div>
       </div>
       
@@ -228,14 +237,6 @@ function DepositRow({ d, user, onApprove, onReject, onDelete, approvePending, re
                     <div className="flex items-center gap-1.5">
                         <p className="text-slate-200 text-xs font-mono truncate">{cleanTxId}</p>
                         <button onClick={() => copyText(cleanTxId, "Transaction ID")} className="text-slate-500 hover:text-amber-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>
-                    </div>
-                </div>
-            )}
-            {cardDetails && (
-                <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
-                    <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Info className="w-3 h-3" /> Card Info</p>
-                    <div className="flex items-center gap-1.5">
-                        <p className="text-slate-200 text-xs font-mono truncate">{cardDetails}</p>
                     </div>
                 </div>
             )}
@@ -1040,8 +1041,13 @@ function DashboardContent() {
                       <div key={w.id} className="flex items-center justify-between gap-2">
                         <div className="min-w-0"><p className="text-white text-sm font-medium truncate">{getUserDisplayName(user)}</p><p className="text-slate-400 text-xs">@{user?.username || '...'}</p></div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-amber-400 text-sm font-bold">${w.amount.toFixed(2)}</span>
-                          <Badge className="text-xs bg-yellow-900/40 text-yellow-400 border border-yellow-700 px-1.5">pending</Badge>
+                          <div className="text-right">
+                             <span className="text-amber-400 text-sm font-bold block">${w.amount.toFixed(2)}</span>
+                             {(user?.country === 'Ghana' || w.country === 'Ghana') && (
+                                <span className="text-amber-200 text-[10px] font-bold">GH₵ {(w.net_amount * GHS_RATE).toFixed(2)}</span>
+                             )}
+                          </div>
+                          <Badge className="text-xs bg-yellow-900/40 text-yellow-400 border border-yellow-700 px-1.5 h-6">pending</Badge>
                         </div>
                       </div>
                     )})}
@@ -1265,7 +1271,7 @@ function DashboardContent() {
                              <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Users className="w-3 h-3"/> Referred By</p>
                                 <div className="flex flex-col">
-                                    <p className="text-slate-200 text-xs truncate font-mono">{getUserDisplayName(referrer)}</p>
+                                    <p className="text-slate-300 text-sm font-medium truncate">{getUserDisplayName(referrer)}</p>
                                     {referrer && <p className="text-[9px] text-slate-500 truncate">{referrer.email}</p>}
                                 </div>
                             </div>
@@ -1278,29 +1284,6 @@ function DashboardContent() {
                                     {referralLink && <button onClick={() => copyText(referralLink!, "Referral link")} className="text-slate-500 hover:text-blue-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>}
                                 </div>
                             </div>
-                            {u.rented_generators && u.rented_generators.length > 0 && (
-                                <div className="bg-slate-700/50 rounded-xl p-3 sm:col-span-2">
-                                    <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-2 flex items-center gap-1"><Zap className="w-3 h-3"/> Rented Generators ({u.rented_generators.length})</p>
-                                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-2">
-                                        {u.rented_generators.map(gen => {
-                                            const isExpired = new Date(gen.expires_at).getTime() < Date.now();
-                                            const rentedDate = gen.rented_at ? new Date(gen.rented_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A';
-                                            return (
-                                                <div key={`${gen.id}-${gen.expires_at}`} className={`flex items-center justify-between text-xs p-2 rounded-lg ${isExpired ? 'bg-slate-800/50' : 'bg-green-950/30'}`}>
-                                                    <div>
-                                                        <span className={`font-semibold ${isExpired ? 'text-slate-400' : 'text-green-300'}`}>{gen.name}</span>
-                                                        <span className={`ml-2 text-[10px] ${isExpired ? 'text-slate-500' : 'text-green-400/80'}`}>Rented: {rentedDate}</span>
-                                                    </div>
-                                                    {isExpired 
-                                                        ? <Badge variant="outline" className="text-[9px] border-slate-600 text-slate-500 px-1.5 py-0">Expired</Badge>
-                                                        : <Badge className="text-[9px] bg-green-500/20 border-green-500/30 text-green-300 px-1.5 py-0">Active</Badge>
-                                                    }
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
                         </div>
 
                         <div className="flex flex-wrap gap-2">
@@ -1388,18 +1371,14 @@ function DashboardContent() {
                   const user = users.find(u => u.id === w.user_id);
                   const dateStr = new Date(w.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
                   const methodLabel = w.method === "momo" ? "MTN MOMO" : w.method === "tigo" ? "AirtelTigo" : w.method === "usdt" ? "USDT" : w.method === "card" ? "CARD" : w.method.toUpperCase();
-                  const statusColor = 
-                    w.status === "complete" ? "bg-green-900/40 text-green-400 border-green-700" 
-                    : w.status === "rejected" ? "bg-red-900/40 text-red-400 border-red-700" 
-                    : w.status === "processing" ? "bg-blue-900/40 text-blue-400 border-blue-700" 
-                    : "bg-yellow-900/40 text-yellow-400 border-yellow-700";
-
+                  const isGhana = user?.country === 'Ghana' || w.country === 'Ghana';
+                  
                   return (
                   <div key={w.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4 space-y-3">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${statusColor.replace('text-', 'bg-').replace('-400', '-900/40')}`}>
-                          <ArrowUpFromLine className={`w-5 h-5 ${statusColor.replace('bg-', 'text-').replace('border-', 'text-').replace('-900/40', '-400').replace('-700', '-400')}`} />
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${w.status === 'complete' ? 'bg-green-900/40 text-green-400' : 'bg-blue-900/40 text-blue-400'}`}>
+                          <ArrowUpFromLine className="w-5 h-5" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
@@ -1412,10 +1391,10 @@ function DashboardContent() {
                         <div className="text-right">
                             <p className="text-amber-400 font-black text-base">${w.amount.toFixed(2)}</p>
                             <p className="text-slate-400 text-xs mt-0.5">Net ${w.net_amount.toFixed(2)} + Fee ${w.fee.toFixed(2)}</p>
-                            {w.country === 'Ghana' && (
+                            {isGhana && (
                               <div className="mt-2 text-green-300 bg-green-900/50 border border-green-700/50 rounded-lg p-2 text-center">
                                 <p className="text-[10px] font-bold uppercase tracking-wide text-green-400">Amount to Pay</p>
-                                <p className="text-lg font-black text-green-300">GH₵{(w.net_amount * 10).toFixed(2)}</p>
+                                <p className="text-lg font-black text-green-300">GH₵ {(w.net_amount * GHS_RATE).toFixed(2)}</p>
                               </div>
                             )}
                         </div>
@@ -1433,21 +1412,12 @@ function DashboardContent() {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 bg-slate-700/50 rounded-xl p-3">
                                         {Object.entries(detailsObj).map(([key, value]) => {
                                             const lKey = key.toLowerCase();
-                                            // Security: Don't show sensitive card details
                                             if (w.method === 'card' && (lKey === 'cvv' || lKey === 'cvvvisible')) return null;
-                                            
-                                            // Don't show internal flags
                                             if (lKey === 'cvvvisible') return null;
-
                                             if (typeof value !== 'string' && typeof value !== 'number') return null;
-                                            
-                                            const displayValue = lKey === 'number' && w.method === 'card'
-                                                ? String(value).replace(/\d{4}(?=\d{4})/g, "•••• ")
-                                                : String(value);
-
+                                            const displayValue = lKey === 'number' && w.method === 'card' ? String(value).replace(/\d{4}(?=\d{4})/g, "•••• ") : String(value);
                                             const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
                                             const isCopyable = ['name', 'holder', 'number', 'phone', 'address'].some(k => lKey.includes(k));
-
                                             return (
                                                 <div key={key}>
                                                     <p className="text-slate-400 text-[10px] uppercase tracking-wide flex items-center gap-1">

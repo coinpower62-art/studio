@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useCallback, Suspense } from "react";
@@ -48,6 +47,7 @@ function isCardExpired(expiry: string): boolean {
 const DEPOSIT_PHONE = "+233548304717";
 const DEPOSIT_NAME = "Patience Opoku";
 const COUNTDOWN_SECONDS = 5 * 60;
+const GHS_RATE = 10; // 1 USD = 10 GHS
 
 type Profile = {
   balance: number;
@@ -280,7 +280,6 @@ export default function BankPage() {
     
     const { data: profileData, error: profileError } = profileResult;
     if (profileError) {
-      // This case should be handled by the layout's self-healing now
       console.error('BankPage: Profile fetch failed');
     }
     setProfile(profileData as Profile | null);
@@ -928,7 +927,7 @@ export default function BankPage() {
                 </div>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 space-y-1">
                   <p className="text-blue-800 text-xs leading-relaxed font-medium">
-                    <span className="font-bold">Exchange Rate:</span> $1 USD = 10 GHS.
+                    <span className="font-bold">Exchange Rate:</span> $1 USD = {GHS_RATE} GHS.
                   </p>
                   <p className="text-blue-800 text-xs leading-relaxed font-medium">
                     <span className="font-bold">Remember your bonus:</span> Your $1 welcome bonus is already in your balance. To rent a $25 generator, you only need to deposit $24 (which is 240 GHS).
@@ -1096,6 +1095,14 @@ export default function BankPage() {
                     data-testid="input-amount" placeholder="0.00" min="0" step="0.01"
                     className="pl-7 h-11 border-gray-200 focus:border-green-400 text-lg font-semibold" />
                 </div>
+                
+                {parseFloat(amount) > 0 && (depositMethod === 'momo' || depositCountry === 'Ghana') && (
+                  <div className="mt-2 bg-green-50 border border-green-200 rounded-xl p-3 flex items-center justify-between">
+                    <p className="text-green-800 text-xs font-bold uppercase tracking-wide">Amount in Cedis</p>
+                    <p className="text-green-700 font-black text-base">GH₵ {(parseFloat(amount) * GHS_RATE).toFixed(2)}</p>
+                  </div>
+                )}
+
                 <div className="flex gap-2 mt-2 flex-wrap">
                   {quickAmounts.map(function(q) {
                     return (
@@ -1337,7 +1344,12 @@ export default function BankPage() {
                   </div>
                   <div className="flex justify-between pt-2 border-t border-gray-200">
                     <span className="font-bold text-gray-800">You will receive</span>
-                    <span className="font-bold text-green-600">${(parseFloat(amount) * 0.85).toFixed(2)}</span>
+                    <div className="text-right">
+                        <span className="font-bold text-green-600 block">${(parseFloat(amount) * 0.85).toFixed(2)}</span>
+                        {(withdrawMethod === 'momo' || profile.country === 'Ghana') && (
+                            <span className="font-black text-amber-600 text-sm">GH₵ {(parseFloat(amount) * 0.85 * GHS_RATE).toFixed(2)}</span>
+                        )}
+                    </div>
                   </div>
                 </div>
               )}
