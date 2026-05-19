@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "navigation";
+import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { Generator } from '@/lib/data';
 import { Zap, TrendingUp, Clock, Star, Users, Shield, CheckCircle, AlertCircle, Timer, Wallet, ArrowDownToLine, LogOut } from "lucide-react";
@@ -157,12 +157,18 @@ export default function Market() {
   if (isLoading || !profile) return <MarketPageSkeleton />;
 
   const now = Date.now();
-  const activeRentedCounts = new Map<string, number>();
-  rentedGenerators.filter(function(ug: RentedGenerator) { return new Date(ug.expires_at).getTime() > now; }).forEach(function(ug: RentedGenerator) {
-    activeRentedCounts.set(ug.generator_id, (activeRentedCounts.get(ug.generator_id) || 0) + 1);
-  });
   
-  const hasEverRentedPg1 = rentedGenerators.some(g => g.generator_id === 'pg1');
+  // Track active rentals for active-limit generators (PG3+)
+  const activeRentedCounts = new Map<string, number>();
+  // Track total rentals for lifetime-limit generators (PG1, PG2)
+  const totalRentedCounts = new Map<string, number>();
+
+  rentedGenerators.forEach(function(ug: RentedGenerator) {
+    totalRentedCounts.set(ug.generator_id, (totalRentedCounts.get(ug.generator_id) || 0) + 1);
+    if (new Date(ug.expires_at).getTime() > now) {
+        activeRentedCounts.set(ug.generator_id, (activeRentedCounts.get(ug.generator_id) || 0) + 1);
+    }
+  });
 
   const colorMap: Record<string, { bg: string; border: string; badge: string; badgeText: string; gradS: string; gradE: string; badgeLabel: string }> = {
     "from-amber-400 to-orange-500": { bg: "from-amber-50 to-orange-50", border: "border-amber-200", badge: "bg-amber-100", badgeText: "text-amber-700", gradS: "#f59e0b", gradE: "#f97316", badgeLabel: "Popular" },
@@ -191,18 +197,20 @@ export default function Market() {
 
         {publishedGenerators.map((gen) => {
           const cm = colorMap[gen.color] || colorMap["from-amber-400 to-orange-500"];
-          const rentedCount = activeRentedCounts.get(gen.id) || 0;
           
           let isMaxed = false;
           if (gen.id === 'pg1') {
-              isMaxed = hasEverRentedPg1;
+              // PG1: Lifetime limit of 1
+              isMaxed = (totalRentedCounts.get('pg1') || 0) >= 1;
           } else if (gen.id === 'pg2') {
-              isMaxed = rentedCount >= 2;
+              // PG2: Lifetime limit of 2 (cannot rent again even if expired)
+              isMaxed = (totalRentedCounts.get('pg2') || 0) >= 2;
           } else {
-              isMaxed = rentedCount >= 1;
+              // PG3+: Active limit of 1 (can rent again after expiry)
+              isMaxed = (activeRentedCounts.get(gen.id) || 0) >= 1;
           }
 
-          const isRented = rentedCount > 0;
+          const isActiveRented = (activeRentedCounts.get(gen.id) || 0) > 0;
 
           return (
             <div key={gen.id} data-testid={'card-generator-' + gen.id}
@@ -275,10 +283,10 @@ export default function Market() {
                     {isRenting === gen.id ? "Processing..." : gen.price === 0 ? "Activate Free Plan" : `Rent ${gen.name} — $${gen.price.toLocaleString()}`}
                   </Button>
                   
-                  {isRented && (
+                  {isActiveRented && (
                     <Button variant="outline" onClick={() => router.push("/dashboard/power")}
                       className="w-full rounded-xl h-10 text-xs font-bold border-amber-300 text-amber-700 hover:bg-amber-50 flex items-center gap-1.5 justify-center">
-                      <Zap className="w-3.5 h-3.5" /> View Active Plan ({rentedCount})
+                      <Zap className="w-3.5 h-3.5" /> View Active Plan ({activeRentedCounts.get(gen.id)})
                     </Button>
                   )}
                 </div>

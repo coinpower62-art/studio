@@ -36,7 +36,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     const now = new Date().toISOString();
 
     if (generatorToRent.id === 'pg1') {
-        // PG1 is a lifetime limit of 1
+        // PG1 is a LIFETIME limit of 1
         const { count, error: countError } = await supabase
             .from('rented_generators')
             .select('*', { count: 'exact', head: true })
@@ -44,22 +44,21 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
             .eq('generator_id', 'pg1');
 
         if (countError) return { error: 'Could not verify your existing generators.' };
-        if (count && count > 0) return { error: 'You can only rent the free PG1 Generator once.' };
+        if (count && count > 0) return { error: 'You have already used your free PG1 Generator activation.' };
     } else if (generatorToRent.id === 'pg2') {
-        // PG2 has an ACTIVE rental limit of 2
-        const { count: activeCount, error: activeCountError } = await supabase
+        // PG2 has a LIFETIME rental limit of 2 (Requested: cannot rent again even after expiry)
+        const { count: totalCount, error: totalCountError } = await supabase
             .from('rented_generators')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user.id)
-            .eq('generator_id', 'pg2')
-            .gt('expires_at', now);
+            .eq('generator_id', 'pg2');
 
-        if (activeCountError) return { error: 'Could not verify your active rentals.' };
-        if (activeCount !== null && activeCount >= 2) {
-            return { error: 'You already have 2 active PG2 plans. Please wait for one to expire.' };
+        if (totalCountError) return { error: 'Could not verify your rental history.' };
+        if (totalCount !== null && totalCount >= 2) {
+            return { error: 'You have reached the lifetime limit for PG2 rentals (Max 2).' };
         }
     } else {
-        // All others (PG3, PG4, PG5, etc.) have an ACTIVE rental limit of 1
+        // PG3, PG4, PG5, etc. have an ACTIVE rental limit of 1
         const { count: activeCount, error: activeCountError } = await supabase
             .from('rented_generators')
             .select('*', { count: 'exact', head: true })
@@ -69,7 +68,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
 
         if (activeCountError) return { error: 'Could not verify your active rentals.' };
         if (activeCount !== null && activeCount >= 1) {
-            return { error: 'You already have an active plan for this generator. You can rent it again once the current one expires.' };
+            return { error: 'You already have an active plan for this generator tier.' };
         }
     }
 
