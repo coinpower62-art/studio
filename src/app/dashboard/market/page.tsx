@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "navigation";
+import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { Generator } from '@/lib/data';
 import { Zap, TrendingUp, Clock, Star, Users, Shield, CheckCircle, AlertCircle, Timer, Wallet, ArrowDownToLine, LogOut } from "lucide-react";
@@ -161,6 +161,7 @@ export default function Market() {
   rentedGenerators.filter(function(ug: RentedGenerator) { return new Date(ug.expires_at).getTime() > now; }).forEach(function(ug: RentedGenerator) {
     activeRentedCounts.set(ug.generator_id, (activeRentedCounts.get(ug.generator_id) || 0) + 1);
   });
+  
   const hasEverRentedPg1 = rentedGenerators.some(g => g.generator_id === 'pg1');
 
   const colorMap: Record<string, { bg: string; border: string; badge: string; badgeText: string; gradS: string; gradE: string; badgeLabel: string }> = {
@@ -191,14 +192,21 @@ export default function Market() {
         {publishedGenerators.map((gen) => {
           const cm = colorMap[gen.color] || colorMap["from-amber-400 to-orange-500"];
           const rentedCount = activeRentedCounts.get(gen.id) || 0;
-          const maxRentals = gen.max_rentals ?? 1;
-          const isMaxed = gen.id === 'pg1' ? hasEverRentedPg1 : rentedCount >= maxRentals;
+          
+          let isMaxed = false;
+          if (gen.id === 'pg1') {
+              isMaxed = hasEverRentedPg1;
+          } else if (gen.id === 'pg2') {
+              isMaxed = rentedCount >= 2;
+          } else {
+              isMaxed = rentedCount >= 1;
+          }
+
           const isRented = rentedCount > 0;
-          const activeUg = rentedGenerators.find(ug => ug.generator_id === gen.id && new Date(ug.expires_at).getTime() > now);
 
           return (
             <div key={gen.id} data-testid={'card-generator-' + gen.id}
-              className={'bg-white rounded-2xl border-2 mb-6 ' + cm.border + ' shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden ' + (isMaxed ? "ring-2 ring-amber-400 ring-offset-2" : "")}>
+              className={'bg-white rounded-2xl border-2 mb-6 ' + cm.border + ' shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden'}>
 
               <div className={'bg-gradient-to-r ' + cm.bg + ' p-4 sm:p-5 border-b ' + cm.border}>
                 <div className="flex items-center justify-between mb-3">
@@ -210,11 +218,6 @@ export default function Market() {
                     <span className={'text-xs font-semibold px-2 py-1 rounded-full ' + cm.badge + ' ' + cm.badgeText}>
                       {cm.badgeLabel}
                     </span>
-                    {isMaxed && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 flex items-center gap-1 border border-amber-200 uppercase">
-                        <CheckCircle className="w-2.5 h-2.5" /> Max Reached ({rentedCount})
-                      </span>
-                    )}
                   </div>
                 </div>
 
@@ -265,11 +268,11 @@ export default function Market() {
                     disabled={isRenting === gen.id || isMaxed}
                     className={`w-full h-11 font-black rounded-xl shadow-md transition-all flex items-center gap-2 justify-center text-sm ${
                       isMaxed 
-                      ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed" 
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed" 
                       : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
                     }`}
                   >
-                    {isRenting === gen.id ? "Processing..." : isMaxed ? "Limit Reached" : gen.price === 0 ? "Activate Free Plan" : `Rent ${gen.name} — $${gen.price.toLocaleString()}`}
+                    {isRenting === gen.id ? "Processing..." : gen.price === 0 ? "Activate Free Plan" : `Rent ${gen.name} — $${gen.price.toLocaleString()}`}
                   </Button>
                   
                   {isRented && (

@@ -33,6 +33,8 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     }
     
     // --- ENFORCE STRICT RENTAL LIMITS ---
+    const now = new Date().toISOString();
+
     if (generatorToRent.id === 'pg1') {
         // PG1 is a lifetime limit of 1
         const { count, error: countError } = await supabase
@@ -41,15 +43,23 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
             .eq('user_id', user.id)
             .eq('generator_id', 'pg1');
 
-        if (countError) {
-             return { error: 'Could not verify your existing generators.' };
-        }
-        if (count && count > 0) {
-            return { error: 'You can only rent the free PG1 Generator once.' };
+        if (countError) return { error: 'Could not verify your existing generators.' };
+        if (count && count > 0) return { error: 'You can only rent the free PG1 Generator once.' };
+    } else if (generatorToRent.id === 'pg2') {
+        // PG2 has an ACTIVE rental limit of 2
+        const { count: activeCount, error: activeCountError } = await supabase
+            .from('rented_generators')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('generator_id', 'pg2')
+            .gt('expires_at', now);
+
+        if (activeCountError) return { error: 'Could not verify your active rentals.' };
+        if (activeCount !== null && activeCount >= 2) {
+            return { error: 'You already have 2 active PG2 plans. Please wait for one to expire.' };
         }
     } else {
-        // Other generators (like PG2) have an ACTIVE rental limit
-        const now = new Date().toISOString();
+        // All others (PG3, PG4, PG5, etc.) have an ACTIVE rental limit of 1
         const { count: activeCount, error: activeCountError } = await supabase
             .from('rented_generators')
             .select('*', { count: 'exact', head: true })
@@ -57,13 +67,9 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
             .eq('generator_id', generatorId)
             .gt('expires_at', now);
 
-        if (activeCountError) {
-            return { error: 'Could not verify your active rentals.' };
-        }
-
-        const limit = generatorToRent.max_rentals || 1;
-        if (activeCount !== null && activeCount >= limit) {
-            return { error: `You have reached the maximum limit of ${limit} active ${generatorToRent.name} plans. Please wait for one to expire before renting again.` };
+        if (activeCountError) return { error: 'Could not verify your active rentals.' };
+        if (activeCount !== null && activeCount >= 1) {
+            return { error: 'You already have an active plan for this generator. You can rent it again once the current one expires.' };
         }
     }
 
