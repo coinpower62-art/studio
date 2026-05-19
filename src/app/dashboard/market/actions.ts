@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -33,7 +32,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         return { error: 'Generator not found or is not available for rent.' };
     }
     
-    // ENFORCE LIMITS
+    // --- ENFORCE STRICT RENTAL LIMITS ---
     if (generatorToRent.id === 'pg1') {
         // PG1 is a lifetime limit of 1
         const { count, error: countError } = await supabase
@@ -49,7 +48,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
             return { error: 'You can only rent the free PG1 Generator once.' };
         }
     } else {
-        // Other generators have an ACTIVE rental limit
+        // Other generators (like PG2) have an ACTIVE rental limit
         const now = new Date().toISOString();
         const { count: activeCount, error: activeCountError } = await supabase
             .from('rented_generators')
@@ -64,7 +63,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
 
         const limit = generatorToRent.max_rentals || 1;
         if (activeCount !== null && activeCount >= limit) {
-            return { error: `Maximum active rental limit reached (${limit}). Please wait for an existing plan to expire.` };
+            return { error: `You have reached the maximum limit of ${limit} active ${generatorToRent.name} plans. Please wait for one to expire before renting again.` };
         }
     }
 
@@ -102,7 +101,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         return { error: 'Could not rent the generator. Your balance has not been changed.' };
     }
     
-    // START: 3-Level Referral Commission Logic
+    // 3-Level Referral Commission Logic
     if (generatorToRent.price > 0 && profile.parent_id) {
         const commissionRates = [0.10, 0.05, 0.02]; // L1, L2, L3
         let currentParentId: string | null = profile.parent_id;
@@ -116,37 +115,29 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
                 .eq('id', currentParentId)
                 .single();
             
-            if (referrerError || !referrer) {
-                console.error(`Commission Error: Could not find referrer at level ${level + 1}. Parent ID: ${currentParentId}`);
-                break;
-            }
+            if (referrerError || !referrer) break;
 
             const commission = generatorToRent.price * commissionRates[level];
             
-            // Use RPC to atomically update balance to prevent race conditions
-            const { error: updateReferrerError } = await supabase.rpc('increment_balance', {
+            // Atomically update balance
+            await supabase.rpc('increment_balance', {
                 user_id_in: referrer.id,
                 amount_in: commission
             });
 
-            if (updateReferrerError) {
-                console.error(`Failed to apply L${level + 1} commission for user ${referrer.id}:`, updateReferrerError.message);
-            } else {
-                 // Log commission payment for record-keeping
-                await supabase.from('gift_codes').insert({
-                    code: `COMM-L${level+1}-${user.id.slice(0,4)}-${generatorToRent.id}`,
-                    amount: commission,
-                    note: `${commissionRates[level]*100}% L${level+1} comm from ${profile.username || profile.email} renting ${generatorToRent.name}`,
-                    is_redeemed: true,
-                    redeemed_at: new Date().toISOString(),
-                    redeemed_by_user_id: referrer.id
-                });
-            }
+            // Log commission payment
+            await supabase.from('gift_codes').insert({
+                code: `COMM-L${level+1}-${user.id.slice(0,4)}-${generatorToRent.id}`,
+                amount: commission,
+                note: `${commissionRates[level]*100}% L${level+1} comm from ${profile.username || profile.email} renting ${generatorToRent.name}`,
+                is_redeemed: true,
+                redeemed_at: new Date().toISOString(),
+                redeemed_by_user_id: referrer.id
+            });
 
-            currentParentId = referrer.parent_id; // Move to the next level up
+            currentParentId = referrer.parent_id;
         }
     }
-    // END: Referral Commission Logic
     
     revalidatePath('/dashboard/market');
     revalidatePath('/dashboard/power');
