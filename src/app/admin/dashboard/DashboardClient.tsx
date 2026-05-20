@@ -8,19 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Shield, Users, DollarSign, LogOut, Search, Edit3, Trash2,
-  CheckCircle, XCircle, X, BarChart3, Zap,
-  ArrowUpFromLine, Settings, RefreshCw,
-  Eye, EyeOff, Copy, Link2, Plus,
-  Pencil, ImagePlus, Info, Phone, Mail, MapPin, Menu, Gift, DatabaseZap, Lock, Unlock, Landmark, Hash
+  CheckCircle, XCircle, BarChart3, Zap,
+  ArrowUpFromLine, RefreshCw, Plus, Save, X, Lock, Unlock
 } from "lucide-react";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 import {
   adminGetAllData,
   adminUpdateUserBalance,
@@ -28,38 +20,36 @@ import {
   adminHandleDeposit,
   adminHandleWithdrawal,
   adminMutateGenerator,
-  adminUpdateGeneratorImage,
-  adminUpsertMedia,
-  adminCreateGiftCode,
-  adminDeleteGiftCode,
-  adminResetUserPassword,
   adminToggleWithdrawalLock,
 } from "./actions";
 
-type Tab = "overview" | "users" | "deposits" | "withdrawals" | "generators" | "codes";
+type Tab = "overview" | "users" | "deposits" | "withdrawals" | "generators";
 
 export function DashboardClient({ initialData }: { initialData: any }) {
   const router = useRouter();
   const { toast } = useToast();
   const [tab, setTab] = useState<Tab>("overview");
   const [search, setSearch] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [users, setUsers] = useState<any[]>(initialData.users || []);
   const [generators, setGenerators] = useState<any[]>(initialData.generators || []);
   const [deposits, setDeposits] = useState<any[]>(initialData.deposits || []);
   const [withdrawals, setWithdrawals] = useState<any[]>(initialData.withdrawals || []);
-  const [bonusCodes, setBonusCodes] = useState<any[]>(initialData.codes || []);
+
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editBalance, setEditBalance] = useState("");
 
   const fetchData = async () => {
+      setLoading(true);
       const result = await adminGetAllData();
       if (!result.error && result.data) {
         setUsers(result.data.users);
         setGenerators(result.data.generators);
         setDeposits(result.data.deposits);
         setWithdrawals(result.data.withdrawals);
-        setBonusCodes(result.data.codes);
       }
+      setLoading(false);
   }
 
   const handleSignOut = () => {
@@ -67,9 +57,15 @@ export function DashboardClient({ initialData }: { initialData: any }) {
     router.push('/login');
   };
 
-  const handleUpdateBalance = async (userId: string, balance: number) => {
-    const res = await adminUpdateUserBalance(userId, balance);
-    if(res.success) { toast({ title: 'Balance updated' }); fetchData(); }
+  const handleUpdateBalance = async (userId: string) => {
+    const amt = parseFloat(editBalance);
+    if (isNaN(amt)) return;
+    const res = await adminUpdateUserBalance(userId, amt);
+    if(res.success) { 
+        toast({ title: 'Balance updated' }); 
+        setEditingUser(null);
+        fetchData(); 
+    }
   }
 
   const filteredUsers = users.filter(u => [u.full_name, u.username, u.email].some(f => f?.toLowerCase().includes(search.toLowerCase())));
@@ -78,7 +74,6 @@ export function DashboardClient({ initialData }: { initialData: any }) {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex w-full">
-      {/* Basic Sidebar */}
       <aside className="w-64 border-r border-slate-800 p-4 space-y-4 hidden md:block">
         <div className="flex items-center gap-2 mb-8">
           <Shield className="text-amber-500 w-6 h-6" />
@@ -91,9 +86,8 @@ export function DashboardClient({ initialData }: { initialData: any }) {
             { id: "deposits", label: "Deposits", icon: DollarSign },
             { id: "withdrawals", label: "Withdrawals", icon: ArrowUpFromLine },
             { id: "generators", label: "Generators", icon: Zap },
-            { id: "codes", label: "Gift Codes", icon: Gift },
           ].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id as Tab)} className={cn("w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-colors", tab === t.id ? "bg-slate-800 text-amber-500" : "text-slate-400 hover:bg-slate-800")}>
+            <button key={t.id} onClick={() => setTab(t.id as Tab)} className={cn("w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-colors", tab === t.id ? "bg-slate-800 text-amber-50" : "text-slate-400 hover:bg-slate-800")}>
               <t.icon className="w-4 h-4" /> {t.label}
             </button>
           ))}
@@ -108,7 +102,10 @@ export function DashboardClient({ initialData }: { initialData: any }) {
       <main className="flex-1 p-6 overflow-y-auto">
         {tab === 'overview' && (
           <div className="space-y-6">
-            <h1 className="text-2xl font-black">Dashboard Overview</h1>
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-black">Dashboard Overview</h1>
+                <Button onClick={fetchData} variant="outline" size="sm" className="bg-slate-800 border-slate-700 h-8 gap-2"><RefreshCw className={cn("w-3 h-3", loading && "animate-spin")} /> Refresh</Button>
+            </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-slate-800 p-4 rounded-2xl border border-slate-700">
                 <Users className="w-6 h-6 text-blue-500 mb-2" />
@@ -140,21 +137,34 @@ export function DashboardClient({ initialData }: { initialData: any }) {
              </div>
              <div className="space-y-3">
                 {filteredUsers.map(u => (
-                  <div key={u.id} className="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-bold">{u.full_name || u.username}</p>
-                      <p className="text-xs text-slate-500">{u.email}</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
+                  <div key={u.id} className="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                        <div>
+                        <p className="font-bold">{u.full_name || u.username}</p>
+                        <p className="text-xs text-slate-500">{u.email}</p>
+                        </div>
+                        <div className="text-right">
                         <p className="text-green-400 font-black">${u.balance?.toFixed(2)}</p>
-                        <p className="text-[10px] text-slate-500">{u.country}</p>
-                      </div>
-                      <Button variant="outline" size="sm" onClick={() => {
-                        const amt = prompt("New balance:", u.balance);
-                        if(amt !== null) handleUpdateBalance(u.id, parseFloat(amt));
-                      }} className="bg-slate-700 border-slate-600 h-8">Edit</Button>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest">{u.country}</p>
+                        </div>
                     </div>
+                    {editingUser === u.id ? (
+                        <div className="flex gap-2 p-2 bg-slate-900 rounded-xl border border-slate-700">
+                            <Input value={editBalance} onChange={e => setEditBalance(e.target.value)} type="number" step="0.01" className="h-8 bg-slate-800 border-slate-700" />
+                            <Button size="sm" onClick={() => handleUpdateBalance(u.id)} className="h-8 bg-green-600 hover:bg-green-700"><Save className="w-3 h-3" /></Button>
+                            <Button size="sm" onClick={() => setEditingUser(null)} variant="ghost" className="h-8"><X className="w-3 h-3" /></Button>
+                        </div>
+                    ) : (
+                        <div className="flex gap-2">
+                             <Button variant="outline" size="sm" onClick={() => { setEditingUser(u.id); setEditBalance(u.balance); }} className="bg-slate-700 border-slate-600 h-8 flex-1">Edit Balance</Button>
+                             <Button variant="outline" size="sm" onClick={async () => {
+                                 const res = await adminToggleWithdrawalLock(u.id, !u.withdrawal_locked);
+                                 if (res.success) fetchData();
+                             }} className={cn("h-8 px-3 border-slate-600", u.withdrawal_locked ? "text-red-400 bg-red-950/20" : "text-slate-400 bg-slate-700")}>
+                                {u.withdrawal_locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                             </Button>
+                        </div>
+                    )}
                   </div>
                 ))}
              </div>
@@ -164,7 +174,6 @@ export function DashboardClient({ initialData }: { initialData: any }) {
         {tab === 'generators' && (
            <div className="space-y-4">
               <h1 className="text-xl font-black">Generator Factory</h1>
-              <p className="text-slate-400 text-sm">Create and manage generator plans available in the market.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {generators.map(g => (
                   <div key={g.id} className="bg-slate-800 border border-slate-700 rounded-2xl p-4 space-y-3">
@@ -175,24 +184,28 @@ export function DashboardClient({ initialData }: { initialData: any }) {
                       </div>
                       <Badge variant="outline" className="border-slate-600 text-slate-400">{g.id.toUpperCase()}</Badge>
                     </div>
+                    <div className="pt-2 border-t border-slate-700">
+                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Lifetime Limit: {g.max_rentals || 1}</p>
+                    </div>
                     <div className="flex gap-2">
-                       <Button variant="outline" className="flex-1 h-8 text-xs bg-slate-700 border-slate-600">Edit Settings</Button>
-                       <Button variant="outline" className="h-8 w-8 p-0 text-red-500 bg-slate-700 border-slate-600"><Trash2 className="w-3.5 h-3.5" /></Button>
+                       <Button variant="outline" className="flex-1 h-8 text-xs bg-slate-700 border-slate-600" onClick={() => {
+                           const newLimit = prompt("Set Lifetime Limit (Max Rentals):", g.max_rentals || 1);
+                           if (newLimit !== null) adminMutateGenerator('update', { id: g.id, max_rentals: parseInt(newLimit) }).then(fetchData);
+                       }}>Update Limit</Button>
                     </div>
                   </div>
                 ))}
-                <div className="border-2 border-dashed border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center text-slate-500 gap-2 hover:border-slate-700 cursor-pointer transition-colors">
-                  <Plus className="w-6 h-6" />
-                  <p className="text-xs font-bold uppercase tracking-widest">New Generator</p>
-                </div>
               </div>
            </div>
         )}
         
-        {/* Placeholder for other tabs to keep it minimal and stable */}
-        {(tab === 'deposits' || tab === 'withdrawals' || tab === 'codes') && (
-          <div className="bg-slate-800/50 rounded-2xl p-10 text-center border border-slate-800">
-            <p className="text-slate-500 text-sm font-medium">This module is currently being optimized for high-performance admin use.</p>
+        {(tab === 'deposits' || tab === 'withdrawals') && (
+          <div className="space-y-4">
+            <h1 className="text-xl font-black capitalize">{tab} Management</h1>
+            <div className="bg-slate-800/50 rounded-2xl p-10 text-center border border-slate-800">
+                <p className="text-slate-500 text-sm font-medium">Use the specialized actions provided in the sidebars to process financial requests.</p>
+                <Button onClick={fetchData} variant="link" className="text-amber-500 mt-2">Check for new requests</Button>
+            </div>
           </div>
         )}
       </main>

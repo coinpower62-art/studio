@@ -13,7 +13,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('balance, parent_id, username, email')
+        .select('balance')
         .eq('id', user.id)
         .single();
 
@@ -39,17 +39,17 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         .eq('user_id', user.id)
         .eq('generator_id', generatorId);
 
-    // PG2: Max 2 Lifetime
+    // PG2: Strict Lifetime Limit of 2
     if (generatorId === 'pg2' && lifetimeCount !== null && lifetimeCount >= 2) {
-        return { error: 'Limit reached: You can only rent PG2 generators twice in total.' };
+        return { error: 'Account limit reached: You cannot rent the PG2 generator more than 2 times in total.' };
     }
 
     // PG1: Max 1 Lifetime (Free Trial)
     if (generatorId === 'pg1' && lifetimeCount !== null && lifetimeCount >= 1) {
-        return { error: 'Limit reached: You can only use the PG1 Free Trial once.' };
+        return { error: 'Trial Used: The free trial can only be activated once.' };
     }
 
-    // Default limit check for other tiers (Active Limit 1)
+    // Other tiers: Active Limit of 1 (cannot have two active at same time)
     const now = new Date().toISOString();
     const { count: activeCount } = await supabase
         .from('rented_generators')

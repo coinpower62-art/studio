@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, TrendingUp, Wallet, Clock, Shield, Timer } from "lucide-react";
+import { Zap, Wallet, Shield, Timer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -99,7 +99,7 @@ export default function Market() {
             <div key={gen.id} className={cn(
                 "bg-white rounded-3xl border-2 p-5 shadow-sm space-y-4 transition-all duration-300",
                 isMaxed 
-                  ? "border-gray-200 opacity-80 cursor-default" 
+                  ? "border-gray-200 opacity-60 grayscale cursor-default" 
                   : "border-amber-200 hover:shadow-xl hover:border-amber-400 hover:-translate-y-1"
             )}>
               <div className="flex justify-between items-start">
@@ -113,7 +113,7 @@ export default function Market() {
               </div>
 
               <div className="aspect-video bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center p-4">
-                <img src={gen.image_url || PlaceHolderImages.find(i => i.id === `gen-${gen.id}`)?.imageUrl} alt={gen.name} className={cn("w-full h-full object-contain", isMaxed && "grayscale opacity-50")} />
+                <img src={gen.image_url || PlaceHolderImages.find(i => i.id === `gen-${gen.id}`)?.imageUrl} alt={gen.name} className={cn("w-full h-full object-contain", isMaxed && "opacity-50")} />
               </div>
 
               <div className="grid grid-cols-3 gap-2">
@@ -123,7 +123,7 @@ export default function Market() {
               </div>
 
               {isMaxed ? (
-                <div className="w-full h-12 bg-gray-100 border border-gray-200 text-gray-500 rounded-2xl flex items-center justify-center font-bold text-sm gap-2">
+                <div className="w-full h-12 bg-gray-100 border border-gray-200 text-gray-400 rounded-2xl flex items-center justify-center font-bold text-sm gap-2">
                   <Shield className="w-4 h-4" /> {lockLabel}
                 </div>
               ) : (
