@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import {
-  Landmark, ArrowDownToLine, ArrowUpFromLine, Wallet, Clock,
-  CheckCircle, Copy, Smartphone, Coins, X, Info
+  Landmark, Wallet, CheckCircle, Info, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,22 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { createDepositRequest, createWithdrawalRequest } from "./actions";
-
-function WithdrawalStatusStepper({ status }: { status: "pending" | "processing" | "complete" | "rejected" }) {
-    const stages = [{ id: "pending", label: "Pending" }, { id: "processing", label: "Processing" }, { id: "complete", label: "Complete" }];
-    if (status === 'rejected') return <div className="text-red-600 text-xs font-bold py-2">Rejected</div>;
-    const currentIdx = stages.findIndex(s => s.id === status);
-    return (
-        <div className="flex items-center gap-2 mt-2 w-full">
-            {stages.map((s, i) => (
-                <div key={s.id} className="flex flex-1 items-center gap-1.5">
-                    {i <= currentIdx ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <div className="w-3.5 h-3.5 rounded-full border border-gray-300" />}
-                    <span className={`text-[10px] ${i <= currentIdx ? "text-gray-900" : "text-gray-400"}`}>{s.label}</span>
-                </div>
-            ))}
-        </div>
-    );
-}
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function BankPage() {
   const router = useRouter();
@@ -41,10 +25,8 @@ export default function BankPage() {
   const [method, setMethod] = useState("");
   const [details, setDetails] = useState("");
   const [depositTxId, setDepositTxId] = useState("");
-  const [depositSuccess, setDepositSuccess] = useState(false);
-  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
-  const [depositRecords, setDepositRecords] = useState<any[]>([]);
-  const [withdrawRecords, setWithdrawRecords] = useState<any[]>([]);
+  const [success, setSuccess] = useState(false);
+  const [records, setRecords] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchData = useCallback(async function() {
@@ -53,185 +35,126 @@ export default function BankPage() {
     if (!user) { router.push('/login'); return; }
 
     const [pRes, dRes, wRes] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', user.id).single(),
+        supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
         supabase.from('deposit_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('withdrawal_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
     ]);
     
     setProfile(pRes.data);
-    setDepositRecords(dRes.data || []);
-    setWithdrawRecords(wRes.data || []);
+    setRecords([...(dRes.data || []), ...(wRes.data || [])].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
     setLoading(false);
   }, [router, supabase]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleDepositSubmit = async () => {
-    if (!amount || !depositTxId) return;
+  const handleSubmit = async () => {
+    if (!amount) return;
     setIsSubmitting(true);
-    const res = await createDepositRequest({
-        amount: parseFloat(amount),
-        txId: depositTxId,
-        method: method || 'MTN MOMO',
-        country: profile.country || 'Ghana'
-    });
+    let res;
+    if (mode === 'deposit') {
+        res = await createDepositRequest({ amount: parseFloat(amount), txId: depositTxId, method: method || 'MOMO', country: profile.country });
+    } else {
+        res = await createWithdrawalRequest({ amount: parseFloat(amount), method, details: { account: details } });
+    }
     setIsSubmitting(false);
     if (res.error) toast({ title: 'Error', description: res.error, variant: 'destructive' });
-    else { 
-        setDepositSuccess(true); 
-        setAmount("");
-        setDepositTxId("");
-        fetchData(); 
-    }
+    else { setSuccess(true); fetchData(); }
   };
 
-  const handleWithdrawSubmit = async () => {
-    if (!amount || !method || !details) {
-        toast({ title: 'Missing fields', description: 'Please fill all fields.', variant: 'destructive' });
-        return;
-    }
-    setIsSubmitting(true);
-    const res = await createWithdrawalRequest({
-        amount: parseFloat(amount),
-        method: method,
-        details: { account: details }
-    });
-    setIsSubmitting(false);
-    if (res.error) toast({ title: 'Error', description: res.error, variant: 'destructive' });
-    else {
-        setWithdrawSuccess(true);
-        setAmount("");
-        setDetails("");
-        fetchData();
-    }
-  };
-
-  if (loading || !profile) return <div className="p-10 text-center">Loading bank...</div>;
-
-  const currentAmountVal = parseFloat(amount) || 0;
+  if (loading || !profile) return <div className="p-10"><Skeleton className="h-64 rounded-3xl" /></div>;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl p-6 text-white shadow-xl">
-            <p className="text-amber-100 text-xs font-medium uppercase tracking-wider mb-1">Available Balance</p>
-            <div className="flex items-baseline gap-2">
-                <p className="text-4xl font-black">${profile.balance.toFixed(2)}</p>
-            </div>
-            <div className="flex gap-4 mt-6">
-                <Button onClick={() => { setMode('deposit'); setWithdrawSuccess(false); setDepositSuccess(false); }} className="bg-white text-amber-600 hover:bg-amber-50 font-bold rounded-xl flex-1">Deposit</Button>
-                <Button onClick={() => { setMode('withdraw'); setWithdrawSuccess(false); setDepositSuccess(false); }} className="bg-amber-700/30 border border-white/20 text-white hover:bg-amber-700/50 font-bold rounded-xl flex-1">Withdraw</Button>
+        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-3xl p-6 text-white shadow-xl">
+            <p className="text-amber-100 text-xs font-bold uppercase tracking-widest mb-1">Total Assets (USD)</p>
+            <p className="text-4xl font-black">${profile.balance.toFixed(2)}</p>
+            <div className="flex gap-4 mt-8">
+                <Button onClick={() => { setMode('deposit'); setSuccess(false); }} className="bg-white text-amber-600 hover:bg-amber-50 font-black rounded-xl flex-1 h-12 shadow-lg">DEPOSIT</Button>
+                <Button onClick={() => { setMode('withdraw'); setSuccess(false); }} className="bg-amber-700/30 border border-white/20 text-white hover:bg-amber-700/50 font-black rounded-xl flex-1 h-12">WITHDRAW</Button>
             </div>
         </div>
 
-        {mode === 'deposit' && !depositSuccess && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-4">
+        {mode && !success && (
+            <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm space-y-5 animate-in slide-in-from-top-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-bold">Deposit Funds</h2>
-                    <Button variant="ghost" onClick={() => setMode(null)}><X className="w-5 h-5" /></Button>
+                    <h2 className="text-lg font-black text-gray-900">{mode === 'deposit' ? 'Add Funds' : 'Cash Out'}</h2>
+                    <button onClick={() => setMode(null)} className="p-2 rounded-full hover:bg-gray-100 text-gray-400 transition-colors"><X className="w-5 h-5" /></button>
                 </div>
                 <div className="space-y-4">
                     <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">Amount ($)</label>
-                        <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="h-12 text-lg font-bold" />
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1 block">Amount ($)</label>
+                        <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="h-14 text-xl font-black rounded-2xl border-2 border-gray-100 focus:border-amber-400 transition-all" />
                     </div>
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">Transaction ID</label>
-                        <Input value={depositTxId} onChange={e => setDepositTxId(e.target.value)} placeholder="Enter ID from payment receipt" className="h-12" />
-                    </div>
-                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-2">
-                        <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-                        <p className="text-[10px] text-amber-800 leading-tight">Send funds to the payment details provided in Support. Deposits are verified manually within 1-24 hours.</p>
-                    </div>
-                    <Button onClick={handleDepositSubmit} disabled={isSubmitting} className="w-full h-12 bg-amber-500 text-white font-bold rounded-xl">{isSubmitting ? 'Submitting...' : 'Confirm Deposit'}</Button>
-                </div>
-            </div>
-        )}
-
-        {mode === 'withdraw' && !withdrawSuccess && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-bold">Withdraw Earnings</h2>
-                    <Button variant="ghost" onClick={() => setMode(null)}><X className="w-5 h-5" /></Button>
-                </div>
-                <div className="space-y-4">
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">Amount to Withdraw ($)</label>
-                        <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="h-12 text-lg font-bold" />
-                        {currentAmountVal > 0 && (
-                            <div className="mt-2 p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-gray-500">Processing Fee (15%)</span>
-                                    <span className="text-red-500">-${(currentAmountVal * 0.15).toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between font-bold">
-                                    <span>Net Payout</span>
-                                    <div className="text-right">
-                                        <p className="text-green-600">${(currentAmountVal * 0.85).toFixed(2)}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">Payout Method</label>
-                        <Select onValueChange={setMethod} value={method}>
-                            <SelectTrigger className="h-12">
-                                <SelectValue placeholder="Select method" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="MTN MOMO">MTN MOMO</SelectItem>
-                                <SelectItem value="USDT">USDT (TRC20)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">{method === 'USDT' ? 'Wallet Address' : 'Phone Number'}</label>
-                        <Input value={details} onChange={e => setDetails(e.target.value)} placeholder={method === 'USDT' ? "Enter TRC20 address" : "Account details"} className="h-12" />
-                    </div>
-                    <Button onClick={handleWithdrawSubmit} disabled={isSubmitting} className="w-full h-12 bg-amber-500 text-white font-bold rounded-xl">{isSubmitting ? 'Submitting...' : 'Request Withdrawal'}</Button>
-                </div>
-            </div>
-        )}
-
-        {depositSuccess && (
-            <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center animate-in zoom-in-95">
-                <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
-                <h3 className="text-xl font-bold text-green-800">Deposit Submitted!</h3>
-                <p className="text-green-700 text-sm mt-1">Our team will verify your payment within 1-24 hours. Your balance will update automatically.</p>
-                <Button onClick={() => { setDepositSuccess(false); setMode(null); }} className="mt-4 bg-green-600 text-white">Back to Bank</Button>
-            </div>
-        )}
-
-        {withdrawSuccess && (
-            <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center animate-in zoom-in-95">
-                <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
-                <h3 className="text-xl font-bold text-green-800">Withdrawal Requested!</h3>
-                <p className="text-green-700 text-sm mt-1">Your request has been queued. Funds are typically processed within 1-24 hours (Mon-Sat).</p>
-                <Button onClick={() => { setWithdrawSuccess(false); setMode(null); }} className="mt-4 bg-green-600 text-white">Back to Bank</Button>
-            </div>
-        )}
-
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <h3 className="font-bold mb-4">Transaction History</h3>
-            <div className="space-y-3">
-                {[...depositRecords, ...withdrawRecords].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map(tx => (
-                    <div key={tx.id} className="flex flex-col p-3 border border-gray-50 rounded-xl hover:bg-gray-50">
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <p className="font-bold text-sm">{'tx_id' in tx ? 'Deposit' : 'Withdrawal'}</p>
-                                <p className="text-xs text-gray-400">{new Date(tx.created_at).toLocaleDateString()}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className={`font-bold ${'tx_id' in tx ? 'text-green-600' : 'text-red-600'}`}>
-                                    {'tx_id' in tx ? '+' : '-'}${tx.amount.toFixed(2)}
-                                </p>
-                            </div>
+                    {mode === 'deposit' && (
+                        <div>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1 block">Transaction ID</label>
+                            <Input value={depositTxId} onChange={e => setDepositTxId(e.target.value)} placeholder="Ref Number from receipt" className="h-12 rounded-xl" />
                         </div>
-                        {'status' in tx && <WithdrawalStatusStepper status={tx.status} />}
+                    )}
+                    {mode === 'withdraw' && (
+                        <>
+                            <div>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1 block">Payout Method</label>
+                                <Select onValueChange={setMethod} value={method}>
+                                    <SelectTrigger className="h-12 rounded-xl">
+                                        <SelectValue placeholder="Select Method" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="MOMO">Mobile Money</SelectItem>
+                                        <SelectItem value="USDT">USDT (TRC20)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1 block">Account Details</label>
+                                <Input value={details} onChange={e => setDetails(e.target.value)} placeholder="Phone or Address" className="h-12 rounded-xl" />
+                            </div>
+                        </>
+                    )}
+                    <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full h-14 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-2xl shadow-xl shadow-amber-200/50">
+                        {isSubmitting ? 'PROCESSING...' : `CONFIRM ${mode.toUpperCase()}`}
+                    </Button>
+                </div>
+            </div>
+        )}
+
+        {success && (
+            <div className="bg-green-50 border-2 border-green-200 rounded-3xl p-8 text-center animate-in zoom-in-95">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-8 h-8 text-green-600" />
+                </div>
+                <h3 className="text-xl font-black text-green-900">Request Received!</h3>
+                <p className="text-green-700 text-sm mt-2">Your transaction is being processed by the system. Verification usually takes 1 to 24 hours.</p>
+                <Button onClick={() => { setSuccess(false); setMode(null); setAmount(""); }} className="mt-6 bg-green-600 text-white font-bold h-11 px-8 rounded-xl">Got it!</Button>
+            </div>
+        )}
+
+        <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+            <h3 className="font-black text-gray-900 mb-5 flex items-center gap-2">
+                <Landmark className="w-5 h-5 text-amber-500" /> History
+            </h3>
+            <div className="space-y-3">
+                {records.map(tx => (
+                    <div key={tx.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-amber-100 transition-colors">
+                        <div>
+                            <p className="font-black text-sm text-gray-900">{tx.tx_id ? 'DEPOSIT' : 'WITHDRAWAL'}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">{new Date(tx.created_at).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className={cn("font-black text-sm", tx.tx_id ? 'text-green-600' : 'text-red-600')}>
+                                {tx.tx_id ? '+' : '-'}${tx.amount.toFixed(2)}
+                            </p>
+                            <Badge variant="outline" className={cn("text-[9px] uppercase tracking-tighter border-0 font-black", tx.status === 'approved' || tx.status === 'complete' ? 'text-green-500 bg-green-100' : 'text-amber-500 bg-amber-100')}>
+                                {tx.status}
+                            </Badge>
+                        </div>
                     </div>
                 ))}
-                {depositRecords.length === 0 && withdrawRecords.length === 0 && (
-                    <p className="text-center text-gray-400 text-sm py-4">No transactions found.</p>
+                {records.length === 0 && (
+                    <div className="py-12 text-center">
+                        <Wallet className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">No Activity Yet</p>
+                    </div>
                 )}
             </div>
         </div>

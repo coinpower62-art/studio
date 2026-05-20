@@ -1,0 +1,8 @@
+name = "coinpower"
+pages_build_output_dir = ".next"
+
+[build]
+command = "npm run build"
+
+[compatibility_dates]
+compatibility_date = "2024-04-18"

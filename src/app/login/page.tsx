@@ -3,7 +3,7 @@
 import { login } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { User, Lock, CheckCircle } from 'lucide-react'
+import { User, Lock, CheckCircle, AlertTriangle } from 'lucide-react'
 import Link from "next/link"
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation';
@@ -13,6 +13,24 @@ function LoginComponent() {
   const searchParams = useSearchParams();
   const message = searchParams.get('message');
   const isSuccessMessage = message && (message.toLowerCase().includes('success') || message.toLowerCase().includes('bonus'));
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  if (!supabaseUrl) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="w-full max-w-md text-center">
+          <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
+          <h1 className="mt-4 text-xl font-bold text-destructive-foreground">Configuration Error</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The application is missing its Supabase configuration. This is likely because the environment variables were not set correctly during deployment.
+          </p>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Please go to your Cloudflare project settings, add the `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` environment variables as described in the `README.md` file, and then redeploy your application.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

@@ -11,30 +11,46 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         return { error: 'You must be logged in to rent a generator.' };
     }
 
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
         .from('profiles')
         .select('balance, parent_id, username, email')
         .eq('id', user.id)
         .single();
 
-    if (profileError || !profile) {
+    if (!profile) {
         return { error: 'Could not find your user profile.' };
     }
 
-    const { data: gen, error: generatorError } = await supabase
+    const { data: gen } = await supabase
         .from('generators')
         .select('*')
         .eq('id', generatorId)
         .eq('published', true)
         .single();
 
-    if (generatorError || !gen) {
+    if (!gen) {
         return { error: 'Generator not found or is not available for rent.' };
     }
     
-    const now = new Date().toISOString();
+    // --- LIFETIME RENTAL LIMITS ---
+    const { count: lifetimeCount } = await supabase
+        .from('rented_generators')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('generator_id', generatorId);
 
-    // 1. ACTIVE Plan Check (One active plan at a time for this specific tier)
+    // PG2: Max 2 Lifetime
+    if (generatorId === 'pg2' && lifetimeCount !== null && lifetimeCount >= 2) {
+        return { error: 'Limit reached: You can only rent PG2 generators twice in total.' };
+    }
+
+    // PG1: Max 1 Lifetime (Free Trial)
+    if (generatorId === 'pg1' && lifetimeCount !== null && lifetimeCount >= 1) {
+        return { error: 'Limit reached: You can only use the PG1 Free Trial once.' };
+    }
+
+    // Default limit check for other tiers (Active Limit 1)
+    const now = new Date().toISOString();
     const { count: activeCount } = await supabase
         .from('rented_generators')
         .select('*', { count: 'exact', head: true })
@@ -46,39 +62,20 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         return { error: 'You already have an active plan for this generator tier.' };
     }
 
-    // 2. DYNAMIC LIFETIME RENTAL LIMITS (Controlled by Admin via database max_rentals)
-    const { count: totalLifetimeCount } = await supabase
-        .from('rented_generators')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('generator_id', generatorId);
-    
-    // Use the dynamic limit from the database (default to 1 if not set)
-    const limit = gen.max_rentals || 1;
-    
-    if (totalLifetimeCount !== null && totalLifetimeCount >= limit) {
-        return { error: `Lifetime limit reached: You can only rent this generator ${limit} time(s) in total.` };
-    }
-
-    // 3. Balance Check
     if (profile.balance < gen.price) {
         return { error: 'insufficient_funds' };
     }
 
-    // 4. Deduct Balance
     const { error: balanceUpdateError } = await supabase
         .from('profiles')
         .update({ balance: profile.balance - gen.price })
         .eq('id', user.id);
 
-    if (balanceUpdateError) {
-        return { error: 'Could not process balance update.' };
-    }
+    if (balanceUpdateError) return { error: 'Balance update failed.' };
     
     const rentedAt = new Date();
     const expiresAt = new Date(rentedAt.getTime() + gen.expire_days * 24 * 60 * 60 * 1000);
 
-    // 5. Create Rental record
     const { error: rentalError } = await supabase
         .from('rented_generators')
         .insert({
@@ -91,30 +88,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     
     if (rentalError) {
         await supabase.from('profiles').update({ balance: profile.balance }).eq('id', user.id); // Rollback
-        return { error: 'Activation failed. Please try again.' };
-    }
-    
-    // 6. Referral Commission Logic (10% / 5% / 2%)
-    if (gen.price > 0 && profile.parent_id) {
-        const rates = [0.10, 0.05, 0.02]; 
-        let currentParentId: string | null = profile.parent_id;
-
-        for (let level = 0; level < 3; level++) {
-            if (!currentParentId) break;
-
-            const { data: ref } = await supabase
-                .from('profiles')
-                .select('id, parent_id')
-                .eq('id', currentParentId)
-                .single();
-            
-            if (!ref) break;
-
-            const commission = gen.price * rates[level];
-            await supabase.rpc('increment_balance', { user_id_in: ref.id, amount_in: commission });
-
-            currentParentId = ref.parent_id;
-        }
+        return { error: 'Rental process failed.' };
     }
     
     revalidatePath('/dashboard/market');
