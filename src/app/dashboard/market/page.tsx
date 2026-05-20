@@ -15,6 +15,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from '@supabase/supabase-js';
 import { rentGeneratorAction } from "./actions";
+import { cn } from "@/lib/utils";
 
 export type RentedGenerator = {
   id: string;
@@ -158,9 +159,7 @@ export default function Market() {
 
   const now = Date.now();
   
-  // Track active rentals for active-limit generators (PG3+)
   const activeRentedCounts = new Map<string, number>();
-  // Track total rentals for lifetime-limit generators (PG1, PG2)
   const totalRentedCounts = new Map<string, number>();
 
   rentedGenerators.forEach(function(ug: RentedGenerator) {
@@ -202,18 +201,15 @@ export default function Market() {
           let limitLabel = "";
           
           if (gen.id === 'pg1') {
-              // PG1: Lifetime limit of 1
               const count = totalRentedCounts.get('pg1') || 0;
               isMaxed = count >= 1;
               limitLabel = count > 0 ? "Limit Reached (1/1)" : "";
           } else if (gen.id === 'pg2') {
-              // PG2: Lifetime limit of 2
               const count = totalRentedCounts.get('pg2') || 0;
               isMaxed = count >= 2;
               limitLabel = count > 0 ? `Usage: ${count}/2` : "";
               if (count >= 2) limitLabel = "Limit Reached (2/2)";
           } else {
-              // PG3+: Active limit of 1
               isMaxed = (activeRentedCounts.get(gen.id) || 0) >= 1;
           }
 
@@ -221,7 +217,11 @@ export default function Market() {
 
           return (
             <div key={gen.id} data-testid={'card-generator-' + gen.id}
-              className={'bg-white rounded-2xl border-2 mb-6 ' + cm.border + ' shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden'}>
+              className={cn(
+                "bg-white rounded-2xl border-2 mb-6 shadow-sm overflow-hidden",
+                cm.border,
+                isMaxed ? "opacity-80" : "hover:shadow-lg transition-all duration-300"
+              )}>
 
               <div className={'bg-gradient-to-r ' + cm.bg + ' p-4 sm:p-5 border-b ' + cm.border}>
                 <div className="flex items-center justify-between mb-3">
@@ -245,7 +245,7 @@ export default function Market() {
                     <img
                       src={gen.image_url || PlaceHolderImages.find(i => i.id === 'gen-' + gen.id)?.imageUrl}
                       alt={gen.name}
-                      className="w-full h-full object-contain"
+                      className={cn("w-full h-full object-contain", isMaxed && "grayscale opacity-50")}
                     />
                 </div>
 
@@ -286,11 +286,12 @@ export default function Market() {
                     data-testid={'button-rent-' + gen.id}
                     onClick={() => handleRentClick(gen)}
                     disabled={isRenting === gen.id || isMaxed}
-                    className={`w-full h-11 font-black rounded-xl shadow-md transition-all flex items-center gap-2 justify-center text-sm ${
+                    className={cn(
+                      "w-full h-11 font-black rounded-xl flex items-center gap-2 justify-center text-sm",
                       isMaxed 
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed" 
-                      : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
-                    }`}
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none" 
+                      : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md transition-all"
+                    )}
                   >
                     {isRenting === gen.id ? "Processing..." : isMaxed ? "Limit Reached" : gen.price === 0 ? "Activate Free Plan" : `Rent ${gen.name} — $${gen.price.toLocaleString()}`}
                   </Button>
@@ -326,7 +327,6 @@ export default function Market() {
         </div>
       </div>
 
-      {/* Low Balance Dialog */}
       <Dialog open={!!lowBalanceGen} onOpenChange={(open) => { if (!open) setLowBalanceGen(null); }}>
         <DialogContent className="max-w-sm mx-auto rounded-3xl p-0 overflow-hidden border-0 shadow-2xl">
           <div className="bg-gradient-to-br from-red-500 to-orange-500 p-6 text-white text-center">
