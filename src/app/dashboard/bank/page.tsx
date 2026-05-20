@@ -13,8 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
 import { createDepositRequest, createWithdrawalRequest } from "./actions";
 
-const GHS_RATE = 10; // System rate: $1 = 10 GHS
-
 function WithdrawalStatusStepper({ status }: { status: "pending" | "processing" | "complete" | "rejected" }) {
     const stages = [{ id: "pending", label: "Pending" }, { id: "processing", label: "Processing" }, { id: "complete", label: "Complete" }];
     if (status === 'rejected') return <div className="text-red-600 text-xs font-bold py-2">Rejected</div>;
@@ -111,7 +109,6 @@ export default function BankPage() {
   if (loading || !profile) return <div className="p-10 text-center">Loading bank...</div>;
 
   const currentAmountVal = parseFloat(amount) || 0;
-  const ghsEquiv = currentAmountVal * GHS_RATE;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
@@ -119,7 +116,6 @@ export default function BankPage() {
             <p className="text-amber-100 text-xs font-medium uppercase tracking-wider mb-1">Available Balance</p>
             <div className="flex items-baseline gap-2">
                 <p className="text-4xl font-black">${profile.balance.toFixed(2)}</p>
-                <p className="text-amber-100 text-lg font-bold opacity-80">/ GH₵{(profile.balance * GHS_RATE).toFixed(2)}</p>
             </div>
             <div className="flex gap-4 mt-6">
                 <Button onClick={() => { setMode('deposit'); setWithdrawSuccess(false); setDepositSuccess(false); }} className="bg-white text-amber-600 hover:bg-amber-50 font-bold rounded-xl flex-1">Deposit</Button>
@@ -137,9 +133,6 @@ export default function BankPage() {
                     <div>
                         <label className="text-xs font-bold text-gray-500 uppercase">Amount ($)</label>
                         <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="h-12 text-lg font-bold" />
-                        {currentAmountVal > 0 && (
-                            <p className="text-sm font-bold text-amber-600 mt-1">Pay exactly: GH₵{ghsEquiv.toFixed(2)}</p>
-                        )}
                     </div>
                     <div>
                         <label className="text-xs font-bold text-gray-500 uppercase">Transaction ID</label>
@@ -147,7 +140,7 @@ export default function BankPage() {
                     </div>
                     <div className="p-3 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-2">
                         <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-                        <p className="text-[10px] text-amber-800 leading-tight">Send funds to the MTN MOMO number provided in Support. Deposits are verified manually within 1-24 hours.</p>
+                        <p className="text-[10px] text-amber-800 leading-tight">Send funds to the payment details provided in Support. Deposits are verified manually within 1-24 hours.</p>
                     </div>
                     <Button onClick={handleDepositSubmit} disabled={isSubmitting} className="w-full h-12 bg-amber-500 text-white font-bold rounded-xl">{isSubmitting ? 'Submitting...' : 'Confirm Deposit'}</Button>
                 </div>
@@ -174,7 +167,6 @@ export default function BankPage() {
                                     <span>Net Payout</span>
                                     <div className="text-right">
                                         <p className="text-green-600">${(currentAmountVal * 0.85).toFixed(2)}</p>
-                                        <p className="text-green-700 text-xs">GH₵{(currentAmountVal * 0.85 * GHS_RATE).toFixed(2)}</p>
                                     </div>
                                 </div>
                             </div>
@@ -187,14 +179,14 @@ export default function BankPage() {
                                 <SelectValue placeholder="Select method" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="MTN MOMO">MTN MOMO (Ghana)</SelectItem>
+                                <SelectItem value="MTN MOMO">MTN MOMO</SelectItem>
                                 <SelectItem value="USDT">USDT (TRC20)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase">{method === 'USDT' ? 'Wallet Address' : 'MOMO Phone Number'}</label>
-                        <Input value={details} onChange={e => setDetails(e.target.value)} placeholder={method === 'USDT' ? "Enter TRC20 address" : "05xxxxxxx"} className="h-12" />
+                        <label className="text-xs font-bold text-gray-500 uppercase">{method === 'USDT' ? 'Wallet Address' : 'Phone Number'}</label>
+                        <Input value={details} onChange={e => setDetails(e.target.value)} placeholder={method === 'USDT' ? "Enter TRC20 address" : "Account details"} className="h-12" />
                     </div>
                     <Button onClick={handleWithdrawSubmit} disabled={isSubmitting} className="w-full h-12 bg-amber-500 text-white font-bold rounded-xl">{isSubmitting ? 'Submitting...' : 'Request Withdrawal'}</Button>
                 </div>
@@ -232,9 +224,6 @@ export default function BankPage() {
                             <div className="text-right">
                                 <p className={`font-bold ${'tx_id' in tx ? 'text-green-600' : 'text-red-600'}`}>
                                     {'tx_id' in tx ? '+' : '-'}${tx.amount.toFixed(2)}
-                                </p>
-                                <p className="text-[10px] text-gray-400 font-medium">
-                                    GH₵{(tx.amount * GHS_RATE).toFixed(2)}
                                 </p>
                             </div>
                         </div>

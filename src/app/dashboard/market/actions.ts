@@ -46,14 +46,14 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         return { error: 'You already have an active plan for this generator tier.' };
     }
 
-    // 2. DYNAMIC LIFETIME RENTAL LIMITS (Controlled by Admin)
+    // 2. DYNAMIC LIFETIME RENTAL LIMITS (Controlled by Admin via database max_rentals)
     const { count: totalLifetimeCount } = await supabase
         .from('rented_generators')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('generator_id', generatorId);
     
-    // Default limit is 1 if not specified, otherwise use the database value
+    // Use the dynamic limit from the database (default to 1 if not set)
     const limit = gen.max_rentals || 1;
     
     if (totalLifetimeCount !== null && totalLifetimeCount >= limit) {

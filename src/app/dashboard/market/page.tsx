@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { Generator } from '@/lib/data';
-import { Zap, TrendingUp, Clock, Star, Users, Shield, CheckCircle, AlertCircle, Timer, Wallet, ArrowDownToLine, LogOut } from "lucide-react";
+import { Zap, TrendingUp, Clock, Star, Users, Shield, Timer, Wallet, ArrowDownToLine } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,32 +30,6 @@ export type RentedGenerator = {
 type Profile = {
     balance: number;
 };
-
-function Countdown({ expiresAt, label = "Expires" }: { expiresAt: number; label?: string }) {
-  const [remaining, setRemaining] = useState(expiresAt - Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setRemaining(expiresAt - Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [expiresAt]);
-  if (remaining <= 0) return <span className="text-red-500 text-xs font-bold">EXPIRED</span>;
-  const d = Math.floor(remaining / 86400000);
-  const h = Math.floor((remaining % 86400000) / 3600000);
-  const m = Math.floor((remaining % 3600000) / 60000);
-  const s = Math.floor((remaining % 60000) / 1000);
-  return (
-    <div className="text-center">
-      <p className="text-[10px] text-slate-400 mb-0.5">{label}</p>
-      <div className="flex items-center gap-0.5 justify-center">
-        {d > 0 && <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded min-w-[1.75rem] text-center">{String(d).padStart(2,"0")}d</span>}
-        <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded">{String(h).padStart(2,"0")}</span>
-        <span className="text-red-500 font-black text-xs">:</span>
-        <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded">{String(m).padStart(2,"0")}</span>
-        <span className="text-red-500 font-black text-xs">:</span>
-        <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded">{String(s).padStart(2,"0")}</span>
-      </div>
-    </div>
-  );
-}
 
 function MarketPageSkeleton() {
     return (
@@ -264,7 +238,7 @@ export default function Market() {
                   </div>
                   <div className="bg-green-50 rounded-xl px-2 py-2 text-center border border-green-100">
                     <p className="text-green-500 text-[10px] font-medium">Daily Income</p>
-                    <p className="text-green-700 font-black text-sm">${gen.daily_income}</p>
+                    <p className="text-green-700 font-black text-sm">${gen.daily_income.toFixed(2)}</p>
                   </div>
                   <div className="bg-amber-50 rounded-xl px-2 py-2 text-center border border-amber-100">
                     <p className="text-amber-500 text-[10px] font-medium">Total Income</p>
@@ -346,7 +320,7 @@ export default function Market() {
                 onClick={() => { setLowBalanceGen(null); router.push("/dashboard/bank"); }}
                 className="w-full rounded-2xl h-12 font-black bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg flex items-center gap-2 justify-center"
               >
-                <ArrowDownToLine className="w-4 h-4" /> Deposit via MTN MOMO
+                <ArrowDownToLine className="w-4 h-4" /> Go to Bank
             </Button>
             <button onClick={() => setLowBalanceGen(null)} className="w-full text-center text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors">
               Cancel and Return

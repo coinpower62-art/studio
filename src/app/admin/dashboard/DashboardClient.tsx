@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Shield, Users, DollarSign, LogOut, Edit3, Trash2, Plus,
-  CheckCircle, RefreshCw, Menu, X, ArrowUpRight, AlertTriangle, CreditCard,
-  ArrowDownToLine, ArrowUpFromLine, Zap, Layers, Image as ImageIcon
+  Shield, Users, DollarSign, Edit3, Trash2, Plus,
+  RefreshCw, Menu, X, ArrowDownToLine, ArrowUpFromLine
 } from "lucide-react";
 import {
   adminGetAllData,
@@ -216,7 +215,7 @@ export default function DashboardClient() {
                                     <p className="font-bold text-amber-400">${g.daily_income}</p>
                                 </div>
                                 <div className="bg-slate-900/50 p-2 rounded">
-                                    <p className="text-slate-500">Limit</p>
+                                    <p className="text-slate-500">Lifetime Limit</p>
                                     <p className="font-bold">{g.max_rentals} per user</p>
                                 </div>
                                 <div className="bg-slate-900/50 p-2 rounded">
