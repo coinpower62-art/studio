@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -12,141 +11,88 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         return { error: 'You must be logged in to rent a generator.' };
     }
 
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
         .from('profiles')
         .select('balance, parent_id, username, email')
         .eq('id', user.id)
         .single();
 
-    if (profileError || !profile) {
+    if (!profile) {
         return { error: 'Could not find your user profile.' };
     }
 
-    const { data: generatorToRent, error: generatorError } = await supabase
+    const { data: gen } = await supabase
         .from('generators')
         .select('*')
         .eq('id', generatorId)
         .eq('published', true)
         .single();
 
-    if (generatorError || !generatorToRent) {
+    if (!gen) {
         return { error: 'Generator not found or is not available for rent.' };
     }
     
-    // ENFORCE LIMITS
-    if (generatorToRent.id === 'pg1') {
-        // PG1 is a lifetime limit of 1
-        const { count, error: countError } = await supabase
+    // LIFETIME LIMIT CHECK
+    if (gen.id === 'pg1') {
+        const { count } = await supabase
             .from('rented_generators')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user.id)
             .eq('generator_id', 'pg1');
-
-        if (countError) {
-             return { error: 'Could not verify your existing generators.' };
-        }
-        if (count && count > 0) {
-            return { error: 'You can only rent the free PG1 Generator once.' };
+        if (count && count > 0) return { error: 'You can only rent the free PG1 Generator once.' };
+    } else if (gen.id === 'pg2') {
+        // STRICT RULE: User is limited to renting PG2 exactly 2 times in their account lifetime.
+        const { count } = await supabase
+            .from('rented_generators')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('generator_id', 'pg2');
+        if (count !== null && count >= 2) {
+            return { error: 'Lifetime limit reached for PG2 (Maximum 2 rentals allowed per account).' };
         }
     } else {
-        // Other generators have an ACTIVE rental limit
+        // Other tiers use active rental limits
         const now = new Date().toISOString();
-        const { count: activeCount, error: activeCountError } = await supabase
+        const { count: activeCount } = await supabase
             .from('rented_generators')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user.id)
             .eq('generator_id', generatorId)
             .gt('expires_at', now);
-
-        if (activeCountError) {
-            return { error: 'Could not verify your active rentals.' };
-        }
-
-        const limit = generatorToRent.max_rentals || 1;
+        const limit = gen.max_rentals || 1;
         if (activeCount !== null && activeCount >= limit) {
-            return { error: `Maximum active rental limit reached (${limit}). Please wait for an existing plan to expire.` };
+            return { error: `Maximum active rental limit reached (${limit}).` };
         }
     }
 
-
-    if (profile.balance < generatorToRent.price) {
+    if (profile.balance < gen.price) {
         return { error: 'insufficient_funds' };
     }
 
-    const newBalance = profile.balance - generatorToRent.price;
     const { error: balanceUpdateError } = await supabase
         .from('profiles')
-        .update({ balance: newBalance })
+        .update({ balance: profile.balance - gen.price })
         .eq('id', user.id);
 
-    if (balanceUpdateError) {
-        return { error: 'Could not update your balance.' };
-    }
+    if (balanceUpdateError) return { error: 'Balance update failed.' };
     
     const rentedAt = new Date();
-    const expiresAt = new Date(rentedAt.getTime() + generatorToRent.expire_days * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(rentedAt.getTime() + gen.expire_days * 24 * 60 * 60 * 1000);
 
     const { error: rentalError } = await supabase
         .from('rented_generators')
         .insert({
             user_id: user.id,
-            generator_id: generatorToRent.id,
+            generator_id: gen.id,
             rented_at: rentedAt.toISOString(),
             expires_at: expiresAt.toISOString(),
             last_claimed_at: rentedAt.toISOString(),
         });
     
     if (rentalError) {
-        // Rollback balance update
-        await supabase.from('profiles').update({ balance: profile.balance }).eq('id', user.id);
-        return { error: 'Could not rent the generator. Your balance has not been changed.' };
+        await supabase.from('profiles').update({ balance: profile.balance }).eq('id', user.id); // Rollback
+        return { error: 'Rental process failed.' };
     }
-    
-    // START: 3-Level Referral Commission Logic
-    if (generatorToRent.price > 0 && profile.parent_id) {
-        const commissionRates = [0.10, 0.05, 0.02]; // L1, L2, L3
-        let currentParentId: string | null = profile.parent_id;
-
-        for (let level = 0; level < 3; level++) {
-            if (!currentParentId) break;
-
-            const { data: referrer, error: referrerError } = await supabase
-                .from('profiles')
-                .select('id, parent_id, username, email')
-                .eq('id', currentParentId)
-                .single();
-            
-            if (referrerError || !referrer) {
-                console.error(`Commission Error: Could not find referrer at level ${level + 1}. Parent ID: ${currentParentId}`);
-                break;
-            }
-
-            const commission = generatorToRent.price * commissionRates[level];
-            
-            // Use RPC to atomically update balance to prevent race conditions
-            const { error: updateReferrerError } = await supabase.rpc('increment_balance', {
-                user_id_in: referrer.id,
-                amount_in: commission
-            });
-
-            if (updateReferrerError) {
-                console.error(`Failed to apply L${level + 1} commission for user ${referrer.id}:`, updateReferrerError.message);
-            } else {
-                 // Log commission payment for record-keeping
-                await supabase.from('gift_codes').insert({
-                    code: `COMM-L${level+1}-${user.id.slice(0,4)}-${generatorToRent.id}`,
-                    amount: commission,
-                    note: `${commissionRates[level]*100}% L${level+1} comm from ${profile.username || profile.email} renting ${generatorToRent.name}`,
-                    is_redeemed: true,
-                    redeemed_at: new Date().toISOString(),
-                    redeemed_by_user_id: referrer.id
-                });
-            }
-
-            currentParentId = referrer.parent_id; // Move to the next level up
-        }
-    }
-    // END: Referral Commission Logic
     
     revalidatePath('/dashboard/market');
     revalidatePath('/dashboard/power');

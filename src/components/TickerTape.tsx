@@ -1,32 +1,49 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 const pairs = [
   "BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT",
   "ADA/USDT", "DOGE/USDT", "SHIB/USDT", "MATIC/USDT", "LTC/USDT"
 ];
 
 const TickerItem = ({ pair }: { pair: string }) => {
-  const isUp = Math.random() > 0.5;
-  const change = (Math.random() * 2 + 0.5).toFixed(2);
-  const price = (Math.random() * 50000 + 1000).toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  });
+  const [data, setData] = useState<{ isUp: boolean; change: string; price: string } | null>(null);
+
+  useEffect(() => {
+    const isUp = Math.random() > 0.5;
+    const change = (Math.random() * 2 + 0.5).toFixed(2);
+    const price = (Math.random() * 50000 + 1000).toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    });
+    setData({ isUp, change, price });
+  }, []);
+
+  if (!data) return <div className="flex items-center gap-2 px-4 flex-shrink-0 opacity-0"><span className="text-sm font-medium text-gray-300">{pair}</span></div>;
 
   return (
     <div className="flex items-center gap-2 px-4 flex-shrink-0">
       <span className="text-sm font-medium text-gray-300">{pair}</span>
-      <span className={`text-sm font-semibold ${isUp ? 'text-green-400' : 'text-red-400'}`}>
-        {price}
+      <span className={`text-sm font-semibold ${data.isUp ? 'text-green-400' : 'text-red-400'}`}>
+        {data.price}
       </span>
-      <span className={`text-xs font-bold ${isUp ? 'text-green-400' : 'text-red-400'}`}>
-        {isUp ? '▲' : '▼'} {change}%
+      <span className={`text-xs font-bold ${data.isUp ? 'text-green-400' : 'text-red-400'}`}>
+        {data.isUp ? '▲' : '▼'} {data.change}%
       </span>
     </div>
   );
 }
 
 export default function TickerTape() {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) return <div className="bg-slate-900 w-full h-9" />;
+
   return (
     <div className="bg-slate-900 w-full overflow-hidden">
       <div className="flex animate-scroll-h py-2">
