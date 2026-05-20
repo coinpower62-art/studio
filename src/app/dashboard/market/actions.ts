@@ -32,55 +32,42 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         return { error: 'Generator not found or is not available for rent.' };
     }
     
-    // --- ENFORCE STRICT RENTAL LIMITS ---
     const now = new Date().toISOString();
 
-    if (generatorToRent.id === 'pg1') {
-        // PG1 is a LIFETIME limit of 1
-        const { count, error: countError } = await supabase
+    // ACTIVE Plan Check (One at a time per tier)
+    const { count: activeCount } = await supabase
+        .from('rented_generators')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('generator_id', generatorId)
+        .gt('expires_at', now);
+
+    if (activeCount && activeCount >= 1) {
+        return { error: 'You already have an active plan for this generator tier.' };
+    }
+
+    // Special PG1 Rule: Lifetime Limit of 1 (Free Trial)
+    if (generatorId === 'pg1') {
+        const { count: totalPg1Count } = await supabase
             .from('rented_generators')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user.id)
             .eq('generator_id', 'pg1');
-
-        if (countError) return { error: 'Could not verify your existing generators.' };
-        if (count && count > 0) return { error: 'You have already used your free PG1 Generator activation.' };
-    } else if (generatorToRent.id === 'pg2') {
-        // PG2 has a LIFETIME rental limit of 2 (Requested: cannot rent again even after expiry)
-        const { count: totalCount, error: totalCountError } = await supabase
-            .from('rented_generators')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('generator_id', 'pg2');
-
-        if (totalCountError) return { error: 'Could not verify your rental history.' };
-        if (totalCount !== null && totalCount >= 2) {
-            return { error: 'You have reached the lifetime limit for PG2 rentals (Max 2).' };
-        }
-    } else {
-        // PG3, PG4, PG5, etc. have an ACTIVE rental limit of 1
-        const { count: activeCount, error: activeCountError } = await supabase
-            .from('rented_generators')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('generator_id', generatorId)
-            .gt('expires_at', now);
-
-        if (activeCountError) return { error: 'Could not verify your active rentals.' };
-        if (activeCount !== null && activeCount >= 1) {
-            return { error: 'You already have an active plan for this generator tier.' };
+        
+        if (totalPg1Count && totalPg1Count >= 1) {
+            return { error: 'The PG1 Free Trial can only be activated once per account.' };
         }
     }
 
-
+    // Balance Check
     if (profile.balance < generatorToRent.price) {
         return { error: 'insufficient_funds' };
     }
 
-    const newBalance = profile.balance - generatorToRent.price;
+    // Deduct Balance
     const { error: balanceUpdateError } = await supabase
         .from('profiles')
-        .update({ balance: newBalance })
+        .update({ balance: profile.balance - generatorToRent.price })
         .eq('id', user.id);
 
     if (balanceUpdateError) {
@@ -90,6 +77,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     const rentedAt = new Date();
     const expiresAt = new Date(rentedAt.getTime() + generatorToRent.expire_days * 24 * 60 * 60 * 1000);
 
+    // Create Rental
     const { error: rentalError } = await supabase
         .from('rented_generators')
         .insert({
@@ -101,46 +89,30 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         });
     
     if (rentalError) {
-        // Rollback balance update
-        await supabase.from('profiles').update({ balance: profile.balance }).eq('id', user.id);
-        return { error: 'Could not rent the generator. Your balance has not been changed.' };
+        await supabase.from('profiles').update({ balance: profile.balance }).eq('id', user.id); // Rollback
+        return { error: 'Activation failed. Please try again.' };
     }
     
-    // 3-Level Referral Commission Logic
+    // Referral Commission Logic
     if (generatorToRent.price > 0 && profile.parent_id) {
-        const commissionRates = [0.10, 0.05, 0.02]; // L1, L2, L3
+        const rates = [0.10, 0.05, 0.02]; 
         let currentParentId: string | null = profile.parent_id;
 
         for (let level = 0; level < 3; level++) {
             if (!currentParentId) break;
 
-            const { data: referrer, error: referrerError } = await supabase
+            const { data: ref } = await supabase
                 .from('profiles')
-                .select('id, parent_id, username, email')
+                .select('id, parent_id')
                 .eq('id', currentParentId)
                 .single();
             
-            if (referrerError || !referrer) break;
+            if (!ref) break;
 
-            const commission = generatorToRent.price * commissionRates[level];
-            
-            // Atomically update balance
-            await supabase.rpc('increment_balance', {
-                user_id_in: referrer.id,
-                amount_in: commission
-            });
+            const commission = generatorToRent.price * rates[level];
+            await supabase.rpc('increment_balance', { user_id_in: ref.id, amount_in: commission });
 
-            // Log commission payment
-            await supabase.from('gift_codes').insert({
-                code: `COMM-L${level+1}-${user.id.slice(0,4)}-${generatorToRent.id}`,
-                amount: commission,
-                note: `${commissionRates[level]*100}% L${level+1} comm from ${profile.username || profile.email} renting ${generatorToRent.name}`,
-                is_redeemed: true,
-                redeemed_at: new Date().toISOString(),
-                redeemed_by_user_id: referrer.id
-            });
-
-            currentParentId = referrer.parent_id;
+            currentParentId = ref.parent_id;
         }
     }
     
