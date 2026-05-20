@@ -197,30 +197,23 @@ export default function Market() {
         {publishedGenerators.map((gen) => {
           const cm = colorMap[gen.color] || colorMap["from-amber-400 to-orange-500"];
           
-          let isMaxed = false;
-          let limitLabel = "";
+          const totalHistory = totalRentedCounts.get(gen.id) || 0;
+          const isActive = (activeRentedCounts.get(gen.id) || 0) > 0;
           
-          if (gen.id === 'pg1') {
-              const count = totalRentedCounts.get('pg1') || 0;
-              isMaxed = count >= 1;
-              limitLabel = count > 0 ? "Limit Reached (1/1)" : "";
-          } else if (gen.id === 'pg2') {
-              const count = totalRentedCounts.get('pg2') || 0;
-              isMaxed = count >= 2;
-              limitLabel = count > 0 ? `Usage: ${count}/2` : "";
-              if (count >= 2) limitLabel = "Limit Reached (2/2)";
-          } else {
-              isMaxed = (activeRentedCounts.get(gen.id) || 0) >= 1;
-          }
-
-          const isActiveRented = (activeRentedCounts.get(gen.id) || 0) > 0;
+          // Use dynamic limit from database
+          const limit = gen.max_rentals || 1;
+          const isMaxed = totalHistory >= limit || isActive;
+          
+          let limitLabel = `Usage: ${totalHistory}/${limit}`;
+          if (totalHistory >= limit) limitLabel = `Limit Reached (${totalHistory}/${limit})`;
+          if (isActive) limitLabel = "Active Plan running";
 
           return (
             <div key={gen.id} data-testid={'card-generator-' + gen.id}
               className={cn(
                 "bg-white rounded-2xl border-2 mb-6 shadow-sm overflow-hidden",
                 cm.border,
-                isMaxed ? "opacity-80" : "hover:shadow-lg transition-all duration-300"
+                isMaxed ? "opacity-80 grayscale-[0.5]" : "hover:shadow-lg transition-all duration-300"
               )}>
 
               <div className={'bg-gradient-to-r ' + cm.bg + ' p-4 sm:p-5 border-b ' + cm.border}>
@@ -233,11 +226,9 @@ export default function Market() {
                     <span className={'text-xs font-semibold px-2 py-1 rounded-full ' + cm.badge + ' ' + cm.badgeText}>
                       {cm.badgeLabel}
                     </span>
-                    {limitLabel && (
-                        <span className="text-[10px] font-bold text-amber-700 bg-amber-100/50 px-2 py-0.5 rounded-full border border-amber-200">
-                            {limitLabel}
-                        </span>
-                    )}
+                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border", isMaxed ? "text-red-700 bg-red-100 border-red-200" : "text-amber-700 bg-amber-100/50 border-amber-200")}>
+                        {limitLabel}
+                    </span>
                   </div>
                 </div>
 
@@ -245,7 +236,7 @@ export default function Market() {
                     <img
                       src={gen.image_url || PlaceHolderImages.find(i => i.id === 'gen-' + gen.id)?.imageUrl}
                       alt={gen.name}
-                      className={cn("w-full h-full object-contain", isMaxed && "grayscale opacity-50")}
+                      className={cn("w-full h-full object-contain", isMaxed && "opacity-50")}
                     />
                 </div>
 
@@ -293,13 +284,13 @@ export default function Market() {
                       : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md transition-all"
                     )}
                   >
-                    {isRenting === gen.id ? "Processing..." : isMaxed ? "Limit Reached" : gen.price === 0 ? "Activate Free Plan" : `Rent ${gen.name} — $${gen.price.toLocaleString()}`}
+                    {isRenting === gen.id ? "Processing..." : isMaxed ? "Plan Restricted" : gen.price === 0 ? "Activate Free Plan" : `Rent ${gen.name} — $${gen.price.toLocaleString()}`}
                   </Button>
                   
-                  {isActiveRented && (
+                  {isActive && (
                     <Button variant="outline" onClick={() => router.push("/dashboard/power")}
                       className="w-full rounded-xl h-10 text-xs font-bold border-amber-300 text-amber-700 hover:bg-amber-50 flex items-center gap-1.5 justify-center">
-                      <Zap className="w-3.5 h-3.5" /> View Active Plan ({activeRentedCounts.get(gen.id)})
+                      <Zap className="w-3.5 h-3.5" /> View Active Plan
                     </Button>
                   )}
                 </div>
