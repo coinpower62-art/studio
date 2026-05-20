@@ -34,7 +34,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     
     const now = new Date().toISOString();
 
-    // ACTIVE Plan Check (One at a time per tier)
+    // 1. ACTIVE Plan Check (One active plan at a time for any tier)
     const { count: activeCount } = await supabase
         .from('rented_generators')
         .select('*', { count: 'exact', head: true })
@@ -42,10 +42,12 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         .eq('generator_id', generatorId)
         .gt('expires_at', now);
 
-    if (activeCount && activeCount >= 1) {
+    if (activeCount !== null && activeCount >= 1) {
         return { error: 'You already have an active plan for this generator tier.' };
     }
 
+    // 2. STRICT LIFETIME RENTAL LIMITS
+    
     // Special PG1 Rule: Lifetime Limit of 1 (Free Trial)
     if (generatorId === 'pg1') {
         const { count: totalPg1Count } = await supabase
@@ -54,17 +56,30 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
             .eq('user_id', user.id)
             .eq('generator_id', 'pg1');
         
-        if (totalPg1Count && totalPg1Count >= 1) {
+        if (totalPg1Count !== null && totalPg1Count >= 1) {
             return { error: 'The PG1 Free Trial can only be activated once per account.' };
         }
     }
 
-    // Balance Check
+    // Special PG2 Rule: Lifetime Limit of 2
+    if (generatorId === 'pg2') {
+        const { count: totalPg2Count } = await supabase
+            .from('rented_generators')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('generator_id', 'pg2');
+        
+        if (totalPg2Count !== null && totalPg2Count >= 2) {
+            return { error: 'Strict lifetime limit reached: You can only rent PG2 generators twice in total.' };
+        }
+    }
+
+    // 3. Balance Check
     if (profile.balance < generatorToRent.price) {
         return { error: 'insufficient_funds' };
     }
 
-    // Deduct Balance
+    // 4. Deduct Balance
     const { error: balanceUpdateError } = await supabase
         .from('profiles')
         .update({ balance: profile.balance - generatorToRent.price })
@@ -77,7 +92,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     const rentedAt = new Date();
     const expiresAt = new Date(rentedAt.getTime() + generatorToRent.expire_days * 24 * 60 * 60 * 1000);
 
-    // Create Rental
+    // 5. Create Rental record
     const { error: rentalError } = await supabase
         .from('rented_generators')
         .insert({
@@ -93,7 +108,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         return { error: 'Activation failed. Please try again.' };
     }
     
-    // Referral Commission Logic
+    // 6. Referral Commission Logic (10% / 5% / 2%)
     if (generatorToRent.price > 0 && profile.parent_id) {
         const rates = [0.10, 0.05, 0.02]; 
         let currentParentId: string | null = profile.parent_id;
