@@ -199,14 +199,21 @@ export default function Market() {
           const cm = colorMap[gen.color] || colorMap["from-amber-400 to-orange-500"];
           
           let isMaxed = false;
+          let limitLabel = "";
+          
           if (gen.id === 'pg1') {
               // PG1: Lifetime limit of 1
-              isMaxed = (totalRentedCounts.get('pg1') || 0) >= 1;
+              const count = totalRentedCounts.get('pg1') || 0;
+              isMaxed = count >= 1;
+              limitLabel = count > 0 ? "Limit Reached (1/1)" : "";
           } else if (gen.id === 'pg2') {
-              // PG2: Lifetime limit of 2 (cannot rent again even if expired)
-              isMaxed = (totalRentedCounts.get('pg2') || 0) >= 2;
+              // PG2: Lifetime limit of 2
+              const count = totalRentedCounts.get('pg2') || 0;
+              isMaxed = count >= 2;
+              limitLabel = count > 0 ? `Usage: ${count}/2` : "";
+              if (count >= 2) limitLabel = "Limit Reached (2/2)";
           } else {
-              // PG3+: Active limit of 1 (can rent again after expiry)
+              // PG3+: Active limit of 1
               isMaxed = (activeRentedCounts.get(gen.id) || 0) >= 1;
           }
 
@@ -226,6 +233,11 @@ export default function Market() {
                     <span className={'text-xs font-semibold px-2 py-1 rounded-full ' + cm.badge + ' ' + cm.badgeText}>
                       {cm.badgeLabel}
                     </span>
+                    {limitLabel && (
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-100/50 px-2 py-0.5 rounded-full border border-amber-200">
+                            {limitLabel}
+                        </span>
+                    )}
                   </div>
                 </div>
 
@@ -280,7 +292,7 @@ export default function Market() {
                       : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
                     }`}
                   >
-                    {isRenting === gen.id ? "Processing..." : gen.price === 0 ? "Activate Free Plan" : `Rent ${gen.name} — $${gen.price.toLocaleString()}`}
+                    {isRenting === gen.id ? "Processing..." : isMaxed ? "Limit Reached" : gen.price === 0 ? "Activate Free Plan" : `Rent ${gen.name} — $${gen.price.toLocaleString()}`}
                   </Button>
                   
                   {isActiveRented && (
