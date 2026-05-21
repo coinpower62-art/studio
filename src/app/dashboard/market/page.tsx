@@ -3,155 +3,401 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, Wallet, Shield, Timer } from "lucide-react";
+import type { Generator } from '@/lib/data';
+import { Zap, TrendingUp, Clock, Star, Users, Shield, CheckCircle, AlertCircle, Timer, Wallet, ArrowDownToLine, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { createClient } from "@/lib/supabase/client";
+import type { User } from '@supabase/supabase-js';
+import { logout } from '@/app/login/actions';
 import { rentGeneratorAction } from "./actions";
 import { cn } from "@/lib/utils";
 
-function MarketPageSkeleton() {
+export type RentedGenerator = {
+  id: string;
+  user_id: string;
+  generator_id: string;
+  rented_at: string;
+  expires_at: string;
+  last_claimed_at: string | null;
+  suspended: boolean;
+};
+
+type Profile = {
+    balance: number;
+};
+
+function Countdown({ expiresAt, label = "Expires" }: { expiresAt: number; label?: string }) {
+  const [remaining, setRemaining] = useState(expiresAt - Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setRemaining(expiresAt - Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [expiresAt]);
+  if (remaining <= 0) return <span className="text-red-500 text-xs font-bold">EXPIRED</span>;
+  const d = Math.floor(remaining / 86400000);
+  const h = Math.floor((remaining % 86400000) / 3600000);
+  const m = Math.floor((remaining % 3600000) / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
   return (
-    <div className="p-4 sm:p-8 space-y-6">
-      <Skeleton className="h-20 w-3/4 mx-auto rounded-xl" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-96 w-full rounded-2xl" />)}
+    <div className="text-center">
+      <p className="text-[10px] text-slate-400 mb-0.5">{label}</p>
+      <div className="flex items-center gap-0.5 justify-center">
+        {d > 0 && <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded">{String(d).padStart(2,"0")}d</span>}
+        <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded">{String(h).padStart(2,"0")}</span>
+        <span className="text-red-500 font-black text-xs">:</span>
+        <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded">{String(m).padStart(2,"0")}</span>
+        <span className="text-red-500 font-black text-xs">:</span>
+        <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded">{String(s).padStart(2,"0")}</span>
       </div>
     </div>
   );
+}
+
+function MarketPageSkeleton() {
+    return (
+      <div className="pt-12 p-4 pb-20 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-80 rounded-2xl" />)}
+        </div>
+      </div>
+    );
 }
 
 export default function Market() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
-  const [generators, setGenerators] = useState<any[]>([]);
-  const [rentedHistory, setRentedHistory] = useState<any[]>([]);
-  const [lowBalanceGen, setLowBalanceGen] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [generators, setGenerators] = useState<Generator[]>([]);
+  const [rentedGenerators, setRentedGenerators] = useState<RentedGenerator[]>([]);
+  
+  const [lowBalanceGen, setLowBalanceGen] = useState<{ name: string; price: number } | null>(null);
   const [isRenting, setIsRenting] = useState<string | null>(null);
 
   const supabase = createClient();
 
   const fetchData = useCallback(async function() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push('/login'); return; }
+      if (!user) {
+          router.push('/login');
+          return;
+      }
+      setUser(user);
 
-      const [pRes, rRes, gRes] = await Promise.all([
-          supabase.from('profiles').select('balance').eq('id', user.id).maybeSingle(),
-          supabase.from('rented_generators').select('*').eq('user_id', user.id),
-          supabase.from('generators').select('*').eq('published', true).order('price', { ascending: true })
-      ]);
+      const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('balance')
+          .eq('id', user.id)
+          .maybeSingle();
       
-      setProfile(pRes.data);
-      setRentedHistory(rRes.data || []);
-      setGenerators(gRes.data || []);
-      setIsLoading(false);
-  }, [router, supabase]);
+      if (profileError) {
+          console.error("MarketPage: Profile fetch failed.");
+      }
+      setProfile(profileData as Profile | null);
+      
+      const { data: rentedData, error: rentedError } = await supabase
+          .from('rented_generators')
+          .select('*')
+          .eq('user_id', user.id);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+      if (rentedError) {
+          toast({ title: 'Error fetching generators', variant: 'destructive'});
+      } else {
+          setRentedGenerators(rentedData as RentedGenerator[]);
+      }
+
+      const { data: allGenerators, error: generatorsError } = await supabase
+        .from('generators')
+        .select('*')
+        .order('price', { ascending: true });
+
+      if (generatorsError) {
+          toast({ title: 'Error fetching market generators', variant: 'destructive'});
+          setGenerators([]);
+      } else {
+          setGenerators(allGenerators as Generator[]);
+      }
+      
+      setIsLoading(false);
+  }, [router, supabase, toast]);
+
+  useEffect(function() {
+    fetchData();
+  }, [fetchData]);
   
-  const handleRentClick = async (gen: any) => {
-    if (profile.balance < gen.price) return setLowBalanceGen(gen);
-    setIsRenting(gen.id);
-    const res = await rentGeneratorAction(gen.id);
-    if (res.error) {
-        toast({ title: "Rental Failed", description: res.error, variant: "destructive" });
-    } else {
-        toast({ title: "Generator Activated!" });
-        fetchData();
+  const handleRentClick = async function(gen: Generator) {
+    if (!profile) return;
+    if (profile.balance < gen.price) {
+       setLowBalanceGen({ name: gen.name, price: gen.price });
+       return;
     }
-    setIsRenting(null);
+    setIsRenting(gen.id);
+    try {
+      const result = await rentGeneratorAction(gen.id);
+
+      if (result.error) {
+        if (result.error === 'insufficient_funds') {
+           setLowBalanceGen({ name: gen.name, price: gen.price });
+        } else {
+          throw new Error(result.error);
+        }
+      } else {
+        toast({ title: "Generator rented!", description: "Moves to your Power page. Claim daily income every 24 hours." });
+        await fetchData();
+      }
+    } catch (err: any) {
+      toast({ title: "Could not rent the generator", description: err.message || 'An unknown error occurred.', variant: "destructive" });
+    } finally {
+      setIsRenting(null);
+    }
   };
 
   if (isLoading || !profile) return <MarketPageSkeleton />;
 
+  const now = Date.now();
+  const historicalRentedCounts = new Map<string, number>();
+  rentedGenerators.forEach(function(ug: RentedGenerator) {
+    historicalRentedCounts.set(ug.generator_id, (historicalRentedCounts.get(ug.generator_id) || 0) + 1);
+  });
+  
+  const activeRentedCounts = new Map<string, number>();
+  rentedGenerators.filter(function(ug: RentedGenerator) { return new Date(ug.expires_at).getTime() > now; }).forEach(function(ug: RentedGenerator) {
+    activeRentedCounts.set(ug.generator_id, (activeRentedCounts.get(ug.generator_id) || 0) + 1);
+  });
+
+  const colorMap: Record<string, { bg: string; border: string; badge: string; badgeText: string; gradS: string; gradE: string; badgeLabel: string }> = {
+    "from-amber-400 to-orange-500": { bg: "from-amber-50 to-orange-50", border: "border-amber-200", badge: "bg-amber-100", badgeText: "text-amber-700", gradS: "#f59e0b", gradE: "#f97316", badgeLabel: "Popular" },
+    "from-green-400 to-emerald-600": { bg: "from-green-50 to-emerald-50", border: "border-green-200", badge: "bg-green-100", badgeText: "text-green-700", gradS: "#22c55e", gradE: "#059669", badgeLabel: "Recommended" },
+    "from-blue-400 to-indigo-600": { bg: "from-blue-50 to-indigo-50", border: "border-blue-200", badge: "bg-blue-100", badgeText: "text-blue-700", gradS: "#3b82f6", gradE: "#4f46e5", badgeLabel: "High Yield" },
+    "from-purple-500 to-pink-600": { bg: "from-purple-50 to-pink-50", border: "border-purple-200", badge: "bg-purple-100", badgeText: "text-purple-700", gradS: "#8b5cf6", gradE: "#ec4899", badgeLabel: "Premium" },
+  };
+
+  const publishedGenerators = generators.filter(g => g.published);
+
   return (
-    <div className="pb-20 px-4 max-w-7xl mx-auto">
-      <div className="text-center py-6 sm:py-10">
-        <h1 className="text-2xl sm:text-3xl font-black text-gray-900">Investment Market</h1>
-        <p className="text-gray-500 text-sm mt-2">Rent a power generator and start earning daily returns.</p>
-      </div>
+    <div className="pb-20 min-h-screen">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6">
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {generators.map(gen => {
-          const lifetimeCount = rentedHistory.filter(r => r.generator_id === gen.id).length;
-          const activeCount = rentedHistory.filter(r => r.generator_id === gen.id && new Date(r.expires_at).getTime() > Date.now()).length;
-          
-          let isMaxed = false;
-          let lockLabel = "";
+        <div className="text-center py-4 sm:py-8 mb-2">
+          <Badge className="mb-2 bg-amber-100 text-amber-700 border-0 px-3 py-1">
+            <TrendingUp className="w-3 h-3 mr-1" />Live Market
+          </Badge>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            Investment <span className="text-amber-600">Generators</span>
+          </h1>
+          <p className="text-gray-500 text-sm max-w-md mx-auto">
+            Rent a generator and claim your daily income every 24 hours in the Power page.
+          </p>
+        </div>
 
-          if (gen.id === 'pg1' && lifetimeCount >= 1) {
-            isMaxed = true;
-            lockLabel = "Trial Used (1/1)";
-          } else if (gen.id === 'pg2' && lifetimeCount >= 2) {
-            isMaxed = true;
-            lockLabel = "Limit Reached (2/2)";
-          } else if (activeCount >= 1) {
-            isMaxed = true;
-            lockLabel = "Plan Currently Active";
-          }
-
-          return (
-            <div key={gen.id} className={cn(
-                "bg-white rounded-3xl border-2 p-5 shadow-sm space-y-4 transition-all duration-300",
-                isMaxed 
-                  ? "border-gray-200 opacity-60 grayscale cursor-default" 
-                  : "border-amber-200 hover:shadow-xl hover:border-amber-400 hover:-translate-y-1"
-            )}>
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-black text-lg text-gray-900">{gen.name}</h3>
-                  <p className="text-xs text-gray-500 font-medium">{gen.subtitle}</p>
-                </div>
-                <Badge className={cn("border-0 font-bold px-3 py-1", isMaxed ? "bg-gray-100 text-gray-500" : "bg-amber-100 text-amber-700")}>
-                    {gen.roi} ROI
-                </Badge>
-              </div>
-
-              <div className="aspect-video bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center p-4">
-                <img src={gen.image_url || PlaceHolderImages.find(i => i.id === `gen-${gen.id}`)?.imageUrl} alt={gen.name} className={cn("w-full h-full object-contain", isMaxed && "opacity-50")} />
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-gray-50 p-2.5 rounded-xl text-center"><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Price</p><p className="font-bold text-sm text-gray-900">${gen.price}</p></div>
-                <div className="bg-green-50 p-2.5 rounded-xl text-center"><p className="text-[10px] text-green-600 font-bold uppercase tracking-wider">Daily</p><p className="font-bold text-sm text-green-700">${gen.daily_income}</p></div>
-                <div className="bg-amber-50 p-2.5 rounded-xl text-center"><p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider">Cycle</p><p className="font-bold text-sm text-amber-700">{gen.expire_days}d</p></div>
-              </div>
-
-              {isMaxed ? (
-                <div className="w-full h-12 bg-gray-100 border border-gray-200 text-gray-400 rounded-2xl flex items-center justify-center font-bold text-sm gap-2">
-                  <Shield className="w-4 h-4" /> {lockLabel}
-                </div>
-              ) : (
-                <Button 
-                  onClick={() => handleRentClick(gen)} 
-                  disabled={isRenting === gen.id} 
-                  className="w-full h-12 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl font-black shadow-lg shadow-amber-200/50"
-                >
-                  {isRenting === gen.id ? "Activating Plan..." : `Rent Tier - $${gen.price}`}
-                </Button>
-              )}
+        {rentedGenerators.filter(ug => new Date(ug.expires_at).getTime() > now).length > 0 && (
+          <div className="mb-4 bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-green-800 font-semibold text-sm">You have active generators!</p>
+              <p className="text-green-600 text-xs">Go to the <button onClick={() => router.push("/dashboard/power")} className="underline font-bold">Power page</button> to claim your daily income every 24 hours.</p>
             </div>
-          );
-        })}
+          </div>
+        )}
+
+        {publishedGenerators.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
+            <Zap className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="font-bold text-gray-800">Market is Currently Empty</h3>
+            <p className="text-gray-500 text-sm mt-1">There are no generators available for rent at the moment.</p>
+            <p className="text-gray-400 text-xs mt-3">Please check back later.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-10">
+            {publishedGenerators.map((gen) => {
+              const cm = colorMap[gen.color] || colorMap["from-amber-400 to-orange-500"];
+              const historicalCount = historicalRentedCounts.get(gen.id) || 0;
+              const activeCount = activeRentedCounts.get(gen.id) || 0;
+              
+              const maxRentals = gen.max_rentals ?? 1;
+              const isMaxed = historicalCount >= maxRentals;
+              const isActive = activeCount > 0;
+              
+              const activeUg = rentedGenerators.find(ug => ug.generator_id === gen.id && new Date(ug.expires_at).getTime() > now);
+
+              return (
+                <div key={gen.id} data-testid={'card-generator-' + gen.id}
+                  className={cn(
+                      'bg-white rounded-2xl border-2 shadow-sm transition-all duration-300 overflow-hidden',
+                      cm.border,
+                      isMaxed ? "opacity-60 grayscale cursor-default pointer-events-none" : "hover:shadow-xl hover:-translate-y-1",
+                      isActive && !isMaxed ? "ring-2 ring-green-400 ring-offset-2" : ""
+                  )}>
+
+                  <div className={'bg-gradient-to-r ' + cm.bg + ' p-4 sm:p-5 border-b ' + cm.border}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-tight">{gen.name}</h3>
+                        <p className="text-gray-500 text-xs sm:text-sm">{gen.subtitle}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1.5">
+                        <span className={'text-xs font-semibold px-2 py-1 rounded-full ' + cm.badge + ' ' + cm.badgeText}>
+                          {isMaxed ? "Limit Reached" : cm.badgeLabel}
+                        </span>
+                        {isActive ? (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" /> {activeCount} Active
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="w-full h-52 sm:h-64 rounded-xl overflow-hidden shadow-inner bg-white">
+                        <img
+                          src={gen.image_url || PlaceHolderImages.find(i => i.id === 'gen-' + gen.id)?.imageUrl}
+                          alt={gen.name}
+                          className="w-full h-full object-contain"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget.parentElement as HTMLElement).style.background = 'linear-gradient(135deg, ' + cm.gradS + ' 0%, ' + cm.gradE + ' 100%)'; }}
+                        />
+                    </div>
+
+                    <div className="flex items-center justify-between mt-3 px-1">
+                      <div className="flex items-center gap-1.5 bg-white/80 border border-amber-200 rounded-lg px-2.5 py-1.5 shadow-sm">
+                        <Clock className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                        <span className="text-xs font-bold text-gray-800">{gen.expire_days} Days</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-white/80 border border-green-200 rounded-lg px-2.5 py-1.5 shadow-sm">
+                        <TrendingUp className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
+                        <span className="text-xs font-bold text-gray-800">{gen.roi}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-white/80 border border-blue-200 rounded-lg px-2.5 py-1.5 shadow-sm">
+                        <Users className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                        <span className="text-xs font-bold text-gray-800">{gen.investors}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 sm:p-5">
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      <div className={'rounded-xl px-2 py-2 text-center border ' + (gen.price === 0 ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-100")}>
+                        <p className={'text-[10px] font-medium ' + (gen.price === 0 ? "text-green-500" : "text-gray-400")}>Rent Price</p>
+                        <p className={'font-black text-sm ' + (gen.price === 0 ? "text-green-700" : "text-gray-900")}>{gen.price === 0 ? "FREE" : '$' + gen.price.toLocaleString()}</p>
+                      </div>
+                      <div className="bg-green-50 rounded-xl px-2 py-2 text-center border border-green-100">
+                        <p className="text-green-500 text-[10px] font-medium">Daily Income</p>
+                        <p className="text-green-700 font-black text-sm">${gen.daily_income}</p>
+                      </div>
+                      <div className="bg-amber-50 rounded-xl px-2 py-2 text-center border border-amber-100">
+                        <p className="text-amber-500 text-[10px] font-medium">Usage Cap</p>
+                        <p className="text-amber-700 font-black text-sm">{historicalCount}/{maxRentals}</p>
+                      </div>
+                    </div>
+
+                    {activeUg && (
+                      <div className="mb-3 bg-red-50 border border-red-200 rounded-xl p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Timer className="w-4 h-4 text-red-500" />
+                          <span className="text-red-700 text-xs font-semibold">Expires in</span>
+                        </div>
+                        <Countdown expiresAt={new Date(activeUg.expires_at).getTime()} label="" />
+                      </div>
+                    )}
+                    
+                    {isMaxed ? (
+                      <div className="flex flex-col gap-2">
+                        <Button disabled
+                          className="w-full bg-gray-100 border border-gray-300 text-gray-400 font-semibold rounded-xl h-10 sm:h-11 flex items-center gap-2 justify-center text-sm"
+                        >
+                          <Shield className="w-4 h-4" /> Lifetime Limit Reached
+                        </Button>
+                        <Button variant="outline" onClick={() => router.push("/dashboard/power")}
+                            className="w-full rounded-xl h-9 text-xs font-semibold border-amber-300 text-amber-700 hover:bg-amber-50 flex items-center gap-1.5 justify-center pointer-events-auto">
+                            <Zap className="w-3.5 h-3.5" /> View in Power Center
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          data-testid={'button-rent-' + gen.id}
+                          onClick={() => handleRentClick(gen)}
+                          disabled={isRenting === gen.id}
+                          className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-xl h-10 sm:h-11 shadow-md transition-all flex items-center gap-2 justify-center text-sm"
+                        >
+                          {isRenting === gen.id ? "Activating..." : gen.price === 0 ? `Activate FREE Trial` : `Rent Tier - $${gen.price.toLocaleString()}`}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="bg-white rounded-2xl border border-amber-100/60 shadow-sm p-4 sm:p-6">
+          <div className="grid grid-cols-3 gap-4 text-center">
+            {[
+              { icon: Shield, label: "Secured", value: "$50M+", color: "text-amber-600" },
+              { icon: Users, label: "Investors", value: "26K+", color: "text-green-600" },
+              { icon: TrendingUp, label: "Paid Out", value: "$8.2M+", color: "text-blue-600" },
+            ].map(({ icon: Icon, label, value, color }) => (
+              <div key={label} className="flex flex-col items-center gap-1 sm:gap-2">
+                <Icon className={'w-6 h-6 sm:w-8 sm:h-8 ' + color} />
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{value}</p>
+                <p className="text-gray-500 text-xs">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <Dialog open={!!lowBalanceGen} onOpenChange={() => setLowBalanceGen(null)}>
-        <DialogContent className="rounded-3xl border-0 p-0 overflow-hidden max-w-sm mx-auto">
-          <div className="bg-gradient-to-br from-red-500 to-orange-600 p-8 text-white text-center">
-             <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Wallet className="w-10 h-10 text-white" />
-             </div>
-             <h2 className="text-2xl font-black">Low Balance</h2>
-             <p className="text-red-100 text-sm mt-2">You need at least <strong>${lowBalanceGen?.price}</strong> to activate this generator.</p>
+      <Dialog open={!!lowBalanceGen} onOpenChange={(open) => { if (!open) setLowBalanceGen(null); }}>
+        <DialogContent className="max-w-sm mx-auto rounded-2xl p-0 overflow-hidden" data-testid="dialog-low-balance">
+          <div className="bg-gradient-to-br from-red-500 to-orange-500 p-5 text-white text-center">
+            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
+              <Wallet className="w-8 h-8 text-white" />
+            </div>
+            <DialogTitle className="text-white text-xl font-black mb-1">Insufficient Balance</DialogTitle>
+            <DialogDescription className="text-red-100 text-sm">
+              You don't have enough funds to rent this generator.
+            </DialogDescription>
           </div>
-          <div className="p-6 bg-white space-y-3">
-             <Button onClick={() => router.push("/dashboard/bank")} className="w-full bg-amber-500 h-12 rounded-xl text-white font-black shadow-lg">Deposit Now</Button>
-             <button onClick={() => setLowBalanceGen(null)} className="w-full text-center text-xs font-bold text-gray-400 py-2">Maybe later</button>
+          <div className="p-5 space-y-4">
+            {lowBalanceGen && profile && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
+                  <span className="text-gray-500 text-sm">Generator</span>
+                  <span className="font-bold text-gray-900 text-sm">{lowBalanceGen.name}</span>
+                </div>
+                <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
+                  <span className="text-gray-500 text-sm">Required</span>
+                  <span className="font-black text-red-600 text-sm">${lowBalanceGen.price.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
+                  <span className="text-gray-500 text-sm">Your Balance</span>
+                  <span className="font-black text-gray-900 text-sm">${profile.balance.toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+            <p className="text-gray-500 text-xs text-center leading-relaxed">
+              Deposit funds via MTN MOMO on the Bank page to top up your balance and activate this generator.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setLowBalanceGen(null)}
+                className="flex-1 rounded-xl h-11 font-semibold border-gray-200"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => { setLowBalanceGen(null); router.push("/dashboard/bank"); }}
+                className="flex-1 rounded-xl h-11 font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md flex items-center gap-2 justify-center"
+              >
+                <ArrowDownToLine className="w-4 h-4" /> Deposit Now
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
