@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Shield, Users, DollarSign, LogOut, Search, Edit3, Trash2,
   CheckCircle, XCircle, BarChart3, Zap,
-  ArrowUpFromLine, RefreshCw, Plus, Save, X, Lock, Unlock
+  ArrowUpFromLine, RefreshCw, Plus, Save, X, Lock, Unlock, Settings, Gift, ImagePlus, Info, Link2, DatabaseZap, Pencil
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -70,7 +70,7 @@ export function DashboardClient({ initialData }: { initialData: any }) {
 
   const filteredUsers = users.filter(u => [u.full_name, u.username, u.email].some(f => f?.toLowerCase().includes(search.toLowerCase())));
   const totalBalance = users.reduce((s, u) => s + (u.balance || 0), 0);
-  const pendingWithdrawalsCount = withdrawals.filter(w => w.status === "pending").length;
+  const pendingWithdrawalsCount = withdrawals.filter(w => w.status === "pending" || w.status === "processing").length;
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex w-full">
@@ -163,6 +163,7 @@ export function DashboardClient({ initialData }: { initialData: any }) {
                              }} className={cn("h-8 px-3 border-slate-600", u.withdrawal_locked ? "text-red-400 bg-red-950/20" : "text-slate-400 bg-slate-700")}>
                                 {u.withdrawal_locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
                              </Button>
+                             <Button variant="outline" size="sm" onClick={() => { if(confirm('Delete user?')) adminDeleteUser(u.id).then(fetchData) }} className="h-8 px-3 border-red-900/50 bg-red-950/20 text-red-500"><Trash2 className="w-3.5 h-3.5" /></Button>
                         </div>
                     )}
                   </div>
@@ -203,7 +204,7 @@ export function DashboardClient({ initialData }: { initialData: any }) {
           <div className="space-y-4">
             <h1 className="text-xl font-black capitalize">{tab} Management</h1>
             <div className="bg-slate-800/50 rounded-2xl p-10 text-center border border-slate-800">
-                <p className="text-slate-500 text-sm font-medium">Use the specialized actions provided in the sidebars to process financial requests.</p>
+                <p className="text-slate-500 text-sm font-medium">Use the specialized actions provided in the main admin dashboard code to process financial requests.</p>
                 <Button onClick={fetchData} variant="link" className="text-amber-500 mt-2">Check for new requests</Button>
             </div>
           </div>

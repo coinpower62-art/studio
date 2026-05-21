@@ -14,7 +14,6 @@ import {
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from '@supabase/supabase-js';
-import { logout } from '@/app/login/actions';
 import { rentGeneratorAction } from "./actions";
 import { cn } from "@/lib/utils";
 
