@@ -21,8 +21,10 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         .eq('user_id', user.id)
         .eq('generator_id', generatorId);
 
-    // Dynamic Max Limit Rule
-    const max = generatorId === 'pg2' ? 2 : (gen.max_rentals ?? 1);
+    // Dynamic Max Limit Rule: PG1 (1), PG2 (2), others from DB
+    let max = gen.max_rentals ?? 1;
+    if (generatorId === 'pg1') max = 1;
+    if (generatorId === 'pg2') max = 2;
     
     if (lifetimeCount !== null && lifetimeCount >= max) {
         return { error: `Lifetime account limit reached for this plan (${max} rentals total).` };

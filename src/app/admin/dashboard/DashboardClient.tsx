@@ -129,6 +129,111 @@ type MediaAsset = {
     url: string;
 }
 
+function DepositRow({ d, user, onApprove, onReject, onDelete, copyText }: {
+  d: DepositRequest;
+  user?: UserRecord;
+  onApprove: () => void;
+  onReject: () => void;
+  onDelete: () => void;
+  copyText: (text: string, label: string) => void;
+}) {
+  const isCard = Boolean(d.tx_id?.match(/\[CARD/i));
+  let method = "Unknown";
+  let country = "Unknown";
+  let cleanTxId = d.tx_id || "";
+
+  const match = d.tx_id?.match(/^\[(.*?)\|(.*?)\]\s*(.*)$/);
+  if (match) {
+    method = match[1];
+    country = match[2];
+    cleanTxId = match[3];
+  }
+
+  return (
+    <div className="bg-slate-800 rounded-2xl border border-slate-700 p-4 space-y-3">
+      <div className="flex justify-between items-start">
+        <div className="flex gap-3">
+          <Avatar><AvatarFallback className="bg-amber-600">{user?.username?.[0].toUpperCase()}</AvatarFallback></Avatar>
+          <div>
+            <p className="font-bold text-white">{user?.full_name || user?.username}</p>
+            <p className="text-xs text-slate-400">{user?.email}</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-green-400 font-black text-lg">${d.amount.toFixed(2)}</p>
+          <Badge className={d.status === 'pending' ? 'bg-yellow-900/40 text-yellow-400' : d.status === 'approved' ? 'bg-green-900/40 text-green-400' : 'bg-red-900/40 text-red-400'}>{d.status}</Badge>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="bg-slate-700/50 p-2 rounded-lg">
+          <p className="text-slate-400 mb-1 uppercase tracking-widest text-[10px]">Method</p>
+          <p className="text-white font-bold">{method}</p>
+        </div>
+        <div className="bg-slate-700/50 p-2 rounded-lg">
+          <p className="text-slate-400 mb-1 uppercase tracking-widest text-[10px]">Phone</p>
+          <p className="text-white font-bold">{user?.phone || '—'}</p>
+        </div>
+        <div className="bg-slate-700/50 p-2 rounded-lg col-span-2">
+          <p className="text-slate-400 mb-1 uppercase tracking-widest text-[10px]">Transaction ID</p>
+          <div className="flex justify-between">
+            <p className="text-amber-400 font-mono font-bold break-all">{cleanTxId}</p>
+            <button onClick={() => copyText(cleanTxId, 'TX ID')} className="text-slate-400 hover:text-white"><Copy className="w-3 h-3" /></button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-2 pt-2">
+        {d.status === 'pending' && (
+          <>
+            <Button onClick={onApprove} size="sm" className="flex-1 bg-green-600">Approve</Button>
+            <Button onClick={onReject} size="sm" variant="destructive" className="flex-1">Reject</Button>
+          </>
+        )}
+        <Button onClick={onDelete} size="sm" variant="ghost" className="text-red-400 px-2"><Trash2 className="w-4 h-4" /></Button>
+      </div>
+    </div>
+  );
+}
+
+function AdminWithdrawalStepper({ status }: { status: "pending" | "processing" | "complete" | "rejected" }) {
+    const stages = [
+        { id: "pending", label: "Pending" },
+        { id: "processing", label: "Processing" },
+        { id: "complete", label: "Complete" },
+    ];
+
+    if (status === 'rejected') {
+        return (
+            <div className="flex items-center gap-1.5 text-red-400 bg-red-900/30 border border-red-700 rounded-full px-2.5 py-1 w-full justify-center">
+                <XCircle className="w-3.5 h-3.5" />
+                <span className="text-xs font-bold">Rejected</span>
+            </div>
+        )
+    }
+
+    const currentStageIndex = stages.findIndex(s => s.id === status);
+
+    return (
+        <div className="flex items-center gap-2 mt-2 bg-slate-900/50 p-2 rounded-lg w-full">
+            {stages.map((stage, index) => {
+                const isCompleted = index < currentStageIndex;
+                const isActive = index === currentStageIndex;
+                
+                return (
+                    <div key={stage.id} className="flex-1 flex items-center gap-1">
+                        {index > 0 && <div className={`flex-1 h-0.5 ${index <= currentStageIndex ? 'bg-green-500' : 'bg-slate-700'}`} />}
+                        <div className="flex items-center gap-1">
+                            {isCompleted ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : isActive ? <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" /> : <div className="w-2 h-2 rounded-full bg-slate-600" />}
+                            <span className={`text-[10px] ${isActive ? 'text-blue-400 font-bold' : 'text-slate-500'}`}>{stage.label}</span>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 function DashboardContent() {
   const router = useRouter();
   const { toast } = useToast();
@@ -138,41 +243,18 @@ function DashboardContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // --- Data State ---
-  const [admin, setAdmin] = useState<{name: string} | null>(null);
-  const [adminLoading, setAdminLoading] = useState(true);
-
   const [users, setUsers] = useState<UserRecord[]>([]);
-  const [usersLoading, setUsersLoading] = useState(true);
-
   const [generators, setGenerators] = useState<Generator[]>([]);
-  const [gensLoading, setGensLoading] = useState(true);
-
   const [deposits, setDeposits] = useState<DepositRequest[]>([]);
-  const [depositsLoading, setDepositsLoading] = useState(true);
-
   const [withdrawals, setWithdrawals] = useState<WithdrawalRecord[]>([]);
-  const [withdrawalsLoading, setWithdrawalsLoading] = useState(true);
-
   const [media, setMedia] = useState<MediaAsset[]>([]);
-  const [mediaLoading, setMediaLoading] = useState(true);
-  const [uploading, setUploading] = useState<string | null>(null);
-
   const [bonusCodes, setBonusCodes] = useState<GiftCode[]>([]);
-  const [codesLoading, setCodesLoading] = useState(true);
-  
   const [visits, setVisits] = useState<{date: string, view_count: number}[]>([]);
-  const [visitsLoading, setVisitsLoading] = useState(true);
   const [allRentedGenerators, setAllRentedGenerators] = useState<RentedGeneratorRaw[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
-      setUsersLoading(true);
-      setGensLoading(true);
-      setDepositsLoading(true);
-      setWithdrawalsLoading(true);
-      setMediaLoading(true);
-      setCodesLoading(true);
-      setVisitsLoading(true);
-
+      setLoading(true);
       const result = await adminGetAllData();
       if (result.error || !result.data) {
         toast({ title: 'Error fetching admin data', description: result.error, variant: 'destructive' });
@@ -183,11 +265,8 @@ function DashboardContent() {
         setAllRentedGenerators(rentedGensRaw);
 
         const generatorMap = new Map(allGenerators.map(g => [g.id, g.name]));
-        
         const rentedByUser = rentedGensRaw.reduce((acc, rg) => {
-            if (!acc[rg.user_id]) {
-                acc[rg.user_id] = [];
-            }
+            if (!acc[rg.user_id]) acc[rg.user_id] = [];
             acc[rg.user_id].push({
                 id: rg.generator_id,
                 name: generatorMap.get(rg.generator_id) || 'Unknown Gen',
@@ -195,561 +274,260 @@ function DashboardContent() {
                 rented_at: rg.rented_at,
             });
             return acc;
-        }, {} as Record<string, { id: string; name: string; expires_at: string; rented_at: string; }[]>);
+        }, {} as Record<string, any[]>);
         
         const referralCounts = rawUsers.reduce((acc, user) => {
-          if (user.parent_id) {
-            acc[user.parent_id] = (acc[user.parent_id] || 0) + 1;
-          }
+          if (user.parent_id) acc[user.parent_id] = (acc[user.parent_id] || 0) + 1;
           return acc;
         }, {} as Record<string, number>);
 
         const usersWithData = rawUsers.map(user => ({
           ...user,
           referral_count: referralCounts[user.id] || 0,
-          rented_generators: (rentedByUser[user.id] || []).sort((a, b) => new Date(b.expires_at).getTime() - new Date(a.expires_at).getTime()),
+          rented_generators: rentedByUser[user.id] || [],
         }));
 
         setUsers(usersWithData);
-        setGenerators(result.data.generators as Generator[]);
+        setGenerators(allGenerators);
         setDeposits(result.data.deposits as DepositRequest[]);
         setWithdrawals(result.data.withdrawals as WithdrawalRecord[]);
         setMedia(result.data.media as MediaAsset[]);
         setBonusCodes(result.data.codes as GiftCode[]);
-        setVisits(result.data.visits as {date: string, view_count: number}[] || []);
+        setVisits(result.data.visits as any[] || []);
       }
-
-      setUsersLoading(false);
-      setGensLoading(false);
-      setDepositsLoading(false);
-      setWithdrawalsLoading(false);
-      setMediaLoading(false);
-      setCodesLoading(false);
-      setVisitsLoading(false);
+      setLoading(false);
   }
 
   useEffect(() => {
-    const isAdminLoggedIn = document.cookie.split('; ').find(row => row.startsWith('admin_logged_in='))?.split('=')[1] === 'true';
-    if (!isAdminLoggedIn) {
-      router.push('/login');
-      return;
-    }
-    setAdmin({ name: 'Admin' });
-    setAdminLoading(false);
+    const isAdmin = document.cookie.includes('admin_logged_in=true');
+    if (!isAdmin) { router.push('/login'); return; }
     fetchData();
   }, [router]);
-
-
-  const switchTab = (id: Tab) => {
-    if (id === "users") setSearch("");
-    setTab(id);
-    setSidebarOpen(false);
-  };
 
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
   const [newBalance, setNewBalance] = useState("");
   const [editingPassword, setEditingPassword] = useState<UserRecord | null>(null);
   const [newPassword, setNewPassword] = useState("");
-  const [showPassFor, setShowPassFor] = useState<string | null>(null);
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [createUserForm, setCreateUserForm] = useState({ full_name: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
-  const [showCreateUserPassword, setShowCreateUserPassword] = useState(false);
 
   const [showCreateGen, setShowCreateGen] = useState(false);
   const [editingGen, setEditingGen] = useState<Generator | null>(null);
   const [newGen, setNewGen] = useState<NewGenerator>({ ...BLANK_GEN });
 
-  const [newCodeAmount, setNewCodeAmount] = useState("");
-  const [newCodeNote, setNewCodeNote] = useState("");
-  const [generatedCode, setGeneratedCode] = useState<GiftCode | null>(null);
-  const [copiedCode, setCopiedCode] = useState(false);
-
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void }>({
     open: false, title: "", description: "", onConfirm: () => {},
   });
-  const openConfirm = (title: string, description: string, onConfirm: () => void) =>
-    setConfirmDialog({ open: true, title, description, onConfirm });
 
   const handleSignOut = () => {
     document.cookie = "admin_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     router.push('/login');
   };
 
-  const handleUpdateBalance = async (userId: string, newBalance: number) => {
-    const result = await adminUpdateUserBalance(userId, newBalance);
-    if(result.error) {
-        toast({ title: 'Error updating balance', description: result.error, variant: 'destructive' });
-    } else {
-        toast({ title: 'Balance updated' });
-        setEditingUser(null);
-        await fetchData();
-    }
-  }
-
-  const handleResetPassword = async (userId: string, newPass: string) => {
-    if (!newPass || newPass.length < 6) {
-        toast({ title: 'Invalid Password', description: 'Password must be at least 6 characters long.', variant: 'destructive' });
-        return;
-    }
-    const result = await adminResetUserPassword(userId, newPass);
-    if(result.error) {
-        toast({ title: 'Error resetting password', description: result.error, variant: 'destructive' });
-    } else {
-        toast({ title: 'Password has been reset successfully!' });
-        setEditingPassword(null);
-        setNewPassword('');
-    }
-  }
-
-  const handleDeleteUser = async (userId: string) => {
-    const result = await adminDeleteUser(userId);
-    if(result.error) {
-        toast({ title: 'Error deleting user', description: result.error, variant: 'destructive' });
-    } else {
-        toast({ title: 'User profile deleted.' });
-        await fetchData();
-    }
-  }
-
-  const handleToggleWithdrawalLock = async (userId: string, isCurrentlyLocked: boolean) => {
-    openConfirm(
-      isCurrentlyLocked ? "Unlock Withdrawals?" : "Lock Withdrawals?",
-      `Are you sure you want to ${isCurrentlyLocked ? 'allow' : 'prevent'} this user from making withdrawals?`,
-      async () => {
-        const result = await adminToggleWithdrawalLock(userId, !isCurrentlyLocked);
-        if (result.error) {
-          toast({ title: 'Error updating lock status', description: result.error, variant: 'destructive' });
-        } else {
-          toast({ title: `Withdrawals ${!isCurrentlyLocked ? 'Locked' : 'Unlocked'}` });
-          await fetchData();
-        }
-      }
-    );
-  };
-
-  const handleCreateUser = async () => {
-    const newUserProfile = {
-      full_name: createUserForm.full_name,
-      username: createUserForm.username,
-      email: createUserForm.email,
-      password: createUserForm.password,
-      country: createUserForm.country,
-      phone: createUserForm.phone,
-      balance: parseFloat(createUserForm.balance) || 0,
-      referral_code: `CP-${createUserForm.username.toUpperCase()}${Math.floor(1000 + Math.random() * 9000)}`,
-    };
-    const result = await adminCreateUser(newUserProfile);
-    if (result.error || !result.data) {
-        toast({ title: 'Error creating user', description: result.error, variant: 'destructive' });
-    } else {
-      toast({ title: "User created successfully!" });
-      setShowCreateUser(false);
-      setCreateUserForm({ full_name: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
-      await fetchData();
-    }
-  }
-
   const handleApproveDeposit = async (id: string, userId: string, amount: number) => {
     const result = await adminHandleDeposit(id, 'approve', userId, amount);
-    if (result.error) {
-      toast({ title: "Error approving deposit", description: result.error, variant: "destructive" });
-    } else {
-      toast({ title: "Deposit approved!" });
-      await fetchData();
-    }
+    if (!result.error) fetchData();
   }
 
   const handleRejectDeposit = async (id: string, userId: string, amount: number) => {
     const result = await adminHandleDeposit(id, 'reject', userId, amount);
-    if (result.error) {
-      toast({ title: "Error rejecting deposit", description: result.error, variant: "destructive" });
-    } else {
-      toast({ title: "Deposit rejected." });
-      await fetchData();
-    }
-  }
-
-  const handleDeleteDeposit = async (id: string) => {
-    const result = await adminHandleDeposit(id, 'delete');
-    if (result.error) {
-      toast({ title: "Error deleting record", description: result.error, variant: "destructive" });
-    } else {
-      toast({ title: "Record deleted." });
-      await fetchData();
-    }
+    if (!result.error) fetchData();
   }
 
   const handleProcessWithdrawal = async (id: string) => {
     const result = await adminHandleWithdrawal(id, 'process');
-    if (result.error) {
-      toast({ title: "Error processing withdrawal", description: result.error, variant: "destructive" });
-    } else {
-      toast({ title: "Withdrawal is now processing!" });
-      await fetchData();
-    }
+    if (!result.error) fetchData();
   }
 
   const handleCompleteWithdrawal = async (id: string) => {
     const result = await adminHandleWithdrawal(id, 'complete');
-    if (result.error) {
-      toast({ title: "Error completing withdrawal", description: result.error, variant: "destructive" });
-    } else {
-      toast({ title: "Withdrawal marked as complete!" });
-      await fetchData();
-    }
+    if (!result.error) fetchData();
   }
 
   const handleRejectWithdrawal = async (id: string, userId: string, amount: number) => {
     const result = await adminHandleWithdrawal(id, 'reject', userId, amount);
-    if(result.error) {
-      toast({ title: "Error rejecting withdrawal", description: result.error, variant: "destructive" });
-    } else {
-      toast({ title: "Withdrawal rejected — balance refunded." });
-      await fetchData();
-    }
+    if (!result.error) fetchData();
   }
 
-  const handleDeleteWithdrawal = async (id: string) => {
-    const result = await adminHandleWithdrawal(id, 'delete');
-    if (result.error) {
-      toast({ title: "Error deleting record", description: result.error, variant: "destructive" });
-    } else {
-      toast({ title: "Record deleted." });
-      await fetchData();
-    }
+  const handleUpdateBalance = async (userId: string, balance: number) => {
+    const res = await adminUpdateUserBalance(userId, balance);
+    if (!res.error) { setEditingUser(null); fetchData(); }
   }
 
-  const handleCreateGenerator = async () => {
-    const result = await adminMutateGenerator('create', newGen);
-    if(result.error || !result.data) {
-      toast({ title: "Error creating generator", description: result.error, variant: "destructive" });
-    } else {
-      toast({ title: "Generator created!" });
-      setShowCreateGen(false);
-      setNewGen({ ...BLANK_GEN });
-      await fetchData();
-    }
+  const handleResetPassword = async (userId: string, pass: string) => {
+    const res = await adminResetUserPassword(userId, pass);
+    if (!res.error) { setEditingPassword(null); toast({ title: "Password Reset" }); }
   }
 
-  const handleUpdateGenerator = async () => {
-    if (editingGen) {
-      const result = await adminMutateGenerator('update', editingGen);
-      if (result.error || !result.data) {
-        toast({ title: "Error updating generator", description: result.error, variant: "destructive" });
-      } else {
-        toast({ title: "Generator updated!" });
-        setEditingGen(null);
-        await fetchData();
-      }
-    }
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">Loading...</div>;
 
-  const handleDeleteGenerator = async (id: string) => {
-    const result = await adminMutateGenerator('delete', { id });
-    if (result.error) {
-      toast({ title: "Error deleting generator", description: result.error, variant: 'destructive' });
-    } else {
-      toast({ title: 'Generator deleted' });
-      await fetchData();
-    }
-  };
-
-  const handleCreateGiftCode = async () => {
-    const amount = parseFloat(newCodeAmount);
-    if (isNaN(amount) || amount <= 0) {
-      toast({ title: 'Invalid Amount', variant: 'destructive' });
-      return;
-    }
-    const result = await adminCreateGiftCode(amount, newCodeNote);
-    if (result.error || !result.data) {
-      toast({ title: 'Error creating code', description: result.error, variant: 'destructive' });
-    } else {
-      toast({ title: 'Gift code created!' });
-      setGeneratedCode(result.data);
-      setNewCodeAmount("");
-      setNewCodeNote("");
-      await fetchData();
-    }
-  };
-
-  const handleDeleteGiftCode = async (codeId: string) => {
-    const result = await adminDeleteGiftCode(codeId);
-    if (result.error) {
-      toast({ title: 'Error deleting code', description: result.error, variant: 'destructive' });
-    } else {
-      toast({ title: 'Gift code deleted.' });
-      await fetchData();
-    }
-  };
-
-  const handlePublishToggle = async (gen: Generator) => {
-    const updatedGen = {...gen, published: !gen.published};
-    const result = await adminMutateGenerator('update', updatedGen);
-    if (result.error || !result.data) {
-        toast({ title: 'Error updating status', variant: 'destructive', description: result.error });
-    } else {
-        toast({ title: `Generator ${updatedGen.published ? 'published' : 'unpublished'}`});
-        await fetchData();
-    }
-  }
-
-  const handleFileUpload = async (type: 'generator' | 'activity' | 'video' | 'license', id: string, file: File) => {
-      const loadingId = `${type}-${id}`;
-      setUploading(loadingId);
-      try {
-        const fileExt = file.name.split('.').pop();
-        let folder = 'assets';
-        if (type === 'generator') folder = 'generator-images';
-        if (type === 'activity') folder = 'activity-images';
-        if (type === 'video') folder = 'tutorial-videos';
-        if (type === 'license') folder = 'license-images';
-        
-        const filePath = `${folder}/${id}-${Date.now()}.${fileExt}`;
-        const BUCKET_NAME = 'site_assets';
-        const supabase = createClient();
-        const { error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(filePath, file, { upsert: true });
-        if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
-        const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
-        const publicUrl = urlData.publicUrl;
-        if (!publicUrl) throw new Error('Could not get public URL.');
-
-        let dbUpdateResult;
-        if (type === 'generator') dbUpdateResult = await adminUpdateGeneratorImage(id, publicUrl);
-        else dbUpdateResult = await adminUpsertMedia(id, publicUrl);
-        if (dbUpdateResult.error) throw new Error(dbUpdateResult.error);
-        toast({ title: `${type} updated!` });
-        await fetchData();
-      } catch (e: any) {
-        toast({ title: 'Upload Failed', description: e.message, variant: 'destructive' });
-      } finally {
-        setUploading(null);
-      }
-  };
-
-  const copyText = (text: string, label: string) => {
-      navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!` }));
-  };
-
-  const getDetailIcon = (key: string) => {
-    const lKey = key.toLowerCase();
-    if (lKey.includes('phone')) return <Phone className="w-3 h-3 text-slate-500" />;
-    if (lKey.includes('name') || lKey.includes('holder')) return <UserIcon className="w-3 h-3 text-slate-500" />;
-    if (lKey.includes('bank')) return <Landmark className="w-3 h-3 text-slate-500" />;
-    if (lKey.includes('country') || lKey.includes('city')) return <MapPin className="w-3 h-3 text-slate-500" />;
-    if (lKey.includes('address')) return <Mail className="w-3 h-3 text-slate-500" />;
-    if (lKey.includes('network')) return <Network className="w-3 h-3 text-slate-500" />;
-    if (lKey.includes('number')) return <Hash className="w-3 h-3 text-slate-500" />;
-    return null;
-  }
-
-  if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
-
-  const filteredUsers = users.filter(u => [u.full_name, u.username, u.email, u.country].some(f => f?.toLowerCase().includes(search.toLowerCase())));
+  const filteredUsers = users.filter(u => [u.full_name, u.username, u.email].some(f => f?.toLowerCase().includes(search.toLowerCase())));
   const totalBalance = users.reduce((s, u) => s + (u.balance || 0), 0);
-  const pendingWithdrawalsCount = withdrawals.filter(w => w.status === "pending" || w.status === "processing").length;
-  const pendingDepositsCount = deposits.filter(d => d.status === "pending").length;
-  const totalReferrals = users.reduce((s, u) => s + (u.referral_count || 0), s);
-  const idToUserMap = new Map(users.map(u => [u.id, u]));
-
-  const heroImg = media.find(m => m.id === 'hero')?.url || PlaceHolderImages.find(i => i.id === 'activity-hero')?.imageUrl;
-  const teamworkImg = media.find(m => m.id === 'teamwork')?.url || PlaceHolderImages.find(i => i.id === 'activity-teamwork')?.imageUrl;
-  const logoImg = media.find(m => m.id === 'app-logo')?.url || PlaceHolderImages.find(i => i.id === 'signup-logo')?.imageUrl;
-  const activeRentals = allRentedGenerators.filter(g => g && g.expires_at && new Date(g.expires_at).getTime() > Date.now()).length;
-
-  const coreGeneratorIds = ['pg1', 'pg2', 'pg3', 'pg4'];
-  const otherGenerators = generators.filter(g => !coreGeneratorIds.includes(g.id));
+  const activeRentals = allRentedGenerators.filter(g => new Date(g.expires_at).getTime() > Date.now()).length;
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-900 text-white flex">
       <AlertDialog open={confirmDialog.open} onOpenChange={o => setConfirmDialog(s => ({ ...s, open: o }))}>
-        <AlertDialogContent className="bg-slate-800 border border-red-700/50 max-w-sm">
+        <AlertDialogContent className="bg-slate-800 border-slate-700 text-white">
           <AlertDialogHeader>
-            <div className="w-12 h-12 rounded-full bg-red-900/40 border border-red-700/50 flex items-center justify-center mx-auto mb-1">
-              <AlertTriangle className="w-6 h-6 text-red-400" />
-            </div>
-            <AlertDialogTitle className="text-white text-center text-lg">{confirmDialog.title}</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-400 text-center text-sm leading-relaxed">
-              {confirmDialog.description}
-            </AlertDialogDescription>
+            <AlertDialogTitle>{confirmDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmDialog.description}</AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row gap-2 justify-center mt-1">
-            <AlertDialogCancel className="flex-1 bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 hover:text-white">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(s => ({ ...s, open: false })); }} className="flex-1 bg-red-700 hover:bg-red-600 text-white border-0">
-              Yes, Confirm
-            </AlertDialogAction>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-700">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDialog.onConfirm} className="bg-red-600">Confirm</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />}
-
-      <div className={`fixed top-0 left-0 h-full z-50 w-72 bg-slate-900 border-r border-slate-700 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
-        <div className="flex items-center justify-between px-4 h-14 border-b border-slate-700 flex-shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-md">
-              <Shield className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <p className="font-black text-white text-sm leading-none">CoinPower</p>
-              <p className="text-amber-400 text-[10px] leading-none mt-0.5">Admin Panel</p>
-            </div>
-          </div>
-          <button onClick={() => setSidebarOpen(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors md:hidden">
-            <X className="w-4 h-4" />
-          </button>
+      {/* Sidebar */}
+      <aside className="w-64 border-r border-slate-800 bg-slate-900 flex flex-col h-screen sticky top-0">
+        <div className="p-4 border-b border-slate-800 font-black text-xl flex items-center gap-2">
+          <Shield className="text-amber-500" /> Admin
         </div>
-
-        <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-0.5">
-          {tabs.map(({ id, label, icon: Icon, badge, color }) => (
-            <button key={id} onClick={() => switchTab(id)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab === id ? "bg-slate-700 text-white shadow-sm" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}>
-              <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center flex-shrink-0 shadow-sm`}><Icon className="w-3.5 h-3.5 text-white" /></div>
-              <span className="flex-1 text-left">{label}</span>
-              {badge !== undefined && badge > 0 && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${tab === id ? "bg-amber-500 text-white" : "bg-slate-600 text-slate-300"}`}>{badge}</span>}
+        <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${tab === t.id ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
+              <t.icon className="w-4 h-4" /> {t.label}
+              {t.badge && <span className="ml-auto bg-amber-600 text-[10px] px-1.5 py-0.5 rounded-full">{t.badge}</span>}
             </button>
           ))}
         </nav>
-
-        <div className="px-3 pb-4 pt-2 border-t border-slate-700 flex-shrink-0">
-          <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-900/30 border border-red-800/50 text-red-400 hover:bg-red-900/50 text-sm font-semibold transition-colors">
-            <LogOut className="w-4 h-4 flex-shrink-0" />
-            Sign Out
-          </button>
+        <div className="p-4 border-t border-slate-800">
+          <Button onClick={handleSignOut} variant="destructive" className="w-full">Sign Out</Button>
         </div>
-      </div>
+      </aside>
 
-      <div className="fixed top-0 left-0 right-0 z-30 bg-slate-800 border-b border-slate-700 px-4 h-12 flex items-center justify-between md:hidden">
-        <button onClick={() => setSidebarOpen(true)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"><Menu className="w-5 h-5" /></button>
-        <p className="text-slate-300 text-xs font-semibold capitalize">{tab}</p>
-        <div />
-      </div>
-
-      <main className="flex flex-col md:ml-72 pt-12 md:pt-0">
-        <div className="flex-1 p-4 sm:p-6">
-          {tab === "overview" && (
-            <div className="space-y-5">
-              <h1 className="text-xl sm:text-2xl font-black text-white">Dashboard Overview</h1>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {[
-                  { label: "Total Users", value: users.length.toLocaleString(), icon: Users, color: "from-blue-500 to-blue-600" },
-                  { label: "Total Balance", value: `$${totalBalance.toFixed(2)}`, icon: DollarSign, color: "from-green-500 to-green-600" },
-                  { label: "Pending Withdrawals", value: String(pendingWithdrawalsCount), icon: ArrowUpFromLine, color: "from-amber-500 to-amber-600" },
-                  { label: "Active Rentals", value: activeRentals.toLocaleString(), icon: Zap, color: "from-teal-500 to-cyan-600" },
-                ].map(({ label, value, icon: Icon, color }) => (
-                  <div key={label} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
-                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-3 shadow-lg`}><Icon className="w-4 h-4 text-white" /></div>
-                    <p className="text-xl font-black text-white">{value}</p>
-                    <p className="text-slate-400 text-xs mt-0.5">{label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {tab === "users" && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h1 className="text-xl font-black text-white">User Accounts</h1>
-                <Button onClick={() => setShowCreateUser(true)} size="sm" className="bg-amber-500 hover:bg-amber-600 text-white font-bold"><Plus className="w-4 h-4 mr-2" /> Create User</Button>
-              </div>
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users..." className="pl-9 bg-slate-800 border-slate-700 text-white" />
-              </div>
-              <div className="space-y-3">
-                {filteredUsers.map(u => (
-                  <div key={u.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
-                    <div className="flex justify-between items-start">
-                        <div className="flex gap-3">
-                            <Avatar><AvatarFallback className="bg-amber-500">{u.username?.[0].toUpperCase()}</AvatarFallback></Avatar>
-                            <div>
-                                <p className="font-bold">{u.full_name || u.username}</p>
-                                <p className="text-xs text-slate-400">{u.email}</p>
-                            </div>
-                        </div>
-                        <p className="text-green-400 font-bold">${u.balance.toFixed(2)}</p>
-                    </div>
-                    <div className="mt-4 flex gap-2">
-                        <button onClick={() => { setEditingUser(u); setNewBalance(String(u.balance)); }} className="text-xs px-3 py-1.5 rounded-lg bg-blue-900/30 text-blue-400 border border-blue-800">Edit Balance</button>
-                        <button onClick={() => { setEditingPassword(u); setNewPassword(''); }} className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 text-white border border-slate-600">Reset Password</button>
-                        <button onClick={() => openConfirm("Delete User", "Delete this user forever?", () => handleDeleteUser(u.id))} className="text-xs px-3 py-1.5 rounded-lg bg-red-900/30 text-red-400 border border-red-800">Delete</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {tab === "deposits" && (
-            <div className="space-y-4">
-              <h1 className="text-xl font-black text-white">Deposit Requests</h1>
-              {deposits.map(d => (
-                <DepositRow key={d.id} d={d} user={users.find(u => u.id === d.user_id)} onApprove={() => handleApproveDeposit(d.id, d.user_id, d.amount)} onReject={() => handleRejectDeposit(d.id, d.user_id, d.amount)} onDelete={() => handleDeleteDeposit(d.id)} approvePending={false} rejectPending={false} copyText={copyText} />
-              ))}
-            </div>
-          )}
-
-          {tab === "withdrawals" && (
-            <div className="space-y-4">
-              <h1 className="text-xl font-black text-white">Withdrawal Requests</h1>
-              {withdrawals.map(w => (
-                 <div key={w.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4 space-y-3">
-                    <div className="flex justify-between">
-                        <div>
-                            <p className="font-bold">{users.find(u => u.id === w.user_id)?.full_name}</p>
-                            <p className="text-xs text-slate-400">{w.method} · {w.country}</p>
-                        </div>
-                        <p className="text-amber-400 font-bold">${w.amount.toFixed(2)}</p>
-                    </div>
-                    <AdminWithdrawalStepper status={w.status} />
-                    <div className="mt-4 flex gap-2">
-                        {w.status === 'pending' && <button onClick={() => handleProcessWithdrawal(w.id)} className="text-xs px-3 py-1.5 rounded-lg bg-blue-900/30 text-blue-400">Process</button>}
-                        {(w.status === 'pending' || w.status === 'processing') && <button onClick={() => handleCompleteWithdrawal(w.id)} className="text-xs px-3 py-1.5 rounded-lg bg-green-900/30 text-green-400">Complete</button>}
-                        {(w.status === 'pending' || w.status === 'processing') && <button onClick={() => handleRejectWithdrawal(w.id, w.user_id, w.amount)} className="text-xs px-3 py-1.5 rounded-lg bg-red-900/30 text-red-400">Reject</button>}
-                    </div>
+      {/* Main Content */}
+      <main className="flex-1 p-6 overflow-y-auto">
+        {tab === "overview" && (
+          <div className="space-y-6">
+            <h1 className="text-2xl font-black">Overview</h1>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+               {[
+                 { label: "Total Users", value: users.length, icon: Users, col: "text-blue-400" },
+                 { label: "Total Balance", value: `$${totalBalance.toFixed(2)}`, icon: DollarSign, col: "text-green-400" },
+                 { label: "Active Rentals", value: activeRentals, icon: Zap, col: "text-amber-400" },
+                 { label: "Pending", value: deposits.filter(d => d.status === 'pending').length, icon: ArrowUpFromLine, col: "text-red-400" },
+               ].map(s => (
+                 <div key={s.label} className="bg-slate-800 p-4 rounded-2xl border border-slate-700">
+                    <s.icon className={`${s.col} mb-2`} />
+                    <p className="text-2xl font-black">{s.value}</p>
+                    <p className="text-xs text-slate-400">{s.label}</p>
                  </div>
+               ))}
+            </div>
+          </div>
+        )}
+
+        {tab === "users" && (
+          <div className="space-y-4">
+             <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-black">Users</h1>
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users..." className="w-64 bg-slate-800" />
+             </div>
+             <div className="grid gap-3">
+                {filteredUsers.map(u => (
+                  <div key={u.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex justify-between items-center">
+                    <div>
+                      <p className="font-bold">{u.full_name || u.username}</p>
+                      <p className="text-xs text-slate-400">{u.email}</p>
+                    </div>
+                    <div className="flex gap-2">
+                       <span className="text-green-400 font-bold mr-4">${u.balance.toFixed(2)}</span>
+                       <Button size="sm" onClick={() => { setEditingUser(u); setNewBalance(String(u.balance)); }} variant="outline">Edit</Button>
+                       <Button size="sm" onClick={() => { setEditingPassword(u); setNewPassword(''); }} variant="outline">Reset</Button>
+                    </div>
+                  </div>
+                ))}
+             </div>
+          </div>
+        )}
+
+        {tab === "deposits" && (
+          <div className="space-y-4">
+            <h1 className="text-2xl font-black">Deposits</h1>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {deposits.map(d => (
+                <DepositRow key={d.id} d={d} user={users.find(u => u.id === d.user_id)} onApprove={() => handleApproveDeposit(d.id, d.user_id, d.amount)} onReject={() => handleRejectDeposit(d.id, d.user_id, d.amount)} onDelete={() => fetchData()} copyText={(txt) => { navigator.clipboard.writeText(txt); toast({ title: "Copied" }); }} />
               ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* ... Add other tabs (referrals, generators, media, codes, settings) ... */}
-        </div>
+        {tab === "withdrawals" && (
+          <div className="space-y-4">
+            <h1 className="text-2xl font-black">Withdrawals</h1>
+            {withdrawals.map(w => (
+              <div key={w.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3">
+                 <div className="flex justify-between">
+                    <div>
+                      <p className="font-bold">{users.find(u => u.id === w.user_id)?.full_name}</p>
+                      <p className="text-xs text-slate-400">{w.method} · {w.country}</p>
+                    </div>
+                    <p className="text-amber-400 font-black">${w.amount.toFixed(2)}</p>
+                 </div>
+                 <AdminWithdrawalStepper status={w.status} />
+                 <div className="flex gap-2 pt-2">
+                    {w.status === 'pending' && <Button onClick={() => handleProcessWithdrawal(w.id)} size="sm" className="bg-blue-600">Process</Button>}
+                    {w.status === 'processing' && <Button onClick={() => handleCompleteWithdrawal(w.id)} size="sm" className="bg-green-600">Complete</Button>}
+                    {(w.status === 'pending' || w.status === 'processing') && <Button onClick={() => handleRejectWithdrawal(w.id, w.user_id, w.amount)} size="sm" variant="destructive">Reject</Button>}
+                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ...Other tabs... */}
       </main>
 
-      {/* ── MODALS ── */}
+      {/* Modals */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm">
-            <h3 className="text-white font-bold mb-4">Edit Balance</h3>
-            <Input type="number" value={newBalance} onChange={e => setNewBalance(e.target.value)} className="bg-slate-700 border-slate-600 mb-4" />
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-slate-800 p-6 rounded-2xl w-full max-w-sm border border-slate-700">
+            <h2 className="font-bold mb-4">Update Balance</h2>
+            <Input type="number" value={newBalance} onChange={e => setNewBalance(e.target.value)} className="mb-4 bg-slate-700" />
             <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setEditingUser(null)} className="flex-1">Cancel</Button>
-                <Button onClick={() => handleUpdateBalance(editingUser.id, parseFloat(newBalance))} className="flex-1 bg-amber-500">Save</Button>
+              <Button onClick={() => setEditingUser(null)} variant="ghost" className="flex-1">Cancel</Button>
+              <Button onClick={() => handleUpdateBalance(editingUser.id, parseFloat(newBalance))} className="flex-1 bg-amber-600">Save</Button>
             </div>
           </div>
         </div>
       )}
 
       {editingPassword && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm">
-            <h3 className="text-white font-bold mb-4">Reset Password</h3>
-            <Input type="text" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="New password" className="bg-slate-700 border-slate-600 mb-4" />
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-slate-800 p-6 rounded-2xl w-full max-w-sm border border-slate-700">
+            <h2 className="font-bold mb-4">Reset Password</h2>
+            <Input type="text" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="New Password" className="mb-4 bg-slate-700" />
             <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setEditingPassword(null)} className="flex-1">Cancel</Button>
-                <Button onClick={() => handleResetPassword(editingPassword.id, newPassword)} className="flex-1 bg-amber-500">Reset</Button>
+              <Button onClick={() => setEditingPassword(null)} variant="ghost" className="flex-1">Cancel</Button>
+              <Button onClick={() => handleResetPassword(editingPassword.id, newPassword)} className="flex-1 bg-amber-600">Reset</Button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
 
+const tabs = [
+  { id: "overview", label: "Overview", icon: BarChart3 },
+  { id: "users", label: "Users", icon: Users },
+  { id: "deposits", label: "Deposits", icon: DollarSign },
+  { id: "withdrawals", label: "Withdrawals", icon: ArrowUpFromLine },
+  { id: "referrals", label: "Referrals", icon: Link2 },
+  { id: "generators", label: "Generators", icon: Zap },
+  { id: "media", label: "Media", icon: ImagePlus },
+  { id: "codes", label: "Gift Codes", icon: Gift },
+  { id: "settings", label: "Settings", icon: Settings },
+  { id: "about", label: "About", icon: Info },
+];
+
 export function DashboardClient() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading...</p></div>}>
+    <Suspense fallback={<div>Loading Dashboard...</div>}>
       <DashboardContent />
     </Suspense>
   )

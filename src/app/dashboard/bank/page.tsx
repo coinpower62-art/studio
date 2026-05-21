@@ -98,11 +98,11 @@ function WithdrawalStatusStepper({ status }: { status: "pending" | "processing" 
                 const isActive = index === currentStageIndex;
                 
                 return (
-                    <Suspense key={stage.id}>
+                    <div key={stage.id} className="flex-1 flex flex-col items-center gap-1">
                         {index > 0 && (
-                             <div className={`flex-1 h-0.5 rounded-full ${index <= currentStageIndex ? 'bg-green-500' : 'bg-gray-200'}`} />
+                             <div className={`w-full h-0.5 mb-2 ${index <= currentStageIndex ? 'bg-green-500' : 'bg-gray-200'}`} />
                         )}
-                        <div className="flex flex-col items-center gap-1">
+                        <div className="flex flex-col items-center">
                             {isCompleted ? (
                                 <CheckCircle className="w-4 h-4 text-green-500" />
                             ) : isActive ? (
@@ -120,7 +120,7 @@ function WithdrawalStatusStepper({ status }: { status: "pending" | "processing" 
                                 {stage.label}
                             </span>
                         </div>
-                    </Suspense>
+                    </div>
                 );
             })}
         </div>

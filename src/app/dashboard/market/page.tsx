@@ -30,32 +30,6 @@ type Profile = {
     balance: number;
 };
 
-function Countdown({ expiresAt, label = "Expires" }: { expiresAt: number; label?: string }) {
-  const [remaining, setRemaining] = useState(expiresAt - Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setRemaining(expiresAt - Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [expiresAt]);
-  if (remaining <= 0) return <span className="text-red-500 text-xs font-bold">EXPIRED</span>;
-  const d = Math.floor(remaining / 86400000);
-  const h = Math.floor((remaining % 86400000) / 3600000);
-  const m = Math.floor((remaining % 3600000) / 60000);
-  const s = Math.floor((remaining % 60000) / 1000);
-  return (
-    <div className="text-center">
-      <p className="text-[10px] text-slate-400 mb-0.5">{label}</p>
-      <div className="flex items-center gap-0.5 justify-center">
-        {d > 0 && <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded">{String(d).padStart(2,"0")}d</span>}
-        <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded">{String(h).padStart(2,"0")}</span>
-        <span className="text-red-500 font-black text-xs">:</span>
-        <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded">{String(m).padStart(2,"0")}</span>
-        <span className="text-red-500 font-black text-xs">:</span>
-        <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded">{String(s).padStart(2,"0")}</span>
-      </div>
-    </div>
-  );
-}
-
 function MarketPageSkeleton() {
     return (
       <div className="pt-12 p-4 pb-20 max-w-7xl mx-auto">
@@ -118,15 +92,14 @@ export default function Market() {
 
   if (isLoading || !profile) return <MarketPageSkeleton />;
 
-  const now = Date.now();
   const historicalRentedCounts = new Map<string, number>();
   rentedHistory.forEach(ug => historicalRentedCounts.set(ug.generator_id, (historicalRentedCounts.get(ug.generator_id) || 0) + 1));
 
   const colorMap: Record<string, any> = {
-    "from-amber-400 to-orange-500": { bg: "from-amber-50 to-orange-50", border: "border-amber-200", badge: "bg-amber-100", badgeText: "text-amber-700", gradS: "#f59e0b", gradE: "#f97316", badgeLabel: "Popular" },
-    "from-green-400 to-emerald-600": { bg: "from-green-50 to-emerald-50", border: "border-green-200", badge: "bg-green-100", badgeText: "text-green-700", gradS: "#22c55e", gradE: "#059669", badgeLabel: "Recommended" },
-    "from-blue-400 to-indigo-600": { bg: "from-blue-50 to-indigo-50", border: "border-blue-200", badge: "bg-blue-100", badgeText: "text-blue-700", gradS: "#3b82f6", gradE: "#4f46e5", badgeLabel: "High Yield" },
-    "from-purple-500 to-pink-600": { bg: "from-purple-50 to-pink-50", border: "border-purple-200", badge: "bg-purple-100", badgeText: "text-purple-700", gradS: "#8b5cf6", gradE: "#ec4899", badgeLabel: "Premium" },
+    "from-amber-400 to-orange-500": { bg: "from-amber-50 to-orange-50", border: "border-amber-200", badge: "bg-amber-100", badgeText: "text-amber-700", badgeLabel: "Popular" },
+    "from-green-400 to-emerald-600": { bg: "from-green-50 to-emerald-50", border: "border-green-200", badge: "bg-green-100", badgeText: "text-green-700", badgeLabel: "Recommended" },
+    "from-blue-400 to-indigo-600": { bg: "from-blue-50 to-indigo-50", border: "border-blue-200", badge: "bg-blue-100", badgeText: "text-blue-700", badgeLabel: "High Yield" },
+    "from-purple-500 to-pink-600": { bg: "from-purple-50 to-pink-50", border: "border-purple-200", badge: "bg-purple-100", badgeText: "text-purple-700", badgeLabel: "Premium" },
   };
 
   return (
@@ -147,10 +120,11 @@ export default function Market() {
             {generators.filter(g => g.published).map((gen) => {
               const cm = colorMap[gen.color] || colorMap["from-amber-400 to-orange-500"];
               const count = historicalRentedCounts.get(gen.id) || 0;
-              const max = gen.id === 'pg1' ? 1 : (gen.id === 'pg2' ? 2 : (gen.max_rentals ?? 1));
+              let max = gen.max_rentals ?? 1;
+              if (gen.id === 'pg1') max = 1;
+              if (gen.id === 'pg2') max = 2;
+
               const isMaxed = count >= max;
-              const isRented = count > 0;
-              const activeUg = rentedHistory.find(ug => ug.generator_id === gen.id && new Date(ug.expires_at).getTime() > now);
 
               return (
                 <div key={gen.id} className={cn(
@@ -195,13 +169,6 @@ export default function Market() {
                           <p className="font-black text-sm text-amber-700">{count}/{max}</p>
                       </div>
                     </div>
-
-                    {activeUg && (
-                      <div className="mb-3 bg-red-50 p-3 rounded-xl flex justify-between items-center border border-red-100">
-                        <span className="text-xs font-bold text-red-600">Active Cycle</span>
-                        <Countdown expiresAt={new Date(activeUg.expires_at).getTime()} label="" />
-                      </div>
-                    )}
                     
                     <Button 
                       disabled={isMaxed || isRenting === gen.id} 
@@ -213,11 +180,6 @@ export default function Market() {
                     >
                       {isRenting === gen.id ? 'PROCESSING...' : isMaxed ? 'LIMIT REACHED' : `RENT ${gen.name.toUpperCase()}`}
                     </Button>
-                    {isRented && !isMaxed && (
-                       <Button variant="ghost" onClick={() => router.push("/dashboard/power")} className="w-full mt-2 text-xs text-amber-600 font-bold">
-                          Go to Power Center →
-                       </Button>
-                    )}
                   </div>
                 </div>
               );
