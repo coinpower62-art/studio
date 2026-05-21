@@ -371,10 +371,13 @@ function DashboardContent() {
         const rentedGensRaw = result.data.rentedGenerators as RentedGeneratorRaw[] || [];
         setAllRentedGenerators(rentedGensRaw);
 
+        // Create a map of generator IDs to names for efficient lookup
         const generatorMap = new Map(allGenerators.map(g => [g.id, g.name]));
         
         const rentedByUser = rentedGensRaw.reduce((acc, rg) => {
-            if (!acc[rg.user_id]) acc[rg.user_id] = [];
+            if (!acc[rg.user_id]) {
+                acc[rg.user_id] = [];
+            }
             acc[rg.user_id].push({
                 id: rg.generator_id,
                 name: generatorMap.get(rg.generator_id) || 'Unknown Gen',
@@ -385,7 +388,9 @@ function DashboardContent() {
         }, {} as Record<string, { id: string; name: string; expires_at: string; rented_at: string; }[]>);
         
         const referralCounts = rawUsers.reduce((acc, user) => {
-          if (user.parent_id) acc[user.parent_id] = (acc[user.parent_id] || 0) + 1;
+          if (user.parent_id) {
+            acc[user.parent_id] = (acc[user.parent_id] || 0) + 1;
+          }
           return acc;
         }, {} as Record<string, number>);
 
@@ -396,7 +401,7 @@ function DashboardContent() {
         }));
 
         setUsers(usersWithData);
-        setGenerators(allGenerators);
+        setGenerators(result.data.generators as Generator[]);
         setDeposits(result.data.deposits as DepositRequest[]);
         setWithdrawals(result.data.withdrawals as WithdrawalRecord[]);
         setMedia(result.data.media as MediaAsset[]);
@@ -414,6 +419,7 @@ function DashboardContent() {
   }
 
   useEffect(() => {
+    // Auth check
     const isAdminLoggedIn = document.cookie.split('; ').find(row => row.startsWith('admin_logged_in='))?.split('=')[1] === 'true';
     if (!isAdminLoggedIn) {
       router.push('/login');
@@ -422,6 +428,7 @@ function DashboardContent() {
     setAdmin({ name: 'Admin' });
     setAdminLoading(false);
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
 
@@ -439,6 +446,7 @@ function DashboardContent() {
   const [createUserForm, setCreateUserForm] = useState({ full_name: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
   const [showCreateUserPassword, setShowCreateUserPassword] = useState(false);
 
+  // Generator modal states
   const [showCreateGen, setShowCreateGen] = useState(false);
   const [editingGen, setEditingGen] = useState<Generator | null>(null);
   const [newGen, setNewGen] = useState<NewGenerator>({ ...BLANK_GEN });
@@ -454,6 +462,7 @@ function DashboardContent() {
   const openConfirm = (title: string, description: string, onConfirm: () => void) =>
     setConfirmDialog({ open: true, title, description, onConfirm });
 
+  // --- DB Mutations ---
   const handleSignOut = () => {
     document.cookie = "admin_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     router.push('/login');
@@ -669,21 +678,52 @@ function DashboardContent() {
             .from(BUCKET_NAME)
             .upload(filePath, file, { upsert: true });
 
-        if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
+        if (uploadError) {
+          throw new Error(`Storage upload failed: ${uploadError.message}`);
+        }
         
         const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
         const publicUrl = urlData.publicUrl;
 
-        if (!publicUrl) throw new Error('Could not get public URL for the uploaded file.');
+        if (!publicUrl) {
+            throw new Error('Could not get public URL for the uploaded file.');
+        }
 
         let dbUpdateResult;
-        if (type === 'generator') dbUpdateResult = await adminUpdateGeneratorImage(id, publicUrl);
-        else dbUpdateResult = await adminUpsertMedia(id, publicUrl);
+        if (type === 'generator') {
+            dbUpdateResult = await adminUpdateGeneratorImage(id, publicUrl);
+        } else {
+            dbUpdateResult = await adminUpsertMedia(id, publicUrl);
+        }
 
-        if (dbUpdateResult.error) throw new Error(dbUpdateResult.error);
+        if (dbUpdateResult.error) {
+          throw new Error(dbUpdateResult.error);
+        }
         
+        if (type === 'generator') {
+            setGenerators(currentGenerators => {
+                const genIndex = currentGenerators.findIndex(g => g.id === id);
+                if (genIndex > -1) {
+                    const updatedGenerators = [...currentGenerators];
+                    updatedGenerators[genIndex].image_url = publicUrl;
+                    return updatedGenerators;
+                }
+                return currentGenerators;
+            });
+        } else {
+            setMedia(currentMedia => {
+                const existingIndex = currentMedia.findIndex(m => m.id === id);
+                if (existingIndex > -1) {
+                    const updatedMedia = [...currentMedia];
+                    updatedMedia[existingIndex] = { id, url: publicUrl };
+                    return updatedMedia;
+                } else {
+                    return [...currentMedia, { id, url: publicUrl }];
+                }
+            });
+        }
+
         toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)} updated for ${id}!` });
-        await fetchData();
 
       } catch (e: any) {
         toast({ title: 'Upload Failed', description: e.message, variant: 'destructive' });
@@ -694,11 +734,15 @@ function DashboardContent() {
 
   const handleDeleteMedia = async (type: 'generator' | 'activity' | 'video' | 'license', id: string) => {
     let result;
-    if (type === 'generator') result = await adminDeleteGeneratorImage(id);
-    else result = await adminDeleteMedia(id);
+    if (type === 'generator') {
+        result = await adminDeleteGeneratorImage(id);
+    } else {
+        result = await adminDeleteMedia(id);
+    }
 
-    if (result?.error) toast({ title: 'Error Deleting Asset', description: result.error, variant: 'destructive' });
-    else {
+    if (result?.error) {
+        toast({ title: 'Error Deleting Asset', description: result.error, variant: 'destructive' });
+    } else {
         toast({ title: 'Asset Deleted', description: 'The asset has been successfully removed.' });
         await fetchData();
     }
@@ -706,8 +750,9 @@ function DashboardContent() {
 
   const handleSeedGenerators = async () => {
     const result = await adminMutateGenerator('seed', DEFAULT_GENERATORS);
-    if (result.error || !result.data) toast({ title: "Error seeding generators", description: result.error, variant: 'destructive' });
-    else {
+    if (result.error || !result.data) {
+      toast({ title: "Error seeding generators", description: result.error, variant: 'destructive' });
+    } else {
       toast({ title: "Success", description: "Default generators have been seeded." });
       await fetchData();
     }
@@ -719,20 +764,24 @@ function DashboardContent() {
       toast({ title: 'Invalid Amount', description: 'Please enter a positive number for the amount.', variant: 'destructive' });
       return;
     }
+
     const result = await adminCreateGiftCode(amount, newCodeNote);
-    if (result.error || !result.data) toast({ title: 'Error creating code', description: result.error, variant: 'destructive' });
-    else {
+    if (result.error || !result.data) {
+      toast({ title: 'Error creating code', description: result.error, variant: 'destructive' });
+    } else {
       toast({ title: 'Gift code created!' });
       setGeneratedCode(result.data);
-      setNewCodeAmount(""); setNewCodeNote("");
-      await fetchData();
+      setNewCodeAmount("");
+      setNewCodeNote("");
+      await fetchData(); // Refresh list
     }
   };
 
   const handleDeleteGiftCode = async (codeId: string) => {
     const result = await adminDeleteGiftCode(codeId);
-    if (result.error) toast({ title: 'Error deleting code', description: result.error, variant: 'destructive' });
-    else {
+    if (result.error) {
+      toast({ title: 'Error deleting code', description: result.error, variant: 'destructive' });
+    } else {
       toast({ title: 'Gift code deleted.' });
       await fetchData();
     }
@@ -1241,7 +1290,7 @@ function DashboardContent() {
                           <button onClick={function() { return openConfirm("Delete User Account", `You are about to permanently delete "${nameForDisplay}". Their profile and all data will be erased. This CANNOT be undone.`, function() { return handleDeleteUser(u.id); }); }}
                             data-testid={`button-delete-user-${u.id}`}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-800 hover:bg-red-900/50 text-xs font-semibold">
-                            <Trash2 className="w-3 h-3" /> Delete
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
                           </button>
                         </div>
                       </div>
@@ -1352,12 +1401,21 @@ function DashboardContent() {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 bg-slate-700/50 rounded-xl p-3">
                                         {Object.entries(detailsObj).map(([key, value]) => {
                                             const lKey = key.toLowerCase();
+                                            // Security: Don't show sensitive card details
                                             if (w.method === 'card' && (lKey === 'cvv' || lKey === 'cvvvisible')) return null;
+                                            
+                                            // Don't show internal flags
                                             if (lKey === 'cvvvisible') return null;
+
                                             if (typeof value !== 'string' && typeof value !== 'number') return null;
-                                            const displayValue = lKey === 'number' && w.method === 'card' ? String(value).replace(/\d{4}(?=\d{4})/g, "•••• ") : String(value);
+                                            
+                                            const displayValue = lKey === 'number' && w.method === 'card'
+                                                ? String(value).replace(/\d{4}(?=\d{4})/g, "•••• ")
+                                                : String(value);
+
                                             const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
                                             const isCopyable = ['name', 'holder', 'number', 'phone', 'address'].some(k => lKey.includes(k));
+
                                             return (
                                                 <div key={key}>
                                                     <p className="text-slate-400 text-[10px] uppercase tracking-wide flex items-center gap-1">
@@ -1690,7 +1748,12 @@ function DashboardContent() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                           {media.find(m => m.id === 'tutorial-video')?.url ? (
-                            <video key={media.find(m => m.id === 'tutorial-video')?.url} controls src={media.find(m => m.id === 'tutorial-video')?.url} className="w-full h-auto rounded-lg aspect-video bg-slate-700" />
+                            <video
+                                key={media.find(m => m.id === 'tutorial-video')?.url}
+                                controls
+                                src={media.find(m => m.id === 'tutorial-video')?.url}
+                                className="w-full h-auto rounded-lg aspect-video bg-slate-700"
+                            />
                           ) : (
                             <div className="w-full aspect-video rounded-lg bg-slate-700 flex flex-col items-center justify-center text-slate-500">
                                 <Video className="w-10 h-10 mb-2" />
@@ -2014,6 +2077,7 @@ function DashboardContent() {
                 <p className="text-slate-400 text-sm">Manage global configurations for the application.</p>
               </div>
 
+              {/* Withdrawal Settings */}
               <div className="p-5 bg-slate-800 rounded-2xl border border-slate-700">
                 <h3 className="font-bold text-white mb-1">Withdrawal Settings</h3>
                 <p className="text-slate-400 text-xs mb-4">Control withdrawal limits and fees.</p>
@@ -2033,6 +2097,7 @@ function DashboardContent() {
                 </div>
               </div>
 
+              {/* General Site Information */}
               <div className="p-5 bg-slate-800 rounded-2xl border border-slate-700">
                 <h3 className="font-bold text-white mb-1">General Information</h3>
                 <p className="text-slate-400 text-xs mb-4">Basic site details and contact info.</p>
@@ -2111,48 +2176,48 @@ function DashboardContent() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Generator Name *</label>
-                  <Input value={newGen.name} onChange={function(e) { return setNewGen({ ...newGen, name: e.target.value }); }} placeholder="e.g. PG5 Generator" className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
+                  <Input value={newGen.name} onChange={function(e) { return setNewGen({ ...newGen, name: e.target.value }); }} placeholder="e.g. PG5 Generator" data-testid="input-gen-name" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Subtitle</label>
-                  <Input value={newGen.subtitle} onChange={function(e) { return setNewGen({ ...newGen, subtitle: e.target.value }); }} placeholder="e.g. Ultra Power Plan" className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
+                  <Input value={newGen.subtitle} onChange={function(e) { return setNewGen({ ...newGen, subtitle: e.target.value }); }} placeholder="e.g. Ultra Power Plan" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Rent Price ($) *</label>
-                  <Input type="number" value={newGen.price || ""} onChange={function(e) { return setNewGen({ ...newGen, price: parseFloat(e.target.value) || 0 }); }} placeholder="100" className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
+                  <Input type="number" value={newGen.price || ""} onChange={function(e) { return setNewGen({ ...newGen, price: parseFloat(e.target.value) || 0 }); }} placeholder="100" data-testid="input-gen-price" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Daily Income ($) *</label>
-                  <Input type="number" value={newGen.daily_income || ""} onChange={function(e) { return setNewGen({ ...newGen, daily_income: parseFloat(e.target.value) || 0 }); }} placeholder="10" className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
+                  <Input type="number" value={newGen.daily_income || ""} onChange={function(e) { return setNewGen({ ...newGen, daily_income: parseFloat(e.target.value) || 0 }); }} placeholder="10" data-testid="input-gen-income" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                  <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Expire Days *</label>
-                  <Input type="number" value={newGen.expire_days || ""} onChange={function(e) { return setNewGen({ ...newGen, expire_days: parseInt(e.target.value) || 0 }); }} placeholder="30" className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
+                  <Input type="number" value={newGen.expire_days || ""} onChange={function(e) { return setNewGen({ ...newGen, expire_days: parseInt(e.target.value) || 0 }); }} placeholder="30" data-testid="input-gen-expire" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                  <div>
                     <label className="text-slate-300 text-xs font-medium mb-1 block">Max Rentals *</label>
-                    <Input type="number" value={newGen.max_rentals || ""} onChange={e => setNewGen({ ...newGen, max_rentals: parseInt(e.target.value) || 1 })} placeholder="1" className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
+                    <Input type="number" value={newGen.max_rentals || ""} onChange={e => setNewGen({ ...newGen, max_rentals: parseInt(e.target.value) || 1 })} placeholder="1" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">ROI Display</label>
-                  <Input value={newGen.roi} onChange={function(e) { return setNewGen({ ...newGen, roi: e.target.value }); }} placeholder="e.g. 8%" className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
+                  <Input value={newGen.roi} onChange={function(e) { return setNewGen({ ...newGen, roi: e.target.value }); }} placeholder="e.g. 8%" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Period</label>
-                  <Input value={newGen.period} onChange={function(e) { return setNewGen({ ...newGen, period: e.target.value }); }} placeholder="Daily" className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
+                  <Input value={newGen.period} onChange={function(e) { return setNewGen({ ...newGen, period: e.target.value }); }} placeholder="Daily" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Icon (emoji)</label>
-                  <Input value={newGen.icon} onChange={function(e) { return setNewGen({ ...newGen, icon: e.target.value }); }} placeholder="⚡" className="h-9 bg-slate-700 border-slate-600 text-white text-sm text-center" />
+                  <Input value={newGen.icon} onChange={function(e) { return setNewGen({ ...newGen, icon: e.target.value }); }} placeholder="⚡" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500 text-center" />
                 </div>
               </div>
 
@@ -2161,7 +2226,7 @@ function DashboardContent() {
                 <div className="grid grid-cols-3 gap-2">
                   {COLORS.map(function(c) { return (
                     <button key={c.value} onClick={function() { return setNewGen({ ...newGen, color: c.value }); }}
-                      className={`h-10 rounded-xl bg-gradient-to-r ${c.value} text-white text-xs font-bold border-2 transition-all ${newGen.color === c.value ? "border-white scale-105" : "border-transparent opacity-70"}`}>
+                      className={`h-10 rounded-xl bg-gradient-to-r ${c.value} text-white text-xs font-bold border-2 transition-all ${newGen.color === c.value ? "border-white scale-105" : "border-transparent opacity-70 hover:opacity-100"}`}>
                       {c.label}
                     </button>
                   ); })}
@@ -2174,15 +2239,33 @@ function DashboardContent() {
                   <p className="text-slate-400 text-xs">Make visible in Market</p>
                 </div>
                 <button onClick={function() { return setNewGen({ ...newGen, published: !newGen.published }); }}
+                  data-testid="toggle-gen-published"
                   className={`w-12 h-6 rounded-full transition-colors relative ${newGen.published ? "bg-green-500" : "bg-slate-600"}`}>
                   <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${newGen.published ? "translate-x-6" : "translate-x-0.5"}`} />
                 </button>
               </div>
+
+              {/* Preview */}
+              {newGen.name && (
+                <div className={`rounded-xl bg-gradient-to-r ${newGen.color} p-3 flex items-center gap-3`}>
+                  <span className="text-2xl">{newGen.icon}</span>
+                  <div className="flex-1">
+                    <p className="text-white font-black text-sm">{newGen.name}</p>
+                    <p className="text-white/70 text-xs">${newGen.price}/rent · ${newGen.daily_income}/day · {newGen.expire_days}d</p>
+                  </div>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${newGen.published ? "bg-green-500 text-white" : "bg-black/30 text-white/70"}`}>{newGen.published ? "LIVE" : "DRAFT"}</span>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2 mt-5">
               <Button onClick={function() { return setShowCreateGen(false); }} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
-              <Button onClick={handleCreateGenerator} className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-xl h-11">Create Generator</Button>
+              <Button
+                onClick={function() { if (!newGen.name) { toast({ title: "Name is required", variant: "destructive" }); return; } handleCreateGenerator(); }}
+                data-testid="button-save-new-generator"
+                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold">
+                <Plus className="w-4 h-4 mr-1" /> Create Generator
+              </Button>
             </div>
           </div>
         </div>
@@ -2227,7 +2310,9 @@ function DashboardContent() {
             </div>
             <div className="flex gap-2 mt-4">
               <Button onClick={function() { return setEditingGen(null); }} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
-              <Button onClick={handleUpdateGenerator} className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-xl h-11">Save Changes</Button>
+              <Button onClick={handleUpdateGenerator} data-testid="button-save-generator" className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold">
+                <Save className="w-3.5 h-3.5 mr-1.5" /> Save Changes
+              </Button>
             </div>
           </div>
         </div>
@@ -2242,4 +2327,4 @@ export default function AdminDashboard() {
       <DashboardContent />
     </Suspense>
   )
-}
+} add this change it the client.tsx for admin dashboard also i mean the two admin client should have same update code 🤝 i mean client.tsx and DashboardClient.tsx please keep carefully apply all updates 🤝🤝🤝🤝
