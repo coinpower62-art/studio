@@ -22,14 +22,8 @@ export async function login(formData: FormData) {
       cookies().set('admin_logged_in', 'true', cookieOptions);
       return redirect('/admin/dashboard');
   }
-
-  // 2. Check for Admin Client Login (Deposit Management Only)
-  if (email === 'coinpower' && password === 'Admin2577') {
-      cookies().set('admin_client_logged_in', 'true', cookieOptions);
-      return redirect('/admin-client/dashboard');
-  }
   
-  // 3. Regular User Login via Supabase
+  // 2. Regular User Login via Supabase
   let supabase
   try {
     supabase = createClient()
@@ -64,6 +58,5 @@ export async function logout() {
   const supabase = createClient()
   await supabase.auth.signOut()
   cookies().set('admin_logged_in', '', { maxAge: 0, path: '/' });
-  cookies().set('admin_client_logged_in', '', { maxAge: 0, path: '/' });
   redirect('/login')
 }
