@@ -90,39 +90,15 @@ export default function Market() {
       }
       setUser(user);
 
-      const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('balance')
-          .eq('id', user.id)
-          .maybeSingle();
+      const [profileResult, rentedResult, generatorsResult] = await Promise.all([
+          supabase.from('profiles').select('balance').eq('id', user.id).maybeSingle(),
+          supabase.from('rented_generators').select('*').eq('user_id', user.id),
+          supabase.from('generators').select('*').order('price', { ascending: true })
+      ]);
       
-      if (profileError) {
-          console.error("MarketPage: Profile fetch failed.");
-      }
-      setProfile(profileData as Profile | null);
-      
-      const { data: rentedData, error: rentedError } = await supabase
-          .from('rented_generators')
-          .select('*')
-          .eq('user_id', user.id);
-
-      if (rentedError) {
-          toast({ title: 'Error fetching generators', variant: 'destructive'});
-      } else {
-          setRentedGenerators(rentedData as RentedGenerator[]);
-      }
-
-      const { data: allGenerators, error: generatorsError } = await supabase
-        .from('generators')
-        .select('*')
-        .order('price', { ascending: true });
-
-      if (generatorsError) {
-          toast({ title: 'Error fetching market generators', variant: 'destructive'});
-          setGenerators([]);
-      } else {
-          setGenerators(allGenerators as Generator[]);
-      }
+      setProfile(profileResult.data as Profile | null);
+      setRentedGenerators(rentedResult.data as RentedGenerator[] || []);
+      setGenerators(generatorsResult.data as Generator[] || []);
       
       setIsLoading(false);
   }, [router, supabase, toast]);
@@ -219,11 +195,9 @@ export default function Market() {
               const cm = colorMap[gen.color] || colorMap["from-amber-400 to-orange-500"];
               const historicalCount = historicalRentedCounts.get(gen.id) || 0;
               const activeCount = activeRentedCounts.get(gen.id) || 0;
-              
               const maxRentals = gen.max_rentals ?? 1;
               const isMaxed = historicalCount >= maxRentals;
               const isActive = activeCount > 0;
-              
               const activeUg = rentedGenerators.find(ug => ug.generator_id === gen.id && new Date(ug.expires_at).getTime() > now);
 
               return (
@@ -243,7 +217,7 @@ export default function Market() {
                       </div>
                       <div className="flex flex-col items-end gap-1.5">
                         <span className={'text-xs font-semibold px-2 py-1 rounded-full ' + cm.badge + ' ' + cm.badgeText}>
-                          {isMaxed ? "Limit Reached" : cm.badgeLabel}
+                          {isMaxed ? "Max Reached" : cm.badgeLabel}
                         </span>
                         {isActive ? (
                           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 flex items-center gap-1">
@@ -324,7 +298,7 @@ export default function Market() {
                           disabled={isRenting === gen.id}
                           className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-xl h-10 sm:h-11 shadow-md transition-all flex items-center gap-2 justify-center text-sm"
                         >
-                          {isRenting === gen.id ? "Activating..." : gen.price === 0 ? `Activate FREE Trial` : `Rent Tier - $${gen.price.toLocaleString()}`}
+                          {isRenting === gen.id ? "Activating..." : gen.price === 0 ? `Activate FREE Trial` : `Rent ${gen.name} — $${gen.price.toLocaleString()}`}
                         </Button>
                       </div>
                     )}
