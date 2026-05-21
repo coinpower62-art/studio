@@ -1,4 +1,3 @@
-
 'use server'
 
 import { revalidatePath } from 'next/cache'
@@ -10,13 +9,7 @@ export async function login(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  // Admin Login Check
-  if (email.toLowerCase() === 'coinpoweritaly' && password === 'Hostmyapp2577') {
-      cookies().set('admin_logged_in', 'true', { path: '/' });
-      return redirect('/admin/dashboard');
-  }
-  
-  // Regular User Login
+  // Regular User Login Only (Admin check moved to admin/login/actions)
   let supabase
   try {
     supabase = createClient()

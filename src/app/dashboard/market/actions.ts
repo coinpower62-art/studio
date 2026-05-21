@@ -5,94 +5,54 @@ import { revalidatePath } from 'next/cache';
 
 export async function rentGeneratorAction(generatorId: string): Promise<{ error?: string }> {
     const supabase = createClient();
-
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        return { error: 'You must be logged in to rent a generator.' };
-    }
+    if (!user) return { error: 'Auth required.' };
 
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('balance')
-        .eq('id', user.id)
-        .single();
+    const { data: profile } = await supabase.from('profiles').select('balance').eq('id', user.id).single();
+    if (!profile) return { error: 'Profile not found.' };
 
-    if (!profile) {
-        return { error: 'Could not find your user profile.' };
-    }
-
-    const { data: gen } = await supabase
-        .from('generators')
-        .select('*')
-        .eq('id', generatorId)
-        .eq('published', true)
-        .single();
-
-    if (!gen) {
-        return { error: 'Generator not found or is not available for rent.' };
-    }
+    const { data: gen } = await supabase.from('generators').select('*').eq('id', generatorId).single();
+    if (!gen) return { error: 'Generator not found.' };
     
-    // --- LIFETIME RENTAL LIMITS ---
+    // Check Lifetime Limit
     const { count: lifetimeCount } = await supabase
         .from('rented_generators')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('generator_id', generatorId);
 
-    // PG2: Strict Lifetime Limit of 2
-    if (generatorId === 'pg2' && lifetimeCount !== null && lifetimeCount >= 2) {
-        return { error: 'Account limit reached: You cannot rent the PG2 generator more than 2 times in total.' };
+    const max = generatorId === 'pg2' ? 2 : (gen.max_rentals ?? 1);
+    if (lifetimeCount !== null && lifetimeCount >= max) {
+        return { error: `Lifetime limit of ${max} reached for this plan.` };
     }
 
-    // PG1: Max 1 Lifetime (Free Trial)
-    if (generatorId === 'pg1' && lifetimeCount !== null && lifetimeCount >= 1) {
-        return { error: 'Trial Used: The free trial can only be activated once.' };
-    }
-
-    // Other tiers: Active Limit of 1 (cannot have two active at same time)
-    const now = new Date().toISOString();
+    // Check Active Limit
     const { count: activeCount } = await supabase
         .from('rented_generators')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('generator_id', generatorId)
-        .gt('expires_at', now);
+        .gt('expires_at', new Date().toISOString());
 
     if (activeCount !== null && activeCount >= 1) {
-        return { error: 'You already have an active plan for this generator tier.' };
+        return { error: 'You already have an active plan of this type.' };
     }
 
-    if (profile.balance < gen.price) {
-        return { error: 'insufficient_funds' };
-    }
+    if (profile.balance < gen.price) return { error: 'Insufficient funds.' };
 
-    const { error: balanceUpdateError } = await supabase
-        .from('profiles')
-        .update({ balance: profile.balance - gen.price })
-        .eq('id', user.id);
-
-    if (balanceUpdateError) return { error: 'Balance update failed.' };
+    await supabase.from('profiles').update({ balance: profile.balance - gen.price }).eq('id', user.id);
     
     const rentedAt = new Date();
     const expiresAt = new Date(rentedAt.getTime() + gen.expire_days * 24 * 60 * 60 * 1000);
 
-    const { error: rentalError } = await supabase
-        .from('rented_generators')
-        .insert({
-            user_id: user.id,
-            generator_id: gen.id,
-            rented_at: rentedAt.toISOString(),
-            expires_at: expiresAt.toISOString(),
-            last_claimed_at: rentedAt.toISOString(),
-        });
-    
-    if (rentalError) {
-        await supabase.from('profiles').update({ balance: profile.balance }).eq('id', user.id); // Rollback
-        return { error: 'Rental process failed.' };
-    }
+    await supabase.from('rented_generators').insert({
+        user_id: user.id,
+        generator_id: gen.id,
+        rented_at: rentedAt.toISOString(),
+        expires_at: expiresAt.toISOString(),
+        last_claimed_at: rentedAt.toISOString(),
+    });
     
     revalidatePath('/dashboard/market');
-    revalidatePath('/dashboard/power');
-    revalidatePath('/dashboard');
     return {};
 }
