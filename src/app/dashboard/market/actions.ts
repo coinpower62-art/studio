@@ -14,19 +14,21 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     const { data: gen } = await supabase.from('generators').select('*').eq('id', generatorId).single();
     if (!gen) return { error: 'Generator not found.' };
     
-    // Check Lifetime Limit
+    // Strict Database Check for Lifetime Limit
     const { count: lifetimeCount } = await supabase
         .from('rented_generators')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('generator_id', generatorId);
 
+    // Dynamic Max Limit Rule
     const max = generatorId === 'pg2' ? 2 : (gen.max_rentals ?? 1);
+    
     if (lifetimeCount !== null && lifetimeCount >= max) {
-        return { error: `Lifetime limit of ${max} reached for this plan.` };
+        return { error: `Lifetime account limit reached for this plan (${max} rentals total).` };
     }
 
-    // Check Active Limit
+    // Active concurrency check (cannot have two of the same active at once)
     const { count: activeCount } = await supabase
         .from('rented_generators')
         .select('*', { count: 'exact', head: true })
@@ -35,10 +37,10 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         .gt('expires_at', new Date().toISOString());
 
     if (activeCount !== null && activeCount >= 1) {
-        return { error: 'You already have an active plan of this type.' };
+        return { error: 'You already have an active plan of this type running.' };
     }
 
-    if (profile.balance < gen.price) return { error: 'Insufficient funds.' };
+    if (profile.balance < gen.price) return { error: 'insufficient_funds' };
 
     await supabase.from('profiles').update({ balance: profile.balance - gen.price }).eq('id', user.id);
     
@@ -54,5 +56,6 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     });
     
     revalidatePath('/dashboard/market');
+    revalidatePath('/dashboard/power');
     return {};
 }
