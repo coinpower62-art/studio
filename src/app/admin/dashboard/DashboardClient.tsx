@@ -1290,7 +1290,7 @@ function DashboardContent() {
                           <button onClick={function() { return openConfirm("Delete User Account", `You are about to permanently delete "${nameForDisplay}". Their profile and all data will be erased. This CANNOT be undone.`, function() { return handleDeleteUser(u.id); }); }}
                             data-testid={`button-delete-user-${u.id}`}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-800 hover:bg-red-900/50 text-xs font-semibold">
-                            <Trash2 className="w-3 h-3" /> Delete
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
                           </button>
                         </div>
                       </div>
@@ -2058,7 +2058,7 @@ function DashboardContent() {
                            <p className="text-slate-500 text-[10px] mt-0.5">Created: {new Date(code.created_at).toLocaleDateString()}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          {!code.is_redeemed && <Button onClick={() => copyText(code.code, 'Gift Code')} variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-white"><Copy className="w-4 h-4" /></Button>}
+                          {!code.is_redeemed && <Button onClick={() => copyText(code.code, 'Gift Code')} variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-white"><Copy className="w-4 h-4" /></button>}
                            <Button onClick={() => openConfirm('Delete Code?', `Are you sure you want to delete code ${code.code}? This cannot be undone.`, () => handleDeleteGiftCode(code.id))} variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-900/30"><Trash2 className="w-4 h-4" /></Button>
                         </div>
                       </div>
