@@ -6,8 +6,6 @@ import {
   ArrowDownToLine, ArrowUpFromLine, Wallet, Shield, Clock,
   CheckCircle, Copy, CreditCard, Smartphone, Info, ChevronLeft, Lock, KeyRound, X, XCircle
 } from "lucide-react";
-import type { User as SupabaseUser } from '@supabase/supabase-js';
-
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

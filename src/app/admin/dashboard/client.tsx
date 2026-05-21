@@ -1,7 +1,7 @@
 'use client';
 
-import { DashboardClient as AdminDashboardClient } from "./DashboardClient";
+import { DashboardClient as InternalDashboardClient } from "./DashboardClient";
 
 export function DashboardClient() {
-    return <AdminDashboardClient />;
+    return <InternalDashboardClient />;
 }

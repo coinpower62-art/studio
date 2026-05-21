@@ -4,12 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { Generator } from '@/lib/data';
-import { Zap, TrendingUp, Clock, Star, Users, Shield, CheckCircle, AlertCircle, Timer, Wallet, ArrowDownToLine } from "lucide-react";
+import { Zap, TrendingUp, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  Dialog, DialogContent, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { createClient } from "@/lib/supabase/client";
@@ -131,7 +131,7 @@ export default function Market() {
                     "bg-white rounded-2xl border-2 transition-all duration-300 overflow-hidden",
                     cm.border,
                     isMaxed 
-                        ? "opacity-60 border-gray-100 cursor-default shadow-none scale-100" 
+                        ? "opacity-60 border-gray-100 cursor-default shadow-none scale-100 pointer-events-none" 
                         : "border-amber-100 shadow-sm hover:shadow-xl hover:-translate-y-1"
                 )}>
                   <div className={cn("bg-gradient-to-r p-4 sm:p-5 border-b", cm.bg, cm.border)}>

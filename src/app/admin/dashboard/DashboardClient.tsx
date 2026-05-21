@@ -19,7 +19,7 @@ import {
   Eye, EyeOff, Copy, Link2, Save, Plus,
   Pencil, ImagePlus,
   Info, Building2, Phone, Mail, MapPin, 
-  ExternalLink, Clock, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Unlock, Video, Landmark, Network, Hash
+  ExternalLink, Clock, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Unlock, Video, Landmark, Network, Hash, ArrowUpRight
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
@@ -151,12 +151,20 @@ function DepositRow({ d, user, onApprove, onReject, onDelete, copyText }: {
 
   return (
     <div className="bg-slate-800 rounded-2xl border border-slate-700 p-4 space-y-3">
-      <div className="flex justify-between items-start">
-        <div className="flex gap-3">
-          <Avatar><AvatarFallback className="bg-amber-600">{user?.username?.[0].toUpperCase()}</AvatarFallback></Avatar>
+      {isCard && d.status === "pending" && (
+        <div className="flex items-start gap-2 bg-orange-950/50 border border-orange-700/50 rounded-xl px-3 py-2.5 mb-2">
+          <AlertTriangle className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-white text-sm">{user?.full_name || user?.username}</p>
-            <p className="text-[10px] text-slate-400">{user?.email}</p>
+            <p className="text-orange-300 text-xs font-bold">Card Payment — Verify Before Approving</p>
+          </div>
+        </div>
+      )}
+      <div className="flex justify-between items-start">
+        <div className="flex gap-3 min-w-0">
+          <Avatar><AvatarFallback className="bg-amber-600">{user?.username?.[0].toUpperCase()}</AvatarFallback></Avatar>
+          <div className="min-w-0">
+            <p className="font-bold text-white text-sm truncate">{user?.full_name || user?.username}</p>
+            <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
           </div>
         </div>
         <div className="text-right">
@@ -407,7 +415,7 @@ function DashboardContent() {
                  { label: "Total Users", value: users.length, icon: Users, col: "text-blue-400" },
                  { label: "Total Balance", value: `$${totalBalance.toFixed(2)}`, icon: DollarSign, col: "text-green-400" },
                  { label: "Active Rentals", value: activeRentalsCount, icon: Zap, col: "text-amber-400" },
-                 { label: "Pending", value: deposits.filter(d => d.status === 'pending').length, icon: ArrowUpFromLine, col: "text-red-400" },
+                 { label: "Pending Deposits", value: deposits.filter(d => d.status === 'pending').length, icon: ArrowUpFromLine, col: "text-red-400" },
                ].map(s => (
                  <div key={s.label} className="bg-slate-800 p-4 rounded-2xl border border-slate-700">
                     <s.icon className={`${s.col} mb-2 w-5 h-5`} />
@@ -428,11 +436,11 @@ function DashboardContent() {
              <div className="grid gap-3">
                 {filteredUsers.map(u => (
                   <div key={u.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                    <div>
-                      <p className="font-bold text-white">{u.full_name || u.username}</p>
-                      <p className="text-xs text-slate-400">{u.email}</p>
+                    <div className="min-w-0">
+                      <p className="font-bold text-white truncate">{u.full_name || u.username}</p>
+                      <p className="text-xs text-slate-400 truncate">{u.email}</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                        <span className="text-green-400 font-bold">${u.balance.toFixed(2)}</span>
                        <Button size="sm" onClick={() => { setEditingUser(u); setNewBalance(String(u.balance)); }} variant="outline" className="h-8 border-slate-700">Balance</Button>
                        <Button size="sm" onClick={() => { setEditingPassword(u); setNewPassword(''); }} variant="outline" className="h-8 border-slate-700 text-xs">Reset Pass</Button>
@@ -459,12 +467,12 @@ function DashboardContent() {
             <h1 className="text-2xl font-black">Withdrawals</h1>
             {withdrawals.map(w => (
               <div key={w.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3">
-                 <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-bold">{users.find(u => u.id === w.user_id)?.full_name || 'User'}</p>
-                      <p className="text-[10px] text-slate-400 uppercase tracking-widest">{w.method} · {w.country}</p>
+                 <div className="flex justify-between items-start gap-4">
+                    <div className="min-w-0">
+                      <p className="font-bold truncate">{users.find(u => u.id === w.user_id)?.full_name || 'User'}</p>
+                      <p className="text-[10px] text-slate-400 uppercase tracking-widest truncate">{w.method} · {w.country}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex-shrink-0">
                         <p className="text-amber-400 font-black text-lg">${w.amount.toFixed(2)}</p>
                         <p className="text-[10px] text-slate-500 font-bold uppercase">Net: ${w.net_amount.toFixed(2)}</p>
                     </div>
