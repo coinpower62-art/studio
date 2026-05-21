@@ -1,8 +1,10 @@
+
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react';
 import { adminGetAllData } from './actions';
 import { DashboardClient } from './DashboardClient';
+import { Shield } from 'lucide-react';
 
 function DashboardLoading() {
     return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm font-medium">Verifying Admin Credentials...</p></div>;
@@ -11,7 +13,7 @@ function DashboardLoading() {
 export default async function AdminDashboardPage() {
     const cookieStore = cookies()
     if (cookieStore.get('admin_logged_in')?.value !== 'true') {
-        redirect('/admin/login');
+        redirect('/login');
     }
 
     const result = await adminGetAllData();
@@ -37,5 +39,3 @@ export default async function AdminDashboardPage() {
         </Suspense>
     )
 }
-
-import { Shield } from 'lucide-react';

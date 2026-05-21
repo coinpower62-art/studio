@@ -1,3 +1,4 @@
+
 'use server'
 
 import { revalidatePath } from 'next/cache'
@@ -6,16 +7,35 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
 export async function login(formData: FormData) {
-  const email = formData.get('email') as string
+  const email = (formData.get('email') as string).toLowerCase()
   const password = formData.get('password') as string
 
-  // Regular User Login Only (Admin check moved to admin/login/actions)
+  const cookieOptions = { 
+    path: '/',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    maxAge: 60 * 60 * 24 
+  };
+
+  // 1. Check for Admin Panel Login
+  if (email === 'coinpoweritaly' && password === 'Hostmyapp2577') {
+      cookies().set('admin_logged_in', 'true', cookieOptions);
+      return redirect('/admin/dashboard');
+  }
+
+  // 2. Check for Admin Client Login (Deposit Management Only)
+  if (email === 'coinpower' && password === 'Admin2577') {
+      cookies().set('admin_client_logged_in', 'true', cookieOptions);
+      return redirect('/admin-client/dashboard');
+  }
+  
+  // 3. Regular User Login via Supabase
   let supabase
   try {
     supabase = createClient()
   } catch (error) {
-    const message = (error as Error).message || 'An unexpected error occurred during initialization.';
-    return redirect(`/login?message=${encodeURIComponent(message)}`)
+    return redirect(`/login?message=${encodeURIComponent('System initialization error.')}`)
   }
   
   if (!email || !password) {
@@ -44,5 +64,7 @@ export async function login(formData: FormData) {
 export async function logout() {
   const supabase = createClient()
   await supabase.auth.signOut()
+  cookies().set('admin_logged_in', '', { maxAge: 0 });
+  cookies().set('admin_client_logged_in', '', { maxAge: 0 });
   redirect('/login')
 }

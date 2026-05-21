@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from "react";
@@ -6,11 +7,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Shield, Users, DollarSign, LogOut, Search, Edit3, Trash2,
   CheckCircle, XCircle, BarChart3, Zap,
-  ArrowUpFromLine, RefreshCw, Plus, Save, X, Lock, Unlock, Settings, Gift, ImagePlus, Info, Link2, DatabaseZap, Pencil
+  ArrowUpFromLine, RefreshCw, Save, X, Lock, Unlock, DatabaseZap, Pencil, Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -106,7 +106,7 @@ export function DashboardClient({ initialData }: { initialData: any }) {
                 <h1 className="text-2xl font-black">Dashboard Overview</h1>
                 <Button onClick={fetchData} variant="outline" size="sm" className="bg-slate-800 border-slate-700 h-8 gap-2"><RefreshCw className={cn("w-3 h-3", loading && "animate-spin")} /> Refresh</Button>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-slate-800 p-4 rounded-2xl border border-slate-700">
                 <Users className="w-6 h-6 text-blue-500 mb-2" />
                 <p className="text-2xl font-black">{users.length}</p>
@@ -115,7 +115,7 @@ export function DashboardClient({ initialData }: { initialData: any }) {
               <div className="bg-slate-800 p-4 rounded-2xl border border-slate-700">
                 <DollarSign className="w-6 h-6 text-green-500 mb-2" />
                 <p className="text-2xl font-black">${totalBalance.toFixed(2)}</p>
-                <p className="text-slate-400 text-xs uppercase font-bold">Platform Assets</p>
+                <p className="text-slate-400 text-xs uppercase font-bold">Total Balance</p>
               </div>
               <div className="bg-slate-800 p-4 rounded-2xl border border-slate-700">
                 <ArrowUpFromLine className="w-6 h-6 text-amber-500 mb-2" />
@@ -174,7 +174,12 @@ export function DashboardClient({ initialData }: { initialData: any }) {
 
         {tab === 'generators' && (
            <div className="space-y-4">
-              <h1 className="text-xl font-black">Generator Factory</h1>
+              <div className="flex justify-between items-center">
+                <h1 className="text-xl font-black">Generator Factory</h1>
+                <Button onClick={() => adminMutateGenerator('seed', []).then(fetchData)} variant="outline" size="sm" className="bg-slate-800 border-slate-700 h-8 gap-2">
+                    <DatabaseZap className="w-3 h-3" /> Reset Defaults
+                </Button>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {generators.map(g => (
                   <div key={g.id} className="bg-slate-800 border border-slate-700 rounded-2xl p-4 space-y-3">
@@ -186,13 +191,21 @@ export function DashboardClient({ initialData }: { initialData: any }) {
                       <Badge variant="outline" className="border-slate-600 text-slate-400">{g.id.toUpperCase()}</Badge>
                     </div>
                     <div className="pt-2 border-t border-slate-700">
-                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Lifetime Limit: {g.max_rentals || 1}</p>
+                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Lifetime Limit: {g.max_rentals || (g.id === 'pg2' ? 2 : 1)}</p>
                     </div>
                     <div className="flex gap-2">
                        <Button variant="outline" className="flex-1 h-8 text-xs bg-slate-700 border-slate-600" onClick={() => {
                            const newLimit = prompt("Set Lifetime Limit (Max Rentals):", g.max_rentals || 1);
                            if (newLimit !== null) adminMutateGenerator('update', { id: g.id, max_rentals: parseInt(newLimit) }).then(fetchData);
                        }}>Update Limit</Button>
+                       <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => adminMutateGenerator('update', { id: g.id, published: !g.published }).then(fetchData)}
+                        className={cn("h-8 px-3 border-slate-600", g.published ? "text-green-400 bg-green-950/20" : "text-slate-400 bg-slate-700")}
+                       >
+                         {g.published ? "Active" : "Hidden"}
+                       </Button>
                     </div>
                   </div>
                 ))}
@@ -202,10 +215,39 @@ export function DashboardClient({ initialData }: { initialData: any }) {
         
         {(tab === 'deposits' || tab === 'withdrawals') && (
           <div className="space-y-4">
-            <h1 className="text-xl font-black capitalize">{tab} Management</h1>
-            <div className="bg-slate-800/50 rounded-2xl p-10 text-center border border-slate-800">
-                <p className="text-slate-500 text-sm font-medium">Use the specialized actions provided in the main admin dashboard code to process financial requests.</p>
-                <Button onClick={fetchData} variant="link" className="text-amber-500 mt-2">Check for new requests</Button>
+            <h1 className="text-xl font-black capitalize">{tab} Requests</h1>
+            <div className="space-y-3">
+                {(tab === 'deposits' ? deposits : withdrawals).map(r => (
+                    <div key={r.id} className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+                        <div className="flex justify-between items-start mb-3">
+                            <div>
+                                <p className="font-bold">{users.find(u => u.id === r.user_id)?.full_name || 'User ID: ' + r.user_id.slice(0,8)}</p>
+                                <p className="text-xs text-slate-500">{new Date(r.created_at).toLocaleString()}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-lg font-black text-white">${r.amount}</p>
+                                <Badge className={cn(
+                                    r.status === 'approved' || r.status === 'complete' ? "bg-green-900/40 text-green-400" :
+                                    r.status === 'pending' || r.status === 'processing' ? "bg-yellow-900/40 text-yellow-400" :
+                                    "bg-red-900/40 text-red-400"
+                                )}>{r.status}</Badge>
+                            </div>
+                        </div>
+                        {r.status === 'pending' || r.status === 'processing' ? (
+                            <div className="flex gap-2 border-t border-slate-700 pt-3">
+                                <Button size="sm" onClick={() => {
+                                    if(tab === 'deposits') adminHandleDeposit(r.id, 'approve', r.user_id, r.amount).then(fetchData);
+                                    else adminHandleWithdrawal(r.id, 'complete', r.user_id, r.amount).then(fetchData);
+                                }} className="flex-1 bg-green-600">Approve</Button>
+                                <Button size="sm" onClick={() => {
+                                    if(tab === 'deposits') adminHandleDeposit(r.id, 'reject').then(fetchData);
+                                    else adminHandleWithdrawal(r.id, 'reject', r.user_id, r.amount).then(fetchData);
+                                }} variant="destructive" className="flex-1">Reject</Button>
+                            </div>
+                        ) : null}
+                    </div>
+                ))}
+                {(tab === 'deposits' ? deposits : withdrawals).length === 0 && <p className="text-center text-slate-500 py-10">No {tab} found.</p>}
             </div>
           </div>
         )}
