@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import {
   Landmark, ArrowDownToLine, ArrowUpFromLine, Wallet, Shield, Clock,
   CheckCircle, Copy, CreditCard, Smartphone, Coins, AlertCircle,
-  PartyPopper, Hash, Network, User, MapPin, Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X, LogOut, Gift, XCircle
+  PartyPopper, Hash, Network, User, MapPin, 
+  Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X, LogOut, Gift, XCircle
 } from "lucide-react";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -15,8 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
-import { countries as COUNTRIES_DATA } from "@/lib/data";
-import { createDepositRequest, createWithdrawalRequest, setWithdrawalPin, redeemGiftCode } from "./actions";
+import { createDepositRequest, createWithdrawalRequest, setWithdrawalPin } from "./actions";
 
 const GHS_RATE = 10;
 const DEPOSIT_PHONE = "+233548304717";
@@ -71,6 +71,60 @@ function PinBoxes({ value, onChange, testId }: { value: string; onChange: (v: st
       ))}
     </div>
   );
+}
+
+function WithdrawalStatusStepper({ status }: { status: "pending" | "processing" | "complete" | "rejected" }) {
+    const stages = [
+        { id: "pending", label: "Pending" },
+        { id: "processing", label: "Processing" },
+        { id: "complete", label: "Complete" },
+    ];
+
+    if (status === 'rejected') {
+        return (
+            <div className="flex items-center gap-1.5 text-red-600 bg-red-50 border border-red-200 rounded-full px-2 py-1 mt-2">
+                <XCircle className="w-3.5 h-3.5" />
+                <span className="text-xs font-bold">Rejected</span>
+            </div>
+        )
+    }
+
+    const currentStageIndex = stages.findIndex(s => s.id === status);
+
+    return (
+        <div className="flex items-center gap-2 mt-2 w-full">
+            {stages.map((stage, index) => {
+                const isCompleted = index < currentStageIndex;
+                const isActive = index === currentStageIndex;
+                
+                return (
+                    <Suspense key={stage.id}>
+                        {index > 0 && (
+                             <div className={`flex-1 h-0.5 rounded-full ${index <= currentStageIndex ? 'bg-green-500' : 'bg-gray-200'}`} />
+                        )}
+                        <div className="flex flex-col items-center gap-1">
+                            {isCompleted ? (
+                                <CheckCircle className="w-4 h-4 text-green-500" />
+                            ) : isActive ? (
+                                <div className="w-4 h-4 flex items-center justify-center">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                                </div>
+                            ) : (
+                                <div className="w-4 h-4 flex items-center justify-center">
+                                     <div className="w-2 h-2 rounded-full bg-gray-300" />
+                                </div>
+                            )}
+                            <span className={`text-[10px] font-semibold ${
+                                isCompleted ? "text-gray-400" : isActive ? "text-amber-600" : "text-gray-400"
+                            }`}>
+                                {stage.label}
+                            </span>
+                        </div>
+                    </Suspense>
+                );
+            })}
+        </div>
+    );
 }
 
 export default function BankPage() {
@@ -182,7 +236,7 @@ export default function BankPage() {
       </div>
 
       {mode === 'deposit' && !depositSuccess && (
-        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4 mb-6 animate-in fade-in slide-in-from-top-4">
+        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4 mb-6">
            <div className="flex justify-between items-center">
               <h2 className="font-black text-gray-900">Deposit Funds</h2>
               <span className="text-red-500 font-bold text-xs font-mono">{countdown}</span>
@@ -205,7 +259,7 @@ export default function BankPage() {
       )}
 
       {mode === 'withdraw' && !withdrawSuccess && (
-        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4 mb-6 animate-in fade-in slide-in-from-top-4">
+        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4 mb-6">
            <h2 className="font-black text-gray-900">Withdraw Funds</h2>
            <div>
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Amount (USD)</label>
@@ -230,43 +284,23 @@ export default function BankPage() {
         </div>
       )}
 
-      {depositSuccess && (
-          <div className="bg-white rounded-3xl p-8 border border-green-200 shadow-sm text-center space-y-4 mb-6 animate-in zoom-in-95">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto shadow-inner"><CheckCircle className="w-8 h-8 text-green-600" /></div>
-              <div>
-                <h2 className="font-black text-xl text-gray-900">Request Sent</h2>
-                <p className="text-sm text-gray-500 mt-1">Your deposit of ${amount} is pending. Balance will update automatically.</p>
-              </div>
-              <Button onClick={() => setMode(null)} className="w-full bg-amber-500 font-black rounded-xl h-12 shadow-lg">CONTINUE</Button>
-          </div>
-      )}
-
-      {withdrawSuccess && (
-          <div className="bg-white rounded-3xl p-8 border border-blue-200 shadow-sm text-center space-y-4 mb-6 animate-in zoom-in-95">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto shadow-inner"><PartyPopper className="w-8 h-8 text-blue-600" /></div>
-              <div>
-                <h2 className="font-black text-xl text-gray-900">Payout Scheduled</h2>
-                <p className="text-sm text-gray-500 mt-1">Your withdrawal of ${amount} is being processed by our financial team.</p>
-              </div>
-              <Button onClick={() => setMode(null)} className="w-full bg-amber-500 font-black rounded-xl h-12 shadow-lg">CONTINUE</Button>
-          </div>
-      )}
-
       <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
         <h3 className="font-black text-gray-900 mb-5 flex items-center gap-2"><Clock className="w-4 h-4 text-amber-500" /> Recent History</h3>
         <div className="space-y-3">
             {transactions.map(tx => (
-                <div key={tx.id} className="flex justify-between items-center p-4 rounded-2xl bg-gray-50 border border-gray-100 group hover:border-amber-200 transition-colors">
-                    <div>
-                        <p className="text-xs font-black text-gray-800 uppercase tracking-wide">{'tx_id' in tx ? 'Deposit' : 'Withdrawal'}</p>
-                        <p className="text-[10px] text-gray-400 font-bold mt-1">{new Date(tx.created_at).toLocaleDateString()}</p>
+                <div key={tx.id} className="flex flex-col p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <p className="text-xs font-black text-gray-800 uppercase tracking-wide">{'tx_id' in tx ? 'Deposit' : 'Withdrawal'}</p>
+                            <p className="text-[10px] text-gray-400 font-bold mt-1">{new Date(tx.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className={`font-black text-lg leading-none ${'tx_id' in tx ? 'text-green-600' : 'text-red-500'}`}>
+                                {('tx_id' in tx ? '+' : '-')}${tx.amount.toFixed(2)}
+                            </p>
+                        </div>
                     </div>
-                    <div className="text-right">
-                        <p className={`font-black text-lg leading-none ${'tx_id' in tx ? 'text-green-600' : 'text-red-500'}`}>
-                            {('tx_id' in tx ? '+' : '-')}${tx.amount.toFixed(2)}
-                        </p>
-                        <p className="text-[10px] font-black text-gray-400 mt-1 uppercase tracking-widest">GH₵ {(tx.amount * GHS_RATE).toLocaleString()}</p>
-                    </div>
+                    { !('tx_id' in tx) && <WithdrawalStatusStepper status={tx.status} /> }
                 </div>
             ))}
             {transactions.length === 0 && <p className="text-center text-gray-400 text-xs py-10 font-bold uppercase tracking-widest">No activity found</p>}
@@ -275,11 +309,11 @@ export default function BankPage() {
 
       {pinMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-           <div className="bg-white rounded-[32px] p-8 w-full max-w-sm text-center space-y-6 shadow-2xl relative border-t-4 border-amber-500">
-              <button onClick={() => setPinMode(null)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+           <div className="bg-white rounded-[32px] p-8 w-full max-w-sm text-center space-y-6 shadow-2xl relative">
+              <button onClick={() => setPinMode(null)} className="absolute top-6 right-6 text-gray-400"><X className="w-5 h-5" /></button>
               {pinMode === 'security' ? (
                   <div className="space-y-5">
-                      <div className="w-20 h-20 bg-amber-100 rounded-3xl mx-auto flex items-center justify-center shadow-inner"><Shield className="w-10 h-10 text-amber-600" /></div>
+                      <div className="w-20 h-20 bg-amber-100 rounded-3xl mx-auto flex items-center justify-center"><Shield className="w-10 h-10 text-amber-600" /></div>
                       <div>
                         <h2 className="font-black text-2xl">Secure Payouts</h2>
                         <p className="text-sm text-gray-500 mt-2">Set a 6-digit security PIN to protect your account withdrawals.</p>
@@ -288,18 +322,15 @@ export default function BankPage() {
                   </div>
               ) : (
                 <>
-                  <div>
-                    <h2 className="font-black text-2xl">{pinMode === 'verify' ? 'Confirm Identity' : 'Create PIN'}</h2>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black mt-1">{pinMode === 'verify' ? 'Enter 6-digit withdrawal PIN' : 'Choose a secure 6-digit PIN'}</p>
-                  </div>
+                  <h2 className="font-black text-2xl">{pinMode === 'verify' ? 'Confirm PIN' : 'Create PIN'}</h2>
                   <PinBoxes value={pinInput} onChange={setPinInput} testId="pin-input" />
                   {pinMode === 'setup' && (
                     <div className="space-y-2 pt-2">
-                        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">Confirm your PIN</p>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">Confirm PIN</p>
                         <PinBoxes value={pinConfirm} onChange={setPinConfirm} testId="pin-confirm" />
                     </div>
                   )}
-                  {pinError && <p className="text-red-500 text-xs font-black bg-red-50 py-2 rounded-xl">{pinError}</p>}
+                  {pinError && <p className="text-red-500 text-xs font-black">{pinError}</p>}
                   <Button onClick={pinMode === 'verify' ? handleWithdrawalSubmit : handleSetPin} disabled={(pinMode === 'verify' && pinInput.length < 6) || (pinMode === 'setup' && (pinInput.length < 6 || pinInput !== pinConfirm)) || isSettingPin || isSubmitting} className="w-full bg-amber-500 h-12 font-black shadow-lg rounded-2xl mt-4">
                       {isSubmitting || isSettingPin ? 'PROCESSING...' : 'CONTINUE'}
                   </Button>
