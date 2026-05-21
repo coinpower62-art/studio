@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { createClient } from "@/lib/supabase/client";
-import type { User } from '@supabase/supabase-js';
 import { rentGeneratorAction } from "./actions";
 import { cn } from "@/lib/utils";
 
@@ -148,7 +147,7 @@ export default function Market() {
             {generators.filter(g => g.published).map((gen) => {
               const cm = colorMap[gen.color] || colorMap["from-amber-400 to-orange-500"];
               const count = historicalRentedCounts.get(gen.id) || 0;
-              const max = gen.id === 'pg2' ? 2 : (gen.max_rentals ?? 1);
+              const max = gen.id === 'pg1' ? 1 : (gen.id === 'pg2' ? 2 : (gen.max_rentals ?? 1));
               const isMaxed = count >= max;
               const isRented = count > 0;
               const activeUg = rentedHistory.find(ug => ug.generator_id === gen.id && new Date(ug.expires_at).getTime() > now);
@@ -158,7 +157,7 @@ export default function Market() {
                     "bg-white rounded-2xl border-2 transition-all duration-300 overflow-hidden",
                     cm.border,
                     isMaxed 
-                        ? "opacity-60 border-gray-100 cursor-not-allowed shadow-none scale-100" 
+                        ? "opacity-60 border-gray-100 cursor-default shadow-none scale-100" 
                         : "border-amber-100 shadow-sm hover:shadow-xl hover:-translate-y-1"
                 )}>
                   <div className={cn("bg-gradient-to-r p-4 sm:p-5 border-b", cm.bg, cm.border)}>
@@ -167,7 +166,7 @@ export default function Market() {
                         <h3 className="font-black text-lg text-gray-900 leading-tight">{gen.name}</h3>
                         <p className="text-gray-500 text-xs">{gen.subtitle}</p>
                       </div>
-                      <Badge variant={isMaxed ? 'secondary' : 'default'} className={isMaxed ? "bg-gray-200" : "bg-amber-100 text-amber-700"}>
+                      <Badge variant={isMaxed ? 'secondary' : 'default'} className={isMaxed ? "bg-gray-200 text-gray-500" : "bg-amber-100 text-amber-700"}>
                         {isMaxed ? 'Limit Reached' : cm.badgeLabel}
                       </Badge>
                     </div>
@@ -183,15 +182,15 @@ export default function Market() {
 
                   <div className="p-5">
                     <div className="grid grid-cols-3 gap-2 mb-4 text-center">
-                      <div className="bg-gray-50 rounded-lg p-2">
+                      <div className="bg-gray-50 rounded-lg p-2 border border-gray-100">
                           <p className="text-[10px] text-gray-400 font-bold uppercase">Price</p>
                           <p className="font-black text-sm text-gray-900">${gen.price}</p>
                       </div>
-                      <div className="bg-green-50 rounded-lg p-2">
+                      <div className="bg-green-50 rounded-lg p-2 border border-green-100">
                           <p className="text-[10px] text-green-500 font-bold uppercase">Daily</p>
                           <p className="font-black text-sm text-green-700">${gen.daily_income}</p>
                       </div>
-                      <div className="bg-amber-50 rounded-lg p-2">
+                      <div className="bg-amber-50 rounded-lg p-2 border border-amber-100">
                           <p className="text-[10px] text-amber-500 font-bold uppercase">Usage</p>
                           <p className="font-black text-sm text-amber-700">{count}/{max}</p>
                       </div>
@@ -209,7 +208,7 @@ export default function Market() {
                       onClick={() => handleRentClick(gen)} 
                       className={cn(
                           "w-full h-12 font-black shadow-lg transition-all",
-                          isMaxed ? "bg-gray-100 text-gray-400" : "bg-amber-500 hover:bg-amber-600 text-white"
+                          isMaxed ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed" : "bg-amber-500 hover:bg-amber-600 text-white"
                       )}
                     >
                       {isRenting === gen.id ? 'PROCESSING...' : isMaxed ? 'LIMIT REACHED' : `RENT ${gen.name.toUpperCase()}`}

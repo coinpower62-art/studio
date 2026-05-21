@@ -163,7 +163,7 @@ export default function BankPage() {
       <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl p-6 mb-6 text-white shadow-xl">
         <p className="text-amber-100 text-[10px] font-black uppercase tracking-widest mb-1">Available Balance</p>
         <div className="flex items-baseline gap-2">
-            <h1 className="text-4xl font-black">${profile.balance.toFixed(2)}</h1>
+            <h1 className="text-4xl font-black text-white">${profile.balance.toFixed(2)}</h1>
             <p className="text-amber-100 font-bold opacity-80">≈ GH₵ {(profile.balance * GHS_RATE).toLocaleString()}</p>
         </div>
       </div>
