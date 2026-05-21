@@ -1,4 +1,3 @@
-
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react';
@@ -35,7 +34,7 @@ export default async function AdminDashboardPage() {
   
     return (
         <Suspense fallback={<DashboardLoading />}>
-            <DashboardClient initialData={result.data} />
+            <DashboardClient />
         </Suspense>
     )
 }

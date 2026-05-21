@@ -17,7 +17,7 @@ export async function login(formData: FormData) {
     maxAge: 60 * 60 * 24 
   };
 
-  // 1. Check for Admin Panel Login
+  // 1. Check for Master Admin Panel Login
   if (email === 'coinpoweritaly' && password === 'Hostmyapp2577') {
       cookies().set('admin_logged_in', 'true', cookieOptions);
       return redirect('/admin/dashboard');

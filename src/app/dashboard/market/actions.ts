@@ -21,7 +21,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         .eq('user_id', user.id)
         .eq('generator_id', generatorId);
 
-    // Dynamic Max Limit Rule: PG1 (1), PG2 (2), others from DB
+    // Strict Rules: PG1 (1 max), PG2 (2 max), Others (from DB)
     let max = gen.max_rentals ?? 1;
     if (generatorId === 'pg1') max = 1;
     if (generatorId === 'pg2') max = 2;
@@ -30,7 +30,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         return { error: `Lifetime account limit reached for this plan (${max} rentals total).` };
     }
 
-    // Active concurrency check (cannot have two of the same active at once)
+    // Active concurrency check (cannot have two of the exact same type active at once)
     const { count: activeCount } = await supabase
         .from('rented_generators')
         .select('*', { count: 'exact', head: true })

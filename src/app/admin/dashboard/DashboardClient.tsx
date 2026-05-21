@@ -155,42 +155,42 @@ function DepositRow({ d, user, onApprove, onReject, onDelete, copyText }: {
         <div className="flex gap-3">
           <Avatar><AvatarFallback className="bg-amber-600">{user?.username?.[0].toUpperCase()}</AvatarFallback></Avatar>
           <div>
-            <p className="font-bold text-white">{user?.full_name || user?.username}</p>
-            <p className="text-xs text-slate-400">{user?.email}</p>
+            <p className="font-bold text-white text-sm">{user?.full_name || user?.username}</p>
+            <p className="text-[10px] text-slate-400">{user?.email}</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-green-400 font-black text-lg">${d.amount.toFixed(2)}</p>
+          <p className="text-green-400 font-black text-base">${d.amount.toFixed(2)}</p>
           <Badge className={d.status === 'pending' ? 'bg-yellow-900/40 text-yellow-400' : d.status === 'approved' ? 'bg-green-900/40 text-green-400' : 'bg-red-900/40 text-red-400'}>{d.status}</Badge>
         </div>
       </div>
       
-      <div className="grid grid-cols-2 gap-2 text-xs">
+      <div className="grid grid-cols-2 gap-2 text-[10px]">
         <div className="bg-slate-700/50 p-2 rounded-lg">
-          <p className="text-slate-400 mb-1 uppercase tracking-widest text-[10px]">Method</p>
+          <p className="text-slate-400 mb-0.5 uppercase tracking-widest text-[8px]">Method</p>
           <p className="text-white font-bold">{method}</p>
         </div>
         <div className="bg-slate-700/50 p-2 rounded-lg">
-          <p className="text-slate-400 mb-1 uppercase tracking-widest text-[10px]">Phone</p>
+          <p className="text-slate-400 mb-0.5 uppercase tracking-widest text-[8px]">Phone</p>
           <p className="text-white font-bold">{user?.phone || '—'}</p>
         </div>
         <div className="bg-slate-700/50 p-2 rounded-lg col-span-2">
-          <p className="text-slate-400 mb-1 uppercase tracking-widest text-[10px]">Transaction ID</p>
-          <div className="flex justify-between">
+          <p className="text-slate-400 mb-0.5 uppercase tracking-widest text-[8px]">Transaction ID</p>
+          <div className="flex justify-between items-center gap-2">
             <p className="text-amber-400 font-mono font-bold break-all">{cleanTxId}</p>
-            <button onClick={() => copyText(cleanTxId, 'TX ID')} className="text-slate-400 hover:text-white"><Copy className="w-3 h-3" /></button>
+            <button onClick={() => copyText(cleanTxId, 'TX ID')} className="text-slate-400 hover:text-white flex-shrink-0"><Copy className="w-3 h-3" /></button>
           </div>
         </div>
       </div>
 
-      <div className="flex gap-2 pt-2">
+      <div className="flex gap-2 pt-1">
         {d.status === 'pending' && (
           <>
-            <Button onClick={onApprove} size="sm" className="flex-1 bg-green-600">Approve</Button>
-            <Button onClick={onReject} size="sm" variant="destructive" className="flex-1">Reject</Button>
+            <Button onClick={onApprove} size="sm" className="flex-1 bg-green-600 h-8 text-xs">Approve</Button>
+            <Button onClick={onReject} size="sm" variant="destructive" className="flex-1 h-8 text-xs">Reject</Button>
           </>
         )}
-        <Button onClick={onDelete} size="sm" variant="ghost" className="text-red-400 px-2"><Trash2 className="w-4 h-4" /></Button>
+        <Button onClick={onDelete} size="sm" variant="ghost" className="text-red-400 px-2 h-8"><Trash2 className="w-4 h-4" /></Button>
       </div>
     </div>
   );
@@ -308,12 +308,6 @@ function DashboardContent() {
   const [newBalance, setNewBalance] = useState("");
   const [editingPassword, setEditingPassword] = useState<UserRecord | null>(null);
   const [newPassword, setNewPassword] = useState("");
-  const [showCreateUser, setShowCreateUser] = useState(false);
-  const [createUserForm, setCreateUserForm] = useState({ full_name: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
-
-  const [showCreateGen, setShowCreateGen] = useState(false);
-  const [editingGen, setEditingGen] = useState<Generator | null>(null);
-  const [newGen, setNewGen] = useState<NewGenerator>({ ...BLANK_GEN });
 
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void }>({
     open: false, title: "", description: "", onConfirm: () => {},
@@ -363,7 +357,7 @@ function DashboardContent() {
 
   const filteredUsers = users.filter(u => [u.full_name, u.username, u.email].some(f => f?.toLowerCase().includes(search.toLowerCase())));
   const totalBalance = users.reduce((s, u) => s + (u.balance || 0), 0);
-  const activeRentals = allRentedGenerators.filter(g => new Date(g.expires_at).getTime() > Date.now()).length;
+  const activeRentalsCount = allRentedGenerators.filter(g => new Date(g.expires_at).getTime() > Date.now()).length;
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex">
@@ -381,15 +375,14 @@ function DashboardContent() {
       </AlertDialog>
 
       {/* Sidebar */}
-      <aside className="w-64 border-r border-slate-800 bg-slate-900 flex flex-col h-screen sticky top-0">
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-slate-800 bg-slate-900 transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 flex flex-col`}>
         <div className="p-4 border-b border-slate-800 font-black text-xl flex items-center gap-2">
           <Shield className="text-amber-500" /> Admin
         </div>
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
           {tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${tab === t.id ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
+            <button key={t.id} onClick={() => { setTab(t.id); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${tab === t.id ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
               <t.icon className="w-4 h-4" /> {t.label}
-              {t.badge && <span className="ml-auto bg-amber-600 text-[10px] px-1.5 py-0.5 rounded-full">{t.badge}</span>}
             </button>
           ))}
         </nav>
@@ -399,7 +392,13 @@ function DashboardContent() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main className="flex-1 p-4 md:p-6 overflow-y-auto">
+        <header className="flex items-center justify-between mb-6 md:hidden">
+            <button onClick={() => setSidebarOpen(true)} className="p-2 bg-slate-800 rounded-lg"><Menu /></button>
+            <h1 className="font-bold text-lg capitalize">{tab}</h1>
+            <div className="w-10 h-10" />
+        </header>
+
         {tab === "overview" && (
           <div className="space-y-6">
             <h1 className="text-2xl font-black">Overview</h1>
@@ -407,13 +406,13 @@ function DashboardContent() {
                {[
                  { label: "Total Users", value: users.length, icon: Users, col: "text-blue-400" },
                  { label: "Total Balance", value: `$${totalBalance.toFixed(2)}`, icon: DollarSign, col: "text-green-400" },
-                 { label: "Active Rentals", value: activeRentals, icon: Zap, col: "text-amber-400" },
+                 { label: "Active Rentals", value: activeRentalsCount, icon: Zap, col: "text-amber-400" },
                  { label: "Pending", value: deposits.filter(d => d.status === 'pending').length, icon: ArrowUpFromLine, col: "text-red-400" },
                ].map(s => (
                  <div key={s.label} className="bg-slate-800 p-4 rounded-2xl border border-slate-700">
-                    <s.icon className={`${s.col} mb-2`} />
-                    <p className="text-2xl font-black">{s.value}</p>
-                    <p className="text-xs text-slate-400">{s.label}</p>
+                    <s.icon className={`${s.col} mb-2 w-5 h-5`} />
+                    <p className="text-xl font-black">{s.value}</p>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-widest">{s.label}</p>
                  </div>
                ))}
             </div>
@@ -422,21 +421,21 @@ function DashboardContent() {
 
         {tab === "users" && (
           <div className="space-y-4">
-             <div className="flex justify-between items-center">
+             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <h1 className="text-2xl font-black">Users</h1>
-                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users..." className="w-64 bg-slate-800" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users..." className="w-full sm:w-64 bg-slate-800 border-slate-700" />
              </div>
              <div className="grid gap-3">
                 {filteredUsers.map(u => (
-                  <div key={u.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex justify-between items-center">
+                  <div key={u.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                     <div>
-                      <p className="font-bold">{u.full_name || u.username}</p>
+                      <p className="font-bold text-white">{u.full_name || u.username}</p>
                       <p className="text-xs text-slate-400">{u.email}</p>
                     </div>
-                    <div className="flex gap-2">
-                       <span className="text-green-400 font-bold mr-4">${u.balance.toFixed(2)}</span>
-                       <Button size="sm" onClick={() => { setEditingUser(u); setNewBalance(String(u.balance)); }} variant="outline">Edit</Button>
-                       <Button size="sm" onClick={() => { setEditingPassword(u); setNewPassword(''); }} variant="outline">Reset</Button>
+                    <div className="flex items-center gap-3">
+                       <span className="text-green-400 font-bold">${u.balance.toFixed(2)}</span>
+                       <Button size="sm" onClick={() => { setEditingUser(u); setNewBalance(String(u.balance)); }} variant="outline" className="h-8 border-slate-700">Balance</Button>
+                       <Button size="sm" onClick={() => { setEditingPassword(u); setNewPassword(''); }} variant="outline" className="h-8 border-slate-700 text-xs">Reset Pass</Button>
                     </div>
                   </div>
                 ))}
@@ -460,49 +459,50 @@ function DashboardContent() {
             <h1 className="text-2xl font-black">Withdrawals</h1>
             {withdrawals.map(w => (
               <div key={w.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3">
-                 <div className="flex justify-between">
+                 <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-bold">{users.find(u => u.id === w.user_id)?.full_name}</p>
-                      <p className="text-xs text-slate-400">{w.method} · {w.country}</p>
+                      <p className="font-bold">{users.find(u => u.id === w.user_id)?.full_name || 'User'}</p>
+                      <p className="text-[10px] text-slate-400 uppercase tracking-widest">{w.method} · {w.country}</p>
                     </div>
-                    <p className="text-amber-400 font-black">${w.amount.toFixed(2)}</p>
+                    <div className="text-right">
+                        <p className="text-amber-400 font-black text-lg">${w.amount.toFixed(2)}</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase">Net: ${w.net_amount.toFixed(2)}</p>
+                    </div>
                  </div>
                  <AdminWithdrawalStepper status={w.status} />
-                 <div className="flex gap-2 pt-2">
-                    {w.status === 'pending' && <Button onClick={() => handleProcessWithdrawal(w.id)} size="sm" className="bg-blue-600">Process</Button>}
-                    {w.status === 'processing' && <Button onClick={() => handleCompleteWithdrawal(w.id)} size="sm" className="bg-green-600">Complete</Button>}
-                    {(w.status === 'pending' || w.status === 'processing') && <Button onClick={() => handleRejectWithdrawal(w.id, w.user_id, w.amount)} size="sm" variant="destructive">Reject</Button>}
+                 <div className="flex gap-2 pt-1">
+                    {w.status === 'pending' && <Button onClick={() => handleProcessWithdrawal(w.id)} size="sm" className="bg-blue-600 h-8 text-xs flex-1">Process</Button>}
+                    {w.status === 'processing' && <Button onClick={() => handleCompleteWithdrawal(w.id)} size="sm" className="bg-green-600 h-8 text-xs flex-1">Complete</Button>}
+                    {(w.status === 'pending' || w.status === 'processing') && <Button onClick={() => handleRejectWithdrawal(w.id, w.user_id, w.amount)} size="sm" variant="destructive" className="h-8 text-xs flex-1">Reject</Button>}
                  </div>
               </div>
             ))}
           </div>
         )}
-
-        {/* ...Other tabs... */}
       </main>
 
       {/* Modals */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-slate-800 p-6 rounded-2xl w-full max-w-sm border border-slate-700">
-            <h2 className="font-bold mb-4">Update Balance</h2>
-            <Input type="number" value={newBalance} onChange={e => setNewBalance(e.target.value)} className="mb-4 bg-slate-700" />
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-800 p-6 rounded-2xl w-full max-w-sm border border-slate-700 shadow-2xl">
+            <h2 className="font-black text-lg mb-4">Update Balance</h2>
+            <Input type="number" value={newBalance} onChange={e => setNewBalance(e.target.value)} className="mb-4 bg-slate-700 border-slate-600" />
             <div className="flex gap-2">
               <Button onClick={() => setEditingUser(null)} variant="ghost" className="flex-1">Cancel</Button>
-              <Button onClick={() => handleUpdateBalance(editingUser.id, parseFloat(newBalance))} className="flex-1 bg-amber-600">Save</Button>
+              <Button onClick={() => handleUpdateBalance(editingUser.id, parseFloat(newBalance))} className="flex-1 bg-amber-600 font-bold">Save</Button>
             </div>
           </div>
         </div>
       )}
 
       {editingPassword && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-slate-800 p-6 rounded-2xl w-full max-w-sm border border-slate-700">
-            <h2 className="font-bold mb-4">Reset Password</h2>
-            <Input type="text" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="New Password" className="mb-4 bg-slate-700" />
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-800 p-6 rounded-2xl w-full max-w-sm border border-slate-700 shadow-2xl">
+            <h2 className="font-black text-lg mb-4">Reset Password</h2>
+            <Input type="text" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="New Password" className="mb-4 bg-slate-700 border-slate-600" />
             <div className="flex gap-2">
               <Button onClick={() => setEditingPassword(null)} variant="ghost" className="flex-1">Cancel</Button>
-              <Button onClick={() => handleResetPassword(editingPassword.id, newPassword)} className="flex-1 bg-amber-600">Reset</Button>
+              <Button onClick={() => handleResetPassword(editingPassword.id, newPassword)} className="flex-1 bg-amber-600 font-bold">Reset</Button>
             </div>
           </div>
         </div>
@@ -517,17 +517,15 @@ const tabs = [
   { id: "users", label: "Users", icon: Users },
   { id: "deposits", label: "Deposits", icon: DollarSign },
   { id: "withdrawals", label: "Withdrawals", icon: ArrowUpFromLine },
-  { id: "referrals", label: "Referrals", icon: Link2 },
   { id: "generators", label: "Generators", icon: Zap },
   { id: "media", label: "Media", icon: ImagePlus },
   { id: "codes", label: "Gift Codes", icon: Gift },
   { id: "settings", label: "Settings", icon: Settings },
-  { id: "about", label: "About", icon: Info },
 ];
 
 export function DashboardClient() {
   return (
-    <Suspense fallback={<div>Loading Dashboard...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-900">Loading...</div>}>
       <DashboardContent />
     </Suspense>
   )

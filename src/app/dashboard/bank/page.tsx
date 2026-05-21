@@ -1,17 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import {
-  Landmark, ArrowDownToLine, ArrowUpFromLine, Wallet, Shield, Clock,
-  CheckCircle, Copy, CreditCard, Smartphone, Coins, AlertCircle,
-  PartyPopper, Hash, Network, User, MapPin, 
-  Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X, LogOut, Gift, XCircle
+  ArrowDownToLine, ArrowUpFromLine, Wallet, Shield, Clock,
+  CheckCircle, Copy, CreditCard, Smartphone, Info, ChevronLeft, Lock, KeyRound, X, XCircle
 } from "lucide-react";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
