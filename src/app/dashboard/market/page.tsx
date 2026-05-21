@@ -218,7 +218,7 @@ export default function Market() {
                   <span className="text-gray-500 text-xs font-bold uppercase">Plan Cost</span>
                   <span className="font-black text-gray-900">${lowBalanceGen?.price}</span>
             </div>
-            <Button onClick={() => { setLowBalanceGen(null); router.push("/dashboard/bank"); }} className="w-full bg-amber-500 h-12 font-black">DEPOSIT NOW</Button>
+            <Button onClick={() => { setLowBalanceGen(null); router.push("/dashboard/bank"); }} className="w-full bg-amber-50 h-12 font-black">DEPOSIT NOW</Button>
           </div>
         </DialogContent>
       </Dialog>

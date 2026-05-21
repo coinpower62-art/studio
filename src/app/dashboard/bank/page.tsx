@@ -20,7 +20,6 @@ import { createClient } from "@/lib/supabase/client";
 import { countries as COUNTRIES_DATA } from "@/lib/data";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { createDepositRequest, createWithdrawalRequest, setWithdrawalPin, redeemGiftCode } from "./actions";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 const GHS_RATE = 10;
 const DEPOSIT_PHONE = "+233548304717";
@@ -184,11 +183,13 @@ export default function BankPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-8">
-        <Button onClick={() => openMode('deposit')} className="h-16 rounded-2xl bg-white border border-gray-200 text-gray-900 shadow-sm flex flex-col gap-1 hover:bg-gray-50">
+        <Button onClick={() => { setMode('deposit'); setAmount(""); setDepositMethod('momo'); setDepositSuccess(false); }} 
+          className="h-16 rounded-2xl bg-white border border-gray-200 text-gray-900 shadow-sm flex flex-col gap-1 hover:bg-gray-50">
           <ArrowDownToLine className="text-green-500" />
           <span className="text-xs font-bold">DEPOSIT</span>
         </Button>
-        <Button onClick={() => { if(!canWithdraw) { toast({ title: "Rental Required", description: "Rent a PG2 generator or higher to withdraw.", variant: "destructive"}); return; } if(!profile.has_withdrawal_pin) setPinMode('security'); else openMode('withdraw'); }} className="h-16 rounded-2xl bg-white border border-gray-200 text-gray-900 shadow-sm flex flex-col gap-1 hover:bg-gray-50">
+        <Button onClick={() => { if(!canWithdraw) { toast({ title: "Rental Required", description: "Rent a PG2 generator or higher to withdraw.", variant: "destructive"}); return; } if(!profile.has_withdrawal_pin) setPinMode('security'); else { setMode('withdraw'); setAmount(""); setWithdrawMethod('momo'); setWithdrawSuccess(false); } }} 
+          className="h-16 rounded-2xl bg-white border border-gray-200 text-gray-900 shadow-sm flex flex-col gap-1 hover:bg-gray-50">
           <ArrowUpFromLine className="text-blue-500" />
           <span className="text-xs font-bold">WITHDRAW</span>
         </Button>
@@ -235,6 +236,24 @@ export default function BankPage() {
         </div>
       )}
 
+      {depositSuccess && (
+          <div className="bg-white rounded-2xl p-8 border border-green-200 shadow-sm text-center space-y-3 mb-6 animate-in zoom-in-95">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto"><CheckCircle className="w-8 h-8 text-green-600" /></div>
+              <h2 className="font-black text-xl text-gray-900">Request Submitted</h2>
+              <p className="text-sm text-gray-500">Your deposit of ${amount} is pending approval. Your balance will update soon.</p>
+              <Button onClick={() => setMode(null)} className="bg-amber-500 font-bold rounded-xl px-8 mt-2">CLOSE</Button>
+          </div>
+      )}
+
+      {withdrawSuccess && (
+          <div className="bg-white rounded-2xl p-8 border border-blue-200 shadow-sm text-center space-y-3 mb-6 animate-in zoom-in-95">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto"><PartyPopper className="w-8 h-8 text-blue-600" /></div>
+              <h2 className="font-black text-xl text-gray-900">Payout Requested</h2>
+              <p className="text-sm text-gray-500">Your withdrawal of ${amount} has been submitted and is processing.</p>
+              <Button onClick={() => setMode(null)} className="bg-amber-500 font-bold rounded-xl px-8 mt-2">CLOSE</Button>
+          </div>
+      )}
+
       <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
         <h3 className="font-bold text-gray-900 mb-4">Transaction History</h3>
         <div className="space-y-3">
@@ -259,7 +278,7 @@ export default function BankPage() {
       {pinMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
            <div className="bg-white rounded-3xl p-8 w-full max-w-sm text-center space-y-5 shadow-2xl relative">
-              <button onClick={() => setPinMode(null)} className="absolute top-4 right-4 text-gray-400"><X className="w-5 h-5" /></button>
+              <button onClick={() => setPinMode(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
               {pinMode === 'security' ? (
                   <div className="space-y-4">
                       <div className="w-16 h-16 bg-amber-100 rounded-2xl mx-auto flex items-center justify-center"><Shield className="w-8 h-8 text-amber-600" /></div>
@@ -273,14 +292,14 @@ export default function BankPage() {
                   <p className="text-xs text-gray-400 uppercase tracking-widest font-bold">{pinMode === 'verify' ? 'Enter your 6-digit PIN' : 'Enter a new 6-digit PIN'}</p>
                   <PinBoxes value={pinInput} onChange={setPinInput} testId="pin-input" />
                   {pinMode === 'setup' && (
-                    <div className="space-y-2">
+                    <div className="space-y-2 mt-4">
                         <p className="text-xs text-gray-400 uppercase tracking-widest font-bold">Confirm PIN</p>
                         <PinBoxes value={pinConfirm} onChange={setPinConfirm} testId="pin-confirm" />
                     </div>
                   )}
-                  {pinError && <p className="text-red-500 text-xs font-bold">{pinError}</p>}
-                  <Button onClick={pinMode === 'verify' ? handleWithdrawalSubmit : handleSetPin} disabled={isSubmitting || (pinMode === 'setup' && pinInput !== pinConfirm)} className="w-full bg-amber-500 h-12 font-black shadow-lg">
-                      {isSubmitting ? 'PROCESSING...' : 'CONTINUE'}
+                  {pinError && <p className="text-red-500 text-xs font-bold mt-2">{pinError}</p>}
+                  <Button onClick={pinMode === 'verify' ? handleWithdrawalSubmit : handleSetPin} disabled={(pinMode === 'verify' && pinInput.length < 6) || (pinMode === 'setup' && (pinInput.length < 6 || pinInput !== pinConfirm)) || isSettingPin || isSubmitting} className="w-full bg-amber-500 h-12 font-black shadow-lg mt-6">
+                      {isSubmitting || isSettingPin ? 'PROCESSING...' : 'CONTINUE'}
                   </Button>
                 </>
               )}
@@ -290,5 +309,3 @@ export default function BankPage() {
     </div>
   );
 }
-
-function openMode(m: Mode) {}

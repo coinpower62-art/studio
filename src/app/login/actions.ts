@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
 export async function login(formData: FormData) {
-  const email = (formData.get('email') as string).toLowerCase()
+  const email = (formData.get('email') as string).toLowerCase().trim()
   const password = formData.get('password') as string
 
   const cookieOptions = { 
@@ -64,7 +64,7 @@ export async function login(formData: FormData) {
 export async function logout() {
   const supabase = createClient()
   await supabase.auth.signOut()
-  cookies().set('admin_logged_in', '', { maxAge: 0 });
-  cookies().set('admin_client_logged_in', '', { maxAge: 0 });
+  cookies().set('admin_logged_in', '', { maxAge: 0, path: '/' });
+  cookies().set('admin_client_logged_in', '', { maxAge: 0, path: '/' });
   redirect('/login')
 }

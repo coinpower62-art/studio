@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Shield, Users, DollarSign, LogOut, Search, Edit3, Trash2,
   CheckCircle, XCircle, BarChart3, Zap,
-  ArrowUpFromLine, RefreshCw, Save, X, Lock, Unlock, DatabaseZap, Pencil, Plus
+  ArrowUpFromLine, RefreshCw, Save, X, Lock, Unlock, DatabaseZap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -74,7 +74,7 @@ export function DashboardClient({ initialData }: { initialData: any }) {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex w-full">
-      <aside className="w-64 border-r border-slate-800 p-4 space-y-4 hidden md:block">
+      <aside className="w-64 border-r border-slate-800 p-4 space-y-4 hidden md:block flex-shrink-0">
         <div className="flex items-center gap-2 mb-8">
           <Shield className="text-amber-500 w-6 h-6" />
           <span className="font-black text-lg">Admin Panel</span>
@@ -220,16 +220,17 @@ export function DashboardClient({ initialData }: { initialData: any }) {
                 {(tab === 'deposits' ? deposits : withdrawals).map(r => (
                     <div key={r.id} className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
                         <div className="flex justify-between items-start mb-3">
-                            <div>
-                                <p className="font-bold">{users.find(u => u.id === r.user_id)?.full_name || 'User ID: ' + r.user_id.slice(0,8)}</p>
+                            <div className="min-w-0 flex-1">
+                                <p className="font-bold truncate">{users.find(u => u.id === r.user_id)?.full_name || users.find(u => u.id === r.user_id)?.username || 'User ID: ' + r.user_id.slice(0,8)}</p>
                                 <p className="text-xs text-slate-500">{new Date(r.created_at).toLocaleString()}</p>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right ml-3">
                                 <p className="text-lg font-black text-white">${r.amount}</p>
                                 <Badge className={cn(
-                                    r.status === 'approved' || r.status === 'complete' ? "bg-green-900/40 text-green-400" :
-                                    r.status === 'pending' || r.status === 'processing' ? "bg-yellow-900/40 text-yellow-400" :
-                                    "bg-red-900/40 text-red-400"
+                                    "text-[10px] uppercase font-bold",
+                                    r.status === 'approved' || r.status === 'complete' ? "bg-green-900/40 text-green-400 border-green-700" :
+                                    r.status === 'pending' || r.status === 'processing' ? "bg-yellow-900/40 text-yellow-400 border-yellow-700" :
+                                    "bg-red-900/40 text-red-400 border-red-700"
                                 )}>{r.status}</Badge>
                             </div>
                         </div>
@@ -238,11 +239,11 @@ export function DashboardClient({ initialData }: { initialData: any }) {
                                 <Button size="sm" onClick={() => {
                                     if(tab === 'deposits') adminHandleDeposit(r.id, 'approve', r.user_id, r.amount).then(fetchData);
                                     else adminHandleWithdrawal(r.id, 'complete', r.user_id, r.amount).then(fetchData);
-                                }} className="flex-1 bg-green-600">Approve</Button>
+                                }} className="flex-1 bg-green-600 hover:bg-green-700 font-bold">APPROVE</Button>
                                 <Button size="sm" onClick={() => {
                                     if(tab === 'deposits') adminHandleDeposit(r.id, 'reject').then(fetchData);
                                     else adminHandleWithdrawal(r.id, 'reject', r.user_id, r.amount).then(fetchData);
-                                }} variant="destructive" className="flex-1">Reject</Button>
+                                }} variant="destructive" className="flex-1 font-bold">REJECT</Button>
                             </div>
                         ) : null}
                     </div>
