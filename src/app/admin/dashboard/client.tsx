@@ -1,3 +1,4 @@
+
 'use client';
 
 import { DashboardClient as InternalDashboardClient } from "./DashboardClient";
