@@ -85,13 +85,14 @@ export default function Market() {
         toast({ title: "Generator rented!" });
         fetchData();
     } else {
-        toast({ title: "Error", description: result.error, variant: "destructive" });
+        toast({ title: "Action Restricted", description: result.error, variant: "destructive" });
     }
     setIsRenting(null);
   };
 
   if (isLoading || !profile) return <MarketPageSkeleton />;
 
+  // Calculate lifetime rental counts for each generator
   const historicalRentedCounts = new Map<string, number>();
   rentedHistory.forEach(ug => historicalRentedCounts.set(ug.generator_id, (historicalRentedCounts.get(ug.generator_id) || 0) + 1));
 
@@ -120,27 +121,37 @@ export default function Market() {
             {generators.filter(g => g.published).map((gen) => {
               const cm = colorMap[gen.color] || colorMap["from-amber-400 to-orange-500"];
               const count = historicalRentedCounts.get(gen.id) || 0;
+              
+              // Define permanent lifetime limits
               let max = gen.max_rentals ?? 1;
-              if (gen.id === 'pg1') max = 1;
-              if (gen.id === 'pg2') max = 2;
+              if (gen.id === 'pg1') max = 1; // PG1 Trial can only be used once ever
+              if (gen.id === 'pg2') max = 2; // PG2 can only be used twice ever
 
               const isMaxed = count >= max;
 
               return (
                 <div key={gen.id} className={cn(
-                    "bg-white rounded-2xl border-2 transition-all duration-300 overflow-hidden",
+                    "bg-white rounded-2xl border-2 transition-all duration-300 overflow-hidden relative",
                     cm.border,
                     isMaxed 
-                        ? "opacity-60 border-gray-100 cursor-default shadow-none scale-100 pointer-events-none" 
+                        ? "opacity-75 border-gray-200 shadow-none grayscale-[0.4]" 
                         : "border-amber-100 shadow-sm hover:shadow-xl hover:-translate-y-1"
                 )}>
+                  {isMaxed && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                      <div className="bg-red-600/90 text-white px-4 py-2 rounded-xl font-black text-sm rotate-[-12deg] shadow-2xl border-2 border-white">
+                        PERMANENTLY DISCONNECTED
+                      </div>
+                    </div>
+                  )}
+
                   <div className={cn("bg-gradient-to-r p-4 sm:p-5 border-b", cm.bg, cm.border)}>
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="font-black text-lg text-gray-900 leading-tight">{gen.name}</h3>
                         <p className="text-gray-500 text-xs">{gen.subtitle}</p>
                       </div>
-                      <Badge variant={isMaxed ? 'secondary' : 'default'} className={isMaxed ? "bg-gray-200 text-gray-500" : "bg-amber-100 text-amber-700"}>
+                      <Badge variant={isMaxed ? 'secondary' : 'default'} className={isMaxed ? "bg-red-100 text-red-700 border-red-200" : "bg-amber-100 text-amber-700"}>
                         {isMaxed ? 'Limit Reached' : cm.badgeLabel}
                       </Badge>
                     </div>
@@ -149,7 +160,7 @@ export default function Market() {
                         <img
                           src={gen.image_url || PlaceHolderImages.find(i => i.id === 'gen-' + gen.id)?.imageUrl}
                           alt={gen.name}
-                          className="max-h-full max-w-full object-contain"
+                          className={cn("max-h-full max-w-full object-contain", isMaxed && "opacity-40")}
                         />
                     </div>
                   </div>
@@ -165,8 +176,8 @@ export default function Market() {
                           <p className="font-black text-sm text-green-700">${gen.daily_income}</p>
                       </div>
                       <div className="bg-amber-50 rounded-lg p-2 border border-amber-100">
-                          <p className="text-[10px] text-amber-500 font-bold uppercase">Usage</p>
-                          <p className="font-black text-sm text-amber-700">{count}/{max}</p>
+                          <p className="text-[10px] text-amber-500 font-bold uppercase">Used</p>
+                          <p className={cn("font-black text-sm", isMaxed ? "text-red-600" : "text-amber-700")}>{count}/{max}</p>
                       </div>
                     </div>
                     
@@ -174,12 +185,18 @@ export default function Market() {
                       disabled={isMaxed || isRenting === gen.id} 
                       onClick={() => handleRentClick(gen)} 
                       className={cn(
-                          "w-full h-12 font-black shadow-lg transition-all",
-                          isMaxed ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed" : "bg-amber-500 hover:bg-amber-600 text-white"
+                          "w-full h-12 font-black shadow-lg transition-all relative z-20",
+                          isMaxed ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed" : "bg-amber-500 hover:bg-amber-600 text-white"
                       )}
                     >
-                      {isRenting === gen.id ? 'PROCESSING...' : isMaxed ? 'LIMIT REACHED' : `RENT ${gen.name.toUpperCase()}`}
+                      {isRenting === gen.id ? 'PROCESSING...' : isMaxed ? 'UPGRADE REQUIRED' : `RENT ${gen.name.toUpperCase()}`}
                     </Button>
+                    
+                    {isMaxed && (
+                      <p className="text-[10px] text-red-500 text-center mt-2 font-bold uppercase tracking-wider">
+                        Lifetime usage limit reached for this plan.
+                      </p>
+                    )}
                   </div>
                 </div>
               );

@@ -14,7 +14,20 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     const { data: gen } = await supabase.from('generators').select('*').eq('id', generatorId).single();
     if (!gen) return { error: 'Generator not found.' };
 
-    // STRICT REQUIREMENT: Check for PG2 lifetime limit (Exactly 2 times, including expired)
+    // 1. Enforce PG1 Lifetime Limit (1 time)
+    if (generatorId === 'pg1') {
+        const { count } = await supabase
+            .from('rented_generators')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('generator_id', 'pg1');
+        
+        if (count !== null && count >= 1) {
+            return { error: 'You have already used your free trial generator.' };
+        }
+    }
+
+    // 2. STRICT REQUIREMENT: Enforce PG2 Lifetime Limit (Exactly 2 times, including expired)
     if (generatorId === 'pg2') {
         const { count, error: countError } = await supabase
             .from('rented_generators')
@@ -25,7 +38,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         if (countError) return { error: countError.message };
 
         if (count !== null && count >= 2) {
-            // This error matches the SQL exception message the user requested
+            // This error matches the SQL exception message and user request
             return { error: 'you reached your pg2 limit please upgrade' };
         }
     }
@@ -59,7 +72,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         // Rollback balance if insert fails
         await supabaseAdmin.from('profiles').update({ balance: profile.balance }).eq('id', user.id);
         
-        // Handle specific DB trigger message
+        // Handle specific DB trigger message if it exists
         if (insertError.message.includes('pg2 limit')) {
             return { error: 'you reached your pg2 limit please upgrade' };
         }
