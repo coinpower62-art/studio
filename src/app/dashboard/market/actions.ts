@@ -24,15 +24,10 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     // Rules: PG1 (1 max), PG2 (2 max), Others (from DB)
     let max = gen.max_rentals ?? 1;
     if (generatorId === 'pg1') max = 1;
-    if (generatorId === 'pg2') {
-        max = 2;
-        if (lifetimeCount !== null && lifetimeCount >= max) {
-            return { error: 'You have reached your rent limit' };
-        }
-    }
+    if (generatorId === 'pg2') max = 2;
     
     if (lifetimeCount !== null && lifetimeCount >= max) {
-        return { error: `Lifetime account limit reached for this plan (${max} rentals total).` };
+        return { error: 'You reached your rent limit' };
     }
 
     // 2. Check Balance
