@@ -114,8 +114,8 @@ const COLORS = [
 const DEFAULT_GENERATORS: Generator[] = [
   { id: 'pg1', name: "PG1 Generator", subtitle: "Basic Power", icon: "⚡", color: "from-amber-400 to-orange-500", price: 0, expire_days: 2, daily_income: 0.5, published: true, roi: "10%", period: "Daily", min_invest: "$0", max_invest: "$0", investors: "12050", max_rentals: 1 },
   { id: 'pg2', name: "PG2 Generator", subtitle: "Standard Power", icon: "🔋", color: "from-green-400 to-emerald-600", price: 25, expire_days: 30, daily_income: 2.5, published: true, roi: "12%", period: "Daily", min_invest: "$25", max_invest: "$1000", investors: "8520", max_rentals: 2 },
-  { id: 'pg3', name: "PG3 Generator", subtitle: "Mega Power", icon: "💡", color: "from-blue-400 to-indigo-600", price: 100, expire_days: 45, daily_income: 10, published: true, roi: "15%", period: "Daily", min_invest: "$100", max_invest: "$5000", investors: "4310", max_rentals: 5 },
-  { id: 'pg4', name: "PG4 Generator", subtitle: "Ultra Power", icon: "🚀", color: "from-purple-500 to-pink-600", price: 500, expire_days: 30, daily_income: 55, published: true, roi: "20%", period: "Daily", min_invest: "$500", max_invest: "$20000", investors: "1250", max_rentals: 5 },
+  { id: 'pg3', name: "PG3 Generator", subtitle: "Mega Power", icon: "💡", color: "from-blue-400 to-indigo-600", price: 100, expire_days: 45, daily_income: 10, published: true, roi: "15%", period: "Daily", min_invest: "$100", max_invest: "$5000", investors: "4310", max_rentals: 1 },
+  { id: 'pg4', name: "PG4 Generator", subtitle: "Ultra Power", icon: "🚀", color: "from-purple-500 to-pink-600", price: 500, expire_days: 30, daily_income: 55, published: true, roi: "20%", period: "Daily", min_invest: "$500", max_invest: "$20000", investors: "1250", max_rentals: 2 },
 ];
 
 
@@ -1614,7 +1614,7 @@ function DashboardContent() {
                             { label: "Price", value: `$${g.price.toLocaleString()}` },
                             { label: "Days", value: `${g.expire_days}` },
                             { label: "Daily Income", value: `$${g.daily_income}` },
-                            { label: "Lifetime Limit", value: g.max_rentals },
+                            { label: "Max Rentals", value: g.max_rentals },
                           ].map(function({ label, value }) { return (
                             <div key={label} className="bg-slate-700/50 rounded-xl px-2.5 py-2">
                               <p className="text-slate-400 text-[10px]">{label}</p>
@@ -2142,7 +2142,7 @@ function DashboardContent() {
       {/* Edit Balance Modal */}
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-sm shadow-2xl">
             <div className="flex items-center justify-between mb-4"><h3 className="text-white font-bold">Edit User Balance</h3><button onClick={function() { return setEditingUser(null); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button></div>
             <p className="text-slate-300 text-sm font-medium">{editingUser.full_name}</p>
             <p className="text-slate-500 text-xs mb-1">@{editingUser.username} · {editingUser.country}</p>
@@ -2201,7 +2201,7 @@ function DashboardContent() {
                   <Input type="number" value={newGen.expire_days || ""} onChange={function(e) { return setNewGen({ ...newGen, expire_days: parseInt(e.target.value) || 0 }); }} placeholder="30" data-testid="input-gen-expire" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                  <div>
-                    <label className="text-slate-300 text-xs font-medium mb-1 block">Lifetime Limit *</label>
+                    <label className="text-slate-300 text-xs font-medium mb-1 block">Max Rentals *</label>
                     <Input type="number" value={newGen.max_rentals || ""} onChange={e => setNewGen({ ...newGen, max_rentals: parseInt(e.target.value) || 1 })} placeholder="1" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
               </div>
@@ -2288,7 +2288,7 @@ function DashboardContent() {
                 { label: "Rent Price ($)", key: "price", type: "number" },
                 { label: "Expire Days", key: "expire_days", type: "number" },
                 { label: "Daily Income ($)", key: "daily_income", type: "number" },
-                { label: "Lifetime Limit", key: "max_rentals", type: "number" },
+                { label: "Max Rentals", key: "max_rentals", type: "number" },
               ].map(function({ label, key, type }) { return (
                 <div key={key}>
                   <label className="text-slate-400 text-xs font-medium mb-1 block">{label}</label>
