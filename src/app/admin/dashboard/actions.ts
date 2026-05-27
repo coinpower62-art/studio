@@ -4,7 +4,8 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 export async function adminGetAllData() {
-    const supabase = createClient();
+    // We use the Admin Client (service_role key) to bypass RLS and see ALL users and data
+    const supabase = createAdminClient();
     try {
         const [
             { data: users },
@@ -14,8 +15,7 @@ export async function adminGetAllData() {
             { data: withdrawals },
             { data: media },
             { data: codes },
-            { data: visits },
-            { data: activityPosts }
+            { data: visits }
         ] = await Promise.all([
             supabase.from('profiles').select('*').order('created_at', { ascending: false }),
             supabase.from('generators').select('*').order('price', { ascending: true }),
@@ -24,8 +24,7 @@ export async function adminGetAllData() {
             supabase.from('withdrawal_requests').select('*').order('created_at', { ascending: false }),
             supabase.from('media').select('*'),
             supabase.from('gift_codes').select('*').order('created_at', { ascending: false }),
-            supabase.from('site_visits').select('*').order('date', { ascending: false }),
-            supabase.from('activity_posts').select('*').order('created_at', { ascending: false })
+            supabase.from('site_visits').select('*').order('date', { ascending: false })
         ]);
 
         return {
@@ -37,8 +36,7 @@ export async function adminGetAllData() {
                 withdrawals: withdrawals || [],
                 media: media || [],
                 codes: codes || [],
-                visits: visits || [],
-                activityPosts: activityPosts || []
+                visits: visits || []
             }
         };
     } catch (error: any) {
