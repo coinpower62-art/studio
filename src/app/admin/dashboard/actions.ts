@@ -95,26 +95,26 @@ export async function adminCreateUser(profile: any) {
 }
 
 export async function adminHandleDeposit(id: string, action: 'approve' | 'reject' | 'delete', userId?: string, amount?: number) {
-    const supabase = createAdminClient();
-    
-    if (action === 'delete') {
-        const { error } = await supabase.from('deposit_requests').delete().eq('id', id);
-        if (error) return { error: error.message };
-    } else {
-        const status = action === 'approve' ? 'approved' : 'rejected';
-        const { error } = await supabase.from('deposit_requests').update({ status }).eq('id', id);
-        if (error) return { error: error.message };
+  const supabase = createAdminClient();
+  
+  if (action === 'delete') {
+      const { error } = await supabase.from('deposit_requests').delete().eq('id', id);
+      if (error) return { error: error.message };
+  } else {
+      const status = action === 'approve' ? 'approved' : 'rejected';
+      const { error } = await supabase.from('deposit_requests').update({ status }).eq('id', id);
+      if (error) return { error: error.message };
 
-        if (action === 'approve' && userId && amount) {
-            const { data: profile } = await supabase.from('profiles').select('balance').eq('id', userId).single();
-            if (profile) {
-                await supabase.from('profiles').update({ balance: (profile.balance || 0) + amount }).eq('id', userId);
-            }
-        }
-    }
-    
-    revalidatePath('/admin/dashboard');
-    return { success: true };
+      if (action === 'approve' && userId && amount) {
+          const { data: profile } = await supabase.from('profiles').select('balance').eq('id', userId).single();
+          if (profile) {
+              await supabase.from('profiles').update({ balance: (profile.balance || 0) + amount }).eq('id', userId);
+          }
+      }
+  }
+  
+  revalidatePath('/admin/dashboard');
+  return { success: true };
 }
 
 export async function adminHandleWithdrawal(id: string, action: 'process' | 'complete' | 'reject' | 'delete', userId?: string, amount?: number) {
