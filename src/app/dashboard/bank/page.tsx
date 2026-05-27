@@ -344,6 +344,10 @@ export default function BankPage() {
   }
 
   const openMode = function(m: Mode) {
+    if (mode === m) {
+      setMode(null);
+      return;
+    }
     setMode(m); setAmount("");
     setDepositMethod(null);
     if (profile) setDepositCountry(profile.country || "");
@@ -612,7 +616,7 @@ export default function BankPage() {
             )}
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setLowBalanceGen(null)} className="flex-1 rounded-xl h-11 font-semibold border-gray-200">Cancel</Button>
-              <Button onClick={() => { setLowBalanceGen(null); router.push("/dashboard/bank"); }} className="flex-1 rounded-xl h-11 font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md flex items-center gap-2 justify-center">
+              <Button onClick={() => { setLowBalanceGen(null); setMode('deposit'); }} className="flex-1 rounded-xl h-11 font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md flex items-center gap-2 justify-center">
                 <ArrowDownToLine className="w-4 h-4" /> Deposit
               </Button>
             </div>
@@ -717,7 +721,7 @@ export default function BankPage() {
         </div>
 
         <div className="space-y-3">
-            <div data-testid="button-deposit" onClick={function() { return openMode('deposit'); }} className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-amber-300 hover:bg-amber-50/50 transition-all">
+            <div data-testid="button-deposit" onClick={function() { return openMode('deposit'); }} className={`bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-amber-300 hover:bg-amber-50/50 transition-all ${mode === 'deposit' ? 'ring-2 ring-amber-500' : ''}`}>
               <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-black flex items-center justify-center">
                 <img src={depositButtonLogo} alt="Deposit" className="w-full h-full object-contain p-1" />
               </div>
@@ -725,7 +729,7 @@ export default function BankPage() {
                 <p className="font-bold text-gray-800">Deposit Funds</p>
                 <p className="text-xs text-gray-500">{isGhana ? "MTN MoMo (GH₵) · USDT" : "USDT · Card"}</p>
               </div>
-              <ArrowDownToLine className="w-5 h-5 text-green-500" />
+              <ArrowDownToLine className={`w-5 h-5 ${mode === 'deposit' ? 'text-amber-600' : 'text-green-500'}`} />
             </div>
 
             <div data-testid="button-withdraw" onClick={() => {
@@ -736,9 +740,9 @@ export default function BankPage() {
                 if (!profile.has_withdrawal_pin) setPinMode("security");
                 else openMode("withdraw");
               }}
-              className={`bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 transition-all ${!canWithdraw ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-amber-300 hover:bg-amber-50/50'}`}>
+              className={`bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 transition-all ${!canWithdraw ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-amber-300 hover:bg-amber-50/50'} ${mode === 'withdraw' ? 'ring-2 ring-amber-500' : ''}`}>
               <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                <ArrowUpFromLine className="w-5 h-5 text-gray-500" />
+                <ArrowUpFromLine className={`w-5 h-5 ${mode === 'withdraw' ? 'text-amber-600' : 'text-gray-500'}`} />
               </div>
               <div className="flex-1">
                 <p className="font-bold text-gray-800">Withdraw Funds</p>
@@ -747,73 +751,93 @@ export default function BankPage() {
             </div>
         </div>
 
-        {mode === "deposit" && !depositSuccess && !!depositMethod && (
-          <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-4 sm:p-6 my-4 space-y-4 animate-in slide-in-from-top-2 duration-300">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <button onClick={function() { return setDepositMethod(null); }} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                  <ChevronLeft className="w-4 h-4 text-gray-500" />
-                </button>
-                <h3 className="font-bold text-gray-900 text-sm sm:text-base">
-                  {depositMethods.find(function(m) { return m.id === depositMethod; })?.label} Deposit
-                </h3>
+        {mode === "deposit" && !depositSuccess && (
+          <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-4 sm:p-6 my-4 space-y-5 animate-in slide-in-from-top-2 duration-300">
+            {!depositMethod ? (
+              <div>
+                <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-3">Select Deposit Method</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                  {depositMethods.map(function({ id, label, img, color }) {
+                    return (
+                    <button key={id} onClick={function() { return setDepositMethod(id); }}
+                      className="flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-gray-200 hover:border-amber-500 hover:bg-amber-50 transition-all">
+                      <div className="w-9 h-9 rounded-xl overflow-hidden shadow-sm flex items-center justify-center bg-white">
+                        <img src={img} alt={label} className="w-full h-full object-contain p-1" />
+                      </div>
+                      <p className="font-bold text-gray-900 text-xs">{label}</p>
+                    </button>
+                  )})}
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-200">
-                <Clock className="w-3.5 h-3.5 text-red-600" />
-                <span className="text-red-600 font-bold text-sm tabular-nums">{countdown}</span>
-              </div>
-            </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <button onClick={function() { return setDepositMethod(null); }} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                      <ChevronLeft className="w-4 h-4 text-gray-500" />
+                    </button>
+                    <h3 className="font-bold text-gray-900 text-sm sm:text-base">
+                      {depositMethods.find(function(m) { return m.id === depositMethod; })?.label} Deposit
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-200">
+                    <Clock className="w-3.5 h-3.5 text-red-600" />
+                    <span className="text-red-600 font-bold text-sm tabular-nums">{countdown}</span>
+                  </div>
+                </div>
 
-            {depositMethod === "momo" && (
-              <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-4 space-y-3">
-                <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-yellow-100">
-                  <div>
-                    <p className="text-xs text-gray-400">Account Name</p>
-                    <p className="font-bold text-gray-900 text-sm sm:text-base">{DEPOSIT_NAME}</p>
+                {depositMethod === "momo" && (
+                  <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-yellow-100">
+                      <div>
+                        <p className="text-xs text-gray-400">Account Name</p>
+                        <p className="font-bold text-gray-900 text-sm sm:text-base">{DEPOSIT_NAME}</p>
+                      </div>
+                      <button onClick={function() { return copy(DEPOSIT_NAME, "Name"); }} className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
+                        <Copy className="w-4 h-4 text-amber-600" />
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-yellow-100">
+                      <div>
+                        <p className="text-xs text-gray-400">MTN MOMO Number</p>
+                        <p className="font-bold text-gray-900 text-lg tracking-widest">{DEPOSIT_PHONE}</p>
+                      </div>
+                      <button onClick={function() { return copy(DEPOSIT_PHONE, "Phone number"); }} className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
+                        <Copy className="w-4 h-4 text-amber-600" />
+                      </button>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+                      <p className="text-blue-800 text-xs leading-relaxed font-medium">
+                        <span className="font-bold">Conversion Rate:</span> $1.00 USD = GH₵{GHS_RATE}.00
+                      </p>
+                    </div>
                   </div>
-                  <button onClick={function() { return copy(DEPOSIT_NAME, "Name"); }} className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
-                    <Copy className="w-4 h-4 text-amber-600" />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-yellow-100">
+                )}
+
+                <div className="space-y-3">
                   <div>
-                    <p className="text-xs text-gray-400">MTN MOMO Number</p>
-                    <p className="font-bold text-gray-900 text-lg tracking-widest">{DEPOSIT_PHONE}</p>
+                    <label className="text-xs font-medium text-gray-600 mb-1.5 block">Amount to Deposit ($)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
+                      <Input type="number" value={amount} onChange={function(e) { return setAmount(e.target.value); }} placeholder="0.00" min="0" step="0.01" className="pl-7 h-11 border-gray-200 focus:border-green-400 text-lg font-semibold" />
+                    </div>
+                    {isGhana && amount && parseFloat(amount) > 0 && (
+                       <div className="mt-2 bg-green-50 rounded-lg px-3 py-2 border border-green-100 flex justify-between items-center">
+                          <span className="text-[10px] font-bold text-green-600 uppercase">You Pay (GHS)</span>
+                          <span className="text-sm font-black text-green-700">GH₵{(parseFloat(amount) * GHS_RATE).toFixed(2)}</span>
+                       </div>
+                    )}
                   </div>
-                  <button onClick={function() { return copy(DEPOSIT_PHONE, "Phone number"); }} className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
-                    <Copy className="w-4 h-4 text-amber-600" />
-                  </button>
-                </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
-                  <p className="text-blue-800 text-xs leading-relaxed font-medium">
-                    <span className="font-bold">Conversion Rate:</span> $1.00 USD = GH₵{GHS_RATE}.00
-                  </p>
+                  <div className="space-y-1.5">
+                     <label className="text-xs font-medium text-gray-600 block">Transaction ID / ID Receipt</label>
+                     <Input value={depositTxId} onChange={function(e) { return setDepositTxId(e.target.value); }} placeholder="Enter ID from receipt" className="h-11 border-gray-200 focus:border-green-400 font-mono text-sm" />
+                  </div>
+                  <Button onClick={handleDepositSubmit} disabled={isSubmitting} className="w-full h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md">
+                    {isSubmitting ? "Submitting..." : "Submit Deposit Request"}
+                  </Button>
                 </div>
               </div>
             )}
-
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-gray-600 mb-1.5 block">Amount to Deposit ($)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
-                  <Input type="number" value={amount} onChange={function(e) { return setAmount(e.target.value); }} placeholder="0.00" min="0" step="0.01" className="pl-7 h-11 border-gray-200 focus:border-green-400 text-lg font-semibold" />
-                </div>
-                {isGhana && amount && parseFloat(amount) > 0 && (
-                   <div className="mt-2 bg-green-50 rounded-lg px-3 py-2 border border-green-100 flex justify-between items-center">
-                      <span className="text-[10px] font-bold text-green-600 uppercase">You Pay (GHS)</span>
-                      <span className="text-sm font-black text-green-700">GH₵{(parseFloat(amount) * GHS_RATE).toFixed(2)}</span>
-                   </div>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                 <label className="text-xs font-medium text-gray-600 block">Transaction ID / ID Receipt</label>
-                 <Input value={depositTxId} onChange={function(e) { return setDepositTxId(e.target.value); }} placeholder="Enter ID from receipt" className="h-11 border-gray-200 focus:border-green-400 font-mono text-sm" />
-              </div>
-              <Button onClick={handleDepositSubmit} disabled={isSubmitting} className="w-full h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md">
-                {isSubmitting ? "Submitting..." : "Submit Deposit Request"}
-              </Button>
-            </div>
           </div>
         )}
 
