@@ -14,7 +14,8 @@ export async function adminGetAllData() {
             { data: withdrawals },
             { data: media },
             { data: codes },
-            { data: visits }
+            { data: visits },
+            { data: activityPosts }
         ] = await Promise.all([
             supabase.from('profiles').select('*').order('created_at', { ascending: false }),
             supabase.from('generators').select('*').order('price', { ascending: true }),
@@ -23,7 +24,8 @@ export async function adminGetAllData() {
             supabase.from('withdrawal_requests').select('*').order('created_at', { ascending: false }),
             supabase.from('media').select('*'),
             supabase.from('gift_codes').select('*').order('created_at', { ascending: false }),
-            supabase.from('site_visits').select('*').order('date', { ascending: false })
+            supabase.from('site_visits').select('*').order('date', { ascending: false }),
+            supabase.from('activity_posts').select('*').order('created_at', { ascending: false })
         ]);
 
         return {
@@ -35,7 +37,8 @@ export async function adminGetAllData() {
                 withdrawals: withdrawals || [],
                 media: media || [],
                 codes: codes || [],
-                visits: visits || []
+                visits: visits || [],
+                activityPosts: activityPosts || []
             }
         };
     } catch (error: any) {
@@ -61,13 +64,12 @@ export async function adminDeleteUser(userId: string) {
 
 export async function adminCreateUser(profile: any) {
     const supabase = createAdminClient();
-    // Create Auth User
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: profile.email,
         password: profile.password,
         email_confirm: true,
         user_metadata: {
-            full_name: profile.full_name,
+            full_name: profile.fullName || profile.full_name,
             username: profile.username,
             country: profile.country,
             phone: profile.phone,
@@ -76,14 +78,13 @@ export async function adminCreateUser(profile: any) {
 
     if (authError) return { error: authError.message };
 
-    // Update Profile with additional fields
     if (authData.user) {
         const { error: pError } = await supabase.from('profiles').update({
             balance: profile.balance,
-            referral_code: profile.referral_code,
+            referral_code: profile.referralCode || profile.referral_code,
             country: profile.country,
             phone: profile.phone,
-            full_name: profile.full_name,
+            full_name: profile.fullName || profile.full_name,
             username: profile.username
         }).eq('id', authData.user.id);
         
@@ -173,26 +174,9 @@ export async function adminUpdateGeneratorImage(id: string, url: string) {
     return { success: true };
 }
 
-export async function adminDeleteGeneratorImage(id: string) {
-    const supabase = createAdminClient();
-    const { error } = await supabase.from('generators').update({ image_url: null }).eq('id', id);
-    if (error) return { error: error.message };
-    revalidatePath('/admin/dashboard');
-    return { success: true };
-}
-
 export async function adminUpsertMedia(id: string, url: string) {
     const supabase = createAdminClient();
     const { error } = await supabase.from('media').upsert({ id, url });
-    if (error) return { error: error.message };
-    revalidatePath('/admin/dashboard');
-    revalidatePath('/dashboard/activity');
-    return { success: true };
-}
-
-export async function adminDeleteMedia(id: string) {
-    const supabase = createAdminClient();
-    const { error } = await supabase.from('media').delete().eq('id', id);
     if (error) return { error: error.message };
     revalidatePath('/admin/dashboard');
     return { success: true };
@@ -233,5 +217,23 @@ export async function adminToggleWithdrawalLock(userId: string, isLocked: boolea
     const { error } = await supabase.from('profiles').update({ withdrawal_locked: isLocked }).eq('id', userId);
     if (error) return { error: error.message };
     revalidatePath('/admin/dashboard');
+    return { success: true };
+}
+
+export async function adminCreateActivityPost(post: any) {
+    const supabase = createAdminClient();
+    const { error } = await supabase.from('activity_posts').insert(post);
+    if (error) return { error: error.message };
+    revalidatePath('/admin/dashboard');
+    revalidatePath('/dashboard/activity');
+    return { success: true };
+}
+
+export async function adminDeleteActivityPost(id: string) {
+    const supabase = createAdminClient();
+    const { error } = await supabase.from('activity_posts').delete().eq('id', id);
+    if (error) return { error: error.message };
+    revalidatePath('/admin/dashboard');
+    revalidatePath('/dashboard/activity');
     return { success: true };
 }
