@@ -122,11 +122,8 @@ export default function Market() {
               const cm = colorMap[gen.color] || colorMap["from-amber-400 to-orange-500"];
               const count = historicalRentedCounts.get(gen.id) || 0;
               
-              // Define permanent lifetime limits
-              let max = gen.max_rentals ?? 1;
-              if (gen.id === 'pg1') max = 1; // PG1 Trial can only be used once ever
-              if (gen.id === 'pg2') max = 2; // PG2 can only be used twice ever
-
+              // Use dynamic lifetime limit from generator data
+              const max = gen.max_rentals ?? 1;
               const isMaxed = count >= max;
 
               return (
