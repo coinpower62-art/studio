@@ -14,14 +14,14 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     const { data: gen } = await supabase.from('generators').select('*').eq('id', generatorId).single();
     if (!gen) return { error: 'Generator not found.' };
     
-    // Strict Database Check for Lifetime Limit
+    // 1. Check Lifetime Limit (Total ever rented)
     const { count: lifetimeCount } = await supabase
         .from('rented_generators')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('generator_id', generatorId);
 
-    // Strict Rules: PG1 (1 max), PG2 (2 max), Others (from DB)
+    // Rules: PG1 (1 max), PG2 (2 max), Others (from DB)
     let max = gen.max_rentals ?? 1;
     if (generatorId === 'pg1') max = 1;
     if (generatorId === 'pg2') max = 2;
@@ -30,32 +30,34 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         return { error: `Lifetime account limit reached for this plan (${max} rentals total).` };
     }
 
-    // Active concurrency check (cannot have two of the exact same type active at once)
-    const { count: activeCount } = await supabase
-        .from('rented_generators')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('generator_id', generatorId)
-        .gt('expires_at', new Date().toISOString());
-
-    if (activeCount !== null && activeCount >= 1) {
-        return { error: 'You already have an active plan of this type running.' };
-    }
-
+    // 2. Check Balance
     if (profile.balance < gen.price) return { error: 'insufficient_funds' };
 
-    await supabase.from('profiles').update({ balance: profile.balance - gen.price }).eq('id', user.id);
+    // 3. Deduct Balance
+    const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ balance: profile.balance - gen.price })
+        .eq('id', user.id);
+        
+    if (updateError) return { error: "Failed to update balance: " + updateError.message };
     
     const rentedAt = new Date();
     const expiresAt = new Date(rentedAt.getTime() + gen.expire_days * 24 * 60 * 60 * 1000);
 
-    await supabase.from('rented_generators').insert({
+    // 4. Record Rental
+    const { error: insertError } = await supabase.from('rented_generators').insert({
         user_id: user.id,
         generator_id: gen.id,
         rented_at: rentedAt.toISOString(),
         expires_at: expiresAt.toISOString(),
         last_claimed_at: rentedAt.toISOString(),
     });
+    
+    if (insertError) {
+        // Optional: Refund balance if insert fails
+        await supabase.from('profiles').update({ balance: profile.balance }).eq('id', user.id);
+        return { error: "Failed to record rental: " + insertError.message };
+    }
     
     revalidatePath('/dashboard/market');
     revalidatePath('/dashboard/power');
