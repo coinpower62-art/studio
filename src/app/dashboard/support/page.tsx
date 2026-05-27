@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -19,7 +20,8 @@ import {
   DollarSign,
   Shield,
   Star,
-  Play
+  Play,
+  Coins
 } from 'lucide-react';
 import { SiTelegram } from 'react-icons/si';
 import { Button } from '@/components/ui/button';
@@ -326,7 +328,9 @@ export default function SupportPage() {
                     </div>
 
                     <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 space-y-2">
-                      <p className="text-teal-800 text-xs font-bold uppercase tracking-wide">USDT (TRC20)</p>
+                      <p className="text-teal-800 text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
+                         <Coins className="w-3.5 h-3.5" /> USDT (TRC20)
+                      </p>
                       <div className="bg-white rounded-lg px-3 py-2 border border-teal-100">
                         <p className="text-gray-400 text-[10px] mb-1">Wallet Address</p>
                         <div className="flex items-start justify-between gap-2">

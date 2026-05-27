@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback, Suspense } from "react";
@@ -5,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   Landmark, ArrowDownToLine, ArrowUpFromLine, Wallet, Shield, Clock,
   CheckCircle, Copy, CreditCard, Smartphone, Coins, AlertCircle,
-  Hash, Network, User, MapPin, ChevronLeft, Lock, KeyRound, X, XCircle, Eye, EyeOff
+  Hash, Network, User, MapPin, ChevronLeft, Lock, KeyRound, X, XCircle, Eye, EyeOff, Hourglass
 } from "lucide-react";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -50,6 +51,7 @@ function isCardExpired(expiry: string): boolean {
 
 const DEPOSIT_PHONE = "+233548304717";
 const DEPOSIT_NAME = "Patience Opoku";
+const USDT_ADDRESS = "TXmRoXPs98oHwBhLZKEkwLKHceLwbADLnb";
 const COUNTDOWN_SECONDS = 5 * 60;
 const GHS_RATE = 10; // $1 = 10 GHS
 
@@ -483,7 +485,7 @@ export default function BankPage() {
       
       {pinMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 relative">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-sm p-6 relative">
             <button onClick={function() { setPinMode(null); setPinInput(""); setPinConfirm(""); setPinError(""); }}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
               <X className="w-5 h-5" />
@@ -578,6 +580,24 @@ export default function BankPage() {
                   <div className="bg-amber-50 rounded-2xl p-4 space-y-3 border border-amber-100">
                     <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-amber-50"><div><p className="text-[10px] text-gray-400">Recipient Name</p><p className="font-bold text-sm">{DEPOSIT_NAME}</p></div><button onClick={() => copy(DEPOSIT_NAME, "Name")} className="p-2 rounded-lg bg-amber-50 text-amber-600"><Copy className="w-4 h-4" /></button></div>
                     <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-amber-50"><div><p className="text-[10px] text-gray-400">Mobile Number</p><p className="font-bold text-sm font-mono">{DEPOSIT_PHONE}</p></div><button onClick={() => copy(DEPOSIT_PHONE, "Phone")} className="p-2 rounded-lg bg-amber-50 text-amber-600"><Copy className="w-4 h-4" /></button></div>
+                  </div>
+                )}
+
+                {depositMethod === 'usdt' && (
+                  <div className="bg-teal-50 border border-teal-100 rounded-2xl p-4 space-y-3">
+                    <p className="text-teal-800 text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
+                      <Coins className="w-3.5 h-3.5" /> USDT (TRC20)
+                    </p>
+                    <div className="bg-white rounded-xl p-3 border border-teal-50">
+                        <p className="text-[10px] text-gray-400 mb-1">Our USDT Address</p>
+                        <div className="flex items-start justify-between gap-2">
+                            <p className="font-mono text-xs text-gray-900 font-bold break-all">{USDT_ADDRESS}</p>
+                            <button onClick={() => copy(USDT_ADDRESS, "USDT Address")} className="p-2 rounded-lg bg-teal-50 text-teal-600 flex-shrink-0">
+                                <Copy className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                    <p className="text-[10px] text-teal-600 font-medium italic">Only send USDT via the TRC20 network. Other networks may result in permanent loss.</p>
                   </div>
                 )}
 
@@ -721,27 +741,5 @@ export default function BankPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-function Hourglass(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M5 22h14" />
-      <path d="M5 2h14" />
-      <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
-      <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
-    </svg>
   );
 }
