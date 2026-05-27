@@ -11,7 +11,7 @@ export async function login(formData: FormData) {
 
   const cookieOptions = { 
     path: '/',
-    httpOnly: true,
+    httpOnly: false, // Set to false so client-side components can verify admin state
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax' as const,
     maxAge: 60 * 60 * 24 

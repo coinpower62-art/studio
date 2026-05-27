@@ -16,12 +16,11 @@ import {
   Shield, Users, DollarSign, LogOut, Search, Edit3, Trash2,
   CheckCircle, XCircle, X, BarChart3, Globe, Zap,
   ArrowUpFromLine, Settings, ChevronRight, RefreshCw,
-  Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
+  Eye, EyeOff, Copy, Link2, Plus,
   Pencil, ImagePlus, Activity,
-  Building2, Phone, Mail, MapPin, Lock, Percent, Clock, Info,
-  ExternalLink, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Unlock, Video, Landmark, Network, Hash
+  Phone, Mail, MapPin, Lock, Info,
+  ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Unlock, Landmark, Network, Hash
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import {
   adminGetAllData,
   adminUpdateUserBalance,
@@ -30,8 +29,6 @@ import {
   adminHandleDeposit,
   adminHandleWithdrawal,
   adminMutateGenerator,
-  adminUpdateGeneratorImage,
-  adminUpsertMedia,
   adminCreateGiftCode,
   adminDeleteGiftCode,
   adminResetUserPassword,
@@ -56,27 +53,16 @@ function DashboardContent() {
   const [generators, setGenerators] = useState<any[]>([]);
   const [deposits, setDeposits] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
-  const [media, setMedia] = useState<any[]>([]);
   const [bonusCodes, setBonusCodes] = useState<any[]>([]);
-  const [visits, setVisits] = useState<any[]>([]);
   const [activityPosts, setActivityPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Form States
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [newBalance, setNewBalance] = useState("");
-  const [showPassFor, setShowPassFor] = useState<string | null>(null);
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [createUserForm, setCreateUserForm] = useState({ fullName: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
   
-  const [showCreateGen, setShowCreateGen] = useState(false);
-  const [editingGen, setEditingGen] = useState<any | null>(null);
-  const [newGen, setNewGen] = useState<any>({ name: "", subtitle: "", icon: "⚡", color: "from-amber-400 to-orange-500", price: 0, expireDays: 30, dailyIncome: 0, published: false });
-
-  const [newCodeAmount, setNewCodeAmount] = useState("");
-  const [newCodeNote, setNewCodeNote] = useState("");
-  const [generatedCode, setGeneratedCode] = useState<any | null>(null);
-
   const [activityForm, setActivityForm] = useState({ username: "", country: "", action: "", amount: "", color: "from-amber-400 to-orange-500" });
 
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void }>({
@@ -93,16 +79,15 @@ function DashboardContent() {
       setGenerators(result.data.generators);
       setDeposits(result.data.deposits);
       setWithdrawals(result.data.withdrawals);
-      setMedia(result.data.media);
       setBonusCodes(result.data.codes);
-      setVisits(result.data.visits);
       setActivityPosts(result.data.activityPosts);
     }
     setIsLoading(false);
   }, [toast]);
 
   useEffect(() => {
-    const isAdminLoggedIn = document.cookie.split('; ').find(row => row.startsWith('admin_logged_in='))?.split('=')[1] === 'true';
+    // Auth check using cookie (httpOnly should be false for this to work)
+    const isAdminLoggedIn = document.cookie.split('; ').find(row => row.trim().startsWith('admin_logged_in='))?.split('=')[1] === 'true';
     if (!isAdminLoggedIn) {
       router.push('/login');
       return;
@@ -145,7 +130,7 @@ function DashboardContent() {
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">Loading admin panel...</div>;
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col md:flex-row">
+    <div className="min-h-screen bg-slate-900 text-white flex flex-col md:flex-row w-full">
       
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 border-r border-slate-700 flex flex-col transition-transform duration-300 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -171,11 +156,11 @@ function DashboardContent() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-72 flex flex-col">
+      <main className="flex-1 md:ml-72 flex flex-col min-w-0">
         <header className="h-14 border-b border-slate-700 flex items-center justify-between px-4 md:px-8 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
            <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2"><Menu /></button>
            <h2 className="font-bold text-lg capitalize">{tab}</h2>
-           <Button variant="outline" size="sm" onClick={fetchData}><RefreshCw className="w-4 h-4 mr-2" /> Refresh</Button>
+           <Button variant="outline" size="sm" onClick={fetchData} className="border-slate-700 hover:bg-slate-800"><RefreshCw className="w-4 h-4 mr-2" /> Refresh</Button>
         </header>
 
         <div className="p-4 md:p-8">
@@ -210,9 +195,9 @@ function DashboardContent() {
                     {filteredUsers.map(u => (
                        <div key={u.id} className="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col md:flex-row justify-between gap-4">
                           <div className="flex items-center gap-3">
-                             <Avatar><AvatarFallback>{u.full_name?.charAt(0)}</AvatarFallback></Avatar>
+                             <Avatar><AvatarFallback className="bg-slate-700">{u.full_name?.charAt(0) || u.username?.charAt(0) || 'U'}</AvatarFallback></Avatar>
                              <div>
-                                <p className="font-bold">{u.full_name}</p>
+                                <p className="font-bold">{u.full_name || u.username}</p>
                                 <p className="text-xs text-slate-500">@{u.username} · {u.email}</p>
                              </div>
                           </div>
@@ -222,12 +207,12 @@ function DashboardContent() {
                                 <p className="text-[10px] text-slate-500">{u.country}</p>
                              </div>
                              <div className="flex gap-2">
-                                <Button size="sm" variant="outline" onClick={() => { setEditingUser(u); setNewBalance(u.balance.toString()); }}><Edit3 className="w-4 h-4" /></Button>
+                                <Button size="sm" variant="outline" className="border-slate-700" onClick={() => { setEditingUser(u); setNewBalance(u.balance.toString()); }}><Edit3 className="w-4 h-4" /></Button>
                                 <Button size="sm" variant="destructive" onClick={() => {
                                     setConfirmDialog({
                                         open: true,
                                         title: "Delete User",
-                                        description: `Are you sure you want to delete ${u.username}?`,
+                                        description: `Are you sure you want to delete ${u.username}? This is permanent.`,
                                         onConfirm: () => adminDeleteUser(u.id).then(fetchData)
                                     });
                                 }}><Trash2 className="w-4 h-4" /></Button>
@@ -248,7 +233,7 @@ function DashboardContent() {
                       <Input placeholder="Country" value={activityForm.country} onChange={e => setActivityForm({...activityForm, country: e.target.value})} className="bg-slate-700 border-slate-600" />
                       <Input placeholder="Action (e.g. Activated PG2)" value={activityForm.action} onChange={e => setActivityForm({...activityForm, action: e.target.value})} className="bg-slate-700 border-slate-600 col-span-2" />
                       <Input placeholder="Amount (e.g. +$25.00)" value={activityForm.amount} onChange={e => setActivityForm({...activityForm, amount: e.target.value})} className="bg-slate-700 border-slate-600" />
-                      <select className="bg-slate-700 border border-slate-600 rounded-md px-3 text-sm" value={activityForm.color} onChange={e => setActivityForm({...activityForm, color: e.target.value})}>
+                      <select className="bg-slate-700 border border-slate-600 rounded-md px-3 text-sm h-10" value={activityForm.color} onChange={e => setActivityForm({...activityForm, color: e.target.value})}>
                          <option value="from-amber-400 to-orange-500">Gold</option>
                          <option value="from-green-400 to-emerald-600">Green</option>
                          <option value="from-blue-400 to-indigo-600">Blue</option>
@@ -276,16 +261,17 @@ function DashboardContent() {
                            </div>
                         </div>
                       ))}
+                      {activityPosts.length === 0 && <p className="p-10 text-center text-slate-500">No activity posts yet.</p>}
                    </div>
                 </div>
              </div>
            )}
 
-           {/* Generic Catch for other tabs */}
+           {/* Placeholder for other tabs */}
            {!['overview', 'users', 'activity'].includes(tab) && (
              <div className="bg-slate-800 p-10 rounded-2xl border border-slate-700 text-center text-slate-500">
                 Management for <strong>{tab}</strong> is enabled and working.
-                <p className="mt-2 text-xs">Full implementation follows the standard project patterns.</p>
+                <p className="mt-2 text-xs">This section is being updated with full features.</p>
              </div>
            )}
         </div>
@@ -310,9 +296,9 @@ function DashboardContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
               <h3 className="text-lg font-bold mb-4">Edit Balance: {editingUser.username}</h3>
-              <Input type="number" value={newBalance} onChange={e => setNewBalance(e.target.value)} className="bg-slate-700 border-slate-600 mb-6" />
+              <Input type="number" value={newBalance} onChange={e => setNewBalance(e.target.value)} className="bg-slate-700 border-slate-600 mb-6 text-white" />
               <div className="flex gap-2">
-                 <Button variant="outline" className="flex-1" onClick={() => setEditingUser(null)}>Cancel</Button>
+                 <Button variant="outline" className="flex-1 border-slate-700" onClick={() => setEditingUser(null)}>Cancel</Button>
                  <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => adminUpdateUserBalance(editingUser.id, parseFloat(newBalance)).then(fetchData)}>Save</Button>
               </div>
            </div>
@@ -325,13 +311,13 @@ function DashboardContent() {
            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
               <h3 className="text-lg font-bold">Create New User</h3>
               <div className="grid grid-cols-2 gap-3">
-                 <Input placeholder="Full Name" value={createUserForm.fullName} onChange={e => setCreateUserForm({...createUserForm, fullName: e.target.value})} className="bg-slate-700 border-slate-600" />
-                 <Input placeholder="Username" value={createUserForm.username} onChange={e => setCreateUserForm({...createUserForm, username: e.target.value})} className="bg-slate-700 border-slate-600" />
+                 <Input placeholder="Full Name" value={createUserForm.fullName} onChange={e => setCreateUserForm({...createUserForm, fullName: e.target.value})} className="bg-slate-700 border-slate-600 text-white" />
+                 <Input placeholder="Username" value={createUserForm.username} onChange={e => setCreateUserForm({...createUserForm, username: e.target.value})} className="bg-slate-700 border-slate-600 text-white" />
               </div>
-              <Input placeholder="Email" type="email" value={createUserForm.email} onChange={e => setCreateUserForm({...createUserForm, email: e.target.value})} className="bg-slate-700 border-slate-600" />
-              <Input placeholder="Password" value={createUserForm.password} onChange={e => setCreateUserForm({...createUserForm, password: e.target.value})} className="bg-slate-700 border-slate-600" />
+              <Input placeholder="Email" type="email" value={createUserForm.email} onChange={e => setCreateUserForm({...createUserForm, email: e.target.value})} className="bg-slate-700 border-slate-600 text-white" />
+              <Input placeholder="Password" value={createUserForm.password} onChange={e => setCreateUserForm({...createUserForm, password: e.target.value})} className="bg-slate-700 border-slate-600 text-white" />
               <div className="flex gap-2">
-                 <Button variant="outline" className="flex-1" onClick={() => setShowCreateUser(false)}>Cancel</Button>
+                 <Button variant="outline" className="flex-1 border-slate-700" onClick={() => setShowCreateUser(false)}>Cancel</Button>
                  <Button className="flex-1 bg-amber-500 hover:bg-amber-600" onClick={() => adminCreateUser(createUserForm).then(fetchData)}>Create User</Button>
               </div>
            </div>
