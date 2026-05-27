@@ -18,8 +18,8 @@ import {
   ArrowUpFromLine, Settings, ChevronRight, RefreshCw,
   Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
   Pencil, ImagePlus, Activity,
-  Info, Building2, Phone, Mail, MapPin, Percent, Clock,
-  ExternalLink, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Unlock, Video, Landmark, Network, Hash
+  Info, Building2, Phone, Mail, MapPin, Percent, Clock3,
+  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Unlock, Video, Landmark, Network, Hash
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
@@ -114,8 +114,8 @@ const COLORS = [
 const DEFAULT_GENERATORS: Generator[] = [
   { id: 'pg1', name: "PG1 Generator", subtitle: "Basic Power", icon: "⚡", color: "from-amber-400 to-orange-500", price: 0, expire_days: 2, daily_income: 0.5, published: true, roi: "10%", period: "Daily", min_invest: "$0", max_invest: "$0", investors: "12050", max_rentals: 1 },
   { id: 'pg2', name: "PG2 Generator", subtitle: "Standard Power", icon: "🔋", color: "from-green-400 to-emerald-600", price: 25, expire_days: 30, daily_income: 2.5, published: true, roi: "12%", period: "Daily", min_invest: "$25", max_invest: "$1000", investors: "8520", max_rentals: 2 },
-  { id: 'pg3', name: "PG3 Generator", subtitle: "Mega Power", icon: "💡", color: "from-blue-400 to-indigo-600", price: 100, expire_days: 45, daily_income: 10, published: true, roi: "15%", period: "Daily", min_invest: "$100", max_invest: "$5000", investors: "4310", max_rentals: 1 },
-  { id: 'pg4', name: "PG4 Generator", subtitle: "Ultra Power", icon: "🚀", color: "from-purple-500 to-pink-600", price: 500, expire_days: 30, daily_income: 55, published: true, roi: "20%", period: "Daily", min_invest: "$500", max_invest: "$20000", investors: "1250", max_rentals: 2 },
+  { id: 'pg3', name: "PG3 Generator", subtitle: "Mega Power", icon: "💡", color: "from-blue-400 to-indigo-600", price: 100, expire_days: 45, daily_income: 10, published: true, roi: "15%", period: "Daily", min_invest: "$100", max_invest: "$5000", investors: "4310", max_rentals: 5 },
+  { id: 'pg4', name: "PG4 Generator", subtitle: "Ultra Power", icon: "🚀", color: "from-purple-500 to-pink-600", price: 500, expire_days: 30, daily_income: 55, published: true, roi: "20%", period: "Daily", min_invest: "$500", max_invest: "$20000", investors: "1250", max_rentals: 5 },
 ];
 
 
@@ -1614,7 +1614,7 @@ function DashboardContent() {
                             { label: "Price", value: `$${g.price.toLocaleString()}` },
                             { label: "Days", value: `${g.expire_days}` },
                             { label: "Daily Income", value: `$${g.daily_income}` },
-                            { label: "Max Rentals", value: g.max_rentals },
+                            { label: "Lifetime Limit", value: g.max_rentals },
                           ].map(function({ label, value }) { return (
                             <div key={label} className="bg-slate-700/50 rounded-xl px-2.5 py-2">
                               <p className="text-slate-400 text-[10px]">{label}</p>
@@ -1920,7 +1920,7 @@ function DashboardContent() {
                                     }}/>
                                     {media.find(m => m.id === id) && (
                                         <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
-                                            onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the photo for "${name}"?`, () => handleDeleteMedia('activity', id))}>
+                                            onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the image for "${name}"?`, () => handleDeleteMedia('activity', id))}>
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
                                     )}
@@ -2201,7 +2201,7 @@ function DashboardContent() {
                   <Input type="number" value={newGen.expire_days || ""} onChange={function(e) { return setNewGen({ ...newGen, expire_days: parseInt(e.target.value) || 0 }); }} placeholder="30" data-testid="input-gen-expire" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                  <div>
-                    <label className="text-slate-300 text-xs font-medium mb-1 block">Max Rentals *</label>
+                    <label className="text-slate-300 text-xs font-medium mb-1 block">Lifetime Limit *</label>
                     <Input type="number" value={newGen.max_rentals || ""} onChange={e => setNewGen({ ...newGen, max_rentals: parseInt(e.target.value) || 1 })} placeholder="1" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
               </div>
@@ -2288,7 +2288,7 @@ function DashboardContent() {
                 { label: "Rent Price ($)", key: "price", type: "number" },
                 { label: "Expire Days", key: "expire_days", type: "number" },
                 { label: "Daily Income ($)", key: "daily_income", type: "number" },
-                { label: "Max Rentals", key: "max_rentals", type: "number" },
+                { label: "Lifetime Limit", key: "max_rentals", type: "number" },
               ].map(function({ label, key, type }) { return (
                 <div key={key}>
                   <label className="text-slate-400 text-xs font-medium mb-1 block">{label}</label>
