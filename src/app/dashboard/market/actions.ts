@@ -15,23 +15,39 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     const { data: gen } = await supabase.from('generators').select('*').eq('id', generatorId).single();
     if (!gen) return { error: 'Generator not found.' };
 
-    // 1. Check Balance first
+    // 1. Check for specific PG2 limit (exactly 2 times)
+    if (generatorId === 'pg2') {
+        const { count, error: countError } = await supabase
+            .from('rented_generators')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('generator_id', 'pg2');
+
+        if (countError) return { error: countError.message };
+
+        if (count !== null && count >= 2) {
+            return { error: 'you reached your pg2 limit please upgrade' };
+        }
+    }
+
+    // 2. Check Balance
     if (profile.balance < gen.price) return { error: 'insufficient_funds' };
 
     const supabaseAdmin = createAdminClient();
 
-    // 2. Deduct Balance
+    // 3. Deduct Balance
     const { error: updateError } = await supabaseAdmin
         .from('profiles')
         .update({ balance: profile.balance - gen.price })
         .eq('id', user.id);
         
-    if (updateError) return { error: "Failed to update balance." };
+    if (updateError) return { error: "Failed to update balance: " + updateError.message };
     
     const rentedAt = new Date();
     const expiresAt = new Date(rentedAt.getTime() + gen.expire_days * 24 * 60 * 60 * 1000);
 
-    // 3. Record Rental (This will trigger the SQL constraint we added)
+    // 4. Record Rental
+    // Note: If the DB trigger is active, this will throw an error if limit is exceeded
     const { error: insertError } = await supabaseAdmin.from('rented_generators').insert({
         user_id: user.id,
         generator_id: gen.id,
@@ -43,12 +59,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     if (insertError) {
         // Rollback balance if insert fails
         await supabaseAdmin.from('profiles').update({ balance: profile.balance }).eq('id', user.id);
-        
-        // Check if it's the specific PG2 limit error from the DB
-        if (insertError.message.includes('you reached your pg2 limit please upgrade')) {
-            return { error: 'you reached your pg2 limit please upgrade' };
-        }
-        return { error: insertError.message };
+        return { error: insertError.message.includes('pg2 limit') ? 'you reached your pg2 limit please upgrade' : insertError.message };
     }
     
     revalidatePath('/dashboard/market');
