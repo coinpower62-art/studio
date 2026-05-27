@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Landmark, ArrowDownToLine, ArrowUpFromLine, Wallet, Shield, Clock,
   CheckCircle, Copy, CreditCard, Smartphone, Coins, AlertCircle,
-  PartyPopper, PhoneCall, Hash, Network, User, MapPin, CalendarDays,
-  Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X, LogOut, Gift, XCircle
+  Hash, Network, User, MapPin, ChevronLeft, Lock, KeyRound, X, XCircle, Eye, EyeOff
 } from "lucide-react";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -19,8 +18,8 @@ import { createClient } from "@/lib/supabase/client";
 import { countries as COUNTRIES_DATA } from "@/lib/data";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { createDepositRequest, createWithdrawalRequest, setWithdrawalPin, redeemGiftCode } from "./actions";
-import { logout } from "@/app/login/actions";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 // Card validation helpers
 function luhnCheck(num: string): boolean {
@@ -39,9 +38,14 @@ function luhnCheck(num: string): boolean {
 function isCardExpired(expiry: string): boolean {
   const [mm, yy] = expiry.split("/");
   if (!mm || !yy) return true;
-  const expDate = new Date(2000 + parseInt(yy), parseInt(mm) - 1, 1);
+  const expYear = parseInt(yy) + 2000;
+  const expMonth = parseInt(mm);
   const now = new Date();
-  return expDate < new Date(now.getFullYear(), now.getMonth(), 1);
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  if (expYear < currentYear) return true;
+  if (expYear === currentYear && expMonth < currentMonth) return true;
+  return false;
 }
 
 const DEPOSIT_PHONE = "+233548304717";
@@ -62,11 +66,6 @@ type Generator = {
   price: number;
   name: string;
 };
-
-type RentedGeneratorRecord = {
-    generator_id: string;
-    expires_at: string;
-}
 
 type WithdrawRecord = {
   id: string;
@@ -229,7 +228,6 @@ export default function BankPage() {
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastTxId, setLastTxId] = useState("");
-  const [historyTab, setHistoryTab] = useState<"all" | "deposit" | "withdraw">("all");
 
   const [usdt, setUsdt] = useState({ address: "", network: "TRC20" });
   const [momo, setMomo] = useState({ phone: "", name: "" });
@@ -248,16 +246,11 @@ export default function BankPage() {
 
   const [depositRecords, setDepositRecords] = useState<DepositRecord[]>([]);
   const [withdrawRecords, setWithdrawRecords] = useState<WithdrawRecord[]>([]);
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [media, setMedia] = useState<any[]>([]);
   const [canWithdraw, setCanWithdraw] = useState(false);
-  const [userHasPg1Only, setUserHasPg1Only] = useState(false);
   const [generators, setGenerators] = useState<Generator[]>([]);
 
   const { display: countdown, expired } = useCountdown(mode === "deposit");
-
-  const [giftCode, setGiftCode] = useState("");
-  const [isRedeeming, setIsRedeeming] = useState(false);
 
   const fetchData = useCallback(async function() {
     setLoading(true);
@@ -278,60 +271,17 @@ export default function BankPage() {
         supabase.from('generators').select('id, name, price').order('price', { ascending: true })
     ]);
     
-    const { data: profileData, error: profileError } = profileResult;
-    if (profileError) {
-      console.error('BankPage: Profile fetch failed');
-    }
-    setProfile(profileData as Profile | null);
-    if (profileData) {
-      setDepositCountry(profileData.country || '');
-    }
+    setProfile(profileResult.data as Profile | null);
+    if (profileResult.data) setDepositCountry(profileResult.data.country || '');
+    setDepositRecords(depositsResult.data || []);
+    setWithdrawRecords(withdrawalsResult.data || []);
+    setMedia(mediaResult.data || []);
 
-    const { data: depositsData, error: depositsError } = depositsResult;
-    if (depositsError) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch deposit history.' });
-    } else {
-        setDepositRecords(depositsData as DepositRecord[]);
-    }
+    const now = Date.now();
+    const hasActivePaidGenerator = rentedResult.data?.some((g: any) => g.generator_id !== 'pg1' && new Date(g.expires_at).getTime() > now) ?? false;
+    setCanWithdraw(hasActivePaidGenerator);
 
-    const { data: withdrawalsData, error: withdrawalsError } = withdrawalsResult;
-    if (withdrawalsError) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch withdrawal history.' });
-    } else {
-        setWithdrawRecords(withdrawalsData as WithdrawRecord[]);
-    }
-    
-    const { data: mediaData, error: mediaError } = mediaResult;
-    if (mediaError) {
-        toast({ title: 'Error fetching media', description: mediaError.message, variant: 'destructive' });
-    } else if (mediaData) {
-        setMedia(mediaData);
-        const logo = mediaData.find(m => m.id === 'app-logo');
-        if (logo?.url) {
-            setLogoUrl(logo.url);
-        }
-    }
-
-    const { data: rentedData, error: rentedError } = rentedResult as { data: RentedGeneratorRecord[] | null, error: any };
-    if (rentedError) {
-      toast({ title: 'Error fetching rental status', description: rentedError.message, variant: 'destructive' });
-      setCanWithdraw(false);
-      setUserHasPg1Only(false);
-    } else {
-      const now = Date.now();
-      const hasActivePaidGenerator = rentedData?.some((g) => g.generator_id !== 'pg1' && new Date(g.expires_at).getTime() > now) ?? false;
-      setCanWithdraw(hasActivePaidGenerator);
-      const hasAnyActiveGenerator = rentedData?.some(g => new Date(g.expires_at).getTime() > now) ?? false;
-      setUserHasPg1Only(hasAnyActiveGenerator && !hasActivePaidGenerator);
-    }
-
-    const { data: generatorsData, error: generatorsError } = generatorsResult;
-    if (generatorsError) {
-        toast({ title: 'Error fetching generators', description: generatorsError.message, variant: 'destructive' });
-    } else if (generatorsData) {
-        setGenerators(generatorsData as Generator[]);
-    }
-    
+    setGenerators(generatorsResult.data || []);
     setLoading(false);
   }, [router, supabase, toast]);
 
@@ -344,10 +294,7 @@ export default function BankPage() {
   }
 
   const openMode = function(m: Mode) {
-    if (mode === m) {
-      setMode(null);
-      return;
-    }
+    if (mode === m) { setMode(null); return; }
     setMode(m); setAmount("");
     setDepositMethod(null);
     if (profile) setDepositCountry(profile.country || "");
@@ -371,22 +318,17 @@ export default function BankPage() {
     setIsSubmitting(true);
     const methodLabel = depositMethods.find(function(m) { return m.id === depositMethod; })?.label || depositMethod;
     
-    let submissionData: any = {
-      amount: parseFloat(amount),
-      method: methodLabel,
-      country: depositCountry
-    };
+    let submissionData: any = { amount: parseFloat(amount), method: methodLabel, country: depositCountry };
 
     if (depositMethod === "card") {
       const rawNum = depositCard.number.replace(/\s/g, "");
-      if (rawNum.length < 13 || !luhnCheck(rawNum)) { toast({ title: "Invalid card number", description: "Please check and enter a valid Visa or Mastercard number.", variant: "destructive" }); setIsSubmitting(false); return; }
+      if (rawNum.length < 13 || !luhnCheck(rawNum)) { toast({ title: "Invalid card number", variant: "destructive" }); setIsSubmitting(false); return; }
       if (!depositCard.holder.trim()) { toast({ title: "Enter the cardholder name", variant: "destructive" }); setIsSubmitting(false); return; }
       if (!depositCard.expiry || depositCard.expiry.length < 5) { toast({ title: "Enter a valid expiry date (MM/YY)", variant: "destructive" }); setIsSubmitting(false); return; }
-      if (isCardExpired(depositCard.expiry)) { toast({ title: "Card has expired", description: "This card's expiry date has passed. Please use a valid card.", variant: "destructive" }); setIsSubmitting(false); return; }
+      if (isCardExpired(depositCard.expiry)) { toast({ title: "Card has expired", variant: "destructive" }); setIsSubmitting(false); return; }
       if (!depositCard.cvv || depositCard.cvv.length < 3) { toast({ title: "Enter the CVV code", variant: "destructive" }); setIsSubmitting(false); return; }
       
-      const cardRef = `CARD-****${rawNum.slice(-4)} ${depositCard.holder.trim()} ${depositCard.expiry}`;
-      submissionData.cardDetails = cardRef;
+      submissionData.cardDetails = `CARD-****${rawNum.slice(-4)} ${depositCard.holder.trim()} ${depositCard.expiry}`;
       submissionData.txId = `CARD-${rawNum.slice(-4)}-${depositCard.holder.trim().toUpperCase().replace(/\s+/g, "-")}`;
     } else {
       if (!depositTxId.trim()) { toast({ title: "Enter your transaction ID", variant: "destructive" }); setIsSubmitting(false); return; }
@@ -401,30 +343,22 @@ export default function BankPage() {
     } else {
       setDepositSuccess(true);
       setDepositTxId("");
-      const newRecord = { ...submissionData, id: 'temp-' + Date.now(), status: 'pending', created_at: new Date().toISOString(), tx_id: submissionData.txId };
-      // @ts-ignore
-      setDepositRecords(function(prev) { return [newRecord as DepositRecord, ...prev]; });
+      fetchData();
     }
   };
   
   const handleSetPin = async function() {
       if (pinInput.length < 6 || pinConfirm.length < 6) { setPinError("Enter all 6 digits"); return; }
       if (pinInput !== pinConfirm) { setPinError("PINs do not match. Try again."); setPinConfirm(""); return; }
-      if (!user) return;
-
-      setPinError("");
-      setIsSettingPin(true);
-
+      setPinError(""); setIsSettingPin(true);
       const result = await setWithdrawalPin();
       setIsSettingPin(false);
-      
       if (result.error) {
          toast({ title: 'Error', description: result.error, variant: 'destructive' });
       } else {
         setPinMode(null);
-        setPinInput(""); setPinConfirm(""); setPinError("");
         setMode("withdraw");
-        toast({ title: "Withdrawal PIN set!", description: "Your PIN has been saved securely. You can now withdraw." });
+        toast({ title: "Withdrawal PIN set!" });
         setProfile(function(p) { return p ? {...p, has_withdrawal_pin: true} : null; });
       }
   }
@@ -434,59 +368,40 @@ export default function BankPage() {
     if (!amount || parseFloat(amount) <= 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
     if (!withdrawMethod) { toast({ title: "Select a payment method", variant: "destructive" }); return; }
     const amt = parseFloat(amount);
+    if (amt < 1) { toast({ title: "Minimum withdrawal is $1.00", variant: "destructive" }); return; }
+    if (amt > profile.balance) { toast({ title: "Insufficient balance", variant: "destructive" }); return; }
     
-    if (amt < 1) {
-      toast({ title: "Minimum withdrawal is $1.00", variant: "destructive" });
-      return;
-    }
-
-    if (amt > profile.balance) {
-      toast({ title: "Insufficient balance", description: `Your balance is $${profile.balance.toFixed(2)}`, variant: "destructive" });
-      return;
-    }
-    
+    // Validation for withdrawal details
     if (withdrawMethod === "card") {
       const rawNum = card.number.replace(/\s/g, "");
-      if (rawNum.length < 13 || !luhnCheck(rawNum)) { toast({ title: "Invalid card number", description: "Please check and enter a valid Visa or Mastercard number.", variant: "destructive" }); return; }
+      if (rawNum.length < 13 || !luhnCheck(rawNum)) { toast({ title: "Invalid card number", variant: "destructive" }); return; }
       if (!card.holder.trim()) { toast({ title: "Enter the cardholder name", variant: "destructive" }); return; }
       if (!card.expiry || card.expiry.length < 5) { toast({ title: "Enter a valid expiry date (MM/YY)", variant: "destructive" }); return; }
-      if (isCardExpired(card.expiry)) { toast({ title: "Card has expired", description: "This card's expiry date has passed. Please use a valid card.", variant: "destructive" }); return; }
+      if (isCardExpired(card.expiry)) { toast({ title: "Card has expired", variant: "destructive" }); return; }
       if (!card.cvv || card.cvv.length < 3) { toast({ title: "Enter the CVV code", variant: "destructive" }); return; }
-    }
-    if (withdrawMethod === "bank") {
+    } else if (withdrawMethod === "bank") {
       if (!bank.name.trim()) { toast({ title: "Please select your bank", variant: "destructive" }); return; }
       if (bank.name === 'Other' && !otherBankName.trim()) { toast({ title: "Please specify your bank name", variant: "destructive" }); return; }
       if (!bank.number.trim()) { toast({ title: "Enter the account number", variant: "destructive" }); return; }
       if (!bank.holder.trim()) { toast({ title: "Enter the account holder name", variant: "destructive" }); return; }
-    }
-     if (withdrawMethod === "usdt") {
+    } else if (withdrawMethod === "usdt") {
         if (!usdt.address.trim()) { toast({ title: "Enter a USDT address", variant: "destructive" }); return; }
-    }
-     if (withdrawMethod === "momo") {
-        const methodState = momo;
-        if (!methodState.phone.trim()) { toast({ title: "Enter a phone number", variant: "destructive" }); return; }
-        if (!methodState.name.trim()) { toast({ title: "Enter an account name", variant: "destructive" }); return; }
-    }
-    if (withdrawMethod === "western_union") {
+    } else if (withdrawMethod === "momo") {
+        if (!momo.phone.trim()) { toast({ title: "Enter a phone number", variant: "destructive" }); return; }
+        if (!momo.name.trim()) { toast({ title: "Enter an account name", variant: "destructive" }); return; }
+    } else if (withdrawMethod === "western_union") {
         if (!westernUnion.fullName.trim()) { toast({ title: "Enter your full name for Western Union", variant: "destructive" }); return; }
         if (!westernUnion.city.trim()) { toast({ title: "Enter your city for pickup", variant: "destructive" }); return; }
     }
     
-    setPinInput("");
-    setPinError("");
-    setPinMode("verify");
+    setPinInput(""); setPinError(""); setPinMode("verify");
   };
 
   const handleWithdrawalSubmit = async function() {
     if (!user || !profile) return;
-    if (pinInput.length < 6) {
-        toast({ title: "PIN Required", description: `Please enter your 6-digit PIN to authorize this withdrawal.`, variant: "destructive" });
-        return;
-    }
+    if (pinInput.length < 6) { toast({ title: "PIN Required", variant: "destructive" }); return; }
     
     setIsSubmitting(true);
-    const amt = parseFloat(amount);
-    
     let details: any;
     switch(withdrawMethod) {
         case 'usdt': details = usdt; break;
@@ -498,7 +413,7 @@ export default function BankPage() {
     }
 
     const result = await createWithdrawalRequest({
-      amount: amt,
+      amount: parseFloat(amount),
       method: withdrawMethods.find(function(m) { return m.id === withdrawMethod; })?.label || withdrawMethod || "",
       details: details,
     });
@@ -510,26 +425,7 @@ export default function BankPage() {
     } else {
       setWithdrawSuccess(true);
       setLastTxId(result.txId || '');
-      setProfile(function(p) { return p ? { ...p, balance: p.balance - amt } : null; });
       setPinMode(null);
-    }
-  };
-
-  const handleRedeemCode = async () => {
-    if (!giftCode.trim()) {
-      toast({ title: "Enter a gift code", variant: "destructive" });
-      return;
-    }
-    setIsRedeeming(true);
-    const result = await redeemGiftCode(giftCode.trim().toUpperCase());
-    setIsRedeeming(false);
-
-    if (result.error) {
-      toast({ title: "Redemption Failed", description: result.error, variant: "destructive" });
-    } else {
-      const redeemedAmount = result.amount ? parseFloat(String(result.amount)) : 0;
-      toast({ title: "Success!", description: `You have redeemed $${redeemedAmount.toFixed(2)}. It has been added to your balance.` });
-      setGiftCode("");
       fetchData();
     }
   };
@@ -547,78 +443,39 @@ export default function BankPage() {
   };
 
   const depositMethods = [
-    { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo, desc: "Mobile Money", color: "from-yellow-400 to-amber-500" },
-    { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt, desc: "Tether (TRC20/ERC20)", color: "from-teal-400 to-green-500" },
-    { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-blue-400 to-indigo-500" },
+    { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo },
+    { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt },
+    { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card },
   ];
 
   const withdrawMethods = [
-    { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt, desc: "Tether (TRC20/ERC20)", color: "from-teal-400 to-green-500" },
-    { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo, desc: "Mobile Money", color: "from-yellow-400 to-amber-500" },
-    { id: "bank", label: "Bank Transfer", icon: Landmark, img: imageMap.bank, desc: "Local & International", color: "from-gray-400 to-gray-500" },
-    { id: "western_union", label: "Western Union", icon: Network, img: imageMap.western_union, desc: "Global Money Transfer", color: "from-blue-400 to-indigo-500"},
-    { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-purple-400 to-pink-500" },
+    { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt },
+    { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo },
+    { id: "bank", label: "Bank Transfer", icon: Landmark, img: imageMap.bank },
+    { id: "western_union", label: "Western Union", icon: Network, img: imageMap.western_union },
+    { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card },
   ];
 
   const allTransactions = [...(depositRecords || []), ...(withdrawRecords || [])]
     .sort(function(a, b) { return new Date(b.created_at).getTime() - new Date(a.created_at).getTime(); });
-  const depositButtonLogo = logoUrl || imageMap.momo;
 
   const africanBanks = ["Absa Bank", "GCB Bank", "Ecobank", "Zenith Bank", "UBA", "Access Bank"];
-  const usaBanks = ["Bank of America", "JPMorgan Chase", "Wells Fargo", "Citibank", "U.S. Bank", "PNC Bank"];
-  const italianBanks = ["Intesa Sanpaolo", "UniCredit", "Banco BPM", "Monte dei Paschi di Siena", "BPER Banca"];
-  const otherMajorBanks = ["HSBC", "Barclays", "Deutsche Bank", "BNP Paribas", "Standard Chartered"];
-
-  let bankOptions: string[] = [];
-  if (profile.country && ['Ghana', 'Nigeria', 'Kenya'].includes(profile.country)) {
-      bankOptions = africanBanks;
-  } else if (profile.country === 'United States') {
-      bankOptions = usaBanks;
-  } else if (profile.country === 'Italy') {
-      bankOptions = italianBanks;
-  } else {
-      bankOptions = [...africanBanks, ...usaBanks, ...italianBanks, ...otherMajorBanks];
-  }
-  bankOptions.sort();
-  bankOptions.push("Other");
-
-  const quickAmounts = generators.filter(g => g.price > 0).map(g => g.price);
+  const bankOptions = [...africanBanks, "Other"].sort();
 
   return (
-    <div className="bg-[#f7f9f4]">
+    <div className="bg-[#f7f9f4] pb-24">
       <Dialog open={!!lowBalanceGen} onOpenChange={(open) => { if (!open) setLowBalanceGen(null); }}>
-        <DialogContent className="max-w-sm mx-auto rounded-2xl p-0 overflow-hidden" data-testid="dialog-low-balance">
+        <DialogContent className="max-w-sm mx-auto rounded-2xl p-0 overflow-hidden">
           <div className="bg-card p-5 text-center">
             <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
               <Wallet className="w-8 h-8 text-red-600" />
             </div>
             <DialogTitle className="text-foreground text-xl font-black mb-1">Insufficient Balance</DialogTitle>
-            <DialogDescription className="text-destructive text-sm">
-              You don't have enough funds to rent this generator.
-            </DialogDescription>
           </div>
           <div className="p-5 space-y-4">
-            {lowBalanceGen && profile && (
-              <div className="space-y-2">
-                <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
-                  <span className="text-gray-500 text-sm">Generator</span>
-                  <span className="font-bold text-gray-900 text-sm">{lowBalanceGen.name}</span>
-                </div>
-                <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
-                  <span className="text-gray-500 text-sm">Required</span>
-                  <span className="font-black text-red-600 text-sm">${lowBalanceGen.price.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
-                  <span className="text-gray-500 text-sm">Your Balance</span>
-                  <span className="font-black text-gray-900 text-sm">${profile.balance.toFixed(2)}</span>
-                </div>
-              </div>
-            )}
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setLowBalanceGen(null)} className="flex-1 rounded-xl h-11 font-semibold border-gray-200">Cancel</Button>
-              <Button onClick={() => { setLowBalanceGen(null); setMode('deposit'); }} className="flex-1 rounded-xl h-11 font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md flex items-center gap-2 justify-center">
-                <ArrowDownToLine className="w-4 h-4" /> Deposit
-              </Button>
+              <Button variant="outline" onClick={() => setLowBalanceGen(null)} className="flex-1 rounded-xl h-11">Cancel</Button>
+              <Button onClick={() => { setLowBalanceGen(null); setMode('deposit'); }} className="flex-1 rounded-xl h-11 bg-amber-500 text-white">Deposit</Button>
             </div>
           </div>
         </DialogContent>
@@ -628,62 +485,38 @@ export default function BankPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 relative">
             <button onClick={function() { setPinMode(null); setPinInput(""); setPinConfirm(""); setPinError(""); }}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
               <X className="w-5 h-5" />
             </button>
-            
             {pinMode === "security" && (
               <div className="flex flex-col items-center text-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg">
-                  <Shield className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Secure Your Withdrawals</h2>
-                  <p className="text-gray-500 text-sm mt-2 leading-relaxed">
-                    CoinPower uses a <span className="font-semibold text-amber-600">6-digit Withdrawal PIN</span> to protect your funds.
-                  </p>
-                </div>
-                <Button onClick={function() { setPinMode("setup"); setPinInput(""); setPinConfirm(""); setPinError(""); }}
-                  className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-xl h-12 text-base shadow-md">
-                  <Lock className="w-4 h-4 mr-2" /> Set Up My PIN
-                </Button>
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg"><Shield className="w-8 h-8 text-white" /></div>
+                <div><h2 className="text-xl font-bold text-gray-900">Secure Your Withdrawals</h2><p className="text-gray-500 text-sm mt-2">CoinPower uses a 6-digit PIN to protect your funds.</p></div>
+                <Button onClick={function() { setPinMode("setup"); }} className="w-full bg-amber-500 text-white font-bold rounded-xl h-12">Set Up My PIN</Button>
               </div>
             )}
-            
             {pinMode === 'setup' && (
                <div className="flex flex-col items-center text-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg">
-                  <KeyRound className="w-7 h-7 text-white" />
-                </div>
+                <div className="w-14 h-14 rounded-2xl bg-amber-500 flex items-center justify-center shadow-lg"><KeyRound className="w-7 h-7 text-white" /></div>
                 <h2 className="text-xl font-bold text-gray-900">Create Withdrawal PIN</h2>
                 <div className="w-full space-y-4">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-700 mb-2 text-left">Enter PIN</p>
-                    <PinBoxes value={pinInput} onChange={setPinInput} testId="pin-input" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-700 mb-2 text-left">Confirm PIN</p>
-                    <PinBoxes value={pinConfirm} onChange={setPinConfirm} testId="pin-confirm" />
-                  </div>
+                  <p className="text-xs font-semibold text-gray-700 text-left">Enter PIN</p>
+                  <PinBoxes value={pinInput} onChange={setPinInput} testId="pin-input" />
+                  <p className="text-xs font-semibold text-gray-700 text-left">Confirm PIN</p>
+                  <PinBoxes value={pinConfirm} onChange={setPinConfirm} testId="pin-confirm" />
                   {pinError && <p className="text-red-500 text-xs font-medium">{pinError}</p>}
                 </div>
-                <Button disabled={pinInput.length < 6 || pinConfirm.length < 6 || isSettingPin} onClick={handleSetPin} className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-xl h-12 text-base shadow-md">
-                  {isSettingPin ? "Saving…" : "Create PIN"}
+                <Button disabled={pinInput.length < 6 || pinConfirm.length < 6 || isSettingPin} onClick={handleSetPin} className="w-full bg-amber-500 text-white font-bold rounded-xl h-12">
+                  {isSettingPin ? "Saving..." : "Create PIN"}
                 </Button>
               </div>
             )}
-
             {pinMode === "verify" && (
               <div className="flex flex-col items-center text-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg">
-                  <Lock className="w-7 h-7 text-white" />
-                </div>
+                <div className="w-14 h-14 rounded-2xl bg-amber-500 flex items-center justify-center shadow-lg"><Lock className="w-7 h-7 text-white" /></div>
                 <h2 className="text-xl font-bold text-gray-900">Enter Withdrawal PIN</h2>
-                <div className="w-full">
-                  <PinBoxes value={pinInput} onChange={setPinInput} testId="pin-verify" />
-                  {pinError && <p className="text-red-500 text-xs font-medium mt-2">{pinError}</p>}
-                </div>
-                <Button disabled={pinInput.length < 6 || isSubmitting} onClick={handleWithdrawalSubmit} className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-xl h-12 text-base shadow-md">
+                <div className="w-full"><PinBoxes value={pinInput} onChange={setPinInput} testId="pin-verify" />{pinError && <p className="text-red-500 text-xs font-medium mt-2">{pinError}</p>}</div>
+                <Button disabled={pinInput.length < 6 || isSubmitting} onClick={handleWithdrawalSubmit} className="w-full bg-amber-500 text-white font-bold rounded-xl h-12">
                   {isSubmitting ? "Processing..." : "Authorize & Withdraw"}
                 </Button>
               </div>
@@ -692,251 +525,223 @@ export default function BankPage() {
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto px-3 sm:px-6">
-
-        <div className="py-4 sm:py-5 mb-2">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="py-6">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-md">
-                <Landmark className="w-4 h-4 text-white" />
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">CoinPower Bank</h1>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-md"><Landmark className="w-4 h-4 text-white" /></div>
+            <h1 className="text-2xl font-bold text-gray-900">CoinPower Bank</h1>
           </div>
-          <p className="text-gray-500 text-xs sm:text-sm">Manage your deposits and withdrawals</p>
+          <p className="text-gray-500 text-sm">Manage your deposits and withdrawals</p>
         </div>
 
-        <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 rounded-2xl p-5 sm:p-6 mb-4 shadow-xl text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/10 -translate-y-1/2 translate-x-1/2" />
+        <div className="bg-gradient-to-r from-amber-500 to-yellow-500 rounded-3xl p-6 mb-6 shadow-xl text-white relative overflow-hidden">
           <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-1">
-              <Wallet className="w-4 h-4 text-amber-100" />
-              <p className="text-amber-100 text-xs font-medium">Available Balance</p>
-            </div>
-            <div className="flex flex-col">
-              <p className="text-3xl sm:text-4xl font-bold mt-1" data-testid="text-balance">${profile.balance.toFixed(2)}</p>
-              {isGhana && (
-                <p className="text-lg sm:text-xl font-semibold text-amber-100/90 mt-0.5">≈ GH₵{(profile.balance * GHS_RATE).toFixed(2)}</p>
-              )}
-            </div>
+            <div className="flex items-center gap-2 mb-1"><Wallet className="w-4 h-4 text-amber-100" /><p className="text-amber-100 text-xs font-medium">Available Balance</p></div>
+            <div className="flex flex-col"><p className="text-4xl font-bold mt-1">${profile.balance.toFixed(2)}</p>{isGhana && <p className="text-xl font-semibold text-amber-100/90 mt-1">≈ GH₵{(profile.balance * GHS_RATE).toFixed(2)}</p>}</div>
           </div>
         </div>
 
-        <div className="space-y-3">
-            <div data-testid="button-deposit" onClick={function() { return openMode('deposit'); }} className={`bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-amber-300 hover:bg-amber-50/50 transition-all ${mode === 'deposit' ? 'ring-2 ring-amber-500' : ''}`}>
-              <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-black flex items-center justify-center">
-                <img src={depositButtonLogo} alt="Deposit" className="w-full h-full object-contain p-1" />
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-gray-800">Deposit Funds</p>
-                <p className="text-xs text-gray-500">{isGhana ? "MTN MoMo (GH₵) · USDT" : "USDT · Card"}</p>
-              </div>
-              <ArrowDownToLine className={`w-5 h-5 ${mode === 'deposit' ? 'text-amber-600' : 'text-green-500'}`} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+            <div onClick={function() { return openMode('deposit'); }} className={cn("bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-amber-300 transition-all", mode === 'deposit' && "ring-2 ring-amber-500")}>
+              <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center p-2"><ArrowDownToLine className="w-full h-full text-green-600" /></div>
+              <div className="flex-1"><p className="font-bold text-gray-800">Deposit Funds</p><p className="text-[10px] text-gray-500">Fund your account</p></div>
             </div>
-
-            <div data-testid="button-withdraw" onClick={() => {
-                if (!canWithdraw) {
-                  toast({ title: "Action Restricted", description: "To withdraw, you must have an active PG2 generator or higher.", variant: "destructive" });
-                  return;
-                }
-                if (!profile.has_withdrawal_pin) setPinMode("security");
-                else openMode("withdraw");
+            <div onClick={() => {
+                if (!canWithdraw) { toast({ title: "Action Restricted", description: "You must have an active paid generator (PG2+) to withdraw.", variant: "destructive" }); return; }
+                if (!profile.has_withdrawal_pin) setPinMode("security"); else openMode("withdraw");
               }}
-              className={`bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 transition-all ${!canWithdraw ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-amber-300 hover:bg-amber-50/50'} ${mode === 'withdraw' ? 'ring-2 ring-amber-500' : ''}`}>
-              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                <ArrowUpFromLine className={`w-5 h-5 ${mode === 'withdraw' ? 'text-amber-600' : 'text-gray-500'}`} />
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-gray-800">Withdraw Funds</p>
-                <p className="text-xs text-gray-500">{isGhana ? "Receive in GH₵ or USDT" : "Transfer to your account"}</p>
-              </div>
+              className={cn("bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 transition-all", !canWithdraw ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-amber-300", mode === 'withdraw' && "ring-2 ring-amber-500")}>
+              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 p-2"><ArrowUpFromLine className="w-full h-full text-amber-600" /></div>
+              <div className="flex-1"><p className="font-bold text-gray-800">Withdraw Funds</p><p className="text-[10px] text-gray-500">Cash out earnings</p></div>
             </div>
         </div>
 
         {mode === "deposit" && !depositSuccess && (
-          <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-4 sm:p-6 my-4 space-y-5 animate-in slide-in-from-top-2 duration-300">
+          <div className="bg-white rounded-3xl shadow-sm border border-amber-100 p-6 mb-6 space-y-6 animate-in slide-in-from-top-2 duration-300">
             {!depositMethod ? (
-              <div>
-                <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-3">Select Deposit Method</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                  {depositMethods.map(function({ id, label, img, color }) {
-                    return (
-                    <button key={id} onClick={function() { return setDepositMethod(id); }}
-                      className="flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-gray-200 hover:border-amber-500 hover:bg-amber-50 transition-all">
-                      <div className="w-9 h-9 rounded-xl overflow-hidden shadow-sm flex items-center justify-center bg-white">
-                        <img src={img} alt={label} className="w-full h-full object-contain p-1" />
-                      </div>
-                      <p className="font-bold text-gray-900 text-xs">{label}</p>
-                    </button>
-                  )})}
-                </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {depositMethods.map(function({ id, label, img }) { return (
+                  <button key={id} onClick={function() { return setDepositMethod(id); }} className="flex flex-col items-center gap-2 p-4 rounded-2xl border-2 border-gray-100 hover:border-amber-500 transition-all">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-white p-2 shadow-sm"><img src={img} alt={label} className="w-full h-full object-contain" /></div>
+                    <p className="font-bold text-gray-900 text-xs">{label}</p>
+                  </button>
+                ); })}
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <button onClick={function() { return setDepositMethod(null); }} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                      <ChevronLeft className="w-4 h-4 text-gray-500" />
-                    </button>
-                    <h3 className="font-bold text-gray-900 text-sm sm:text-base">
-                      {depositMethods.find(function(m) { return m.id === depositMethod; })?.label} Deposit
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-200">
-                    <Clock className="w-3.5 h-3.5 text-red-600" />
-                    <span className="text-red-600 font-bold text-sm tabular-nums">{countdown}</span>
-                  </div>
+                  <div className="flex items-center gap-2"><button onClick={function() { return setDepositMethod(null); }} className="p-2 rounded-xl hover:bg-gray-100"><ChevronLeft className="w-4 h-4 text-gray-500" /></button><h3 className="font-bold text-gray-900">Deposit via {depositMethod.toUpperCase()}</h3></div>
+                  <div className="px-3 py-1 rounded-full bg-red-50 border border-red-100 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-red-600" /><span className="text-red-600 font-bold text-xs tabular-nums">{countdown}</span></div>
                 </div>
 
-                {depositMethod === "momo" && (
-                  <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-4 space-y-3">
-                    <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-yellow-100">
-                      <div>
-                        <p className="text-xs text-gray-400">Account Name</p>
-                        <p className="font-bold text-gray-900 text-sm sm:text-base">{DEPOSIT_NAME}</p>
-                      </div>
-                      <button onClick={function() { return copy(DEPOSIT_NAME, "Name"); }} className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
-                        <Copy className="w-4 h-4 text-amber-600" />
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-yellow-100">
-                      <div>
-                        <p className="text-xs text-gray-400">MTN MOMO Number</p>
-                        <p className="font-bold text-gray-900 text-lg tracking-widest">{DEPOSIT_PHONE}</p>
-                      </div>
-                      <button onClick={function() { return copy(DEPOSIT_PHONE, "Phone number"); }} className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
-                        <Copy className="w-4 h-4 text-amber-600" />
-                      </button>
-                    </div>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
-                      <p className="text-blue-800 text-xs leading-relaxed font-medium">
-                        <span className="font-bold">Conversion Rate:</span> $1.00 USD = GH₵{GHS_RATE}.00
-                      </p>
-                    </div>
+                {depositMethod === 'momo' && (
+                  <div className="bg-amber-50 rounded-2xl p-4 space-y-3 border border-amber-100">
+                    <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-amber-50"><div><p className="text-[10px] text-gray-400">Recipient Name</p><p className="font-bold text-sm">{DEPOSIT_NAME}</p></div><button onClick={() => copy(DEPOSIT_NAME, "Name")} className="p-2 rounded-lg bg-amber-50 text-amber-600"><Copy className="w-4 h-4" /></button></div>
+                    <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-amber-50"><div><p className="text-[10px] text-gray-400">Mobile Number</p><p className="font-bold text-sm font-mono">{DEPOSIT_PHONE}</p></div><button onClick={() => copy(DEPOSIT_PHONE, "Phone")} className="p-2 rounded-lg bg-amber-50 text-amber-600"><Copy className="w-4 h-4" /></button></div>
                   </div>
                 )}
 
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1.5 block">Amount to Deposit ($)</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
-                      <Input type="number" value={amount} onChange={function(e) { return setAmount(e.target.value); }} placeholder="0.00" min="0" step="0.01" className="pl-7 h-11 border-gray-200 focus:border-green-400 text-lg font-semibold" />
+                {depositMethod === 'card' ? (
+                  <div className="space-y-4">
+                    <Input value={depositCard.number} onChange={(e) => setDepositCard({ ...depositCard, number: e.target.value })} placeholder="Card Number" className="h-12 rounded-xl" />
+                    <Input value={depositCard.holder} onChange={(e) => setDepositCard({ ...depositCard, holder: e.target.value })} placeholder="Cardholder Name" className="h-12 rounded-xl" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input value={depositCard.expiry} onChange={(e) => setDepositCard({ ...depositCard, expiry: e.target.value })} placeholder="MM/YY" className="h-12 rounded-xl" />
+                      <Input value={depositCard.cvv} type="password" onChange={(e) => setDepositCard({ ...depositCard, cvv: e.target.value })} placeholder="CVV" className="h-12 rounded-xl" />
                     </div>
-                    {isGhana && amount && parseFloat(amount) > 0 && (
-                       <div className="mt-2 bg-green-50 rounded-lg px-3 py-2 border border-green-100 flex justify-between items-center">
-                          <span className="text-[10px] font-bold text-green-600 uppercase">You Pay (GHS)</span>
-                          <span className="text-sm font-black text-green-700">GH₵{(parseFloat(amount) * GHS_RATE).toFixed(2)}</span>
-                       </div>
-                    )}
                   </div>
-                  <div className="space-y-1.5">
-                     <label className="text-xs font-medium text-gray-600 block">Transaction ID / ID Receipt</label>
-                     <Input value={depositTxId} onChange={function(e) { return setDepositTxId(e.target.value); }} placeholder="Enter ID from receipt" className="h-11 border-gray-200 focus:border-green-400 font-mono text-sm" />
+                ) : (
+                  <div className="space-y-4">
+                    <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span><Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="pl-8 h-12 rounded-xl text-lg font-bold" /></div>
+                    <Input value={depositTxId} onChange={(e) => setDepositTxId(e.target.value)} placeholder="Transaction ID / Receipt Reference" className="h-12 rounded-xl font-mono text-sm" />
                   </div>
-                  <Button onClick={handleDepositSubmit} disabled={isSubmitting} className="w-full h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md">
-                    {isSubmitting ? "Submitting..." : "Submit Deposit Request"}
-                  </Button>
-                </div>
+                )}
+                <Button onClick={handleDepositSubmit} disabled={isSubmitting} className="w-full h-12 bg-amber-500 text-white font-bold rounded-xl shadow-lg">Submit Deposit</Button>
               </div>
             )}
           </div>
         )}
 
         {mode === "withdraw" && !withdrawSuccess && (
-          <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-4 sm:p-6 my-4 space-y-5 animate-in slide-in-from-top-2 duration-300">
-            <div>
-              <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-3">Select Payout Method</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                {withdrawMethods.map(function({ id, label, img, color }) {
-                  return (
-                  <button key={id} onClick={function() { return setWithdrawMethod(id); }}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${withdrawMethod === id ? "border-amber-500 bg-amber-50" : "border-gray-200 hover:bg-gray-50"}`}>
-                    <div className={`w-9 h-9 rounded-xl overflow-hidden shadow-sm flex items-center justify-center bg-white`}>
-                      <img src={img} alt={label} className="w-full h-full object-contain p-1" />
-                    </div>
-                    <p className="font-bold text-gray-900 text-xs">{label}</p>
-                  </button>
-                )})}
-              </div>
+          <div className="bg-white rounded-3xl shadow-sm border border-amber-100 p-6 mb-6 space-y-6 animate-in slide-in-from-top-2 duration-300">
+            <h3 className="font-bold text-gray-900">Select Withdrawal Method</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {withdrawMethods.map(function({ id, label, img }) { return (
+                <button key={id} onClick={function() { return setWithdrawMethod(id); }} className={cn("flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all", withdrawMethod === id ? "border-amber-500 bg-amber-50" : "border-gray-100")}>
+                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-white p-2 shadow-sm"><img src={img} alt={label} className="w-full h-full object-contain" /></div>
+                  <p className="font-bold text-gray-900 text-xs">{label}</p>
+                </button>
+              ); })}
             </div>
 
             {withdrawMethod && (
-            <div className="space-y-4 pt-4 border-t border-gray-100">
-               <div>
-                <label className="text-xs font-medium text-gray-600 mb-1.5 block">Amount to Withdraw ($)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
-                  <Input type="number" value={amount} onChange={function(e) { return setAmount(e.target.value); }} placeholder="0.00" min="0" step="0.01" className="pl-7 h-11 border-gray-200 focus:border-amber-400 text-lg font-semibold" />
+              <div className="space-y-5 pt-4 border-t border-gray-100">
+                <div className="space-y-3">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Enter Payout Details</p>
+                  
+                  {withdrawMethod === 'momo' && (
+                    <div className="space-y-3">
+                      <div className="relative"><Smartphone className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={momo.phone} onChange={(e) => setMomo({ ...momo, phone: e.target.value })} placeholder="Mobile Number" className="pl-10 h-12 rounded-xl" /></div>
+                      <div className="relative"><User className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={momo.name} onChange={(e) => setMomo({ ...momo, name: e.target.value })} placeholder="Account Holder Name" className="pl-10 h-12 rounded-xl" /></div>
+                    </div>
+                  )}
+
+                  {withdrawMethod === 'bank' && (
+                    <div className="space-y-3">
+                      <Select value={bank.name} onValueChange={(val) => setBank({ ...bank, name: val })}>
+                        <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Select Your Bank" /></SelectTrigger>
+                        <SelectContent>{bankOptions.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
+                      </Select>
+                      {bank.name === 'Other' && <Input value={otherBankName} onChange={(e) => setOtherBankName(e.target.value)} placeholder="Specify Bank Name" className="h-12 rounded-xl" />}
+                      <div className="relative"><Hash className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={bank.number} onChange={(e) => setBank({ ...bank, number: e.target.value })} placeholder="Account Number / IBAN" className="pl-10 h-12 rounded-xl" /></div>
+                      <div className="relative"><User className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={bank.holder} onChange={(e) => setBank({ ...bank, holder: e.target.value })} placeholder="Account Holder Name" className="pl-10 h-12 rounded-xl" /></div>
+                    </div>
+                  )}
+
+                  {withdrawMethod === 'usdt' && (
+                    <div className="space-y-3">
+                      <div className="relative"><Coins className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={usdt.address} onChange={(e) => setUsdt({ ...usdt, address: e.target.value })} placeholder="USDT TRC20 Wallet Address" className="pl-10 h-12 rounded-xl font-mono text-sm" /></div>
+                      <p className="text-[10px] text-amber-600 font-bold text-center px-4 bg-amber-50 py-2 rounded-lg">Ensure your wallet supports the TRC20 network to avoid loss of funds.</p>
+                    </div>
+                  )}
+
+                  {withdrawMethod === 'western_union' && (
+                    <div className="space-y-3">
+                      <div className="relative"><User className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={westernUnion.fullName} onChange={(e) => setWesternUnion({ ...westernUnion, fullName: e.target.value })} placeholder="Your Full Legal Name" className="pl-10 h-12 rounded-xl" /></div>
+                      <div className="relative"><MapPin className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={westernUnion.city} onChange={(e) => setWesternUnion({ ...westernUnion, city: e.target.value })} placeholder="City for Pickup" className="pl-10 h-12 rounded-xl" /></div>
+                    </div>
+                  )}
+
+                  {withdrawMethod === 'card' && (
+                    <div className="space-y-3">
+                      <div className="relative"><CreditCard className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={card.number} onChange={(e) => setCard({ ...card, number: e.target.value })} placeholder="Card Number" className="pl-10 h-12 rounded-xl" /></div>
+                      <Input value={card.holder} onChange={(e) => setCard({ ...card, holder: e.target.value })} placeholder="Name on Card" className="h-12 rounded-xl" />
+                      <div className="grid grid-cols-2 gap-3">
+                        <Input value={card.expiry} onChange={(e) => setCard({ ...card, expiry: e.target.value })} placeholder="MM/YY" className="h-12 rounded-xl" />
+                        <Input value={card.cvv} type="password" onChange={(e) => setCard({ ...card, cvv: e.target.value })} placeholder="CVV" className="h-12 rounded-xl" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span><Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount to cash out" className="pl-8 h-14 rounded-2xl text-xl font-black focus:ring-amber-500" /></div>
+                  {parseFloat(amount) > 0 && (
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-2">
+                      <div className="flex justify-between text-sm text-gray-500"><span>Processing Fee (15%)</span><span className="text-red-500 font-bold">-${(parseFloat(amount) * 0.15).toFixed(2)}</span></div>
+                      <div className="flex justify-between items-baseline pt-2 border-t border-gray-200"><div><p className="font-bold text-gray-800 text-base">You will receive</p>{isGhana && <p className="text-[10px] text-gray-400">Converted at GH₵{GHS_RATE}/$</p>}</div><div className="text-right"><p className="font-black text-green-600 text-xl">${(parseFloat(amount) * 0.85).toFixed(2)}</p>{isGhana && <p className="font-bold text-green-700 text-sm">GH₵{(parseFloat(amount) * 0.85 * GHS_RATE).toFixed(2)}</p>}</div></div>
+                    </div>
+                  )}
+                  <Button onClick={handleWithdrawal} disabled={isSubmitting || !withdrawMethod} className="w-full h-14 bg-amber-500 text-white font-black rounded-2xl shadow-lg active:scale-95 transition-transform">Withdraw ${amount || '0.00'}</Button>
                 </div>
               </div>
-
-              {parseFloat(amount) > 0 && (
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Withdrawal Amount</span>
-                    <span className="font-semibold text-gray-800">${parseFloat(amount).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Processing Fee (15%)</span>
-                    <span className="font-semibold text-red-600">-${(parseFloat(amount) * 0.15).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t border-gray-200 items-baseline">
-                    <div className="flex flex-col">
-                        <span className="font-bold text-gray-800">You will receive</span>
-                        {isGhana && <span className="text-[10px] text-gray-500">Converted at GH₵{GHS_RATE}/$</span>}
-                    </div>
-                    <div className="text-right">
-                        <p className="font-black text-green-600 text-base">${(parseFloat(amount) * 0.85).toFixed(2)}</p>
-                        {isGhana && <p className="font-bold text-green-700 text-sm">GH₵{(parseFloat(amount) * 0.85 * GHS_RATE).toFixed(2)}</p>}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <Button onClick={handleWithdrawal} disabled={isSubmitting} className="w-full h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md">
-                {`Withdraw $${amount || '0.00'}`}
-              </Button>
-            </div>
             )}
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 my-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-gray-900 text-sm sm:text-base">Transaction History</h3>
+        {depositSuccess && (
+          <div className="bg-white rounded-3xl p-8 border border-green-200 text-center space-y-4 mb-6 animate-in zoom-in-95">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto text-green-600"><CheckCircle className="w-10 h-10" /></div>
+            <h3 className="text-xl font-bold text-gray-900">Request Submitted!</h3>
+            <p className="text-gray-500 text-sm leading-relaxed">Our team is reviewing your deposit. Funds will be credited to your balance within 1 to 24 hours.</p>
+            <Button onClick={() => setDepositSuccess(false)} className="w-full bg-gray-900 text-white font-bold h-12 rounded-xl mt-2">Okay</Button>
           </div>
-          <div className="space-y-2">
+        )}
+
+        {withdrawSuccess && (
+          <div className="bg-white rounded-3xl p-8 border border-amber-200 text-center space-y-4 mb-6 animate-in zoom-in-95">
+            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto text-amber-600"><Hourglass className="w-10 h-10 animate-pulse" /></div>
+            <h3 className="text-xl font-bold text-gray-900">Withdrawal Processing</h3>
+            <p className="text-gray-500 text-sm leading-relaxed">Your withdrawal request <strong>{lastTxId}</strong> has been received. Funds will arrive in your account within 1 to 24 hours.</p>
+            <Button onClick={() => setWithdrawSuccess(false)} className="w-full bg-gray-900 text-white font-bold h-12 rounded-xl mt-2">Continue</Button>
+          </div>
+        )}
+
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-4">
+          <div className="flex items-center justify-between"><h3 className="font-bold text-gray-900">Recent Transactions</h3><Clock className="w-4 h-4 text-gray-300" /></div>
+          <div className="space-y-3">
             {allTransactions.length > 0 ? (
               allTransactions.map(function(tx) {
                   const isDeposit = 'tx_id' in tx;
-                  const statusColor = tx.status === 'approved' ? 'bg-green-100 text-green-700' : tx.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700';
+                  const statusColor = tx.status === 'approved' || tx.status === 'complete' ? 'bg-green-100 text-green-700' : tx.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700';
                   const Icon = isDeposit ? ArrowDownToLine : ArrowUpFromLine;
                   return (
-                    <div key={tx.id} className="flex flex-col p-2.5 rounded-lg hover:bg-gray-50 transition-colors border-b last:border-0 border-gray-50">
-                      <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${statusColor.replace('text-', 'bg-').replace('700', '100')}`}>
-                            <Icon className={`w-4 h-4 ${statusColor.replace('bg-','text-').replace('100','600')}`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-800">{isDeposit ? 'Deposit' : 'Withdrawal'}</p>
-                            <p className="text-[10px] text-gray-400 truncate">{new Date(tx.created_at).toLocaleDateString()} · {tx.status}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className={`text-sm font-bold ${isDeposit ? 'text-green-600' : 'text-gray-800'}`}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>
-                            {isGhana && <p className="text-[10px] font-semibold text-gray-400">GH₵{(tx.amount * GHS_RATE).toFixed(2)}</p>}
-                          </div>
+                    <div key={tx.id} className="flex flex-col p-3 rounded-2xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                      <div className="flex items-center gap-4">
+                          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0", statusColor.replace('text-', 'bg-').replace('700', '100'))}><Icon className="w-5 h-5" /></div>
+                          <div className="flex-1 min-w-0"><p className="text-sm font-bold text-gray-800">{isDeposit ? 'Deposit' : 'Withdrawal'}</p><p className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">{new Date(tx.created_at).toLocaleDateString()} · {tx.status}</p></div>
+                          <div className="text-right"><p className={cn("text-sm font-black", isDeposit ? 'text-green-600' : 'text-gray-800')}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>{isGhana && <p className="text-[10px] font-bold text-gray-400">GH₵{(tx.amount * GHS_RATE).toFixed(2)}</p>}</div>
                       </div>
                       {!isDeposit && <WithdrawalStatusStepper status={(tx as WithdrawRecord).status} />}
                     </div>
                   );
                 })
-            ) : (
-                <div className="text-center py-8">
-                    <p className="text-gray-500 text-sm">No transactions yet.</p>
-                </div>
-            )}
+            ) : (<div className="text-center py-10 space-y-2"><Landmark className="w-10 h-10 text-gray-100 mx-auto" /><p className="text-gray-400 text-sm font-medium">No transaction history yet.</p></div>)}
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function Hourglass(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M5 22h14" />
+      <path d="M5 2h14" />
+      <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
+      <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+    </svg>
   );
 }
