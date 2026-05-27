@@ -18,8 +18,9 @@ import {
   Shield, Users, DollarSign, LogOut, Search, Edit3, Trash2,
   CheckCircle, XCircle, X, BarChart3, Globe, Zap,
   ArrowUpFromLine, Settings, ChevronRight, RefreshCw,
-  Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
-  Pencil, ImagePlus, Activity, Clock, AlertTriangle, CreditCard, Menu, Gift
+  Eye, EyeOff, Copy, RotateCcw, Link2, Plus,
+  Pencil, ImagePlus, Activity, Clock, AlertTriangle, CreditCard, Menu, Gift,
+  Building2, Phone, Mail, MapPin, Lock, Percent, ExternalLink
 } from "lucide-react";
 
 import {
@@ -31,7 +32,6 @@ import {
   adminMutateGenerator,
   adminCreateGiftCode,
   adminDeleteGiftCode,
-  adminResetUserPassword,
   adminCreateUser
 } from "./actions";
 
@@ -39,28 +39,27 @@ type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "ge
 
 interface DepositRequest {
   id: string;
-  userId: string;
-  username: string;
-  fullName: string;
+  user_id: string;
   amount: number;
-  txId: string;
-  date: string;
+  tx_id: string;
   status: "pending" | "approved" | "rejected";
-  createdAt: number;
+  created_at: string;
+  profiles?: {
+    full_name: string;
+    username: string;
+  };
 }
 
 interface UserRecord {
   id: string;
-  fullName: string;
+  full_name: string;
   username: string;
   email: string;
   password?: string;
   country: string;
   balance: number;
-  referralCode: string | null;
-  referredBy: string | null;
-  activeGenerators?: any[];
-  activeGeneratorCount?: number;
+  referral_code: string | null;
+  phone?: string;
 }
 
 interface Generator {
@@ -70,15 +69,15 @@ interface Generator {
   icon: string;
   color: string;
   price: number;
-  expireDays: number;
-  dailyIncome: number;
+  expire_days: number;
+  daily_income: number;
   published: boolean;
   roi: string;
   period: string;
-  minInvest: string;
-  maxInvest: string;
+  min_invest: string;
+  max_invest: string;
   investors: string;
-  imageUrl?: string;
+  image_url?: string;
 }
 
 const BLANK_GEN: Omit<Generator, "id"> = {
@@ -87,13 +86,13 @@ const BLANK_GEN: Omit<Generator, "id"> = {
   icon: "⚡",
   color: "from-amber-400 to-orange-500",
   price: 0,
-  expireDays: 30,
-  dailyIncome: 0,
+  expire_days: 30,
+  daily_income: 0,
   published: false,
   roi: "",
   period: "Daily",
-  minInvest: "",
-  maxInvest: "",
+  min_invest: "",
+  max_invest: "",
   investors: "0",
 };
 
@@ -105,12 +104,6 @@ const COLORS = [
   { label: "Red", value: "from-red-500 to-rose-600" },
   { label: "Teal", value: "from-teal-400 to-cyan-600" },
 ];
-
-type WithdrawalRecord = {
-  id: string; userId: string; username: string; fullName: string; country: string;
-  method: string; amount: number; netAmount: number; fee: number;
-  details: string; status: "pending" | "approved" | "rejected"; createdAt: number;
-};
 
 export function AdminDashboard() {
   const router = useRouter();
@@ -130,12 +123,6 @@ export function AdminDashboard() {
   const [showCreateGen, setShowCreateGen] = useState(false);
   const [editingGen, setEditingGen] = useState<Generator | null>(null);
   const [newGen, setNewGen] = useState<Omit<Generator, "id">>({ ...BLANK_GEN });
-
-  const [generatedCode, setGeneratedCode] = useState<any | null>(null);
-  const [copiedCode, setCopiedCode] = useState(false);
-  const [newCodeAmount, setNewCodeAmount] = useState("");
-  const [newCodeNote, setNewCodeNote] = useState("");
-  const [activityForm, setActivityForm] = useState({ username: "", country: "", action: "", amount: "", color: "from-amber-400 to-orange-500" });
 
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void }>({
     open: false, title: "", description: "", onConfirm: () => {},
@@ -159,10 +146,7 @@ export function AdminDashboard() {
   const deposits = adminData?.deposits || [];
   const withdrawals = adminData?.withdrawals || [];
   const bonusCodes = adminData?.codes || [];
-  const activityPosts = adminData?.activityPosts || [];
-  const activityImages = adminData?.activityImages || [];
 
-  // Mutations
   const updateBalanceMutation = useMutation({
     mutationFn: (args: { id: string; balance: number }) => adminUpdateUserBalance(args.id, args.balance),
     onSuccess: () => { refetchAll(); toast({ title: "Balance updated" }); setEditingUser(null); },
@@ -173,53 +157,12 @@ export function AdminDashboard() {
     onSuccess: () => { refetchAll(); toast({ title: "User deleted" }); },
   });
 
-  const createGenMutation = useMutation({
-    mutationFn: (data: any) => adminMutateGenerator("create", data),
-    onSuccess: () => { refetchAll(); setShowCreateGen(false); toast({ title: "Generator created" }); },
-  });
-
-  const deleteGenMutation = useMutation({
-    mutationFn: (id: string) => adminMutateGenerator("delete", { id }),
-    onSuccess: () => { refetchAll(); toast({ title: "Generator deleted" }); },
-  });
-
   const signoutMutation = useMutation({
     mutationFn: async () => {
         document.cookie = "admin_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         router.push('/login');
     }
   });
-
-  const createCodeMutation = useMutation({
-    mutationFn: (data: { amount: number; note: string }) => adminCreateGiftCode(data.amount, data.note),
-    onSuccess: (res: any) => {
-      setGeneratedCode(res.data);
-      setNewCodeAmount(""); setNewCodeNote("");
-      refetchAll();
-    },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
-  });
-
-  const deleteCodeMutation = useMutation({
-    mutationFn: (id: string) => adminDeleteGiftCode(id),
-    onSuccess: () => { refetchAll(); toast({ title: "Code deleted" }); },
-  });
-
-  const createUserMutation = useMutation({
-    mutationFn: (data: any) => adminCreateUser(data),
-    onSuccess: () => {
-      refetchAll();
-      setShowCreateUser(false);
-      setCreateUserForm({ fullName: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
-      toast({ title: "User created successfully!" });
-    },
-    onError: (e: any) => toast({ title: "Failed to create user", description: e.message, variant: "destructive" }),
-  });
-
-  const copyText = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast({ title: `${label} copied!` });
-  };
 
   const filteredUsersList = users.filter((u: any) =>
     [u.full_name, u.username, u.email, u.country].some((f) =>
@@ -236,11 +179,8 @@ export function AdminDashboard() {
     { id: "users",        label: "Users",       icon: Users,           color: "from-violet-500 to-purple-600", badge: users.length },
     { id: "deposits",     label: "Deposits",    icon: DollarSign,      color: "from-green-500 to-emerald-600", badge: pendingDepositsCount || undefined },
     { id: "withdrawals",  label: "Withdrawals", icon: ArrowUpFromLine, color: "from-amber-500 to-orange-500",  badge: pendingCount || undefined },
-    { id: "referrals",    label: "Referrals",   icon: Link2,           color: "from-pink-500 to-rose-600" },
     { id: "generators",   label: "Generators",  icon: Zap,             color: "from-yellow-400 to-amber-500",  badge: generators.length },
-    { id: "activity",     label: "Activity",    icon: Activity,        color: "from-emerald-500 to-green-600" },
-    { id: "media",        label: "Media",       icon: ImagePlus,       color: "from-teal-500 to-cyan-600" },
-    { id: "codes",        label: "Gift Codes",  icon: Gift,            color: "from-rose-500 to-pink-600" },
+    { id: "codes",        label: "Gift Codes",  icon: Gift,            color: "from-rose-500 to-pink-600",     badge: bonusCodes.length },
     { id: "settings",     label: "Settings",    icon: Settings,        color: "from-slate-500 to-slate-600" },
     { id: "about",        label: "About",       icon: Info,            color: "from-indigo-500 to-indigo-600" },
   ];
@@ -256,8 +196,8 @@ export function AdminDashboard() {
             <AlertDialogDescription>{confirmDialog.description}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <button className="bg-red-600 px-4 py-2 rounded text-white" onClick={confirmDialog.onConfirm}>Confirm</button>
+            <AlertDialogCancel className="bg-slate-700 text-white hover:bg-slate-600">Cancel</AlertDialogCancel>
+            <button className="bg-red-600 px-4 py-2 rounded text-white font-bold" onClick={confirmDialog.onConfirm}>Confirm</button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -285,21 +225,13 @@ export function AdminDashboard() {
           </button>
         </div>
 
-        <div className="mx-3 mt-3 mb-1 flex items-center gap-2.5 bg-slate-800 rounded-xl px-3 py-2.5 border border-slate-700">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-xs font-black text-white flex-shrink-0">A</div>
-          <div>
-            <p className="text-white text-xs font-bold">Administrator</p>
-            <p className="text-slate-400 text-[10px]">Full access</p>
-          </div>
-        </div>
-
         <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-0.5">
           {tabs.map(({ id, label, icon: Icon, badge, color }) => {
             const isActive = tab === id;
             return (
               <button
                 key={id}
-                onClick={() => setTab(id)}
+                onClick={() => { setTab(id); setSidebarOpen(false); }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                   isActive
                     ? "bg-slate-700 text-white shadow-sm"
@@ -315,7 +247,7 @@ export function AdminDashboard() {
                 )}
               </button>
             );
-          })} vacation
+          })}
         </nav>
 
         <div className="px-3 pb-4 pt-2 border-t border-slate-700 flex-shrink-0">
@@ -347,7 +279,7 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      <div className="pt-12 min-h-screen">
+      <div className="pt-12 md:pl-72 min-h-screen">
         <div className="max-w-6xl mx-auto px-3 sm:px-6 py-5 sm:py-6">
           {tab === "overview" && (
             <div className="space-y-5">
@@ -385,7 +317,7 @@ export function AdminDashboard() {
                             <p className="text-green-400 text-sm mt-1">${(u.balance || 0).toFixed(2)}</p>
                         </div>
                         <div className="flex gap-2">
-                             <Button size="sm" onClick={() => { setEditingUser(u); setNewBalance(u.balance.toString()); }}>Edit Balance</Button>
+                             <Button size="sm" variant="outline" onClick={() => { setEditingUser(u); setNewBalance(u.balance.toString()); }}>Edit</Button>
                              <Button size="sm" variant="destructive" onClick={() => openConfirm("Delete User", "Are you sure?", () => deleteUserMutation.mutate(u.id))}>Delete</Button>
                         </div>
                     </div>
@@ -393,26 +325,65 @@ export function AdminDashboard() {
               </div>
             </div>
           )}
-
-          {tab === "deposits" && (
-              <div className="space-y-4">
-                <h1 className="text-xl font-black">Deposit Requests</h1>
-                {deposits.map((d: any) => (
-                    <DepositRow
-                      key={d.id}
-                      d={d}
-                      onApprove={() => approveDepositMutation.mutate(d.id)}
-                      onReject={() => rejectDepositMutation.mutate(d.id)}
-                      approvePending={approveDepositMutation.isPending}
-                      rejectPending={rejectDepositMutation.isPending}
-                    />
-                ))}
-              </div>
-          )}
           
-          {/* ... Implement other tabs similarly ... */}
+          {tab === "settings" && (
+            <div className="space-y-4 max-w-xl">
+              <div><h1 className="text-xl font-black text-white">Admin Settings</h1><p className="text-slate-400 text-sm">Platform configuration</p></div>
+              {[
+                { label: "Platform Name", value: "CoinPower" },
+                { label: "Admin Username", value: "admin" },
+                { label: "Admin Password", value: "coinpower2026" },
+                { label: "Withdrawal Fee", value: "15%" },
+                { label: "Processing Time", value: "1 – 24 hours" },
+                { label: "Headquarters", value: "Rome, Italy" },
+              ].map(({ label, value }) => (
+                <div key={label} className="bg-slate-800 rounded-xl border border-slate-700 p-4 flex items-center justify-between">
+                  <div><p className="text-slate-400 text-xs">{label}</p><p className="text-white font-semibold text-sm mt-0.5">{value}</p></div>
+                  <button onClick={() => { navigator.clipboard.writeText(value); toast({ title: "Copied" }); }} className="text-slate-500 hover:text-amber-400 p-1"><Copy className="w-4 h-4" /></button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === "about" && (
+            <div className="space-y-5 max-w-2xl">
+              <h1 className="text-xl font-black text-white">About CoinPower</h1>
+              <div className="bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 rounded-2xl p-5 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg flex-shrink-0">
+                  <Shield className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-white font-black text-lg">CoinPower</h2>
+                  <p className="text-amber-400 text-sm font-semibold">Digital Energy Mining Platform</p>
+                  <p className="text-slate-400 text-xs mt-1">© {new Date().getFullYear()} CoinPower Italy. All rights reserved.</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Edit Balance Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-bold">Edit User Balance</h3>
+              <button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="mb-4">
+              <label className="text-slate-300 text-xs font-medium mb-1.5 block">New Balance ($)</label>
+              <Input type="number" value={newBalance} onChange={e => setNewBalance(e.target.value)} className="bg-slate-700 border-slate-600 text-white" />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => setEditingUser(null)} variant="outline" className="flex-1">Cancel</Button>
+              <Button onClick={() => updateBalanceMutation.mutate({ id: editingUser.id, balance: parseFloat(newBalance) || 0 })} disabled={updateBalanceMutation.isPending} className="flex-1 bg-amber-500 text-white">
+                {updateBalanceMutation.isPending ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

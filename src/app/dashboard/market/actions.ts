@@ -15,21 +15,10 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     const { data: gen } = await supabase.from('generators').select('*').eq('id', generatorId).single();
     if (!gen) return { error: 'Generator not found.' };
 
-    // 1. Check for specific PG2 limit (exactly 2 times)
-    if (generatorId === 'pg2') {
-        const { count, error: countError } = await supabase
-            .from('rented_generators')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('generator_id', 'pg2');
-
-        if (countError) return { error: countError.message };
-
-        if (count !== null && count >= 2) {
-            return { error: 'you reached your pg2 limit please upgrade' };
-        }
-    }
-
+    // 1. Check Lifetime Limit (Total ever rented, including expired)
+    // The database trigger public.check_pg2_limit handles the 'pg2' exactly 2 limit
+    // and throws 'you reached your pg2 limit please upgrade'.
+    
     // 2. Check Balance
     if (profile.balance < gen.price) return { error: 'insufficient_funds' };
 
@@ -47,7 +36,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     const expiresAt = new Date(rentedAt.getTime() + gen.expire_days * 24 * 60 * 60 * 1000);
 
     // 4. Record Rental
-    // Note: If the DB trigger is active, this will throw an error if limit is exceeded
+    // Note: If the DB trigger is active, it will raise an exception if the PG2 limit is reached.
     const { error: insertError } = await supabaseAdmin.from('rented_generators').insert({
         user_id: user.id,
         generator_id: gen.id,
@@ -57,9 +46,11 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     });
     
     if (insertError) {
-        // Rollback balance if insert fails
+        // Rollback balance if insert fails (e.g., triggered by our SQL limit)
         await supabaseAdmin.from('profiles').update({ balance: profile.balance }).eq('id', user.id);
-        return { error: insertError.message.includes('pg2 limit') ? 'you reached your pg2 limit please upgrade' : insertError.message };
+        
+        // Return the specific message from the database exception
+        return { error: insertError.message };
     }
     
     revalidatePath('/dashboard/market');
