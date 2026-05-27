@@ -270,3 +270,5 @@ export default function MarketClient({ generators, userBalance, rentedCounts }: 
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
