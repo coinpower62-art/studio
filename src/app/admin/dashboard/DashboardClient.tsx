@@ -1,14 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
-import gen1Img from "@assets/6f957afd1-300x300_1773138232842.png";
-import gen2Img from "@assets/41c5f1dc-6c58-428e-b41f-2bc1784b1bd2_1773138232843.webp";
-import gen3Img from "@assets/63f52963-e7bd-4550-aaf9-7b5c68b27b3a_1773138232844.jpg";
-import gen4Img from "@assets/200kVA-250kVA-300kVA-400kVA-Electric-AC-Three-Phase-Silent-Die_1773138232846.jpg";
-import defaultHeroImg from "@assets/grok_image_1771017969948_1773138463661.jpg";
-import defaultTeamWorkImg from "@assets/grok_image_1771018028526_1773138463663.jpg";
+import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -21,12 +15,46 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Shield, Users, DollarSign, LogOut, Search, Edit3, Trash2,
-  CheckCircle, XCircle, X, BarChart3, Globe, Zap,
-  ArrowUpFromLine, Settings, ChevronRight, RefreshCw,
-  Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
-  Pencil, ImagePlus, Activity,
-  Building2, Phone, Mail, MapPin, Lock, Percent, Clock, Menu, Gift
+  Shield, Users,     
+  DollarSign, 
+  LogOut, 
+  Search, 
+  Edit3, 
+  Trash2,
+  CheckCircle, 
+  XCircle, 
+  X, 
+  BarChart3, 
+  Globe, 
+  Zap,
+  ArrowUpFromLine, 
+  Settings, 
+  ChevronRight, 
+  RefreshCw,
+  Eye, 
+  EyeOff, 
+  Copy, 
+  RotateCcw, 
+  Link2, 
+  Upload, 
+  Save, 
+  Plus,
+  Pencil, 
+  ImagePlus, 
+  Activity,
+  Building2, 
+  Phone, 
+  Mail, 
+  MapPin, 
+  Lock, 
+  Percent, 
+  Clock,
+  ExternalLink, 
+  ArrowUpRight, 
+  AlertTriangle, 
+  CreditCard, 
+  Menu, 
+  Gift
 } from "lucide-react";
 
 import {
@@ -40,32 +68,34 @@ import {
   adminDeleteGiftCode,
   adminResetUserPassword,
   adminToggleWithdrawalLock,
+  adminCreateUser
 } from "./actions";
 
 type Tab = "overview" | "users" | "deposits" | "withdrawals" | "referrals" | "generators" | "activity" | "media" | "codes" | "settings" | "about";
 
-const generatorImages: Record<string, string> = {
-  pg1: gen1Img,
-  pg2: gen2Img,
-  pg3: gen3Img,
-  pg4: gen4Img,
-};
-
-const activityDefaultImages: Record<string, string> = {
-  hero: defaultHeroImg,
-  teamwork: defaultTeamWorkImg,
-};
-
 type DepositRequest = {
-  id: string; userId: string; username: string; fullName: string;
-  amount: number; txId: string; date: string; status: "pending" | "approved" | "rejected"; createdAt: number;
+  id: string; 
+  userId: string; 
+  username: string; 
+  fullName: string;
+  amount: number; 
+  txId: string; 
+  date: string; 
+  status: "pending" | "approved" | "rejected"; 
+  createdAt: number;
 };
 
 type ActiveGen = { id: string; name: string; icon: string; dailyIncome: number; expiresAt: number; };
 type UserRecord = {
-  id: string; fullName: string; username: string; email: string;
-  password: string; country: string; balance: number;
-  referralCode: string | null; referredBy: string | null;
+  id: string; 
+  fullName: string; 
+  username: string; 
+  email: string;
+  password: string; 
+  country: string; 
+  balance: number;
+  referralCode: string | null; 
+  referredBy: string | null;
   activeGenerators?: ActiveGen[];
   activeGeneratorCount?: number;
   totalGenerators?: number;
@@ -165,7 +195,7 @@ function DepositRow({ d, onApprove, onReject, approvePending, rejectPending }: {
 }
 
 export function AdminDashboard() {
-  const [, navigate] = useLocation();
+  const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -223,32 +253,49 @@ export function AdminDashboard() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["adminData"] }); setShowCreateGen(false); toast({ title: "Generator created" }); },
   });
 
+  const updateGenMutation = useMutation({
+    mutationFn: ({ id, ...data }: Partial<Generator> & { id: string }) =>
+      apiRequest("PATCH", `/api/admin/generators/${id}`, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["adminData"] }); queryClient.invalidateQueries({ queryKey: ["api/generators"] }); toast({ title: "Generator updated" }); setEditingGen(null); },
+  });
+
   const deleteGenMutation = useMutation({
     mutationFn: (id: string) => adminMutateGenerator("delete", { id }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["adminData"] }); toast({ title: "Generator deleted" }); },
   });
 
+  const createCodeMutation = useMutation({
+    mutationFn: (data: { amount: number; note: string }) => adminCreateGiftCode(data.amount, data.note),
+    onSuccess: (res: any) => {
+      setGeneratedCode(res.data);
+      setNewCodeAmount(""); setNewCodeNote("");
+      queryClient.invalidateQueries({ queryKey: ["adminData"] });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteCodeMutation = useMutation({
+    mutationFn: (id: string) => adminDeleteGiftCode(id),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["adminData"] }); toast({ title: "Code deleted" }); },
+  });
+
+  const createUserMutation = useMutation({
+    mutationFn: (data: typeof createUserForm) => adminCreateUser(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminData"] });
+      setShowCreateUser(false);
+      setCreateUserForm({ fullName: "", username: "", email: "", password: "", country: "Ghana", phone: "", balance: "1.00" });
+      toast({ title: "User created successfully!" });
+    },
+    onError: (e: any) => toast({ title: "Failed to create user", description: e.message, variant: "destructive" }),
+  });
+
   const signoutMutation = useMutation({
     mutationFn: async () => {
         document.cookie = "admin_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        navigate("/admin");
+        router.push('/login');
     }
   });
-
-  const copyText = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast({ title: `${label} copied!` });
-  };
-
-  const filteredUsersList = users.filter((u: any) =>
-    [u.full_name, u.username, u.email, u.country].some((f) =>
-      f?.toLowerCase().includes(search.toLowerCase())
-    )
-  );
-
-  const pendingDepositsCount = deposits.filter((d: any) => d.status === "pending").length;
-  const pendingCount = withdrawals.filter((w: any) => w.status === "pending").length;
-  const totalBalanceVal = users.reduce((s: number, u: any) => s + (u.balance || 0), 0);
 
   const switchTabInternal = (id: Tab) => {
     if (id === "users") setSearch("");
@@ -258,19 +305,24 @@ export function AdminDashboard() {
 
   if (adminLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading admin panel...</p></div>;
 
+  const filtered = users.filter((u: any) => [u.full_name, u.username, u.email, u.country].some(f => f?.toLowerCase().includes(search.toLowerCase())));
+  const totalBalanceVal = users.reduce((s: number, u: any) => s + (u.balance || 0), 0);
+  const pendingCount = withdrawals.filter((w: any) => w.status === "pending").length;
+  const pendingDepositsCount = deposits.filter((d: any) => d.status === "pending").length;
+
+  const copyText = (text: string, label: string) => navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!` }));
+
   const tabs: { id: Tab; label: string; icon: any; badge?: number; color: string }[] = [
-    { id: "overview",     label: "Overview",    icon: BarChart3,       color: "from-blue-500 to-blue-600" },
-    { id: "users",        label: "Users",       icon: Users,           color: "from-violet-500 to-purple-600", badge: users.length },
-    { id: "deposits",     label: "Deposits",    icon: DollarSign,      color: "from-green-500 to-emerald-600", badge: pendingDepositsCount || undefined },
-    { id: "withdrawals",  label: "Withdrawals", icon: ArrowUpFromLine, color: "from-amber-500 to-orange-500",  badge: pendingCount || undefined },
-    { id: "referrals",    label: "Referrals",   icon: Link2,           color: "from-pink-500 to-rose-600" },
-    { id: "generators",   label: "Generators",  icon: Zap,             color: "from-yellow-400 to-amber-500",  badge: generators.length },
-    { id: "activity",     label: "Activity",    icon: Activity,        color: "from-emerald-500 to-green-600" },
-    { id: "media",        label: "Media",       icon: ImagePlus,       color: "from-teal-500 to-cyan-600" },
-    { id: "codes",        label: "Gift Codes",  icon: Gift,            color: "from-rose-500 to-pink-600" },
-    { id: "settings",     label: "Settings",    icon: Settings,        color: "from-slate-500 to-slate-600" },
-    { id: "about",        label: "About",       icon: BarChart3,       color: "from-indigo-500 to-indigo-600" },
+    { id: "overview", label: "Overview", icon: BarChart3, color: "from-blue-500 to-indigo-600" },
+    { id: "users", label: "Users", icon: Users, color: "from-emerald-500 to-teal-600" },
+    { id: "deposits", label: "Deposits", icon: DollarSign, badge: pendingDepositsCount, color: "from-amber-400 to-orange-500" },
+    { id: "withdrawals", label: "Withdrawals", icon: ArrowUpFromLine, badge: pendingCount, color: "from-rose-500 to-red-600" },
+    { id: "generators", label: "Generators", icon: Zap, color: "from-purple-500 to-pink-600" },
+    { id: "activity", label: "Activity Feed", icon: Activity, color: "from-cyan-500 to-blue-600" },
+    { id: "codes", label: "Gift Codes", icon: Gift, color: "from-violet-500 to-purple-600" },
   ];
+
+  const refetchUsers = () => queryClient.invalidateQueries({ queryKey: ["adminData"] });
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-slate-900 text-white">
@@ -279,7 +331,7 @@ export function AdminDashboard() {
         <AlertDialogContent className="bg-slate-800 border border-red-700/50 max-w-sm">
           <AlertDialogHeader>
             <div className="w-12 h-12 rounded-full bg-red-900/40 border border-red-700/50 flex items-center justify-center mx-auto mb-1">
-              <Shield className="w-6 h-6 text-red-400" />
+              <AlertTriangle className="w-6 h-6 text-red-400" />
             </div>
             <AlertDialogTitle className="text-white text-center text-lg">{confirmDialog.title}</AlertDialogTitle>
             <AlertDialogDescription className="text-slate-400 text-center text-sm leading-relaxed">
@@ -293,7 +345,7 @@ export function AdminDashboard() {
             <AlertDialogAction
               onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(s => ({ ...s, open: false })); }}
               className="flex-1 bg-red-700 hover:bg-red-600 text-white border-0">
-              Yes, Action
+              Yes, Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -401,7 +453,9 @@ export function AdminDashboard() {
       </div>
 
       <div className="pt-12 min-h-screen">
-        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-5 sm:py-6">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-5 sm:py-6 ml-0 md:ml-72">
+
+          {/* ── OVERVIEW ── */}
           {tab === "overview" && (
             <div className="space-y-5">
               <div><h1 className="text-xl sm:text-2xl font-black text-white">Dashboard Overview</h1><p className="text-slate-400 text-sm">Welcome back, Administrator</p></div>
@@ -419,9 +473,48 @@ export function AdminDashboard() {
                   </div>
                 ))}
               </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="bg-slate-800 rounded-2xl border border-slate-700 p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-white text-sm">Recent Users</h3>
+                    <button onClick={() => switchTabInternal("users")} className="text-amber-400 text-xs flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></button>
+                  </div>
+                  {users.length === 0 ? <p className="text-slate-500 text-sm">No users yet</p> : (
+                    <div className="space-y-3">{users.slice(0, 5).map((u: any) => {
+                      const initials = u.full_name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "??";
+                      return (
+                        <div key={u.id} className="flex items-center gap-3">
+                          <Avatar className="w-8 h-8 flex-shrink-0"><AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-white text-xs font-bold">{initials}</AvatarFallback></Avatar>
+                          <div className="flex-1 min-w-0"><p className="text-white text-sm font-medium truncate">{u.full_name}</p><p className="text-slate-400 text-xs">@{u.username}</p></div>
+                          <p className="text-green-400 text-sm font-bold">${(u.balance || 0).toFixed(2)}</p>
+                        </div>
+                      );
+                    })}</div>
+                  )}
+                </div>
+                <div className="bg-slate-800 rounded-2xl border border-slate-700 p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-white text-sm">Pending Withdrawals</h3>
+                    <button onClick={() => switchTabInternal("withdrawals")} className="text-amber-400 text-xs flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></button>
+                  </div>
+                  <div className="space-y-3">
+                    {withdrawals.filter((w: any) => w.status === "pending").slice(0, 4).map((w: any) => (
+                      <div key={w.id} className="flex items-center justify-between gap-2">
+                        <div className="min-w-0"><p className="text-white text-sm font-medium truncate">{w.fullName}</p><p className="text-slate-400 text-xs">{w.method.toUpperCase()} · @{w.username}</p></div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-amber-400 text-sm font-bold">${w.amount.toFixed(2)}</span>
+                          <Badge className="text-xs bg-yellow-900/40 text-yellow-400 border border-yellow-700 px-1.5">pending</Badge>
+                        </div>
+                      </div>
+                    ))}
+                    {pendingCount === 0 && <p className="text-slate-500 text-sm">No pending withdrawals</p>}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
+          {/* ── USERS ── */}
           {tab === "users" && (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -431,26 +524,60 @@ export function AdminDashboard() {
                     <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users..." className="pl-9 pr-8 h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 text-sm" />
                   </div>
-                  <Button variant="outline" size="sm" className="h-9 border-slate-600 text-slate-300 hover:bg-slate-700 flex-shrink-0"><RefreshCw className="w-3.5 h-3.5" /></Button>
+                  <Button onClick={() => refetchUsers()} variant="outline" size="sm" className="h-9 border-slate-600 text-slate-300 hover:bg-slate-700 flex-shrink-0"><RefreshCw className="w-3.5 h-3.5" /></Button>
                   <Button onClick={() => setShowCreateUser(true)} size="sm" className="h-9 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold flex-shrink-0 gap-1.5"><Plus className="w-3.5 h-3.5" /> Create User</Button>
                 </div>
               </div>
 
               <div className="space-y-3">
-                {filteredUsersList.map(u => (
-                  <div key={u.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-10 h-10"><AvatarFallback>{u.fullName?.charAt(0) || '?'}</AvatarFallback></Avatar>
-                        <div><p className="text-white font-bold">{u.fullName}</p><p className="text-slate-400 text-xs">@{u.username}</p></div>
+                {filtered.map((u: any) => {
+                  const initials = u.full_name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "??";
+                  return (
+                    <div key={u.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Avatar className="w-10 h-10 flex-shrink-0"><AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-white text-xs font-bold">{initials}</AvatarFallback></Avatar>
+                          <div className="min-w-0"><p className="text-white font-bold text-sm">{u.full_name}</p><p className="text-slate-400 text-xs">@{u.username} · {u.country}</p></div>
+                        </div>
+                        <p className="text-green-400 font-black text-base flex-shrink-0">${(u.balance || 0).toFixed(2)}</p>
                       </div>
-                      <p className="text-green-400 font-bold">${(u.balance || 0).toFixed(2)}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                        <div className="bg-slate-700/50 rounded-xl px-3 py-2">
+                          <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide mb-0.5">User ID</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-slate-200 text-xs font-mono truncate">{u.id}</p>
+                            <button onClick={() => copyText(u.id, "User ID")} className="text-slate-500 hover:text-amber-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>
+                          </div>
+                        </div>
+                        <div className="bg-slate-700/50 rounded-xl px-3 py-2">
+                          <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide mb-0.5">Referral Code</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-amber-400 text-xs font-bold font-mono">{u.referral_code || "—"}</p>
+                            {u.referral_code && <button onClick={() => copyText(u.referral_code!, "Referral code")} className="text-slate-500 hover:text-amber-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button onClick={() => { setEditingUser(u); setNewBalance(String(u.balance || 0)); }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-900/30 text-blue-400 border border-blue-800 hover:bg-blue-900/50 text-xs font-semibold">
+                          <Edit3 className="w-3 h-3" /> Edit Balance
+                        </button>
+                        <button onClick={() => openConfirm(
+                            "Delete User Account",
+                            `You are about to permanently delete "${u.full_name}" (@${u.username}). Their balance, generators, and all data will be erased.`,
+                            () => deleteUserMutation.mutate(u.id)
+                          )}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-800 hover:bg-red-900/50 text-xs font-semibold">
+                          <Trash2 className="w-3.5 h-3.5" /> Delete
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
+
         </div>
       </div>
     </div>
