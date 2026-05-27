@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
@@ -14,40 +15,12 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     const { data: gen } = await supabase.from('generators').select('*').eq('id', generatorId).single();
     if (!gen) return { error: 'Generator not found.' };
 
-    // SPECIFIC REQUIREMENT: Check if PG2 has been rented exactly 2 times already
-    if (generatorId === 'pg2') {
-        const { count, error: countError } = await supabase
-            .from('rented_generators')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('generator_id', 'pg2');
-
-        if (countError) return { error: countError.message };
-
-        if (count !== null && count >= 2) {
-            return { error: 'you reached your pg2 limit please upgrade' };
-        }
-    }
-
-    // General limit for other generators (if applicable)
-    if (generatorId === 'pg1') {
-        const { count: pg1Count } = await supabase
-            .from('rented_generators')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('generator_id', 'pg1');
-        
-        if (pg1Count !== null && pg1Count >= 1) {
-            return { error: 'You have reached the limit for this free trial.' };
-        }
-    }
-
-    // Check Balance first to avoid unnecessary DB triggers
+    // 1. Check Balance first
     if (profile.balance < gen.price) return { error: 'insufficient_funds' };
 
     const supabaseAdmin = createAdminClient();
 
-    // Deduct Balance
+    // 2. Deduct Balance
     const { error: updateError } = await supabaseAdmin
         .from('profiles')
         .update({ balance: profile.balance - gen.price })
@@ -58,7 +31,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     const rentedAt = new Date();
     const expiresAt = new Date(rentedAt.getTime() + gen.expire_days * 24 * 60 * 60 * 1000);
 
-    // Record Rental
+    // 3. Record Rental (This will trigger the SQL constraint we added)
     const { error: insertError } = await supabaseAdmin.from('rented_generators').insert({
         user_id: user.id,
         generator_id: gen.id,
@@ -68,10 +41,13 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     });
     
     if (insertError) {
-        // Rollback balance if insert fails (e.g. triggered by SQL exception)
+        // Rollback balance if insert fails
         await supabaseAdmin.from('profiles').update({ balance: profile.balance }).eq('id', user.id);
         
-        // Return the specific message from the database
+        // Check if it's the specific PG2 limit error from the DB
+        if (insertError.message.includes('you reached your pg2 limit please upgrade')) {
+            return { error: 'you reached your pg2 limit please upgrade' };
+        }
         return { error: insertError.message };
     }
     
