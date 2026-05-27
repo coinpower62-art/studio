@@ -18,7 +18,7 @@ import {
   ArrowUpFromLine, Settings, ChevronRight, RefreshCw,
   Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
   Pencil, ImagePlus, Activity,
-  Building2, Phone, Mail, MapPin, Lock, Percent, Clock,
+  Building2, Phone, Mail, MapPin, Lock, Percent, Clock, Info,
   ExternalLink, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Unlock, Video, Landmark, Network, Hash
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -223,7 +223,14 @@ function DashboardContent() {
                              </div>
                              <div className="flex gap-2">
                                 <Button size="sm" variant="outline" onClick={() => { setEditingUser(u); setNewBalance(u.balance.toString()); }}><Edit3 className="w-4 h-4" /></Button>
-                                <Button size="sm" variant="destructive" onClick={() => openConfirm("Delete User", `Delete ${u.username}?`, () => adminDeleteUser(u.id).then(fetchData))}><Trash2 className="w-4 h-4" /></Button>
+                                <Button size="sm" variant="destructive" onClick={() => {
+                                    setConfirmDialog({
+                                        open: true,
+                                        title: "Delete User",
+                                        description: `Are you sure you want to delete ${u.username}?`,
+                                        onConfirm: () => adminDeleteUser(u.id).then(fetchData)
+                                    });
+                                }}><Trash2 className="w-4 h-4" /></Button>
                              </div>
                           </div>
                        </div>
@@ -260,7 +267,7 @@ function DashboardContent() {
                               <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${p.color}`} />
                               <div>
                                  <p className="text-sm font-bold">{p.username} <span className="text-xs text-slate-500">({p.country})</span></p>
-                                 <p className="text-xs text-slate-400">{p.action}</p>
+                                 <p className="text-xs text-gray-400">{p.action}</p>
                               </div>
                            </div>
                            <div className="flex items-center gap-3">
