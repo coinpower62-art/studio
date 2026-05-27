@@ -25,6 +25,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         if (countError) return { error: countError.message };
 
         if (count !== null && count >= 2) {
+            // This error matches the SQL exception message the user requested
             return { error: 'you reached your pg2 limit please upgrade' };
         }
     }
@@ -58,7 +59,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
         // Rollback balance if insert fails
         await supabaseAdmin.from('profiles').update({ balance: profile.balance }).eq('id', user.id);
         
-        // Handle the specific DB trigger message if it surfaces
+        // Handle specific DB trigger message
         if (insertError.message.includes('pg2 limit')) {
             return { error: 'you reached your pg2 limit please upgrade' };
         }

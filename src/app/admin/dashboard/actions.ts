@@ -69,7 +69,7 @@ export async function adminCreateUser(profile: any) {
         password: profile.password,
         email_confirm: true,
         user_metadata: {
-            full_name: profile.fullName || profile.full_name,
+            full_name: profile.full_name,
             username: profile.username,
             country: profile.country,
             phone: profile.phone,
@@ -81,10 +81,10 @@ export async function adminCreateUser(profile: any) {
     if (authData.user) {
         const { error: pError } = await supabase.from('profiles').update({
             balance: profile.balance,
-            referral_code: profile.referralCode || profile.referral_code,
+            referral_code: profile.referral_code,
             country: profile.country,
             phone: profile.phone,
-            full_name: profile.fullName || profile.full_name,
+            full_name: profile.full_name,
             username: profile.username
         }).eq('id', authData.user.id);
         
@@ -220,20 +220,18 @@ export async function adminToggleWithdrawalLock(userId: string, isLocked: boolea
     return { success: true };
 }
 
-export async function adminCreateActivityPost(post: any) {
+export async function adminDeleteMedia(id: string) {
     const supabase = createAdminClient();
-    const { error } = await supabase.from('activity_posts').insert(post);
+    const { error } = await supabase.from('media').delete().eq('id', id);
     if (error) return { error: error.message };
     revalidatePath('/admin/dashboard');
-    revalidatePath('/dashboard/activity');
     return { success: true };
 }
 
-export async function adminDeleteActivityPost(id: string) {
+export async function adminDeleteGeneratorImage(id: string) {
     const supabase = createAdminClient();
-    const { error } = await supabase.from('activity_posts').delete().eq('id', id);
+    const { error } = await supabase.from('generators').update({ image_url: null }).eq('id', id);
     if (error) return { error: error.message };
     revalidatePath('/admin/dashboard');
-    revalidatePath('/dashboard/activity');
     return { success: true };
 }
