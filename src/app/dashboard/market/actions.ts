@@ -1,51 +1,38 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 export async function rentGeneratorAction(generatorId: string): Promise<{ error?: string }> {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: 'Auth required.' };
+    if (!user) return { error: 'Authentication required.' };
 
     const { data: profile } = await supabase.from('profiles').select('balance').eq('id', user.id).single();
     if (!profile) return { error: 'Profile not found.' };
 
     const { data: gen } = await supabase.from('generators').select('*').eq('id', generatorId).single();
     if (!gen) return { error: 'Generator not found.' };
-    
-    // 1. Check Lifetime Limit (Total ever rented)
-    const { count: lifetimeCount } = await supabase
-        .from('rented_generators')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('generator_id', generatorId);
 
-    // Rules: PG1 (1 max), PG2 (2 max), Others (from DB)
-    let max = gen.max_rentals ?? 1;
-    if (generatorId === 'pg1') max = 1;
-    if (generatorId === 'pg2') max = 2;
-    
-    if (lifetimeCount !== null && lifetimeCount >= max) {
-        return { error: 'You reached your rent limit' };
-    }
-
-    // 2. Check Balance
+    // Check Balance first to avoid unnecessary DB triggers
     if (profile.balance < gen.price) return { error: 'insufficient_funds' };
 
-    // 3. Deduct Balance
-    const { error: updateError } = await supabase
+    const supabaseAdmin = createAdminClient();
+
+    // 1. Deduct Balance
+    const { error: updateError } = await supabaseAdmin
         .from('profiles')
         .update({ balance: profile.balance - gen.price })
         .eq('id', user.id);
         
-    if (updateError) return { error: "Failed to update balance: " + updateError.message };
+    if (updateError) return { error: "Failed to update balance." };
     
     const rentedAt = new Date();
     const expiresAt = new Date(rentedAt.getTime() + gen.expire_days * 24 * 60 * 60 * 1000);
 
-    // 4. Record Rental
-    const { error: insertError } = await supabase.from('rented_generators').insert({
+    // 2. Record Rental
+    // If the PG2 limit is reached, the SQL trigger we created in Step 1 will throw an error here
+    const { error: insertError } = await supabaseAdmin.from('rented_generators').insert({
         user_id: user.id,
         generator_id: gen.id,
         rented_at: rentedAt.toISOString(),
@@ -54,9 +41,11 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     });
     
     if (insertError) {
-        // Optional: Refund balance if insert fails
-        await supabase.from('profiles').update({ balance: profile.balance }).eq('id', user.id);
-        return { error: "Failed to record rental: " + insertError.message };
+        // Rollback balance if the database constraint/trigger failed
+        await supabaseAdmin.from('profiles').update({ balance: profile.balance }).eq('id', user.id);
+        
+        // Return the specific message from the database trigger
+        return { error: insertError.message };
     }
     
     revalidatePath('/dashboard/market');
