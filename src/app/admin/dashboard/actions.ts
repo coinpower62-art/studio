@@ -132,9 +132,11 @@ export async function adminHandleWithdrawal(id: string, action: 'process' | 'com
                 await supabase.from('profiles').update({ balance: (profile.balance || 0) + amount }).eq('id', userId);
             }
         }
-    } else {
-        const status = action === 'process' ? 'processing' : 'complete';
-        const { error } = await supabase.from('withdrawal_requests').update({ status }).eq('id', id);
+    } else if (action === 'process') {
+        const { error } = await supabase.from('withdrawal_requests').update({ status: 'processing' }).eq('id', id);
+        if (error) return { error: error.message };
+    } else if (action === 'complete') {
+        const { error } = await supabase.from('withdrawal_requests').update({ status: 'complete' }).eq('id', id);
         if (error) return { error: error.message };
     }
 

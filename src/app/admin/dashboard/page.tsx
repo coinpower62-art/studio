@@ -1920,7 +1920,7 @@ function DashboardContent() {
                                     }}/>
                                     {media.find(m => m.id === id) && (
                                         <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
-                                            onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the image for "${name}"?`, () => handleDeleteMedia('activity', id))}>
+                                            onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the photo for "${name}"?`, () => handleDeleteMedia('activity', id))}>
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
                                     )}
@@ -2142,7 +2142,7 @@ function DashboardContent() {
       {/* Edit Balance Modal */}
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-sm shadow-2xl">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
             <div className="flex items-center justify-between mb-4"><h3 className="text-white font-bold">Edit User Balance</h3><button onClick={function() { return setEditingUser(null); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button></div>
             <p className="text-slate-300 text-sm font-medium">{editingUser.full_name}</p>
             <p className="text-slate-500 text-xs mb-1">@{editingUser.username} · {editingUser.country}</p>
