@@ -4,7 +4,6 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 export async function adminGetAllData() {
-    // We use the Admin Client (service_role key) to bypass RLS and see ALL users and data
     const supabase = createAdminClient();
     try {
         const [
