@@ -1,5 +1,15 @@
 'use server';
 
+/**
+ * DATABASE SCHEMA REQUIREMENTS:
+ * If you see "column not found" errors, run this in Supabase SQL Editor:
+ * 
+ * ALTER TABLE public.generators ADD COLUMN IF NOT EXISTS active_limit INTEGER DEFAULT 1;
+ * ALTER TABLE public.generators ADD COLUMN IF NOT EXISTS lifetime_limit INTEGER DEFAULT 5;
+ * ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS device_id TEXT;
+ * ALTER TABLE public.rented_generators ADD COLUMN IF NOT EXISTS suspended BOOLEAN DEFAULT FALSE;
+ */
+
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
