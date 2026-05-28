@@ -14,25 +14,34 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     const { data: gen } = await supabase.from('generators').select('*').eq('id', generatorId).single();
     if (!gen) return { error: 'Generator not found.' };
 
-    // Enforce dynamic lifetime rental limit
-    const { count, error: countError } = await supabase
+    // Fetch all rentals for this generator to check limits
+    const { data: rentals, error: rentedError } = await supabase
         .from('rented_generators')
-        .select('*', { count: 'exact', head: true })
+        .select('*')
         .eq('user_id', user.id)
         .eq('generator_id', gen.id);
     
-    if (countError) return { error: countError.message };
+    if (rentedError) return { error: rentedError.message };
 
-    const maxRentals = gen.max_rentals ?? 1;
-    if (count !== null && count >= maxRentals) {
-        // Keep your specific pg2 error message as requested previously
-        if (gen.id === 'pg2') {
-            return { error: 'you reached your pg2 limit please upgrade' };
-        }
-        return { error: `You have reached the lifetime rental limit for the ${gen.name}.` };
+    const now = new Date().getTime();
+    const activeCount = rentals?.filter(r => new Date(r.expires_at).getTime() > now).length || 0;
+    const totalCount = rentals?.length || 0;
+
+    const activeLimit = gen.active_limit || 1;
+    const lifetimeLimit = gen.lifetime_limit || 1;
+
+    // 1. Enforce Lifetime Limit (Permanent Disconnection)
+    if (totalCount >= lifetimeLimit) {
+        if (gen.id === 'pg2') return { error: 'you reached your pg2 limit please upgrade' };
+        return { error: `Lifetime limit reached for ${gen.name}. This generator is now disconnected.` };
     }
 
-    // Check Balance
+    // 2. Enforce Active Limit (Running at once)
+    if (activeCount >= activeLimit) {
+        return { error: `You already have ${activeCount} active ${gen.name}(s). Please wait for one to expire or upgrade plans.` };
+    }
+
+    // 3. Check Balance
     if (profile.balance < gen.price) return { error: 'insufficient_funds' };
 
     const supabaseAdmin = createAdminClient();

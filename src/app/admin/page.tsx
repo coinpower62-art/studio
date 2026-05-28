@@ -72,7 +72,8 @@ type Generator = {
   price: number; expire_days: number; daily_income: number; published: boolean;
   roi: string; period: string; min_invest: string; max_invest: string; investors: string;
   image_url?: string;
-  max_rentals: number;
+  active_limit: number;
+  lifetime_limit: number;
 };
 
 type NewGenerator = Omit<Generator, "id">;
@@ -99,7 +100,8 @@ const BLANK_GEN: NewGenerator = {
   name: "", subtitle: "", icon: "⚡", color: "from-amber-400 to-orange-500",
   price: 0, expire_days: 30, daily_income: 0, published: false,
   roi: "", period: "Daily", min_invest: "", max_invest: "", investors: "0",
-  max_rentals: 1,
+  active_limit: 1,
+  lifetime_limit: 1,
 };
 
 const COLORS = [
@@ -112,10 +114,11 @@ const COLORS = [
 ];
 
 const DEFAULT_GENERATORS: Generator[] = [
-  { id: 'pg1', name: "PG1 Generator", subtitle: "Basic Power", icon: "⚡", color: "from-amber-400 to-orange-500", price: 0, expire_days: 2, daily_income: 0.5, published: true, roi: "10%", period: "Daily", min_invest: "$0", max_invest: "$0", investors: "12050", max_rentals: 1 },
-  { id: 'pg2', name: "PG2 Generator", subtitle: "Standard Power", icon: "🔋", color: "from-green-400 to-emerald-600", price: 25, expire_days: 30, daily_income: 2.5, published: true, roi: "12%", period: "Daily", min_invest: "$25", max_invest: "$1000", investors: "8520", max_rentals: 2 },
-  { id: 'pg3', name: "PG3 Generator", subtitle: "Mega Power", icon: "💡", color: "from-blue-400 to-indigo-600", price: 100, expire_days: 45, daily_income: 10, published: true, roi: "15%", period: "Daily", min_invest: "$100", max_invest: "$5000", investors: "4310", max_rentals: 1 },
-  { id: 'pg4', name: "PG4 Generator", subtitle: "Ultra Power", icon: "🚀", color: "from-purple-500 to-pink-600", price: 500, expire_days: 30, daily_income: 55, published: true, roi: "20%", period: "Daily", min_invest: "$500", max_invest: "$20000", investors: "1250", max_rentals: 2 },
+  { id: 'pg1', name: "PG1 Generator", subtitle: "Free Trial Power", icon: "⚡", color: "from-amber-400 to-orange-500", price: 0, expire_days: 2, daily_income: 0.5, published: true, roi: "10%", period: "Daily", min_invest: "$0", max_invest: "$0", investors: "12050", active_limit: 1, lifetime_limit: 1 },
+  { id: 'pg2', name: "PG2 Generator", subtitle: "Standard Power", icon: "🔋", color: "from-green-400 to-emerald-600", price: 25, expire_days: 30, daily_income: 2.5, published: true, roi: "12%", period: "Daily", min_invest: "$25", max_invest: "$1000", investors: "8520", active_limit: 2, lifetime_limit: 2 },
+  { id: 'pg3', name: "PG3 Generator", subtitle: "Mega Power", icon: "💡", color: "from-blue-400 to-indigo-600", price: 100, expire_days: 45, daily_income: 10, published: true, roi: "15%", period: "Daily", min_invest: "$100", max_invest: "$5000", investors: "4310", active_limit: 1, lifetime_limit: 5 },
+  { id: 'pg4', name: "PG4 Generator", subtitle: "Ultra Power", icon: "🚀", color: "from-purple-500 to-pink-600", price: 500, expire_days: 30, daily_income: 55, published: true, roi: "20%", period: "Daily", min_invest: "$500", max_invest: "$20000", investors: "1250", active_limit: 1, lifetime_limit: 4 },
+  { id: 'pg5', name: "PG5 Generator", subtitle: "Elite Power", icon: "💎", color: "from-teal-400 to-cyan-600", price: 1000, expire_days: 60, daily_income: 120, published: true, roi: "25%", period: "Daily", min_invest: "$1000", max_invest: "$50000", investors: "540", active_limit: 1, lifetime_limit: 5 },
 ];
 
 
@@ -828,7 +831,7 @@ function DashboardContent() {
     { id: "about",        label: "About",       icon: Info,            color: "from-indigo-500 to-indigo-600" },
   ];
 
-  const coreGeneratorIds = ['pg1', 'pg2', 'pg3', 'pg4'];
+  const coreGeneratorIds = ['pg1', 'pg2', 'pg3', 'pg4', 'pg5'];
   const otherGenerators = generators.filter(g => !coreGeneratorIds.includes(g.id));
 
   return (
@@ -947,7 +950,7 @@ function DashboardContent() {
         </p>
         <div className="flex items-center gap-2">
           {(pendingDepositsCount > 0 || pendingWithdrawalsCount > 0) && (
-            <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 rounded-lg px-2 py-1">
+            <div className="flex items-center gap-1 bg-amber-50/20 border border-amber-50/40 rounded-lg px-2 py-1">
               <span className="text-amber-400 text-[10px] font-bold">{pendingDepositsCount + pendingWithdrawalsCount} pending</span>
             </div>
           )}
@@ -1571,7 +1574,7 @@ function DashboardContent() {
                 <div className="flex gap-2 flex-wrap justify-start sm:justify-end">
                   <Button onClick={() => openConfirm(
                     "Seed Default Generators?",
-                    "This will DELETE all current generators and replace them with the 4 default (PG1-PG4) generators. This cannot be undone.",
+                    "This will DELETE all current generators and replace them with the 5 default (PG1-PG5) generators. This cannot be undone.",
                     handleSeedGenerators
                   )} variant="outline" size="sm" className="h-9 border-orange-700/50 bg-orange-950 text-orange-300 hover:bg-orange-900 hover:text-orange-200">
                     <DatabaseZap className="w-4 h-4 mr-2" /> Seed Defaults
@@ -1610,11 +1613,10 @@ function DashboardContent() {
                       <div className="p-4 space-y-3">
                         <div className="grid grid-cols-3 gap-2">
                           {[
-                            { label: "ID", value: g.id },
                             { label: "Price", value: `$${g.price.toLocaleString()}` },
-                            { label: "Days", value: `${g.expire_days}` },
                             { label: "Daily Income", value: `$${g.daily_income}` },
-                            { label: "Max Rentals", value: g.max_rentals },
+                            { label: "Active Limit", value: g.active_limit },
+                            { label: "Lifetime Limit", value: g.lifetime_limit },
                           ].map(function({ label, value }) { return (
                             <div key={label} className="bg-slate-700/50 rounded-xl px-2.5 py-2">
                               <p className="text-slate-400 text-[10px]">{label}</p>
@@ -2200,9 +2202,15 @@ function DashboardContent() {
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Expire Days *</label>
                   <Input type="number" value={newGen.expire_days || ""} onChange={function(e) { return setNewGen({ ...newGen, expire_days: parseInt(e.target.value) || 0 }); }} placeholder="30" data-testid="input-gen-expire" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
-                 <div>
-                    <label className="text-slate-300 text-xs font-medium mb-1 block">Max Rentals *</label>
-                    <Input type="number" value={newGen.max_rentals || ""} onChange={e => setNewGen({ ...newGen, max_rentals: parseInt(e.target.value) || 1 })} placeholder="1" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                 <div className="grid grid-cols-2 gap-2">
+                    <div>
+                        <label className="text-slate-300 text-[10px] font-medium mb-1 block">Active Limit</label>
+                        <Input type="number" value={newGen.active_limit} onChange={e => setNewGen({ ...newGen, active_limit: parseInt(e.target.value) || 1 })} className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
+                    </div>
+                    <div>
+                        <label className="text-slate-300 text-[10px] font-medium mb-1 block">Lifetime Limit</label>
+                        <Input type="number" value={newGen.lifetime_limit} onChange={e => setNewGen({ ...newGen, lifetime_limit: parseInt(e.target.value) || 1 })} className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
+                    </div>
                 </div>
               </div>
 
@@ -2240,7 +2248,7 @@ function DashboardContent() {
                 </div>
                 <button onClick={function() { return setNewGen({ ...newGen, published: !newGen.published }); }}
                   data-testid="toggle-gen-published"
-                  className={`w-12 h-6 rounded-full transition-colors relative ${newGen.published ? "bg-green-500" : "bg-slate-600"}`}>
+                  className={`w-12 h-6 rounded-full transition-colors relative ${newGen.published ? "bg-green-50" : "bg-slate-600"}`}>
                   <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${newGen.published ? "translate-x-6" : "translate-x-0.5"}`} />
                 </button>
               </div>
@@ -2251,7 +2259,7 @@ function DashboardContent() {
                   <span className="text-2xl">{newGen.icon}</span>
                   <div className="flex-1">
                     <p className="text-white font-black text-sm">{newGen.name}</p>
-                    <p className="text-white/70 text-xs">${newGen.price}/rent · ${newGen.daily_income}/day · {newGen.expire_days}d</p>
+                    <p className="text-white/70 text-[10px]">${newGen.price}/rent · ${newGen.daily_income}/day · Act {newGen.active_limit}/Life {newGen.lifetime_limit}</p>
                   </div>
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${newGen.published ? "bg-green-500 text-white" : "bg-black/30 text-white/70"}`}>{newGen.published ? "LIVE" : "DRAFT"}</span>
                 </div>
@@ -2288,7 +2296,8 @@ function DashboardContent() {
                 { label: "Rent Price ($)", key: "price", type: "number" },
                 { label: "Expire Days", key: "expire_days", type: "number" },
                 { label: "Daily Income ($)", key: "daily_income", type: "number" },
-                { label: "Max Rentals", key: "max_rentals", type: "number" },
+                { label: "Active Limit", key: "active_limit", type: "number" },
+                { label: "Lifetime Limit", key: "lifetime_limit", type: "number" },
               ].map(function({ label, key, type }) { return (
                 <div key={key}>
                   <label className="text-slate-400 text-xs font-medium mb-1 block">{label}</label>
