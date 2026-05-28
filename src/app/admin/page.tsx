@@ -101,7 +101,7 @@ const BLANK_GEN: NewGenerator = {
   price: 0, expire_days: 30, daily_income: 0, published: false,
   roi: "", period: "Daily", min_invest: "", max_invest: "", investors: "0",
   active_limit: 1,
-  lifetime_limit: 1,
+  lifetime_limit: 5,
 };
 
 const COLORS = [
@@ -1005,7 +1005,7 @@ function DashboardContent() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="bg-slate-800 rounded-2xl border border-slate-700 p-5 lg:col-span-2">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-white text-sm">Pending Withdrawals</h3>
+                    h3 className="font-bold text-white text-sm">Pending Withdrawals</h3>
                     <button onClick={function() { return switchTab("withdrawals"); }} className="text-amber-400 text-xs flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></button>
                   </div>
                   <div className="space-y-3">
@@ -1032,7 +1032,7 @@ function DashboardContent() {
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div><h1 className="text-xl font-black text-white">User Accounts</h1><p className="text-slate-400 text-sm">{users.length.toLocaleString()} registered users</p></div>
-                <div className="flex gap-2 w-full sm:w-auto">
+                <div className="flex gap-2 w-full sm:auto">
                   <div className="relative flex-1 sm:w-60">
                     <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input value={search} onChange={function(e) { return setSearch(e.target.value); }} placeholder="Search users..." className="pl-9 pr-8 h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 text-sm" />
@@ -1159,7 +1159,7 @@ function DashboardContent() {
                                   onChange={function(e) { return setNewBalance(e.target.value); }}
                                   className="h-8 bg-slate-600 border-slate-500 text-white text-sm"
                                 />
-                                <Button size="sm" onClick={function() { return handleUpdateBalance(u.id, parseFloat(newBalance)); }} className="h-8 bg-green-600 hover:bg-green-500 text-white">Save</Button>
+                                <Button size="sm" onClick={function() { return handleUpdateBalance(u.id, parseFloat(newBalance)); }} className="h-8 bg-green-600 hover:bg-green-50 text-white">Save</Button>
                                 <Button size="sm" variant="ghost" onClick={function() { return setEditingUser(null); }} className="h-8 text-slate-400 hover:bg-slate-600 hover:text-white">Cancel</Button>
                               </div>
                           </div>
@@ -1184,7 +1184,7 @@ function DashboardContent() {
                                             {isShowingPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                                         </button>
                                     </div>
-                                    <Button size="sm" onClick={() => handleResetPassword(u.id, newPassword)} className="h-8 bg-green-600 hover:bg-green-500 text-white">Save</Button>
+                                    <Button size="sm" onClick={() => handleResetPassword(u.id, newPassword)} className="h-8 bg-green-600 hover:bg-green-50 text-white">Save</Button>
                                     <Button size="sm" variant="ghost" onClick={() => setEditingPassword(null)} className="h-8 text-slate-400 hover:bg-slate-600 hover:text-white">Cancel</Button>
                                 </div>
                             </div>
@@ -1860,7 +1860,7 @@ function DashboardContent() {
               </div>
 
                <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
-                  <h3 className="font-bold text-white">License Card Images</h3>
+                  h3 className="font-bold text-white">License Card Images</h3>
                   <p className="text-sm text-slate-400">These images appear as the background for the license cards on the Activity page.</p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
