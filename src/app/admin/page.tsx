@@ -2337,3 +2337,4 @@ export default function AdminDashboard() {
     </Suspense>
   )
 }
+use this code exatly to update the Admin panel also. all is perfectly. use this exactly to update the Admin Panel only
