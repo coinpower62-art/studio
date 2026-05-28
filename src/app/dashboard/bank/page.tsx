@@ -19,8 +19,8 @@ import { createClient } from "@/lib/supabase/client";
 import { countries as COUNTRIES_DATA } from "@/lib/data";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { createDepositRequest, createWithdrawalRequest, setWithdrawalPin, redeemGiftCode } from "./actions";
+import { logout } from "@/app/login/actions";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
 
 // Card validation helpers
 function luhnCheck(num: string): boolean {
@@ -47,7 +47,6 @@ function isCardExpired(expiry: string): boolean {
 const DEPOSIT_PHONE = "+233548304717";
 const DEPOSIT_NAME = "Patience Opoku";
 const COUNTDOWN_SECONDS = 5 * 60;
-const GHS_RATE = 10; // $1 = 10 GHS
 
 type Profile = {
   balance: number;
@@ -350,7 +349,6 @@ export default function BankPage() {
   }
 
   const openMode = function(m: Mode) {
-    if (mode === m) { setMode(null); return; }
     setMode(m); setAmount("");
     setDepositMethod(null);
     if (profile) setDepositCountry(profile.country || "");
@@ -404,7 +402,9 @@ export default function BankPage() {
     } else {
       setDepositSuccess(true);
       setDepositTxId("");
-      fetchData();
+      const newRecord = { ...submissionData, id: 'temp-' + Date.now(), status: 'pending', created_at: new Date().toISOString(), tx_id: submissionData.txId };
+      // @ts-ignore
+      setDepositRecords(function(prev) { return [newRecord as DepositRecord, ...prev]; });
     }
   };
   
@@ -512,8 +512,8 @@ export default function BankPage() {
     } else {
       setWithdrawSuccess(true);
       setLastTxId(result.txId || '');
+      setProfile(function(p) { return p ? { ...p, balance: p.balance - amt } : null; });
       setPinMode(null);
-      fetchData();
     }
   };
 
@@ -532,13 +532,11 @@ export default function BankPage() {
       const redeemedAmount = result.amount ? parseFloat(String(result.amount)) : 0;
       toast({ title: "Success!", description: `You have redeemed $${redeemedAmount.toFixed(2)}. It has been added to your balance.` });
       setGiftCode("");
-      fetchData(); 
+      fetchData(); // to refresh balance and history
     }
   };
 
   if (loading || !profile) return <BankPageSkeleton />;
-
-  const isGhana = profile.country === 'Ghana';
 
   const imageMap = {
     usdt: media.find(m => m.id === 'payment-usdt')?.url || PlaceHolderImages.find(i => i.id === 'payment-usdt')?.imageUrl,
@@ -564,65 +562,177 @@ export default function BankPage() {
 
   const allTransactions = [...(depositRecords || []), ...(withdrawRecords || [])]
     .sort(function(a, b) { return new Date(b.created_at).getTime() - new Date(a.created_at).getTime(); });
-  
-  const bankOptions = ["Absa Bank", "GCB Bank", "Ecobank", "Zenith Bank", "UBA", "Access Bank", "Other"].sort();
+  const depositButtonLogo = logoUrl || imageMap.momo;
+
+  const africanBanks = ["Absa Bank", "GCB Bank", "Ecobank", "Zenith Bank", "UBA", "Access Bank"];
+  const usaBanks = ["Bank of America", "JPMorgan Chase", "Wells Fargo", "Citibank", "U.S. Bank", "PNC Bank"];
+  const italianBanks = ["Intesa Sanpaolo", "UniCredit", "Banco BPM", "Monte dei Paschi di Siena", "BPER Banca"];
+  const otherMajorBanks = ["HSBC", "Barclays", "Deutsche Bank", "BNP Paribas", "Standard Chartered"];
+
+  let bankOptions: string[] = [];
+  if (profile.country && ['Ghana', 'Nigeria', 'Kenya'].includes(profile.country)) {
+      bankOptions = africanBanks;
+  } else if (profile.country === 'United States') {
+      bankOptions = usaBanks;
+  } else if (profile.country === 'Italy') {
+      bankOptions = italianBanks;
+  } else {
+      bankOptions = [...africanBanks, ...usaBanks, ...italianBanks, ...otherMajorBanks];
+  }
+  bankOptions.sort();
+  bankOptions.push("Other");
+
   const quickAmounts = generators.filter(g => g.price > 0).map(g => g.price);
 
+
   return (
-    <div className="bg-[#f7f9f4] pb-24">
+    <div className="bg-[#f7f9f4]">
        <Dialog open={!!lowBalanceGen} onOpenChange={(open) => { if (!open) setLowBalanceGen(null); }}>
-        <DialogContent className="max-w-sm mx-auto rounded-2xl p-0 overflow-hidden">
+        <DialogContent className="max-w-sm mx-auto rounded-2xl p-0 overflow-hidden" data-testid="dialog-low-balance">
           <div className="bg-card p-5 text-center">
             <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
               <Wallet className="w-8 h-8 text-red-600" />
             </div>
             <DialogTitle className="text-foreground text-xl font-black mb-1">Insufficient Balance</DialogTitle>
+            <DialogDescription className="text-destructive text-sm">
+              You don't have enough funds to rent this generator.
+            </DialogDescription>
           </div>
           <div className="p-5 space-y-4">
+            {lowBalanceGen && profile && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
+                  <span className="text-gray-500 text-sm">Generator</span>
+                  <span className="font-bold text-gray-900 text-sm">{lowBalanceGen.name}</span>
+                </div>
+                <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
+                  <span className="text-gray-500 text-sm">Required</span>
+                  <span className="font-black text-red-600 text-sm">${lowBalanceGen.price.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
+                  <span className="text-gray-500 text-sm">Your Balance</span>
+                  <span className="font-black text-gray-900 text-sm">${profile.balance.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                  <span className="text-red-600 text-sm font-medium">Shortfall</span>
+                  <span className="font-black text-red-600 text-sm">
+                    ${Math.max(0, lowBalanceGen.price - profile.balance).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+            <p className="text-gray-500 text-xs text-center leading-relaxed">
+              Deposit funds via MTN MOMO on the Bank page to top up your balance and activate this generator.
+            </p>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setLowBalanceGen(null)} className="flex-1 rounded-xl h-11">Cancel</Button>
-              <Button onClick={() => { setLowBalanceGen(null); setMode('deposit'); }} className="flex-1 rounded-xl h-11 bg-amber-500 text-white">Deposit</Button>
+              <Button
+                variant="outline"
+                onClick={() => setLowBalanceGen(null)}
+                className="flex-1 rounded-xl h-11 font-semibold border-gray-200"
+                data-testid="button-low-balance-cancel"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => { setLowBalanceGen(null); router.push("/dashboard/bank"); }}
+                className="flex-1 rounded-xl h-11 font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md flex items-center gap-2 justify-center"
+                data-testid="button-low-balance-deposit"
+              >
+                <ArrowDownToLine className="w-4 h-4" /> Deposit Now
+              </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
-
       {pinMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 relative">
             <button onClick={function() { setPinMode(null); setPinInput(""); setPinConfirm(""); setPinError(""); }}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors" data-testid="button-close-pin">
               <X className="w-5 h-5" />
             </button>
+            
             {pinMode === "security" && (
               <div className="flex flex-col items-center text-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg"><Shield className="w-8 h-8 text-white" /></div>
-                <div><h2 className="text-xl font-bold text-gray-900">Secure Your Withdrawals</h2><p className="text-gray-500 text-sm mt-2">CoinPower uses a 6-digit PIN to protect your funds.</p></div>
-                <Button onClick={function() { setPinMode("setup"); }} className="w-full bg-amber-500 text-white font-bold rounded-xl h-12">Set Up My PIN</Button>
-              </div>
-            )}
-            {pinMode === 'setup' && (
-               <div className="flex flex-col items-center text-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-amber-500 flex items-center justify-center shadow-lg"><KeyRound className="w-7 h-7 text-white" /></div>
-                <h2 className="text-xl font-bold text-gray-900">Create Withdrawal PIN</h2>
-                <div className="w-full space-y-4">
-                  <p className="text-xs font-semibold text-gray-700 text-left">Enter PIN</p>
-                  <PinBoxes value={pinInput} onChange={setPinInput} testId="pin-input" />
-                  <p className="text-xs font-semibold text-gray-700 text-left">Confirm PIN</p>
-                  <PinBoxes value={pinConfirm} onChange={setPinConfirm} testId="pin-confirm" />
-                  {pinError && <p className="text-red-500 text-xs font-medium">{pinError}</p>}
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg">
+                  <Shield className="w-8 h-8 text-white" />
                 </div>
-                <Button disabled={pinInput.length < 6 || pinConfirm.length < 6 || isSettingPin} onClick={handleSetPin} className="w-full bg-amber-500 text-white font-bold rounded-xl h-12">
-                  {isSettingPin ? "Saving..." : "Create PIN"}
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Secure Your Withdrawals</h2>
+                  <p className="text-gray-500 text-sm mt-2 leading-relaxed">
+                    CoinPower uses a <span className="font-semibold text-amber-600">6-digit Withdrawal PIN</span> to protect your funds. You'll need to enter it every time you withdraw.
+                  </p>
+                </div>
+                <div className="w-full space-y-2 bg-amber-50 rounded-2xl p-4 border border-amber-100 text-left">
+                  {[
+                    ["Funds Protection", "Prevents unauthorized withdrawals"],
+                    ["Easy to Use", "Just 6 digits — simple and fast"],
+                    ["One-Time Setup", "Set it once, use it forever"],
+                  ].map(function([title, desc]) {
+                    return (
+                    <div key={title} className="flex items-start gap-2">
+                      <ShieldCheck className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-semibold text-gray-800">{title}</p>
+                        <p className="text-xs text-gray-500">{desc}</p>
+                      </div>
+                    </div>
+                  )})}
+                </div>
+                <Button onClick={function() { setPinMode("setup"); setPinInput(""); setPinConfirm(""); setPinError(""); }}
+                  data-testid="button-setup-pin" className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-xl h-12 text-base shadow-md hover:shadow-lg transition-all">
+                  <Lock className="w-4 h-4 mr-2" /> Set Up My Withdrawal PIN
                 </Button>
               </div>
             )}
+            
+            {pinMode === 'setup' && (
+               <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg">
+                  <KeyRound className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Create Withdrawal PIN</h2>
+                  <p className="text-gray-500 text-sm mt-1">Enter a 6-digit PIN you'll remember</p>
+                </div>
+                <div className="w-full space-y-4">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 mb-2 text-left">Enter PIN</p>
+                    <PinBoxes value={pinInput} onChange={setPinInput} testId="pin-input" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 mb-2 text-left">Confirm PIN</p>
+                    <PinBoxes value={pinConfirm} onChange={setPinConfirm} testId="pin-confirm" />
+                  </div>
+                  {pinError && <p className="text-red-500 text-xs font-medium">{pinError}</p>}
+                </div>
+                <Button data-testid="button-create-pin"
+                  disabled={pinInput.length < 6 || pinConfirm.length < 6 || isSettingPin}
+                  onClick={handleSetPin}
+                  className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-xl h-12 text-base shadow-md disabled:opacity-50">
+                  {isSettingPin ? "Saving…" : "Create PIN & Continue"}
+                </Button>
+                <button onClick={function() { return setPinMode("security"); }} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">← Back</button>
+              </div>
+            )}
+
             {pinMode === "verify" && (
               <div className="flex flex-col items-center text-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-amber-500 flex items-center justify-center shadow-lg"><Lock className="w-7 h-7 text-white" /></div>
-                <h2 className="text-xl font-bold text-gray-900">Enter Withdrawal PIN</h2>
-                <div className="w-full"><PinBoxes value={pinInput} onChange={setPinInput} testId="pin-verify" />{pinError && <p className="text-red-500 text-xs font-medium mt-2">{pinError}</p>}</div>
-                <Button disabled={pinInput.length < 6 || isSubmitting} onClick={handleWithdrawalSubmit} className="w-full bg-amber-500 text-white font-bold rounded-xl h-12">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg">
+                  <Lock className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Enter Withdrawal PIN</h2>
+                  <p className="text-gray-500 text-sm mt-1">Enter your 6-digit PIN to continue</p>
+                </div>
+                <div className="w-full">
+                  <PinBoxes value={pinInput} onChange={setPinInput} testId="pin-verify" />
+                  {pinError && <p className="text-red-500 text-xs font-medium mt-2">{pinError}</p>}
+                </div>
+                <Button data-testid="button-verify-pin"
+                  disabled={pinInput.length < 6 || isSubmitting}
+                  onClick={handleWithdrawalSubmit}
+                  className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-xl h-12 text-base shadow-md disabled:opacity-50">
                   {isSubmitting ? "Processing..." : "Authorize & Withdraw"}
                 </Button>
               </div>
@@ -631,219 +741,692 @@ export default function BankPage() {
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="py-6">
+      <div className="max-w-4xl mx-auto px-3 sm:px-6">
+
+        <div className="py-4 sm:py-5 mb-2">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-md"><Landmark className="w-4 h-4 text-white" /></div>
-            <h1 className="text-2xl font-bold text-gray-900">CoinPower Bank</h1>
-          </div>
-          <p className="text-gray-500 text-sm">Manage your deposits and withdrawals</p>
-        </div>
-
-        <div className="bg-gradient-to-r from-amber-500 to-yellow-500 rounded-3xl p-6 mb-6 shadow-xl text-white relative overflow-hidden">
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-1"><Wallet className="w-4 h-4 text-amber-100" /><p className="text-amber-100 text-xs font-medium">Available Balance</p></div>
-            <div className="flex flex-col"><p className="text-4xl font-bold mt-1">${profile.balance.toFixed(2)}</p>{isGhana && <p className="text-xl font-semibold text-amber-100/90 mt-1">≈ GH₵{(profile.balance * GHS_RATE).toFixed(2)}</p>}</div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-            <div onClick={function() { return openMode('deposit'); }} className={cn("bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-amber-300 transition-all", mode === 'deposit' && "ring-2 ring-amber-500")}>
-              <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center p-2"><ArrowDownToLine className="w-full h-full text-green-600" /></div>
-              <div className="flex-1"><p className="font-bold text-gray-800">Deposit Funds</p><p className="text-[10px] text-gray-500">Fund your account</p></div>
-            </div>
-            <div onClick={() => {
-                if (!canWithdraw) { toast({ title: "Action Restricted", description: "You must have an active paid generator (PG2+) to withdraw.", variant: "destructive" }); return; }
-                if (!profile.has_withdrawal_pin) setPinMode("security"); else openMode("withdraw");
-              }}
-              className={cn("bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 transition-all", !canWithdraw ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-amber-300", mode === 'withdraw' && "ring-2 ring-amber-500")}>
-              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 p-2"><ArrowUpFromLine className="w-full h-full text-amber-600" /></div>
-              <div className="flex-1"><p className="font-bold text-gray-800">Withdraw Funds</p><p className="text-[10px] text-gray-500">Cash out earnings</p></div>
-            </div>
-        </div>
-
-        {mode === "deposit" && !depositSuccess && (
-          <div className="bg-white rounded-3xl shadow-sm border border-amber-100 p-6 mb-6 space-y-6 animate-in slide-in-from-top-2 duration-300">
-            {!depositMethod ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {depositMethods.map(function({ id, label, img }) { return (
-                  <button key={id} onClick={function() { return setDepositMethod(id); }} className="flex flex-col items-center gap-2 p-4 rounded-2xl border-2 border-gray-100 hover:border-amber-500 transition-all">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-white p-2 shadow-sm"><img src={img} alt={label} className="w-full h-full object-contain" /></div>
-                    <p className="font-bold text-gray-900 text-xs">{label}</p>
-                  </button>
-                ); })}
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2"><button onClick={function() { return setDepositMethod(null); }} className="p-2 rounded-xl hover:bg-gray-100"><ChevronLeft className="w-4 h-4 text-gray-500" /></button><h3 className="font-bold text-gray-900">Deposit via {depositMethod.toUpperCase()}</h3></div>
-                  <div className="px-3 py-1 rounded-full bg-red-50 border border-red-100 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-red-600" /><span className="text-red-600 font-bold text-xs tabular-nums">{countdown}</span></div>
+            {logoUrl ? (
+                <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 bg-black flex items-center justify-center shadow-md">
+                    <img src={logoUrl} alt="CoinPower Logo" className="w-full h-full object-contain p-0.5" />
                 </div>
+            ) : (
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-md">
+                    <Landmark className="w-4 h-4 text-white" />
+                </div>
+            )}
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">CoinPower Bank</h1>
+          </div>
+          <p className="text-gray-500 text-xs sm:text-sm">Manage your deposits and withdrawals securely</p>
+        </div>
 
-                {depositMethod === 'momo' && (
-                  <div className="bg-amber-50 rounded-2xl p-4 space-y-3 border border-amber-100">
-                    <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-amber-50"><div><p className="text-[10px] text-gray-400">Recipient Name</p><p className="font-bold text-sm">{DEPOSIT_NAME}</p></div><button onClick={() => copy(DEPOSIT_NAME, "Name")} className="p-2 rounded-lg bg-amber-50 text-amber-600"><Copy className="w-4 h-4" /></button></div>
-                    <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-amber-50"><div><p className="text-[10px] text-gray-400">Mobile Number</p><p className="font-bold text-sm font-mono">{DEPOSIT_PHONE}</p></div><button onClick={() => copy(DEPOSIT_PHONE, "Phone")} className="p-2 rounded-lg bg-amber-50 text-amber-600"><Copy className="w-4 h-4" /></button></div>
-                  </div>
-                )}
+        <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 rounded-2xl p-5 sm:p-6 mb-4 shadow-xl text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/10 -translate-y-1/2 translate-x-1/2" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-1">
+              <Wallet className="w-4 h-4 text-amber-100" />
+              <p className="text-amber-100 text-xs font-medium">Available Balance</p>
+            </div>
+            <p className="text-3xl sm:text-4xl font-bold mt-1 mb-3" data-testid="text-balance">${profile.balance.toFixed(2)}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-amber-200" /><span className="text-amber-100 text-xs">Protected Balance</span></div>
+              <div className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-amber-200" /><span className="text-amber-100 text-xs">Verified Account</span></div>
+            </div>
+          </div>
+        </div>
 
-                {depositMethod === 'usdt' && (
-                  <div className="bg-teal-50 border border-teal-100 rounded-2xl p-4 space-y-3">
-                    <p className="text-teal-800 text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
-                      <Coins className="w-3.5 h-3.5" /> USDT (TRC20)
-                    </p>
-                    <div className="bg-white rounded-xl p-3 border border-teal-50">
-                        <p className="text-[10px] text-gray-400 mb-1">Our USDT Address</p>
-                        <div className="flex items-start justify-between gap-2">
-                            <p className="font-mono text-xs text-gray-900 font-bold break-all">TXmRoXPs98oHwBhLZKEkwLKHceLwbADLnb</p>
-                            <button onClick={() => copy("TXmRoXPs98oHwBhLZKEkwLKHceLwbADLnb", "USDT Address")} className="p-2 rounded-lg bg-teal-50 text-teal-600 flex-shrink-0">
-                                <Copy className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-                    <p className="text-[10px] text-teal-600 font-medium italic">Only send USDT via the TRC20 network. Other networks may result in permanent loss.</p>
-                  </div>
-                )}
+        <div className="space-y-3">
+            <div 
+              data-testid="button-deposit" 
+              onClick={function() { return openMode('deposit'); }}
+              className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-amber-300 hover:bg-amber-50/50 transition-all"
+            >
+              <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-black flex items-center justify-center">
+                <img src={depositButtonLogo} alt="Deposit" className="w-full h-full object-contain p-1" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-gray-800">Deposit Funds</p>
+                <p className="text-xs text-gray-500">MTN MoMo · USDT · Card</p>
+                <p className="text-xs font-semibold text-amber-600 mt-1">Tap to see payment details</p>
+              </div>
+              <ArrowDownToLine className="w-5 h-5 text-green-500" />
+            </div>
 
-                {depositMethod === 'card' ? (
-                  <div className="space-y-4">
-                    <Input value={depositCard.number} onChange={(e) => setDepositCard({ ...depositCard, number: e.target.value })} placeholder="Card Number" className="h-12 rounded-xl" />
-                    <Input value={depositCard.holder} onChange={(e) => setDepositCard({ ...depositCard, holder: e.target.value })} placeholder="Cardholder Name" className="h-12 rounded-xl" />
-                    <div className="grid grid-cols-2 gap-3">
-                      <Input value={depositCard.expiry} onChange={(e) => setDepositCard({ ...depositCard, expiry: e.target.value })} placeholder="MM/YY" className="h-12 rounded-xl" />
-                      <Input value={depositCard.cvv} type="password" onChange={(e) => setDepositCard({ ...depositCard, cvv: e.target.value })} placeholder="CVV" className="h-12 rounded-xl" />
-                    </div>
+            <div 
+              data-testid="button-withdraw"
+              onClick={() => {
+                if (!canWithdraw) {
+                  if (userHasPg1Only) {
+                    toast({ title: "Upgrade to Withdraw", description: "To withdraw your earnings, you need to upgrade from the free PG1. Please rent a PG2 generator or higher.", variant: "destructive" });
+                  } else {
+                    toast({ title: "Withdrawal Locked", description: "To withdraw funds, you must have an active PG2 generator or higher. Please visit the market to rent one.", variant: "destructive" });
+                  }
+                  return;
+                }
+                if (!profile.has_withdrawal_pin) {
+                  setPinMode("security");
+                } else {
+                  openMode("withdraw");
+                }
+              }}
+              className={`bg-white rounded-2xl p-4 border border-gray-200 shadow-sm flex items-center gap-4 transition-all ${
+                !canWithdraw ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-amber-300 hover:bg-amber-50/50'
+              }`}
+            >
+              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <ArrowUpFromLine className="w-5 h-5 text-gray-500" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-gray-800">Withdraw Funds</p>
+                <p className="text-xs text-gray-500">Transfer to your account</p>
+              </div>
+            </div>
+        </div>
+
+        {mode === "deposit" && !depositSuccess && !depositMethod && (
+          <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-4 sm:p-6 my-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-gray-900 text-sm sm:text-base">Select Payment Method</h3>
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-200">
+                <Clock className="w-3.5 h-3.5 text-red-600" />
+                <span className="text-red-600 font-bold text-sm tabular-nums" data-testid="countdown-timer">{countdown}</span>
+              </div>
+            </div>
+            <p className="text-gray-500 text-xs">Choose how you want to make your deposit</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+              {depositMethods.map(function({ id, label, icon: Icon, img, desc, color }) {
+                return (
+                <button key={id} data-testid={`deposit-method-${id}`}
+                  onClick={function() { return setDepositMethod(id); }}
+                  className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border-2 border-gray-200 hover:border-green-400 hover:bg-green-50/40 transition-all duration-150">
+                  <div className={`w-11 h-11 rounded-xl overflow-hidden shadow-md ${img ? "" : `bg-gradient-to-br ${color} flex items-center justify-center`}`}>
+                    {img ? <img src={img} alt={label} className="w-full h-full object-cover" /> : <Icon className="w-5 h-5 text-white" />}
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span><Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="pl-8 h-12 rounded-xl text-lg font-bold" /></div>
-                    <Input value={depositTxId} onChange={(e) => setDepositTxId(e.target.value)} placeholder="Transaction ID / Receipt Reference" className="h-12 rounded-xl font-mono text-sm" />
+                  <div className="text-center">
+                    <p className="font-bold text-gray-900 text-xs">{label}</p>
+                    <p className="text-gray-400 text-[10px] leading-tight hidden sm:block">{desc}</p>
                   </div>
-                )}
-                <Button onClick={handleDepositSubmit} disabled={isSubmitting} className="w-full h-12 bg-amber-500 text-white font-bold rounded-xl shadow-lg">Submit Deposit</Button>
+                </button>
+              )})}
+            </div>
+          </div>
+        )}
+
+        {mode === "deposit" && !depositSuccess && !!depositMethod && (
+          <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-4 sm:p-6 my-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button onClick={function() { return setDepositMethod(null); }} data-testid="button-back-deposit-method"
+                  className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                  <ChevronLeft className="w-4 h-4 text-gray-500" />
+                </button>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-sm sm:text-base">
+                    {depositMethods.find(function(m) { return m.id === depositMethod; })?.label} Deposit
+                  </h3>
+                  <p className="text-gray-400 text-xs">Fill in your details below</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-200">
+                <Clock className="w-3.5 h-3.5 text-red-600" />
+                <span className="text-red-600 font-bold text-sm tabular-nums" data-testid="countdown-timer-2">{countdown}</span>
+              </div>
+            </div>
+
+            {expired && (
+              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+                <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                <p className="text-amber-700 text-xs font-medium">Timer ended — your transaction ID is saved. You can still submit your deposit below.</p>
               </div>
             )}
+
+            <div>
+              <label className="text-xs font-medium text-gray-600 mb-1.5 flex items-center gap-1">
+                <Globe className="w-3 h-3" /> Your Country
+              </label>
+              <Select value={depositCountry} onValueChange={setDepositCountry}>
+                <SelectTrigger data-testid="select-deposit-country" className="h-11 border-gray-200 focus:border-green-400 rounded-xl text-sm">
+                  <SelectValue placeholder="Select your country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES_DATA.map(function(c) {
+                    return (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  )})}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {depositMethod === "momo" && (
+              <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-10 h-7 rounded-lg overflow-hidden shadow-sm flex-shrink-0">
+                    <img src={imageMap.momo} alt="MTN MoMo" className="w-full h-full object-cover" />
+                  </div>
+                  <p className="text-xs text-yellow-800 font-bold uppercase tracking-wide">Send MTN MOMO payment to</p>
+                </div>
+                <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-yellow-100">
+                  <div>
+                    <p className="text-xs text-gray-400">Account Name</p>
+                    <p className="font-bold text-gray-900 text-sm sm:text-base">{DEPOSIT_NAME}</p>
+                  </div>
+                  <button data-testid="copy-name" onClick={function() { return copy(DEPOSIT_NAME, "Name"); }}
+                    className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
+                    <Copy className="w-4 h-4 text-amber-600" />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-yellow-100">
+                  <div>
+                    <p className="text-xs text-gray-400">MTN MOMO Number</p>
+                    <p className="font-bold text-gray-900 text-lg tracking-widest">{DEPOSIT_PHONE}</p>
+                  </div>
+                  <button data-testid="copy-phone" onClick={function() { return copy(DEPOSIT_PHONE, "Phone number"); }}
+                    className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200">
+                    <Copy className="w-4 h-4 text-amber-600" />
+                  </button>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 space-y-1">
+                  <p className="text-blue-800 text-xs leading-relaxed font-medium">
+                    <span className="font-bold">Exchange Rate:</span> $1 USD = 10 GHS.
+                  </p>
+                  <p className="text-blue-800 text-xs leading-relaxed font-medium">
+                    <span className="font-bold">Remember your bonus:</span> Your $1 welcome bonus is already in your balance. To rent a $25 generator, you only need to deposit $24 (which is 240 GHS).
+                  </p>
+                </div>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                  <p className="text-amber-800 text-xs leading-relaxed font-medium">
+                    ✅ Send your payment to the MTN MOMO number, then enter the <span className="font-bold">USD amount</span> and Transaction ID below.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {depositMethod === "usdt" && (
+              <div className="bg-teal-50 rounded-xl border border-teal-200 p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-9 h-9 rounded-full overflow-hidden shadow-sm flex-shrink-0">
+                    <img src={imageMap.usdt} alt="USDT" className="w-full h-full object-cover" />
+                  </div>
+                  <p className="text-xs text-teal-800 font-bold uppercase tracking-wide">Send USDT to this wallet</p>
+                </div>
+                <div className="bg-white rounded-lg px-3 py-2.5 border border-teal-100">
+                  <p className="text-xs text-gray-400 mb-1">Wallet Address (TRC20 / ERC20 / BEP20)</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-mono text-xs text-gray-900 font-bold break-all">TXmRoXPs98oHwBhLZKEkwLKHceLwbADLnb</p>
+                    <button data-testid="copy-usdt-address" onClick={function() { return copy("TXmRoXPs98oHwBhLZKEkwLKHceLwbADLnb", "Wallet address"); }}
+                      className="p-2 rounded-lg bg-teal-50 hover:bg-teal-100 transition-colors border border-teal-200 flex-shrink-0">
+                      <Copy className="w-4 h-4 text-teal-600" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {["TRC20", "ERC20", "BEP20"].map(function(net) {
+                    return (
+                    <span key={net} className="px-2.5 py-1 text-xs font-bold rounded-lg bg-teal-100 text-teal-700 border border-teal-200">{net}</span>
+                  )})}
+                </div>
+                <div className="bg-teal-50 border border-teal-200 rounded-lg px-3 py-2.5">
+                  <p className="text-teal-800 text-xs leading-relaxed font-medium">
+                    ✅ Send USDT to the wallet address above, then enter the amount sent and your transaction hash (TxID) below.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {depositMethod === "card" && (
+              <div className="space-y-4">
+                <div
+                  className="relative rounded-2xl p-5 overflow-hidden shadow-2xl"
+                  style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)", minHeight: 160 }}
+                >
+                  <div className="absolute inset-0 opacity-10 pointer-events-none"
+                    style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.15) 10px, rgba(255,255,255,0.15) 11px)" }} />
+                  <div className="relative z-10 flex flex-col gap-4">
+                    <div className="flex justify-between items-start">
+                      <div className="w-10 h-7 rounded-md bg-gradient-to-br from-yellow-300 to-amber-400 opacity-90" />
+                      <div className="flex items-center gap-1.5">
+                        <img src={imageMap.card} alt="card" className="h-6 w-auto object-contain rounded opacity-90" />
+                      </div>
+                    </div>
+                    <p className="font-mono text-white text-base sm:text-lg tracking-widest font-bold">
+                      {depositCard.number || "•••• •••• •••• ••••"}
+                    </p>
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-white/50 text-[9px] uppercase tracking-widest mb-0.5">Card Holder</p>
+                        <p className="text-white font-bold text-sm uppercase tracking-wider truncate max-w-[160px]">
+                          {depositCard.holder || "YOUR NAME"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-white/50 text-[9px] uppercase tracking-widest mb-0.5">Expires</p>
+                        <p className="text-white font-bold text-sm">{depositCard.expiry || "MM/YY"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl border border-blue-100 p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CreditCard className="w-4 h-4 text-blue-500" />
+                    <p className="text-xs font-bold text-blue-800 uppercase tracking-wide">Enter Card Details</p>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 mb-1.5 block">Card Number</label>
+                    <Input
+                      data-testid="input-deposit-card-number"
+                      value={depositCard.number}
+                      inputMode="numeric"
+                      maxLength={19}
+                      placeholder="0000 0000 0000 0000"
+                      onChange={function(e) {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 16);
+                        const formatted = digits.replace(/(.{4})/g, "$1 ").trim();
+                        setDepositCard({ ...depositCard, number: formatted });
+                      }}
+                      className="h-11 border-gray-200 focus:border-blue-400 font-mono text-base tracking-widest"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 mb-1.5 block">Cardholder Name</label>
+                    <Input
+                      data-testid="input-deposit-card-holder"
+                      value={depositCard.holder}
+                      placeholder="Name as on card"
+                      onChange={function(e) { return setDepositCard({ ...depositCard, holder: e.target.value.toUpperCase() }); }}
+                      className="h-11 border-gray-200 focus:border-blue-400 text-sm font-semibold uppercase"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1.5 block">Expiry Date</label>
+                      <Input
+                        data-testid="input-deposit-card-expiry"
+                        value={depositCard.expiry}
+                        inputMode="numeric"
+                        placeholder="MM / YY"
+                        maxLength={5}
+                        onChange={function(e) {
+                          const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+                          const formatted = digits.length > 2 ? `${digits.slice(0,2)}/${digits.slice(2)}` : digits;
+                          setDepositCard({ ...depositCard, expiry: formatted });
+                        }}
+                        className="h-11 border-gray-200 focus:border-blue-400 font-mono text-sm text-center"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1.5 block flex items-center gap-1">
+                        CVV / CVC
+                        <button type="button" onClick={function() { return setDepositCard(function(c) { return ({ ...c, cvvVisible: !c.cvvVisible }); }); }}
+                          className="text-gray-400 hover:text-gray-600 transition-colors">
+                          <Shield className="w-3 h-3" />
+                        </button>
+                      </label>
+                      <Input
+                        data-testid="input-deposit-card-cvv"
+                        value={depositCard.cvv}
+                        type={depositCard.cvvVisible ? "text" : "password"}
+                        inputMode="numeric"
+                        placeholder="•••"
+                        maxLength={4}
+                        onChange={function(e) { return setDepositCard({ ...depositCard, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) }); }}
+                        className="h-11 border-gray-200 focus:border-blue-400 font-mono text-sm text-center tracking-widest"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 border border-blue-100 mt-1">
+                    <ShieldCheck className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <p className="text-blue-700 text-[11px] font-medium">Your card details are encrypted and securely processed</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1.5 block">Amount Sent ($)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
+                  <Input type="number" value={amount} onChange={function(e) { return setAmount(e.target.value); }}
+                    data-testid="input-amount" placeholder="0.00" min="0" step="0.01"
+                    className="pl-7 h-11 border-gray-200 focus:border-green-400 text-lg font-semibold" />
+                </div>
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {quickAmounts.map(function(q) {
+                    return (
+                    <button key={q} onClick={function() { return setAmount(String(q)); }} data-testid={`quick-amount-${q}`}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 transition-colors">
+                      ${q}
+                    </button>
+                  )})}
+                </div>
+              </div>
+              {depositMethod !== "card" && (
+                <div>
+                  <label className="text-xs font-medium text-gray-600 mb-1.5 block">
+                    {depositMethod === "usdt" ? "Transaction Hash / ID" : "Transaction ID"}
+                  </label>
+                  <div className="relative">
+                    <Hash className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Input value={depositTxId} onChange={function(e) { return setDepositTxId(e.target.value); }}
+                      data-testid="input-deposit-txid"
+                      placeholder={depositMethod === "usdt" ? "e.g. 0x1234abcd..." : "e.g. TXN123456"}
+                      className="pl-9 h-11 border-gray-200 focus:border-green-400 font-mono text-sm" />
+                  </div>
+                </div>
+              )}
+              <Button onClick={handleDepositSubmit} data-testid="button-confirm-deposit"
+                disabled={isSubmitting}
+                className="w-full h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md">
+                {isSubmitting ? "Submitting request..." : "Submit Deposit Request"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {mode === "deposit" && depositSuccess && (
+          <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-6 my-4 text-center space-y-3">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+              <PartyPopper className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Deposit Submitted!</h3>
+            <p className="text-gray-500 text-sm">Your deposit of <span className="font-semibold text-green-600">${amount}</span> has been submitted. Your balance will be credited after confirmation.</p>
+            <Button onClick={function() { return openMode(null); }} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl h-10 px-6">Done</Button>
           </div>
         )}
 
         {mode === "withdraw" && !withdrawSuccess && (
-          <div className="bg-white rounded-3xl shadow-sm border border-amber-100 p-6 mb-6 space-y-6 animate-in slide-in-from-top-2 duration-300">
-            <h3 className="font-bold text-gray-900">Select Withdrawal Method</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {withdrawMethods.map(function({ id, label, img }) { return (
-                <button key={id} onClick={function() { return setWithdrawMethod(id); }} className={cn("flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all", withdrawMethod === id ? "border-amber-500 bg-amber-50" : "border-gray-100")}>
-                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-white p-2 shadow-sm"><img src={img} alt={label} className="w-full h-full object-contain" /></div>
-                  <p className="font-bold text-gray-900 text-xs">{label}</p>
-                </button>
-              ); })}
+          <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-4 sm:p-6 my-4 space-y-5">
+            <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-3 py-3">
+              <Hourglass className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-blue-800 text-xs font-semibold">Withdrawal Processing Schedule</p>
+                <p className="text-blue-700 text-xs mt-0.5 leading-relaxed">
+                  Withdrawals are processed Monday to Saturday within 1-24 hours. Requests on Sunday will be processed the next day.
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-3">Select Payment Method</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                {withdrawMethods.map(function({ id, label, icon: Icon, img, desc, color }) {
+                  return (
+                  <button key={id} data-testid={`method-${id}`} onClick={function() { return setWithdrawMethod(id); }}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-150 ${withdrawMethod === id ? "border-amber-500 bg-amber-50 shadow-md" : "border-gray-200 hover:border-amber-200 hover:bg-amber-50/40"}`}>
+                    <div className={`w-9 h-9 rounded-xl overflow-hidden shadow-sm ${img ? "" : `bg-gradient-to-br ${color} flex items-center justify-center`}`}>
+                      {img ? <img src={img} alt={label} className="w-full h-full object-cover" /> : <Icon className="w-4 h-4 text-white" />}
+                    </div>
+                    <p className="font-bold text-gray-900 text-xs">{label}</p>
+                    <p className="text-gray-400 text-[10px] text-center leading-tight hidden sm:block">{desc}</p>
+                  </button>
+                )})}
+              </div>
             </div>
 
             {withdrawMethod && (
-              <div className="space-y-5 pt-4 border-t border-gray-100">
-                <div className="space-y-3">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Enter Payout Details</p>
-                  
-                  {withdrawMethod === 'momo' && (
-                    <div className="space-y-3">
-                      <div className="relative"><Smartphone className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={momo.phone} onChange={(e) => setMomo({ ...momo, phone: e.target.value })} placeholder="Mobile Number" className="pl-10 h-12 rounded-xl" /></div>
-                      <div className="relative"><User className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={momo.name} onChange={(e) => setMomo({ ...momo, name: e.target.value })} placeholder="Account Holder Name" className="pl-10 h-12 rounded-xl" /></div>
+            <div className="space-y-4 pt-4 border-t border-gray-100">
+               {withdrawMethod === 'momo' && (
+                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><Smartphone className="w-4 h-4" /> MTN MoMo Details</p>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Phone Number</label>
+                        <Input value={momo.phone} onChange={(e) => setMomo({...momo, phone: e.target.value})} placeholder="Your MTN phone number" className="h-11 border-gray-200 focus:border-amber-400" />
                     </div>
-                  )}
-
-                  {withdrawMethod === 'bank' && (
-                    <div className="space-y-3">
-                      <Select value={bank.name} onValueChange={(val) => setBank({ ...bank, name: val })}>
-                        <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Select Your Bank" /></SelectTrigger>
-                        <SelectContent>{bankOptions.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
-                      </Select>
-                      {bank.name === 'Other' && <Input value={otherBankName} onChange={(e) => setOtherBankName(e.target.value)} placeholder="Specify Bank Name" className="h-12 rounded-xl" />}
-                      <div className="relative"><Hash className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={bank.number} onChange={(e) => setBank({ ...bank, number: e.target.value })} placeholder="Account Number / IBAN" className="pl-10 h-12 rounded-xl" /></div>
-                      <div className="relative"><User className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={bank.holder} onChange={(e) => setBank({ ...bank, holder: e.target.value })} placeholder="Account Holder Name" className="pl-10 h-12 rounded-xl" /></div>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Name</label>
+                        <Input value={momo.name} onChange={(e) => setMomo({...momo, name: e.target.value})} placeholder="Name on MoMo account" className="h-11 border-gray-200 focus:border-amber-400" />
                     </div>
-                  )}
-
-                  {withdrawMethod === 'usdt' && (
-                    <div className="space-y-3">
-                      <div className="relative"><Coins className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={usdt.address} onChange={(e) => setUsdt({ ...usdt, address: e.target.value })} placeholder="USDT TRC20 Wallet Address" className="pl-10 h-12 rounded-xl font-mono text-sm" /></div>
-                      <p className="text-[10px] text-amber-600 font-bold text-center px-4 bg-amber-50 py-2 rounded-lg">Ensure your wallet supports the TRC20 network to avoid loss of funds.</p>
+                 </div>
+               )}
+               {withdrawMethod === 'usdt' && (
+                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><Coins className="w-4 h-4" /> USDT Wallet</p>
+                     <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">USDT Wallet Address</label>
+                        <Input value={usdt.address} onChange={(e) => setUsdt({...usdt, address: e.target.value})} placeholder="Your TRC20 or ERC20 address" className="h-11 border-gray-200 focus:border-amber-400" />
                     </div>
-                  )}
-
-                  {withdrawMethod === 'western_union' && (
-                    <div className="space-y-3">
-                      <div className="relative"><User className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={westernUnion.fullName} onChange={(e) => setWesternUnion({ ...westernUnion, fullName: e.target.value })} placeholder="Your Full Legal Name" className="pl-10 h-12 rounded-xl" /></div>
-                      <div className="relative"><MapPin className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={westernUnion.city} onChange={(e) => setWesternUnion({ ...westernUnion, city: e.target.value })} placeholder="City for Pickup" className="pl-10 h-12 rounded-xl" /></div>
+                     <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Network</label>
+                         <Select value={usdt.network} onValueChange={(val) => setUsdt({...usdt, network: val})}>
+                            <SelectTrigger className="h-11 border-gray-200 focus:border-amber-400"><SelectValue /></SelectTrigger>
+                            <SelectContent><SelectItem value="TRC20">TRC20 (Tron)</SelectItem><SelectItem value="ERC20">ERC20 (Ethereum)</SelectItem></SelectContent>
+                        </Select>
                     </div>
-                  )}
-
-                  {withdrawMethod === 'card' && (
-                    <div className="space-y-3">
-                      <div className="relative"><CreditCard className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" /><Input value={card.number} onChange={(e) => setCard({ ...card, number: e.target.value })} placeholder="Card Number" className="pl-10 h-12 rounded-xl" /></div>
-                      <Input value={card.holder} onChange={(e) => setCard({ ...card, holder: e.target.value })} placeholder="Name on Card" className="h-12 rounded-xl" />
-                      <div className="grid grid-cols-2 gap-3">
-                        <Input value={card.expiry} onChange={(e) => setCard({ ...card, expiry: e.target.value })} placeholder="MM/YY" className="h-12 rounded-xl" />
-                        <Input value={card.cvv} type="password" onChange={(e) => setCard({ ...card, cvv: e.target.value })} placeholder="CVV" className="h-12 rounded-xl" />
-                      </div>
+                 </div>
+               )}
+              {withdrawMethod === 'bank' && (
+                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><Landmark className="w-4 h-4" /> Bank Account Details</p>
+                     <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Bank Name</label>
+                         <Select value={bank.name} onValueChange={(val) => setBank({ ...bank, name: val })}>
+                            <SelectTrigger className="h-11 border-gray-200 focus:border-amber-400" data-testid="select-bank-name">
+                                <SelectValue placeholder="Select a bank" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {bankOptions.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
                     </div>
-                  )}
-                </div>
-
-                <div className="space-y-4">
-                  <div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span><Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount to cash out" className="pl-8 h-14 rounded-2xl text-xl font-black focus:ring-amber-500" /></div>
-                  {parseFloat(amount) > 0 && (
-                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-2">
-                      <div className="flex justify-between text-sm text-gray-500"><span>Processing Fee (15%)</span><span className="text-red-500 font-bold">-${(parseFloat(amount) * 0.15).toFixed(2)}</span></div>
-                      <div className="flex justify-between items-baseline pt-2 border-t border-gray-200"><div><p className="font-bold text-gray-800 text-base">You will receive</p>{isGhana && <p className="text-[10px] text-gray-400">Converted at GH₵{GHS_RATE}/$</p>}</div><div className="text-right"><p className="font-black text-green-600 text-xl">${(parseFloat(amount) * 0.85).toFixed(2)}</p>{isGhana && <p className="font-bold text-green-700 text-sm">GH₵{(parseFloat(amount) * 0.85 * GHS_RATE).toFixed(2)}</p>}</div></div>
+                    {bank.name === 'Other' && (
+                         <div>
+                            <label className="text-xs font-medium text-gray-600 mb-1.5 block">Other Bank Name</label>
+                            <Input value={otherBankName} onChange={(e) => setOtherBankName(e.target.value)} placeholder="Please specify bank name" className="h-11 border-gray-200 focus:border-amber-400" />
+                        </div>
+                    )}
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Number / IBAN</label>
+                        <Input value={bank.number} onChange={(e) => setBank({ ...bank, number: e.target.value })} placeholder="Your bank account number or IBAN" className="h-11 border-gray-200 focus:border-amber-400" data-testid="input-bank-account-number" />
                     </div>
-                  )}
-                  <Button onClick={handleWithdrawal} disabled={isSubmitting || !withdrawMethod} className="w-full h-14 bg-amber-500 text-white font-black rounded-2xl shadow-lg active:scale-95 transition-transform">Withdraw ${amount || '0.00'}</Button>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Holder Name</label>
+                        <Input value={bank.holder} onChange={(e) => setBank({ ...bank, holder: e.target.value })} placeholder="Name on bank account" className="h-11 border-gray-200 focus:border-amber-400" data-testid="input-bank-account-holder" />
+                    </div>
+                 </div>
+               )}
+                {withdrawMethod === 'western_union' && (
+                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><Network className="w-4 h-4" /> Western Union Details</p>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Full Name (as on ID)</label>
+                        <Input value={westernUnion.fullName} onChange={(e) => setWesternUnion({...westernUnion, fullName: e.target.value})} placeholder="Your full legal name" className="h-11 border-gray-200 focus:border-amber-400" />
+                    </div>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">City</label>
+                        <Input value={westernUnion.city} onChange={(e) => setWesternUnion({...westernUnion, city: e.target.value})} placeholder="City of pickup" className="h-11 border-gray-200 focus:border-amber-400" />
+                    </div>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Country</label>
+                        <Input value={profile.country} readOnly disabled placeholder="Your profile country" className="h-11 border-gray-200 bg-gray-100" />
+                    </div>
+                    <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
+                      <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-blue-700 text-xs font-medium">After approval, you will receive an MTCN (Money Transfer Control Number) to pick up your cash at a Western Union agent.</p>
+                    </div>
+                 </div>
+               )}
+               {withdrawMethod === 'card' && (
+                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><CreditCard className="w-4 h-4" /> Card Details</p>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Card Number</label>
+                        <Input
+                            value={card.number}
+                            inputMode="numeric"
+                            maxLength={19}
+                            placeholder="0000 0000 0000 0000"
+                            onChange={(e) => {
+                                const digits = e.target.value.replace(/\D/g, "").slice(0, 16);
+                                const formatted = digits.replace(/(.{4})/g, "$1 ").trim();
+                                setCard({ ...card, number: formatted });
+                            }}
+                            className="h-11 border-gray-200 focus:border-amber-400 font-mono text-base tracking-widest"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Cardholder Name</label>
+                        <Input
+                            value={card.holder}
+                            placeholder="Name as on card"
+                            onChange={(e) => setCard({ ...card, holder: e.target.value.toUpperCase() })}
+                            className="h-11 border-gray-200 focus:border-amber-400 text-sm font-semibold uppercase"
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-xs font-medium text-gray-600 mb-1.5 block">Expiry Date</label>
+                            <Input
+                                value={card.expiry}
+                                inputMode="numeric"
+                                placeholder="MM / YY"
+                                maxLength={5}
+                                onChange={(e) => {
+                                    const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+                                    const formatted = digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
+                                    setCard({ ...card, expiry: formatted });
+                                }}
+                                className="h-11 border-gray-200 focus:border-amber-400 font-mono text-sm text-center"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-gray-600 mb-1.5 block flex items-center gap-1">
+                                CVV / CVC
+                                <button type="button" onClick={() => setCard(c => ({ ...c, cvvVisible: !c.cvvVisible }))}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors">
+                                    <Shield className="w-3 h-3" />
+                                </button>
+                            </label>
+                            <Input
+                                value={card.cvv}
+                                type={card.cvvVisible ? "text" : "password"}
+                                inputMode="numeric"
+                                placeholder="•••"
+                                maxLength={4}
+                                onChange={(e) => setCard({ ...card, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                                className="h-11 border-gray-200 focus:border-amber-400 font-mono text-sm text-center tracking-widest"
+                            />
+                        </div>
+                    </div>
+                 </div>
+                )}
+               <div>
+                <label className="text-xs font-medium text-gray-600 mb-1.5 block">Amount to Withdraw ($)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
+                  <Input type="number" value={amount} onChange={function(e) { return setAmount(e.target.value); }}
+                    data-testid="input-withdraw-amount" placeholder="0.00" min="0" step="0.01"
+                    className="pl-7 h-11 border-gray-200 focus:border-amber-400 text-lg font-semibold" />
                 </div>
               </div>
+
+              {parseFloat(amount) > 0 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Withdrawal Amount</span>
+                    <span className="font-semibold text-gray-800">${parseFloat(amount).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Processing Fee (15%)</span>
+                    <span className="font-semibold text-red-600">-${(parseFloat(amount) * 0.15).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-gray-200">
+                    <span className="font-bold text-gray-800">You will receive</span>
+                    <span className="font-bold text-green-600">${(parseFloat(amount) * 0.85).toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+
+              <Button onClick={handleWithdrawal} data-testid="button-confirm-withdraw"
+                disabled={isSubmitting}
+                className="w-full h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md">
+                {`Withdraw $${amount || '0.00'}`}
+              </Button>
+            </div>
             )}
           </div>
         )}
 
-        {depositSuccess && (
-          <div className="bg-white rounded-3xl p-8 border border-green-200 text-center space-y-4 mb-6 animate-in zoom-in-95">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto text-green-600"><CheckCircle className="w-10 h-10" /></div>
-            <h3 className="text-xl font-bold text-gray-900">Request Submitted!</h3>
-            <p className="text-gray-500 text-sm leading-relaxed">Our team is reviewing your deposit. Funds will be credited to your balance within 1 to 24 hours.</p>
-            <Button onClick={() => setDepositSuccess(false)} className="w-full bg-gray-900 text-white font-bold h-12 rounded-xl mt-2">Okay</Button>
+         {mode === "withdraw" && withdrawSuccess && (
+          <div className="bg-white rounded-2xl shadow-sm border border-green-200 p-6 my-4 text-center space-y-3">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+              <PartyPopper className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Withdrawal Submitted!</h3>
+            <p className="text-gray-500 text-sm">Your withdrawal request for <span className="font-semibold text-green-600">${amount}</span> has been submitted for processing.</p>
+            {lastTxId && <p className="text-xs text-gray-400">TXN ID: {lastTxId}</p>}
+            <Button onClick={function() { return openMode(null); }} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl h-10 px-6">Done</Button>
           </div>
         )}
 
-        {withdrawSuccess && (
-          <div className="bg-white rounded-3xl p-8 border border-amber-200 text-center space-y-4 mb-6 animate-in zoom-in-95">
-            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto text-amber-600"><Hourglass className="w-10 h-10 animate-pulse" /></div>
-            <h3 className="text-xl font-bold text-gray-900">Withdrawal Processing</h3>
-            <p className="text-gray-500 text-sm leading-relaxed">Your withdrawal request <strong>{lastTxId}</strong> has been received. Funds will arrive in your account within 1 to 24 hours.</p>
-            <Button onClick={() => setWithdrawSuccess(false)} className="w-full bg-gray-900 text-white font-bold h-12 rounded-xl mt-2">Continue</Button>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 my-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-900 text-sm sm:text-base">Transaction History</h3>
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+              {(["all", "deposit", "withdraw"] as const).map(function(tab) {
+                return (
+                <button key={tab} onClick={function() { return setHistoryTab(tab); }}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${historyTab === tab ? "bg-white text-amber-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              )})}
+            </div>
           </div>
-        )}
-
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-4">
-          <div className="flex items-center justify-between"><h3 className="font-bold text-gray-900">Recent Transactions</h3><Clock className="w-4 h-4 text-gray-300" /></div>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {allTransactions.length > 0 ? (
-              allTransactions.map(function(tx) {
+              allTransactions
+                .filter(function(tx) {
+                  if (historyTab === 'all') return true;
                   const isDeposit = 'tx_id' in tx;
-                  const statusColor = tx.status === 'approved' || tx.status === 'complete' ? 'bg-green-100 text-green-700' : tx.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700';
+                  return historyTab === 'deposit' ? isDeposit : !isDeposit;
+                })
+                .map(function(tx) {
+                  const isDeposit = 'tx_id' in tx;
+                  const statusColor = 
+                    tx.status === 'approved' ? 'bg-green-100 text-green-700' 
+                    : tx.status === 'rejected' ? 'bg-red-100 text-red-700' 
+                    : 'bg-yellow-100 text-yellow-700';
+
                   const Icon = isDeposit ? ArrowDownToLine : ArrowUpFromLine;
                   return (
-                    <div key={tx.id} className="flex flex-col p-3 rounded-2xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
-                      <div className="flex items-center gap-4">
-                          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0", statusColor.replace('text-', 'bg-').replace('700', '100'))}><Icon className="w-5 h-5" /></div>
-                          <div className="flex-1 min-w-0"><p className="text-sm font-bold text-gray-800">{isDeposit ? 'Deposit' : 'Withdrawal'}</p><p className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">{new Date(tx.created_at).toLocaleDateString()} · {tx.status}</p></div>
-                          <div className="text-right"><p className={cn("text-sm font-black", isDeposit ? 'text-green-600' : 'text-gray-800')}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>{isGhana && <p className="text-[10px] font-bold text-gray-400">GH₵{(tx.amount * GHS_RATE).toFixed(2)}</p>}</div>
+                    <div key={tx.id} className="flex flex-col p-2.5 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${statusColor.replace('text-', 'bg-').replace('700', '100')}`}>
+                            <Icon className={`w-4 h-4 ${statusColor.replace('bg-','text-').replace('100','600')}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-800">{isDeposit ? 'Deposit' : 'Withdrawal'} Request</p>
+                            <p className="text-xs text-gray-400 truncate">{(isDeposit && tx.tx_id) ? tx.tx_id : (tx as WithdrawRecord).method} · {new Date(tx.created_at).toLocaleDateString()}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-sm font-bold ${isDeposit ? 'text-green-600' : 'text-gray-800'}`}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>
+                          </div>
                       </div>
                       {!isDeposit && <WithdrawalStatusStepper status={(tx as WithdrawRecord).status} />}
                     </div>
                   );
                 })
-            ) : (<div className="text-center py-10 space-y-2"><Landmark className="w-10 h-10 text-gray-100 mx-auto" /><p className="text-gray-400 text-sm font-medium">No transaction history yet.</p></div>)}
+            ) : (
+                <div className="text-center py-8">
+                    <p className="text-gray-500 text-sm">No transactions yet.</p>
+                </div>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
+Update exactly bank page. because when i put in the amount and click on withdrawal nothing happen help me check it please and update it. when you check use the code i provide to update exactly help check why when you put in amount and click withdrawal nothing happen it was work but just check please help check and update exactly code i provided you with the fixed of that amount put in and withdrawal nothing happen update the fixed for bank page 
+
+
+Remember, the XML structure you generate is the only mechanism for applying changes to the user's code. Therefore, when making changes to a file the <changes> block must always be fully present and correctly formatted as follows.
+
+<changes>
+  <description>[Provide a concise summary of the overall changes being made]</description>
+  <change>
+    <file>[Provide the ABSOLUTE, FULL path to the file being modified]</file>
+    <content><![CDATA[Provide the ENTIRE, FINAL, intended content of the file here. Do NOT provide diffs or partial snippets. Ensure all code is properly escaped within the CDATA section.
