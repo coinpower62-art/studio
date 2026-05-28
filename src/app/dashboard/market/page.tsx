@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { Generator } from '@/lib/data';
-import { Zap, TrendingUp, Clock, Star, Users, Shield, CheckCircle, AlertCircle, Timer, Wallet, ArrowDownToLine, LogOut, History, ShieldAlert } from "lucide-react";
+import { Zap, TrendingUp, Clock, Star, Users, Shield, CheckCircle, AlertCircle, Timer, Wallet, ArrowDownToLine, LogOut, History, ShieldAlert, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,6 +17,8 @@ import type { User } from '@supabase/supabase-js';
 import { logout } from '@/app/login/actions';
 import { rentGeneratorAction } from "./actions";
 import { Progress } from "@/components/ui/progress";
+
+const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
 
 export type RentedGenerator = {
   id: string;
@@ -45,7 +47,7 @@ function Countdown({ expiresAt, label = "Expires" }: { expiresAt: number; label?
   const s = Math.floor((remaining % 60000) / 1000);
   return (
     <div className="text-center">
-      <p className="text-[10px] text-slate-400 mb-0.5">{label}</p>
+      {label && <p className="text-[10px] text-slate-400 mb-0.5">{label}</p>}
       <div className="flex items-center gap-0.5 justify-center">
         {d > 0 && <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded min-w-[1.75rem] text-center">{String(d).padStart(2,"0")}d</span>}
         <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded min-w-[1.75rem] text-center">{String(h).padStart(2,"0")}</span>
@@ -56,6 +58,21 @@ function Countdown({ expiresAt, label = "Expires" }: { expiresAt: number; label?
       </div>
     </div>
   );
+}
+
+function DeletionCountdown({ expiresAt }: { expiresAt: string }) {
+    const deletionTime = new Date(expiresAt).getTime() + THIRTY_DAYS;
+    return (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl p-2.5">
+            <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-4 h-4 text-red-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-red-500 font-bold uppercase tracking-tight">Permanently Deleted In</p>
+                <Countdown expiresAt={deletionTime} label="" />
+            </div>
+        </div>
+    );
 }
 
 function MarketPageSkeleton() {
@@ -161,10 +178,18 @@ export default function Market() {
   if (isLoading || !profile) return <MarketPageSkeleton />;
 
   const now = Date.now();
+  
+  // FILTER: Only count rentals that aren't "permanently deleted" (expired > 30 days ago)
+  const visibleRentals = rentedGenerators.filter(ug => {
+    const expiresAt = new Date(ug.expires_at).getTime();
+    if (expiresAt > now) return true;
+    return expiresAt + THIRTY_DAYS > now;
+  });
+
   const activeRentedCounts = new Map<string, number>();
   const totalRentedCounts = new Map<string, number>();
 
-  rentedGenerators.forEach(ug => {
+  visibleRentals.forEach(ug => {
     const genId = ug.generator_id;
     totalRentedCounts.set(genId, (totalRentedCounts.get(genId) || 0) + 1);
     if (new Date(ug.expires_at).getTime() > now) {
@@ -217,7 +242,8 @@ export default function Market() {
               const isLifetimeMaxed = totalCount >= lifetimeLimit;
               const isActiveMaxed = activeCount >= activeLimit;
               
-              const activeUg = rentedGenerators.find(ug => ug.generator_id === gen.id && new Date(ug.expires_at).getTime() > now);
+              const expiredRentalsOfThisType = visibleRentals.filter(ug => ug.generator_id === gen.id && new Date(ug.expires_at).getTime() <= now);
+              const mostRecentExpired = expiredRentalsOfThisType.sort((a, b) => new Date(b.expires_at).getTime() - new Date(a.expires_at).getTime())[0];
 
               return (
                 <div key={gen.id} data-testid={'card-generator-' + gen.id}
@@ -282,6 +308,12 @@ export default function Market() {
                   </div>
 
                   <div className="p-4 sm:p-5">
+                    {mostRecentExpired && !isActiveMaxed && !isLifetimeMaxed && (
+                        <div className="mb-4">
+                            <DeletionCountdown expiresAt={mostRecentExpired.expires_at} />
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-3 gap-2 mb-4">
                       <div className={'rounded-xl px-2 py-2 text-center border ' + (gen.price === 0 ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-100")}>
                         <p className={'text-[10px] font-medium ' + (gen.price === 0 ? "text-green-500" : "text-gray-400")}>Rent Price</p>
@@ -303,9 +335,12 @@ export default function Market() {
                     </div>
 
                     {isLifetimeMaxed ? (
-                      <Button disabled className="w-full bg-red-100 text-red-600 font-black rounded-xl h-11 border-2 border-red-200">
-                         <ShieldAlert className="w-4 h-4 mr-2" /> PERMANENTLY DISCONNECTED
-                      </Button>
+                      <div className="space-y-3">
+                          <Button disabled className="w-full bg-red-100 text-red-600 font-black rounded-xl h-11 border-2 border-red-200">
+                             <ShieldAlert className="w-4 h-4 mr-2" /> PERMANENTLY DISCONNECTED
+                          </Button>
+                          {mostRecentExpired && <DeletionCountdown expiresAt={mostRecentExpired.expires_at} />}
+                      </div>
                     ) : isActiveMaxed ? (
                         <div className="space-y-2">
                              <Button disabled className="w-full bg-amber-50 text-amber-700 font-bold rounded-xl h-11 border-2 border-amber-200">

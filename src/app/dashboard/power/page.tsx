@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, TrendingUp, CheckCircle, Gift, Timer, AlertTriangle, DollarSign, Star, Play, Users, BadgeCheck } from "lucide-react";
+import { Zap, TrendingUp, CheckCircle, Gift, Timer, AlertTriangle, DollarSign, Star, Play, Users, BadgeCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -19,18 +19,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { collectEarnings } from "./actions";
 import type { Generator as BaseGenerator } from '@/lib/data';
 
-type ReferredUser = {
-    id: string;
-    full_name: string | null;
-    username: string | null;
-    created_at: string;
-};
-
-type ProfileForNetwork = {
-  id: string;
-  full_name: string | null;
-  username: string | null;
-};
+const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
 
 export type RentedGenerator = {
   id: string;
@@ -363,6 +352,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
   const isExpired = expiresAtMs <= now;
   const pendingIncome = periodsReady * actualDailyIncome;
   const nextCreditAt = lastRef + TWENTY_FOUR_H;
+  const deletionAtMs = expiresAtMs + THIRTY_DAYS;
 
   const borderColor = isExpired && !canCollect ? "border-gray-200 opacity-60"
     : isSuspended ? "border-red-300 bg-red-50/30"
@@ -412,7 +402,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
       </div>
 
       <div className="p-4 space-y-3">
-        <ExpiryBar rentedAt={new Date(ug.rented_at).getTime()} expiresAt={expiresAtMs} />
+        {!isExpired && <ExpiryBar rentedAt={new Date(ug.rented_at).getTime()} expiresAt={expiresAtMs} />}
 
         {!isExpired && !canCollect && (
           <LiveChart genId={ug.id} dailyIncome={actualDailyIncome} genColor={ug.color} suspended={isSuspended} canCollect={canCollect} />
@@ -442,9 +432,18 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                 </div>
             </div>
         ) : isExpired ? (
-            <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-3 border border-gray-200">
-                <AlertTriangle className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <p className="text-gray-500 text-sm">This generator has expired. Rent a new one from the Market.</p>
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-3">
+                <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <p className="text-gray-500 text-sm">This generator has expired. Rent a new one from the Market.</p>
+                </div>
+                <div className="bg-red-50 border border-red-100 rounded-xl p-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-red-600">
+                        <Trash2 className="w-4 h-4" />
+                        <span className="text-[10px] font-bold uppercase">Permanently Deleted In</span>
+                    </div>
+                    <RedCountdown targetMs={deletionAtMs} />
+                </div>
             </div>
         ) : isSuspended ? (
             <div className="bg-red-50 border border-red-300 rounded-xl p-3 space-y-2">
@@ -763,7 +762,15 @@ export default function Power() {
   }
 
   const now = Date.now();
-  const activeGenerators = rentedGenerators.filter(function(ug) {
+  
+  // FILTER: Only count rentals that aren't "permanently deleted" (expired > 30 days ago)
+  const visibleRentals = rentedGenerators.filter(ug => {
+    const expiresAt = new Date(ug.expires_at).getTime();
+    if (expiresAt > now) return true;
+    return expiresAt + THIRTY_DAYS > now;
+  });
+
+  const activeGenerators = visibleRentals.filter(function(ug) {
     if (!ug || !ug.expires_at) return false;
     const expiresAtMs = new Date(ug.expires_at).getTime();
     if (expiresAtMs <= now) {
@@ -775,7 +782,7 @@ export default function Power() {
     return true; // Not expired
   });
 
-  const expiredGenerators = rentedGenerators.filter(function(ug) {
+  const expiredGenerators = visibleRentals.filter(function(ug) {
     return !activeGenerators.some(ag => ag.id === ug.id);
   });
   

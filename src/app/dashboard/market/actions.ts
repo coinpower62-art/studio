@@ -3,6 +3,8 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
+const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+
 export async function rentGeneratorAction(generatorId: string): Promise<{ error?: string }> {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -15,7 +17,7 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     if (!gen) return { error: 'Generator not found.' };
 
     // Fetch all rentals for this generator to check limits
-    const { data: rentals, error: rentedError } = await supabase
+    const { data: allRentals, error: rentedError } = await supabase
         .from('rented_generators')
         .select('*')
         .eq('user_id', user.id)
@@ -24,16 +26,29 @@ export async function rentGeneratorAction(generatorId: string): Promise<{ error?
     if (rentedError) return { error: rentedError.message };
 
     const now = new Date().getTime();
-    const activeCount = rentals?.filter(r => new Date(r.expires_at).getTime() > now).length || 0;
-    const totalCount = rentals?.length || 0;
+
+    // FILTER: Only count rentals that aren't "permanently deleted" (expired > 30 days ago)
+    const activeRentals = allRentals?.filter(r => {
+        const expiresAt = new Date(r.expires_at).getTime();
+        return expiresAt > now;
+    }) || [];
+
+    const visibleRentals = allRentals?.filter(r => {
+        const expiresAt = new Date(r.expires_at).getTime();
+        if (expiresAt > now) return true;
+        return expiresAt + THIRTY_DAYS > now;
+    }) || [];
+
+    const activeCount = activeRentals.length;
+    const totalCount = visibleRentals.length;
 
     const activeLimit = gen.active_limit || 1;
     const lifetimeLimit = gen.lifetime_limit || 1;
 
-    // 1. Enforce Lifetime Limit (Permanent Disconnection)
+    // 1. Enforce Lifetime Limit (Permanent Disconnection for 30 days)
     if (totalCount >= lifetimeLimit) {
         if (gen.id === 'pg2') return { error: 'you reached your pg2 limit please upgrade' };
-        return { error: `Lifetime limit reached for ${gen.name}. This generator is now disconnected.` };
+        return { error: `Lifetime limit reached for ${gen.name}. This slot will clear 30 days after your plan expires.` };
     }
 
     // 2. Enforce Active Limit (Running at once)
