@@ -1005,7 +1005,7 @@ function DashboardContent() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="bg-slate-800 rounded-2xl border border-slate-700 p-5 lg:col-span-2">
                   <div className="flex items-center justify-between mb-4">
-                    h3 className="font-bold text-white text-sm">Pending Withdrawals</h3>
+                    <h3 className="font-bold text-white text-sm">Pending Withdrawals</h3>
                     <button onClick={function() { return switchTab("withdrawals"); }} className="text-amber-400 text-xs flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></button>
                   </div>
                   <div className="space-y-3">
@@ -1242,6 +1242,1105 @@ function DashboardContent() {
                             </div>
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2 sm:col-span-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><ExternalLink className="w-3 h-3"/> Referral Link</p>
+                                <div className="flex items-center gap-1.5">
+                                    <a href={referralLink || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs font-mono truncate">
+                                        {referralLink || '—'}
+                                    </a>
+                                    {referralLink && <button onClick={() => copyText(referralLink!, "Referral link")} className="text-slate-500 hover:text-blue-400 flex-shrink-0"><Copy className="w-3 h-3" /></button>}
+                                </div>
+                            </div>
+                            {u.rented_generators && u.rented_generators.length > 0 && (
+                                <div className="bg-slate-700/50 rounded-xl p-3 sm:col-span-2">
+                                    <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-2 flex items-center gap-1"><Zap className="w-3 h-3"/> Rented Generators ({u.rented_generators.length})</p>
+                                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-2">
+                                        {u.rented_generators.map(gen => {
+                                            const isExpired = new Date(gen.expires_at).getTime() < Date.now();
+                                            const rentedDate = gen.rented_at ? new Date(gen.rented_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A';
+                                            return (
+                                                <div key={`${gen.id}-${gen.expires_at}`} className={`flex items-center justify-between text-xs p-2 rounded-lg ${isExpired ? 'bg-slate-800/50' : 'bg-green-950/30'}`}>
+                                                    <div>
+                                                        <span className={`font-semibold ${isExpired ? 'text-slate-400' : 'text-green-300'}`}>{gen.name}</span>
+                                                        <span className={`ml-2 text-[10px] ${isExpired ? 'text-slate-500' : 'text-green-400/80'}`}>Rented: {rentedDate}</span>
+                                                    </div>
+                                                    {isExpired 
+                                                        ? <Badge variant="outline" className="text-[9px] border-slate-600 text-slate-500 px-1.5 py-0">Expired</Badge>
+                                                        : <Badge className="text-[9px] bg-green-500/20 border-green-500/30 text-green-300 px-1.5 py-0">Active</Badge>
+                                                    }
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <button onClick={function() { setEditingUser(u); setNewBalance(String(u.balance || 0)); }}
+                            data-testid={`button-edit-user-${u.id}`}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-900/30 text-blue-400 border border-blue-800 hover:bg-blue-900/50 text-xs font-semibold">
+                            <Edit3 className="w-3 h-3" /> Edit Balance
+                          </button>
+                          <button onClick={() => handleToggleWithdrawalLock(u.id, !!u.withdrawal_locked)}
+                            data-testid={`button-lock-user-${u.id}`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold ${
+                                u.withdrawal_locked
+                                ? "bg-green-900/30 text-green-400 border-green-800 hover:bg-green-900/50" // to unlock
+                                : "bg-orange-900/40 text-orange-400 border-orange-700 hover:bg-orange-900/50" // to lock
+                            }`}>
+                            {u.withdrawal_locked ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                            {u.withdrawal_locked ? 'Unlock Withdrawals' : 'Lock Withdrawals'}
+                          </button>
+                          <button onClick={function() { return openConfirm("Delete User Account", `You are about to permanently delete "${nameForDisplay}". Their profile and all data will be erased. This CANNOT be undone.`, function() { return handleDeleteUser(u.id); }); }}
+                            data-testid={`button-delete-user-${u.id}`}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-800 hover:bg-red-900/50 text-xs font-semibold">
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── DEPOSITS ── */}
+          {tab === "deposits" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h1 className="text-xl font-black text-white">Deposit Requests</h1>
+                  <p className="text-slate-400 text-sm">{pendingDepositsCount} pending · {deposits.length} total</p>
+                </div>
+                <Button onClick={function() { return fetchData(); }} variant="outline" size="sm" className="h-9 border-slate-600 text-slate-300 hover:bg-slate-700"><RefreshCw className="w-3.5 h-3.5" /></Button>
+              </div>
+              {depositsLoading ? <p className="text-slate-400 text-sm">Loading...</p> : deposits.length === 0 ? (
+                <div className="bg-slate-800 rounded-2xl border border-slate-700 p-10 text-center">
+                  <DollarSign className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                  <p className="text-slate-400">No deposit requests yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {deposits.map(function(d) {
+                    const user = users.find(u => u.id === d.user_id);
+                    return (
+                    <DepositRow
+                      key={d.id}
+                      d={d}
+                      user={user}
+                      onApprove={() => handleApproveDeposit(d.id, d.user_id, d.amount)}
+                      onReject={() => handleRejectDeposit(d.id, d.user_id, d.amount)}
+                      onDelete={() => openConfirm("Delete Deposit Record", `Remove the deposit record for $${d.amount.toFixed(2)} from ${user?.full_name || 'user'}? This cannot be undone.`, () => handleDeleteDeposit(d.id))}
+                      approvePending={false}
+                      rejectPending={false}
+                      copyText={copyText}
+                    />
+                  ); })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── WITHDRAWALS ── */}
+          {tab === "withdrawals" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div><h1 className="text-xl font-black text-white">Withdrawal Requests</h1><p className="text-slate-400 text-sm">{pendingWithdrawalsCount} pending · {withdrawals.length} total</p></div>
+                <Button onClick={function() { return fetchData(); }} variant="outline" size="sm" className="h-9 border-slate-600 text-slate-300 hover:bg-slate-700"><RefreshCw className="w-3.5 h-3.5" /></Button>
+              </div>
+              {withdrawalsLoading ? <p className="text-slate-400 text-sm">Loading...</p> : withdrawals.length === 0 ? (
+                <div className="bg-slate-800 rounded-2xl border border-slate-700 p-10 text-center">
+                  <ArrowUpFromLine className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                  <p className="text-slate-400">No withdrawal requests yet.</p>
+                </div>
+              ) : (
+              <div className="space-y-3">
+                {withdrawals.map(function(w) {
+                  const user = users.find(u => u.id === w.user_id);
+                  const dateStr = new Date(w.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                  const methodLabel = w.method === "momo" ? "MTN MOMO" : w.method === "tigo" ? "AirtelTigo" : w.method === "usdt" ? "USDT" : w.method === "card" ? "CARD" : w.method.toUpperCase();
+                  const statusColor = 
+                    w.status === "complete" ? "bg-green-900/40 text-green-400 border-green-700" 
+                    : w.status === "rejected" ? "bg-red-900/40 text-red-400 border-red-700" 
+                    : w.status === "processing" ? "bg-blue-900/40 text-blue-400 border-blue-700" 
+                    : "bg-yellow-900/40 text-yellow-400 border-yellow-700";
+
+                  return (
+                  <div key={w.id} className="bg-slate-800 rounded-2xl border border-slate-700 p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${statusColor.replace('text-', 'bg-').replace('-400', '-900/40')}`}>
+                          <ArrowUpFromLine className={`w-5 h-5 ${statusColor.replace('bg-', 'text-').replace('border-', 'text-').replace('-900/40', '-400').replace('-700', '-400')}`} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-white font-semibold text-sm">{user?.full_name || 'Unknown'}</p>
+                          </div>
+                          <p className="text-slate-400 text-xs">@{user?.username || '...'} · {methodLabel} · {w.country} · {dateStr}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                        <div className="text-right">
+                            <p className="text-amber-400 font-black text-base">${w.amount.toFixed(2)}</p>
+                            <p className="text-slate-400 text-xs mt-0.5">Net ${w.net_amount.toFixed(2)} + Fee ${w.fee.toFixed(2)}</p>
+                            {w.country === 'Ghana' && (
+                              <div className="mt-2 text-green-300 bg-green-900/50 border border-green-700/50 rounded-lg p-2 text-center">
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-green-400">Amount to Pay</p>
+                                <p className="text-lg font-black text-green-300">GH₵{(w.net_amount * 10).toFixed(2)}</p>
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <AdminWithdrawalStepper status={w.status} />
+
+                     {w.details && (() => {
+                        try {
+                            const detailsObj = JSON.parse(w.details);
+                            return (
+                                <div className="pt-3 border-t border-slate-700">
+                                    <p className="text-slate-300 text-xs font-semibold mb-2">Withdrawal Details</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 bg-slate-700/50 rounded-xl p-3">
+                                        {Object.entries(detailsObj).map(([key, value]) => {
+                                            const lKey = key.toLowerCase();
+                                            // Security: Don't show sensitive card details
+                                            if (w.method === 'card' && (lKey === 'cvv' || lKey === 'cvvvisible')) return null;
+                                            
+                                            // Don't show internal flags
+                                            if (lKey === 'cvvvisible') return null;
+
+                                            if (typeof value !== 'string' && typeof value !== 'number') return null;
+                                            
+                                            const displayValue = lKey === 'number' && w.method === 'card'
+                                                ? String(value).replace(/\d{4}(?=\d{4})/g, "•••• ")
+                                                : String(value);
+
+                                            const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
+                                            const isCopyable = ['name', 'holder', 'number', 'phone', 'address'].some(k => lKey.includes(k));
+
+                                            return (
+                                                <div key={key}>
+                                                    <p className="text-slate-400 text-[10px] uppercase tracking-wide flex items-center gap-1">
+                                                        {getDetailIcon(key)} {formattedKey}
+                                                    </p>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <p className="text-slate-200 text-xs font-mono truncate">{displayValue}</p>
+                                                        {isCopyable && (
+                                                            <button onClick={() => copyText(String(value), formattedKey)} className="text-slate-500 hover:text-amber-400 flex-shrink-0">
+                                                                <Copy className="w-3 h-3" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )
+                        } catch (e) {
+                            return (
+                                <div className="pt-3 border-t border-slate-700">
+                                    <p className="text-slate-300 text-xs font-semibold mb-2">Withdrawal Details</p>
+                                    <div className="bg-slate-700/50 rounded-xl p-3">
+                                        <p className="text-slate-200 text-xs font-mono">{w.details}</p>
+                                    </div>
+                                </div>
+                            )
+                        }
+                    })()}
+                    <div className="flex gap-2 items-center w-full justify-end pt-3 border-t border-slate-700">
+                      {w.status === 'pending' && (
+                          <>
+                              <button onClick={() => handleProcessWithdrawal(w.id)}
+                                  data-testid={`button-process-withdrawal-${w.id}`}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-900/30 text-blue-400 border border-blue-700 hover:bg-blue-900/50 text-xs font-semibold">
+                                  <RefreshCw className="w-3.5 h-3.5" /> Process
+                              </button>
+                              <button onClick={() => openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? The amount will be refunded to their balance.`, () => handleRejectWithdrawal(w.id, w.user_id, w.amount))}
+                                  data-testid={`button-reject-withdrawal-${w.id}`}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold">
+                                  <XCircle className="w-3.5 h-3.5" /> Reject
+                              </button>
+                          </>
+                      )}
+                      {w.status === 'processing' && (
+                          <>
+                              <button onClick={() => handleCompleteWithdrawal(w.id)}
+                                  data-testid={`button-complete-withdrawal-${w.id}`}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-green-900/30 text-green-400 border border-green-700 hover:bg-green-900/50 text-xs font-semibold">
+                                  <CheckCircle className="w-3.5 h-3.5" /> Complete
+                              </button>
+                              <button onClick={() => openConfirm("Reject Withdrawal", `Reject withdrawal of $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? The amount will be refunded to their balance.`, () => handleRejectWithdrawal(w.id, w.user_id, w.amount))}
+                                  data-testid={`button-reject-withdrawal-${w.id}`}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-700 hover:bg-red-900/50 text-xs font-semibold">
+                                  <XCircle className="w-3.5 h-3.5" /> Reject
+                              </button>
+                          </>
+                      )}
+
+                      <button
+                        onClick={() => openConfirm("Delete Withdrawal Record", `Remove the withdrawal record for $${w.amount.toFixed(2)} from ${user?.full_name || 'user'}? This cannot be undone.`, () => handleDeleteWithdrawal(w.id))}
+                        data-testid={`button-delete-withdrawal-${w.id}`}
+                        className="flex items-center justify-center w-8 h-8 rounded-xl bg-red-950/40 text-red-500 border border-red-800/50 hover:bg-red-900/50 hover:text-red-300 transition-colors flex-shrink-0"
+                        title="Delete record"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  );
+                })}
+              </div>
+              )}
+            </div>
+          )}
+
+          {/* ── REFERRALS ── */}
+          {tab === "referrals" && (
+            <div className="space-y-4">
+              <div><h1 className="text-xl font-black text-white">Referral Management</h1><p className="text-slate-400 text-sm">Track referral codes and referred users</p></div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[
+                  { label: "Total Referrals", value: totalReferrals.toString(), icon: Link2, color: "text-amber-400" },
+                  { label: "Active Codes", value: users.filter(function(r: any) { return r.referral_code; }).length.toString(), icon: CheckCircle, color: "text-green-400" },
+                  { label: "Total Users", value: users.length.toString(), icon: Users, color: "text-blue-400" },
+                ].map(function({ label, value, icon: Icon, color }) { return (
+                  <div key={label} className="bg-slate-800 rounded-2xl border border-slate-700 p-4 text-center">
+                    <Icon className={`w-6 h-6 ${color} mx-auto mb-2`} />
+                    <p className="text-white text-xl font-black">{value}</p>
+                    <p className="text-slate-400 text-xs mt-0.5">{label}</p>
+                  </div>
+                ); })}
+              </div>
+              {users.length === 0 ? (
+                <div className="bg-slate-800 rounded-2xl border border-slate-700 p-10 text-center">
+                  <Link2 className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                  <p className="text-slate-400">No referral data yet.</p>
+                </div>
+              ) : (
+                <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead><tr className="border-b border-slate-700 bg-slate-700/50">
+                        <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">User</th>
+                        <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referral Code</th>
+                        <th className="text-center px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referred</th>
+                        <th className="text-left px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Referred By (Parent)</th>
+                        <th className="text-right px-4 py-3 text-slate-300 font-semibold text-xs uppercase tracking-wide">Balance</th>
+                      </tr></thead>
+                      <tbody className="divide-y divide-slate-700">
+                        {users.map((u: UserRecord) => { 
+                          const referrer = u.parent_id ? idToUserMap.get(u.parent_id) : null;
+                          return (
+                          <tr key={u.id} className="hover:bg-slate-700/40 transition-colors">
+                            <td className="px-4 py-3"><p className="text-white font-medium text-sm">{u.full_name}</p><p className="text-slate-400 text-xs">@{u.username}</p></td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-amber-400 font-bold font-mono text-xs bg-amber-900/30 border border-amber-700 px-2 py-0.5 rounded-lg">{u.referral_code || "—"}</span>
+                                {u.referral_code && <button onClick={() => copyText(u.referral_code!, "Referral code")} className="text-slate-500 hover:text-amber-400"><Copy className="w-3 h-3" /></button>}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center"><Badge className={`text-xs border ${(u.referral_count || 0) > 0 ? "bg-green-900/40 text-green-400 border-green-700" : "bg-slate-700 text-slate-400 border-slate-600"}`}>{u.referral_count || 0} users</Badge></td>
+                            <td className="px-4 py-3">
+                                {referrer ? (
+                                    <div>
+                                        <p className="text-slate-300 text-sm font-medium">{referrer.full_name}</p>
+                                        <p className="text-slate-500 text-xs">@{referrer.username}</p>
+                                    </div>
+                                ) : (
+                                    <span className="text-slate-500">{'—'}</span>
+                                )}
+                            </td>
+                            <td className="px-4 py-3 text-right"><span className="text-green-400 font-bold text-sm">${(u.balance || 0).toFixed(2)}</span></td>
+                          </tr>
+                        ); })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── GENERATORS FACTORY ── */}
+          {tab === "generators" && (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <h1 className="text-xl font-black text-white">Generators Factory</h1>
+                  <p className="text-slate-400 text-sm">Create, edit, publish generators · {generators.length} total · {generators.filter(function(g) { return g.published; }).length} published</p>
+                </div>
+                <div className="flex gap-2 flex-wrap justify-start sm:justify-end">
+                  <Button onClick={() => openConfirm(
+                    "Seed Default Generators?",
+                    "This will DELETE all current generators and replace them with the 5 default (PG1-PG5) generators. This cannot be undone.",
+                    handleSeedGenerators
+                  )} variant="outline" size="sm" className="h-9 border-orange-700/50 bg-orange-950 text-orange-300 hover:bg-orange-900 hover:text-orange-200">
+                    <DatabaseZap className="w-4 h-4 mr-2" /> Seed Defaults
+                  </Button>
+                  <Button onClick={function() { return fetchData(); }} variant="outline" size="sm" className="h-9 border-slate-600 text-slate-300 hover:bg-slate-700"><RefreshCw className="w-3.5 h-3.5" /></Button>
+                  <Button onClick={function() { return setNewGen({ ...BLANK_GEN }); setShowCreateGen(true); }}
+                    data-testid="button-create-generator"
+                    className="h-9 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-sm flex items-center gap-1.5 rounded-xl shadow-md">
+                    <Plus className="w-4 h-4" /> New Generator
+                  </Button>
+                </div>
+              </div>
+
+              {gensLoading ? <p className="text-slate-400 text-sm">Loading...</p> : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {generators.map(function(g) { return (
+                    <div key={g.id} className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+                      <div className={`bg-gradient-to-r ${g.color} p-4 flex items-center justify-between`}>
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{g.icon}</span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-black text-white text-sm">{g.name}</p>
+                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${g.published ? "bg-green-500 text-white" : "bg-black/30 text-white/70"}`}>
+                                {g.published ? "LIVE" : "DRAFT"}
+                              </span>
+                            </div>
+                            <p className="text-white/70 text-xs">{g.subtitle}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-white text-xl font-black">{g.roi}</p>
+                          <p className="text-white/70 text-xs">{g.period}</p>
+                        </div>
+                      </div>
+                      <div className="p-4 space-y-3">
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { label: "Price", value: `$${g.price.toLocaleString()}` },
+                            { label: "Daily Income", value: `$${g.daily_income}` },
+                            { label: "Active Limit", value: g.active_limit },
+                            { label: "Lifetime Limit", value: g.lifetime_limit },
+                          ].map(function({ label, value }) { return (
+                            <div key={label} className="bg-slate-700/50 rounded-xl px-2.5 py-2">
+                              <p className="text-slate-400 text-[10px]">{label}</p>
+                              <p className="text-white text-xs font-semibold truncate">{value}</p>
+                            </div>
+                          ); })}
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={function() { return setEditingGen({ ...g }); }}
+                            data-testid={`button-edit-gen-${g.id}`}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-blue-900/30 text-blue-400 border border-blue-800 hover:bg-blue-900/50 text-xs font-semibold">
+                            <Pencil className="w-3 h-3" /> Edit
+                          </button>
+                          <button
+                            onClick={() => handlePublishToggle(g)}
+                            data-testid={`button-publish-gen-${g.id}`}
+                            className={`flex-1 flex items-center justify-center gap-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all duration-200 ${g.published ? "bg-green-900/30 border-green-600 text-green-300 shadow-[0_0_8px_rgba(34,197,94,0.25)]" : "bg-slate-700/60 border-slate-600 text-slate-400 hover:border-slate-500"}`}
+                          >
+                            <div className={`relative w-9 h-5 rounded-full transition-colors duration-300 flex-shrink-0 ${g.published ? "bg-green-500" : "bg-slate-600"}`}>
+                              <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-300 ${g.published ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+                            </div>
+                            <span className="tracking-widest text-[11px]">{g.published ? "ON" : "OFF"}</span>
+                          </button>
+                          <button onClick={function() { return openConfirm(
+                              "Delete Generator",
+                              `Are you sure you want to delete "${g.name}"? This cannot be undone.`,
+                              function() { return handleDeleteGenerator(g.id); }
+                            ); }}
+                            data-testid={`button-delete-gen-${g.id}`}
+                            className="px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-800 hover:bg-red-900/50 text-xs font-semibold">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ); })}
+                </div>
+              )}
+
+            </div>
+          )}
+
+          {/* ── MEDIA ── */}
+          {tab === "media" && (
+             <div className="space-y-4">
+              <div><h1 className="text-xl font-black text-white">Media Management</h1><p className="text-slate-400 text-sm">Update images, videos, and icons for the app.</p></div>
+
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Power Page Slider</h3>
+                  <p className="text-sm text-slate-400">These three images will create an automatic slideshow in the Power Center header.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {[
+                          { id: 'power-slider-1', name: 'Slider Image 1', default: 'https://picsum.photos/seed/power-slider-1/1200/800' },
+                          { id: 'power-slider-2', name: 'Slider Image 2', default: 'https://picsum.photos/seed/power-slider-2/1200/800' },
+                          { id: 'power-slider-3', name: 'Slider Image 3', default: 'https://picsum.photos/seed/power-slider-3/1200/800' },
+                      ].map(({ id, name, default: defaultUrl }) => {
+                          const imageUrl = media.find(m => m.id === id)?.url || defaultUrl;
+                          const isUploading = uploading === `activity-${id}`;
+                          return (
+                              <div key={id} className="text-center">
+                                  <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-video object-cover bg-slate-700" />
+                                  <p className="text-white text-sm font-semibold mt-2">{name}</p>
+                                  <div className="flex items-center justify-center gap-3 mt-1">
+                                    <label htmlFor={`act-upload-${id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                        {isUploading ? 'Uploading...' : 'Upload new image'}
+                                    </label>
+                                    <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) await handleFileUpload('activity', id, file);
+                                    }}/>
+                                    <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                        onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the image for "${name}"?`, () => handleDeleteMedia('activity', id))}>
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                              </div>
+                          )
+                      })}
+                  </div>
+              </div>
+              
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Homepage Cover Image</h3>
+                  <p className="text-sm text-slate-400">This is the main background image on the public homepage.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                           <img src={media.find(m => m.id === 'homepage-cover')?.url || 'https://picsum.photos/seed/joyfulwoman/1080/1920'} alt="Homepage Cover" className="w-full h-auto rounded-lg aspect-[9/16] object-cover bg-slate-700" />
+                           <div className="flex items-center justify-center gap-3 mt-2">
+                                <label htmlFor={`act-upload-homepage-cover`} className={`text-xs cursor-pointer hover:underline ${uploading === 'activity-homepage-cover' ? 'text-slate-400' : 'text-amber-400'}`}>
+                                  {uploading === 'activity-homepage-cover' ? 'Uploading...' : 'Upload new cover image'}
+                                </label>
+                                <input type="file" id={`act-upload-homepage-cover`} className="hidden" accept="image/*" disabled={uploading === 'activity-homepage-cover'} onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) await handleFileUpload('activity', 'homepage-cover', file);
+                                }}/>
+                                <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                    onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the homepage cover image?`, () => handleDeleteMedia('activity', 'homepage-cover'))}>
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                           </div>
+                      </div>
+                  </div>
+              </div>
+
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">About Page Hero</h3>
+                  <p className="text-sm text-slate-400">This is the main background image on the 'About' page.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                          <img src={media.find(m => m.id === 'about-page-hero')?.url || 'https://picsum.photos/seed/about-hero/1200/400'} alt="About Page Hero" className="w-full h-auto rounded-lg aspect-video object-cover bg-slate-700" />
+                           <div className="flex items-center justify-center gap-3 mt-2">
+                                <label htmlFor={`act-upload-about-page-hero`} className={`text-xs cursor-pointer hover:underline ${uploading === 'activity-about-page-hero' ? 'text-slate-400' : 'text-amber-400'}`}>
+                                  {uploading === 'activity-about-page-hero' ? 'Uploading...' : 'Upload new hero image'}
+                                </label>
+                                <input type="file" id={`act-upload-about-page-hero`} className="hidden" accept="image/*" disabled={uploading === 'activity-about-page-hero'} onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) await handleFileUpload('activity', 'about-page-hero', file);
+                                }}/>
+                                <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                    onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the about page hero image?`, () => handleDeleteMedia('activity', 'about-page-hero'))}>
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                           </div>
+                      </div>
+                  </div>
+              </div>
+
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Tutorial Video</h3>
+                  <p className="text-sm text-slate-400">This video appears on the 'How to Start' and 'Video Tutorial' pages.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                          {media.find(m => m.id === 'tutorial-video')?.url ? (
+                            <video
+                                key={media.find(m => m.id === 'tutorial-video')?.url}
+                                controls
+                                src={media.find(m => m.id === 'tutorial-video')?.url}
+                                className="w-full h-auto rounded-lg aspect-video bg-slate-700"
+                            />
+                          ) : (
+                            <div className="w-full aspect-video rounded-lg bg-slate-700 flex flex-col items-center justify-center text-slate-500">
+                                <Video className="w-10 h-10 mb-2" />
+                                <span className="text-xs font-semibold">No video uploaded</span>
+                            </div>
+                          )}
+                           <div className="flex items-center justify-center gap-3 mt-2">
+                             <label htmlFor={`vid-upload-tutorial-video`} className={`text-xs cursor-pointer hover:underline ${uploading === 'video-tutorial-video' ? 'text-slate-400' : 'text-amber-400'}`}>
+                                {uploading === 'video-tutorial-video' ? 'Uploading...' : 'Upload new video'}
+                             </label>
+                             <input type="file" id={`vid-upload-tutorial-video`} className="hidden" accept="video/mp4,video/webm" disabled={uploading === 'video-tutorial-video'} onChange={async (e) => {
+                                 const file = e.target.files?.[0];
+                                 if (file) await handleFileUpload('video', 'tutorial-video', file);
+                             }}/>
+                              {media.find(m => m.id === 'tutorial-video') && (
+                                <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Video"
+                                    onClick={() => openConfirm('Delete Video?', `Are you sure you want to delete the tutorial video?`, () => handleDeleteMedia('video', 'tutorial-video'))}>
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                           </div>
+                      </div>
+                  </div>
+              </div>
+
+               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Application Logo</h3>
+                  <p className="text-sm text-slate-400">This logo appears on the Sign In and Sign Up pages.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="text-center">
+                          <img src={logoImg} alt="App Logo" className="w-full h-auto rounded-lg aspect-square object-cover bg-slate-700 p-4" />
+                           <div className="flex items-center justify-center gap-3 mt-2">
+                             <label htmlFor={`act-upload-app-logo`} className={`text-xs cursor-pointer hover:underline ${uploading === 'activity-app-logo' ? 'text-slate-400' : 'text-amber-400'}`}>
+                                {uploading === 'activity-app-logo' ? 'Uploading...' : 'Upload new logo'}
+                             </label>
+                             <input type="file" id={`act-upload-app-logo`} className="hidden" accept="image/*" disabled={uploading === 'activity-app-logo'} onChange={async function(e) {
+                                 const file = e.target.files?.[0];
+                                 if (file) await handleFileUpload('activity', 'app-logo', file);
+                             }}/>
+                              <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Logo"
+                                onClick={() => openConfirm('Delete Logo?', `Are you sure you want to delete the app logo?`, () => handleDeleteMedia('activity', 'app-logo'))}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                           </div>
+                      </div>
+                  </div>
+              </div>
+
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Generator Images</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {coreGeneratorIds.map(function(id) {
+                      const g = generators.find(gen => gen.id === id);
+                      const imageUrl = g?.image_url || PlaceHolderImages.find(function(i) { return i.id === `gen-${id}`; })?.imageUrl;
+                      const name = g?.name || id.toUpperCase();
+                      const isUploading = uploading === `generator-${id}`;
+                      return (
+                        <div key={id} className="text-center">
+                          <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-square object-contain bg-slate-700" />
+                           <div className="flex items-center justify-center gap-3 mt-2">
+                             <label htmlFor={`gen-upload-${id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                {isUploading ? 'Uploading...' : `Upload for ${id.toUpperCase()}`}
+                             </label>
+                             <input type="file" id={`gen-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
+                               const file = e.target.files?.[0];
+                               if (file) await handleFileUpload('generator', id, file);
+                             }}/>
+                              {g?.image_url && (
+                                <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                    onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the image for "${name}"?`, () => handleDeleteMedia('generator', id))}>
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                           </div>
+                        </div>
+                      );
+                    })}
+                    {otherGenerators.map(function(g) {
+                      const isUploading = uploading === `generator-${g.id}`;
+                      return (
+                        <div key={g.id} className="text-center">
+                          <img src={g.image_url || PlaceHolderImages.find(function(i) { return i.id === `gen-${g.id}`; })?.imageUrl} alt={g.name} className="w-full h-auto rounded-lg aspect-square object-contain bg-slate-700" />
+                           <div className="flex items-center justify-center gap-3 mt-2">
+                             <label htmlFor={`gen-upload-${g.id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                {isUploading ? 'Uploading...' : `Upload for ${g.id.toUpperCase()}`}
+                             </label>
+                             <input type="file" id={`gen-upload-${g.id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
+                               const file = e.target.files?.[0];
+                               if (file) await handleFileUpload('generator', g.id, file);
+                             }}/>
+                             {g.image_url && (
+                                <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                    onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the image for "${g.name}"?`, () => handleDeleteMedia('generator', g.id))}>
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                             )}
+                           </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+              </div>
+
+               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">License Card Images</h3>
+                  <p className="text-sm text-slate-400">These images appear as the background for the license cards on the Activity page.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { id: 'license-consob', name: 'CONSOB License' },
+                      { id: 'license-banca', name: 'Banca d\'Italia License' },
+                      { id: 'license-camera', name: 'Camera di Commercio' },
+                      { id: 'license-mica', name: 'EU MiCA Compliance' },
+                    ].map(({ id, name }) => {
+                        const imageUrl = media.find(m => m.id === id)?.url || `https://picsum.photos/seed/${id}/600/400`;
+                        const isUploading = uploading === `license-${id}`;
+                        return (
+                            <div key={id} className="text-center">
+                                <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-[3/2] object-cover bg-slate-700" />
+                                <p className="text-white text-sm font-semibold mt-2">{name}</p>
+                                <div className="flex items-center justify-center gap-3 mt-1">
+                                    <label htmlFor={`lic-upload-${id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                        {isUploading ? 'Uploading...' : 'Upload new image'}
+                                    </label>
+                                    <input type="file" id={`lic-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) await handleFileUpload('license', id, file);
+                                    }}/>
+                                    {media.find(m => m.id === id) && (
+                                        <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                            onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the image for "${name}"?`, () => handleDeleteMedia('license', id))}>
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        )
+                    })}
+                  </div>
+              </div>
+              
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Leadership Team Images</h3>
+                  <p className="text-sm text-slate-400">These images appear on the About page.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                          { id: 'ceo-portrait', name: 'Alessandro Romano' },
+                          { id: 'leader-tn', name: 'Themba Nkosi' },
+                          { id: 'leader-jc', name: 'James Carter' },
+                          { id: 'leader-sm', name: 'Sophie Müller' },
+                      ].map(({ id, name }) => {
+                          const imageUrl = media.find(m => m.id === id)?.url || PlaceHolderImages.find(i => i.id === id)?.imageUrl;
+                          const isUploading = uploading === `activity-${id}`;
+                          return (
+                              <div key={id} className="text-center">
+                                  <img src={imageUrl} alt={name} className="w-full h-auto rounded-lg aspect-square object-cover bg-slate-700" />
+                                  <p className="text-white text-sm font-semibold mt-2">{name}</p>
+                                  <div className="flex items-center justify-center gap-3 mt-1">
+                                    <label htmlFor={`act-upload-${id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                        {isUploading ? 'Uploading...' : 'Upload new photo'}
+                                    </label>
+                                    <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) await handleFileUpload('activity', id, file);
+                                    }}/>
+                                    {media.find(m => m.id === id) && (
+                                        <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                            onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the image for "${name}"?`, () => handleDeleteMedia('activity', id))}>
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    )}
+                                  </div>
+                              </div>
+                          )
+                      })}
+                  </div>
+              </div>
+               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Payment Method Icons</h3>
+                  <p className="text-sm text-slate-400">These icons appear on the Bank page for deposits and withdrawals.</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                          { id: 'payment-usdt', name: 'USDT' },
+                          { id: 'payment-mtn-momo', name: 'MTN MOMO' },
+                          { id: 'payment-bank-transfer', name: 'Bank Transfer' },
+                          { id: 'payment-western-union', name: 'Western Union' },
+                          { id: 'payment-card', name: 'Card' },
+                      ].map(({ id, name }) => {
+                          const imageUrl = media.find(m => m.id === id)?.url || PlaceHolderImages.find(i => i.id === id)?.imageUrl;
+                          const isUploading = uploading === `activity-${id}`;
+                          return (
+                              <div key={id} className="text-center">
+                                  <div className="w-full h-auto rounded-lg aspect-square object-contain bg-slate-700 p-2">
+                                      {imageUrl ? <img src={imageUrl} alt={name} className="w-full h-full object-contain" /> : <div className="w-full h-full bg-slate-600 rounded-md" />}
+                                  </div>
+                                  <p className="text-white text-sm font-semibold mt-2">{name}</p>
+                                   <div className="flex items-center justify-center gap-3 mt-1">
+                                    <label htmlFor={`act-upload-${id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                        {isUploading ? 'Uploading...' : 'Upload new icon'}
+                                    </label>
+                                    <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) await handleFileUpload('activity', id, file);
+                                    }}/>
+                                     {media.find(m => m.id === id) && (
+                                        <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Icon"
+                                            onClick={() => openConfirm('Delete Icon?', `Are you sure you want to delete the icon for "${name}"?`, () => handleDeleteMedia('activity', id))}>
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    )}
+                                  </div>
+                              </div>
+                          )
+                      })}
+                  </div>
+              </div>
+              <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Activity Page Images</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {['hero', 'teamwork'].map(function(id) {
+                        const isUploading = uploading === `activity-${id}`;
+                        return (
+                          <div key={id} className="text-center">
+                            <img src={id === 'hero' ? heroImg : teamworkImg} alt={id} className="w-full h-auto rounded-lg aspect-[16/9] object-cover" />
+                             <div className="flex items-center justify-center gap-3 mt-2">
+                                <label htmlFor={`act-upload-${id}`} className={`text-xs cursor-pointer hover:underline ${isUploading ? 'text-slate-400' : 'text-amber-400'}`}>
+                                  {isUploading ? 'Uploading...' : `Upload ${id} image`}
+                                </label>
+                                <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
+                                  const file = e.target.files?.[0];
+                                  if (file) await handleFileUpload('activity', id, file);
+                                }} />
+                                {media.find(m => m.id === id) && (
+                                    <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
+                                        onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the ${id} image?`, () => handleDeleteMedia('activity', id))}>
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                )}
+                             </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── GIFT CODES ── */}
+          {tab === "codes" && (
+            <div className="space-y-4">
+              <div><h1 className="text-xl font-black text-white">Gift Code Generator</h1><p className="text-slate-400 text-sm">Create bonus codes that add funds to a user's account</p></div>
+               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                  <h3 className="font-bold text-white">Create New Code</h3>
+                   <div className="grid sm:grid-cols-3 gap-3">
+                      <div>
+                          <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Amount ($)</label>
+                          <Input type="number" value={newCodeAmount} onChange={(e) => setNewCodeAmount(e.target.value)} placeholder="e.g. 10.00" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                      </div>
+                      <div className="sm:col-span-2">
+                          <label className="text-slate-400 text-[10px] font-semibold uppercase tracking-wide block mb-1">Note (Optional)</label>
+                          <Input value={newCodeNote} onChange={(e) => setNewCodeNote(e.target.value)} placeholder="e.g. For marketing campaign" className="h-9 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm" />
+                      </div>
+                   </div>
+                   <Button onClick={handleCreateGiftCode} className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold gap-1.5"><Gift className="w-4 h-4" /> Generate Code</Button>
+               </div>
+               
+               {generatedCode && (
+                  <div className="p-4 bg-green-900/30 rounded-2xl border border-green-700 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-bold text-green-400">Code Generated Successfully!</h3>
+                          <p className="text-xs text-slate-400">Share this code with a user to add ${generatedCode.amount.toFixed(2)} to their balance.</p>
+                        </div>
+                        <button onClick={() => setGeneratedCode(null)} className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700"><X className="w-4 h-4" /></button>
+                      </div>
+                      <div className="flex items-center gap-2 bg-slate-800 border border-slate-600 rounded-xl p-3">
+                        <span className="font-mono font-black text-xl text-amber-400 flex-1 text-center tracking-widest">{generatedCode.code}</span>
+                        <Button onClick={() => { copyText(generatedCode.code, 'Gift Code'); setCopiedCode(true); setTimeout(() => setCopiedCode(false), 2000); }} variant="outline" size="sm" className="h-9 border-slate-600 text-slate-300 hover:bg-slate-700 flex-shrink-0 gap-1.5">
+                          {copiedCode ? <CheckCircle className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />} {copiedCode ? 'Copied' : 'Copy'}
+                        </Button>
+                      </div>
+                  </div>
+               )}
+
+               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
+                 <h3 className="font-bold text-white">Existing Codes</h3>
+                 {codesLoading ? (
+                   <p className="text-slate-400 text-sm">Loading codes...</p>
+                 ) : bonusCodes.length === 0 ? (
+                   <p className="text-slate-500 text-sm text-center py-4">No gift codes created yet.</p>
+                 ) : (
+                   <div className="space-y-2">
+                    {bonusCodes.map(code => (
+                      <div key={code.id} className={`p-3 rounded-xl flex items-center justify-between gap-3 ${code.is_redeemed ? 'bg-slate-700/50' : 'bg-slate-700'}`}>
+                        <div>
+                           <div className="flex items-center gap-2">
+                             <p className={`font-mono font-bold text-sm ${code.is_redeemed ? 'text-slate-500 line-through' : 'text-amber-400'}`}>{code.code}</p>
+                             <Badge className={`text-xs border px-1.5 py-0 ${code.is_redeemed ? 'bg-red-900/40 text-red-400 border-red-700' : 'bg-green-900/40 text-green-400 border-green-700'}`}>
+                               {code.is_redeemed ? 'Redeemed' : 'Active'}
+                             </Badge>
+                           </div>
+                           <p className="text-slate-400 text-xs mt-0.5">${code.amount.toFixed(2)} {code.note ? `· ${code.note}` : ''}</p>
+                           <p className="text-slate-500 text-[10px] mt-0.5">Created: {new Date(code.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {!code.is_redeemed && <Button onClick={() => copyText(code.code, 'Gift Code')} variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-white"><Copy className="w-4 h-4" /></Button>}
+                           <Button onClick={() => openConfirm('Delete Code?', `Are you sure you want to delete code ${code.code}? This cannot be undone.`, () => handleDeleteGiftCode(code.id))} variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-900/30"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                   </div>
+                 )}
+               </div>
+            </div>
+          )}
+
+          {/* ── SETTINGS ── */}
+          {tab === "settings" && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-xl font-black text-white">Site Settings</h1>
+                <p className="text-slate-400 text-sm">Manage global configurations for the application.</p>
+              </div>
+
+              {/* Withdrawal Settings */}
+              <div className="p-5 bg-slate-800 rounded-2xl border border-slate-700">
+                <h3 className="font-bold text-white mb-1">Withdrawal Settings</h3>
+                <p className="text-slate-400 text-xs mb-4">Control withdrawal limits and fees.</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-slate-400 text-xs font-semibold">Minimum Withdrawal ($)</label>
+                    <Input type="number" defaultValue="1" className="mt-1 h-9 bg-slate-700 border-slate-600 text-white" />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-xs font-semibold">Withdrawal Fee (%)</label>
+                    <Input type="number" defaultValue="15" className="mt-1 h-9 bg-slate-700 border-slate-600 text-white" />
+                  </div>
+                  <div className="flex items-center justify-between bg-slate-700/50 p-3 rounded-lg">
+                    <span className="text-slate-300 text-sm font-medium">Enable Withdrawals</span>
+                    <Switch defaultChecked={true} />
+                  </div>
+                </div>
+              </div>
+
+              {/* General Site Information */}
+              <div className="p-5 bg-slate-800 rounded-2xl border border-slate-700">
+                <h3 className="font-bold text-white mb-1">General Information</h3>
+                <p className="text-slate-400 text-xs mb-4">Basic site details and contact info.</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-slate-400 text-xs font-semibold">Site Name</label>
+                    <Input defaultValue="CoinPower" className="mt-1 h-9 bg-slate-700 border-slate-600 text-white" />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-xs font-semibold">Support Email</label>
+                    <Input type="email" defaultValue="support@coinpower.com" className="mt-1 h-9 bg-slate-700 border-slate-600 text-white" />
+                  </div>
+                   <div>
+                    <label className="text-slate-400 text-xs font-semibold">Telegram Group Link</label>
+                    <Input defaultValue="https://t.me/coinpow_group" className="mt-1 h-9 bg-slate-700 border-slate-600 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                 <Button onClick={() => toast({ title: 'Settings Saved!', description: 'Your changes have been saved.' })} className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold">
+                   Save Changes
+                </Button>
+              </div>
+
+            </div>
+          )}
+
+          {/* ── ABOUT ── */}
+          {tab === "about" && (
+            <div className="space-y-4">
+               <div><h1 className="text-xl font-black text-white">About CoinPower</h1><p className="text-slate-400 text-sm">Version and system information</p></div>
+               <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-2">
+                 <p className="text-white">CoinPower Admin Panel v1.0.0</p>
+                 <p className="text-slate-400 text-xs">Built with Next.js, Supabase, and shadcn/ui.</p>
+               </div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Edit Balance Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="flex items-center justify-between mb-4"><h3 className="text-white font-bold">Edit User Balance</h3><button onClick={function() { return setEditingUser(null); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button></div>
+            <p className="text-slate-300 text-sm font-medium">{editingUser.full_name}</p>
+            <p className="text-slate-500 text-xs mb-1">@{editingUser.username} · {editingUser.country}</p>
+            <p className="text-green-400 text-sm mb-4">Current: ${(editingUser.balance || 0).toFixed(2)}</p>
+            <div className="mb-4">
+              <label className="text-slate-300 text-xs font-medium mb-1.5 block">New Balance ($)</label>
+              <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
+                <Input type="number" value={newBalance} onChange={function(e) { return setNewBalance(e.target.value); }} data-testid="input-new-balance" placeholder="0.00" min="0" step="0.01" className="pl-7 h-11 bg-slate-700 border-slate-600 text-white focus:border-amber-500" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={function() { return setEditingUser(null); }} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
+              <Button onClick={function() { return handleUpdateBalance(editingUser.id, parseFloat(newBalance) || 0); }} data-testid="button-save-balance" className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold">
+                Save Balance
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Generator Modal */}
+      {showCreateGen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}>
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <div><h3 className="text-white font-black text-lg">Create New Generator</h3><p className="text-slate-400 text-xs mt-0.5">Fill in the details and publish</p></div>
+              <button onClick={function() { return setShowCreateGen(false); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Generator Name *</label>
+                  <Input value={newGen.name} onChange={function(e) { return setNewGen({ ...newGen, name: e.target.value }); }} placeholder="e.g. PG5 Generator" data-testid="input-gen-name" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Subtitle</label>
+                  <Input value={newGen.subtitle} onChange={function(e) { return setNewGen({ ...newGen, subtitle: e.target.value }); }} placeholder="e.g. Ultra Power Plan" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Rent Price ($) *</label>
+                  <Input type="number" value={newGen.price || ""} onChange={function(e) { return setNewGen({ ...newGen, price: parseFloat(e.target.value) || 0 }); }} placeholder="100" data-testid="input-gen-price" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Daily Income ($) *</label>
+                  <Input type="number" value={newGen.daily_income || ""} onChange={function(e) { return setNewGen({ ...newGen, daily_income: parseFloat(e.target.value) || 0 }); }} placeholder="10" data-testid="input-gen-income" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                 <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Expire Days *</label>
+                  <Input type="number" value={newGen.expire_days || ""} onChange={function(e) { return setNewGen({ ...newGen, expire_days: parseInt(e.target.value) || 0 }); }} placeholder="30" data-testid="input-gen-expire" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+                 <div className="grid grid-cols-2 gap-2">
+                    <div>
+                        <label className="text-slate-300 text-[10px] font-medium mb-1 block">Active Limit</label>
+                        <Input type="number" value={newGen.active_limit} onChange={e => setNewGen({ ...newGen, active_limit: parseInt(e.target.value) || 1 })} className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
+                    </div>
+                    <div>
+                        <label className="text-slate-300 text-[10px] font-medium mb-1 block">Lifetime Limit</label>
+                        <Input type="number" value={newGen.lifetime_limit} onChange={e => setNewGen({ ...newGen, lifetime_limit: parseInt(e.target.value) || 1 })} className="h-9 bg-slate-700 border-slate-600 text-white text-sm" />
+                    </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">ROI Display</label>
+                  <Input value={newGen.roi} onChange={function(e) { return setNewGen({ ...newGen, roi: e.target.value }); }} placeholder="e.g. 8%" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Period</label>
+                  <Input value={newGen.period} onChange={function(e) { return setNewGen({ ...newGen, period: e.target.value }); }} placeholder="Daily" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+                <div>
+                  <label className="text-slate-300 text-xs font-medium mb-1 block">Icon (emoji)</label>
+                  <Input value={newGen.icon} onChange={function(e) { return setNewGen({ ...newGen, icon: e.target.value }); }} placeholder="⚡" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500 text-center" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-slate-300 text-xs font-medium mb-2 block">Color Theme</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {COLORS.map(function(c) { return (
+                    <button key={c.value} onClick={function() { return setNewGen({ ...newGen, color: c.value }); }}
+                      className={`h-10 rounded-xl bg-gradient-to-r ${c.value} text-white text-xs font-bold border-2 transition-all ${newGen.color === c.value ? "border-white scale-105" : "border-transparent opacity-70 hover:opacity-100"}`}>
+                      {c.label}
+                    </button>
+                  ); })}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between bg-slate-700/50 rounded-xl px-4 py-3">
+                <div>
+                  <p className="text-white text-sm font-semibold">Publish immediately</p>
+                  <p className="text-slate-400 text-xs">Make visible in Market</p>
+                </div>
+                <button onClick={function() { return setNewGen({ ...newGen, published: !newGen.published }); }}
+                  data-testid="toggle-gen-published"
+                  className={`w-12 h-6 rounded-full transition-colors relative ${newGen.published ? "bg-green-500" : "bg-slate-600"}`}>
+                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${newGen.published ? "translate-x-6" : "translate-x-0.5"}`} />
+                </button>
+              </div>
+
+              {/* Preview */}
+              {newGen.name && (
+                <div className={`rounded-xl bg-gradient-to-r ${newGen.color} p-3 flex items-center gap-3`}>
+                  <span className="text-2xl">{newGen.icon}</span>
+                  <div className="flex-1">
+                    <p className="text-white font-black text-sm">{newGen.name}</p>
+                    <p className="text-white/70 text-[10px]">${newGen.price}/rent · ${newGen.daily_income}/day · Act {newGen.active_limit}/Life {newGen.lifetime_limit}</p>
+                  </div>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${newGen.published ? "bg-green-500 text-white" : "bg-black/30 text-white/70"}`}>{newGen.published ? "LIVE" : "DRAFT"}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 mt-5">
+              <Button onClick={function() { return setShowCreateGen(false); }} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
+              <Button
+                onClick={function() { if (!newGen.name) { toast({ title: "Name is required", variant: "destructive" }); return; } handleCreateGenerator(); }}
+                data-testid="button-save-new-generator"
+                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold">
+                <Plus className="w-4 h-4 mr-1" /> Create Generator
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Generator Modal */}
+      {editingGen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}>
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-bold flex items-center gap-2"><span>{editingGen.icon}</span>{editingGen.name}</h3>
+              <button onClick={function() { return setEditingGen(null); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-3">
+              {[
+                { label: "Name", key: "name", type: "text" },
+                { label: "Subtitle", key: "subtitle", type: "text" },
+                { label: "ROI Display", key: "roi", type: "text" },
+                { label: "Period", key: "period", type: "text" },
+                { label: "Rent Price ($)", key: "price", type: "number" },
+                { label: "Expire Days", key: "expire_days", type: "number" },
+                { label: "Daily Income ($)", key: "daily_income", type: "number" },
+                { label: "Active Limit", key: "active_limit", type: "number" },
+                { label: "Lifetime Limit", key: "lifetime_limit", type: "number" },
+              ].map(function({ label, key, type }) { return (
+                <div key={key}>
+                  <label className="text-slate-400 text-xs font-medium mb-1 block">{label}</label>
+                  <Input type={type} value={(editingGen as any)[key]} onChange={function(e) { return setEditingGen({ ...editingGen, [key]: type === "number" ? parseFloat(e.target.value) || 0 : e.target.value }); }}
+                    className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                </div>
+              ); })}
+              <div>
+                <label className="text-slate-300 text-xs font-medium mb-2 block">Color Theme</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {COLORS.map(function(c) { return (
+                    <button key={c.value} onClick={function() { return setEditingGen({ ...editingGen, color: c.value }); }}
+                      className={`h-8 rounded-xl bg-gradient-to-r ${c.value} text-white text-xs font-bold border-2 transition-all ${editingGen.color === c.value ? "border-white scale-105" : "border-transparent opacity-70"}`}>
+                      {c.label}
+                    </button>
+                  ); })}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button onClick={function() { return setEditingGen(null); }} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
+              <Button onClick={handleUpdateGenerator} data-testid="button-save-generator" className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold">
+                <Save className="w-3.5 h-3.5 mr-1.5" /> Save Changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function AdminDashboard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-900"><p className="text-slate-400 text-sm">Loading Dashboard...</p></div>}>
+      <DashboardContent />
+    </Suspense>
+  )
+}
+use this code exactly to update the admin page please check the lifetime and the active limit update it please update the code for admin exactly what i provided for you use it exactly 
+ because when i seed the default generators the lifetime 5 not working check and update the seed to correctly work check well the seed code inside the provided code. seed default it correctly for me for all generators pg2 active 2 lifetime 2 pg3 Active 1 lifetime 5 pg4 active 1 lifetime 4 pg5 active 1 lifetime 5 do this exactly for me in the seed code and the whole admin code exactly use it everything working perfect now only that lifetime 5 for pg5 disabled the card check it well inside the provided code and update it correctly please update the admin with the provided code exactly 
+_
+"><ExternalLink className="w-3 h-3"/> Referral Link</p>
                                 <div className="flex items-center gap-1.5">
                                     <a href={referralLink || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline text-xs font-mono truncate">
                                         {referralLink || '—'}
@@ -1860,7 +2959,7 @@ function DashboardContent() {
               </div>
 
                <div className="p-4 bg-slate-800 rounded-2xl border border-slate-700 space-y-3">
-                  h3 className="font-bold text-white">License Card Images</h3>
+                  <h3 className="font-bold text-white">License Card Images</h3>
                   <p className="text-sm text-slate-400">These images appear as the background for the license cards on the Activity page.</p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
@@ -2337,3 +3436,4 @@ export default function AdminDashboard() {
     </Suspense>
   )
 }
+use this code exactly to update the admin page please check the lifetime and the active limit update it please update the code for admin exactly what i provided for you use it exactly because when i seed the default generators the lifetime 5 not working check and update the seed to correctly work check well the seed code inside the provided code. seed default it correctly for me for all generators pg2 active 2 lifetime 2 pg3 Active 1 lifetime 5 pg4 active 1 lifetime 4 pg5 active 1 lifetime 5 do this exactly for me in the seed code and the whole admin code exactly use it everything working perfect now only that lifetime 5 for pg5 disabled the card check it well inside the provided code and update it correctly please update the admin with the provided code exactly
