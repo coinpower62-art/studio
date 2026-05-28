@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import {
   Landmark, ArrowDownToLine, ArrowUpFromLine, Wallet, Shield, Clock,
   CheckCircle, Copy, CreditCard, Smartphone, Coins, AlertCircle,
-  PartyPopper, Hash, Network, ChevronLeft, Lock, KeyRound, ShieldCheck, X, XCircle
+  PartyPopper, PhoneCall, Hash, Network, User, MapPin, CalendarDays,
+  Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X, LogOut, Gift, XCircle
 } from "lucide-react";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -18,6 +19,7 @@ import { createClient } from "@/lib/supabase/client";
 import { countries as COUNTRIES_DATA } from "@/lib/data";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { createDepositRequest, createWithdrawalRequest, setWithdrawalPin, redeemGiftCode } from "./actions";
+import { logout } from "@/app/login/actions";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 // Card validation helpers
@@ -582,6 +584,7 @@ export default function BankPage() {
 
   const quickAmounts = generators.filter(g => g.price > 0).map(g => g.price);
 
+
   return (
     <div className="bg-[#f7f9f4]">
        <Dialog open={!!lowBalanceGen} onOpenChange={(open) => { if (!open) setLowBalanceGen(null); }}>
@@ -763,7 +766,12 @@ export default function BankPage() {
               <Wallet className="w-4 h-4 text-amber-100" />
               <p className="text-amber-100 text-xs font-medium">Available Balance</p>
             </div>
-            <p className="text-3xl sm:text-4xl font-bold mt-1 mb-3" data-testid="text-balance">${profile.balance.toFixed(2)}</p>
+            <p className="text-3xl sm:text-4xl font-bold mt-1 mb-3" data-testid="text-balance">
+              ${profile.balance.toFixed(2)}
+              {profile.country === 'Ghana' && (
+                <span className="text-sm ml-2 opacity-80 font-medium">/ GH₵{(profile.balance * 10).toFixed(2)}</span>
+              )}
+            </p>
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-amber-200" /><span className="text-amber-100 text-xs">Protected Balance</span></div>
               <div className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-amber-200" /><span className="text-amber-100 text-xs">Verified Account</span></div>
@@ -877,7 +885,9 @@ export default function BankPage() {
             )}
 
             <div>
-              <label className="text-xs font-medium text-gray-600 mb-1.5 block">Your Country</label>
+              <label className="text-xs font-medium text-gray-600 mb-1.5 flex items-center gap-1">
+                <Globe className="w-3 h-3" /> Your Country
+              </label>
               <Select value={depositCountry} onValueChange={setDepositCountry}>
                 <SelectTrigger data-testid="select-deposit-country" className="h-11 border-gray-200 focus:border-green-400 rounded-xl text-sm">
                   <SelectValue placeholder="Select your country" />
@@ -927,6 +937,11 @@ export default function BankPage() {
                     <span className="font-bold">Remember your bonus:</span> Your $1 welcome bonus is already in your balance. To rent a $25 generator, you only need to deposit $24 (which is 240 GHS).
                   </p>
                 </div>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                  <p className="text-amber-800 text-xs leading-relaxed font-medium">
+                    ✅ Send your payment to the MTN MOMO number, then enter the <span className="font-bold">USD amount</span> and Transaction ID below.
+                  </p>
+                </div>
               </div>
             )}
             
@@ -948,6 +963,130 @@ export default function BankPage() {
                     </button>
                   </div>
                 </div>
+                <div className="flex gap-2">
+                  {["TRC20", "ERC20", "BEP20"].map(function(net) {
+                    return (
+                    <span key={net} className="px-2.5 py-1 text-xs font-bold rounded-lg bg-teal-100 text-teal-700 border border-teal-200">{net}</span>
+                  )})}
+                </div>
+                <div className="bg-teal-50 border border-teal-200 rounded-lg px-3 py-2.5">
+                  <p className="text-teal-800 text-xs leading-relaxed font-medium">
+                    ✅ Send USDT to the wallet address above, then enter the amount sent and your transaction hash (TxID) below.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {depositMethod === "card" && (
+              <div className="space-y-4">
+                <div
+                  className="relative rounded-2xl p-5 overflow-hidden shadow-2xl"
+                  style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)", minHeight: 160 }}
+                >
+                  <div className="absolute inset-0 opacity-10 pointer-events-none"
+                    style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.15) 10px, rgba(255,255,255,0.15) 11px)" }} />
+                  <div className="relative z-10 flex flex-col gap-4">
+                    <div className="flex justify-between items-start">
+                      <div className="w-10 h-7 rounded-md bg-gradient-to-br from-yellow-300 to-amber-400 opacity-90" />
+                      <div className="flex items-center gap-1.5">
+                        <img src={imageMap.card} alt="card" className="h-6 w-auto object-contain rounded opacity-90" />
+                      </div>
+                    </div>
+                    <p className="font-mono text-white text-base sm:text-lg tracking-widest font-bold">
+                      {depositCard.number || "•••• •••• •••• ••••"}
+                    </p>
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-white/50 text-[9px] uppercase tracking-widest mb-0.5">Card Holder</p>
+                        <p className="text-white font-bold text-sm uppercase tracking-wider truncate max-w-[160px]">
+                          {depositCard.holder || "YOUR NAME"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-white/50 text-[9px] uppercase tracking-widest mb-0.5">Expires</p>
+                        <p className="text-white font-bold text-sm">{depositCard.expiry || "MM/YY"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl border border-blue-100 p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CreditCard className="w-4 h-4 text-blue-500" />
+                    <p className="text-xs font-bold text-blue-800 uppercase tracking-wide">Enter Card Details</p>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 mb-1.5 block">Card Number</label>
+                    <Input
+                      data-testid="input-deposit-card-number"
+                      value={depositCard.number}
+                      inputMode="numeric"
+                      maxLength={19}
+                      placeholder="0000 0000 0000 0000"
+                      onChange={function(e) {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 16);
+                        const formatted = digits.replace(/(.{4})/g, "$1 ").trim();
+                        setDepositCard({ ...depositCard, number: formatted });
+                      }}
+                      className="h-11 border-gray-200 focus:border-blue-400 font-mono text-base tracking-widest"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 mb-1.5 block">Cardholder Name</label>
+                    <Input
+                      data-testid="input-deposit-card-holder"
+                      value={depositCard.holder}
+                      placeholder="Name as on card"
+                      onChange={function(e) { return setDepositCard({ ...depositCard, holder: e.target.value.toUpperCase() }); }}
+                      className="h-11 border-gray-200 focus:border-blue-400 text-sm font-semibold uppercase"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1.5 block">Expiry Date</label>
+                      <Input
+                        data-testid="input-deposit-card-expiry"
+                        value={depositCard.expiry}
+                        inputMode="numeric"
+                        placeholder="MM / YY"
+                        maxLength={5}
+                        onChange={function(e) {
+                          const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+                          const formatted = digits.length > 2 ? `${digits.slice(0,2)}/${digits.slice(2)}` : digits;
+                          setDepositCard({ ...depositCard, expiry: formatted });
+                        }}
+                        className="h-11 border-gray-200 focus:border-blue-400 font-mono text-sm text-center"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1.5 block flex items-center gap-1">
+                        CVV / CVC
+                        <button type="button" onClick={function() { return setDepositCard(function(c) { return ({ ...c, cvvVisible: !c.cvvVisible }); }); }}
+                          className="text-gray-400 hover:text-gray-600 transition-colors">
+                          <Shield className="w-3 h-3" />
+                        </button>
+                      </label>
+                      <Input
+                        data-testid="input-deposit-card-cvv"
+                        value={depositCard.cvv}
+                        type={depositCard.cvvVisible ? "text" : "password"}
+                        inputMode="numeric"
+                        placeholder="•••"
+                        maxLength={4}
+                        onChange={function(e) { return setDepositCard({ ...depositCard, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) }); }}
+                        className="h-11 border-gray-200 focus:border-blue-400 font-mono text-sm text-center tracking-widest"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2 border border-blue-100 mt-1">
+                    <ShieldCheck className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <p className="text-blue-700 text-[11px] font-medium">Your card details are encrypted and securely processed</p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -960,15 +1099,26 @@ export default function BankPage() {
                     data-testid="input-amount" placeholder="0.00" min="0" step="0.01"
                     className="pl-7 h-11 border-gray-200 focus:border-green-400 text-lg font-semibold" />
                 </div>
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {quickAmounts.map(function(q) {
+                    return (
+                    <button key={q} onClick={function() { return setAmount(String(q)); }} data-testid={`quick-amount-${q}`}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 transition-colors">
+                      ${q}
+                    </button>
+                  )})}
+                </div>
               </div>
               {depositMethod !== "card" && (
                 <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1.5 block">Transaction ID</label>
+                  <label className="text-xs font-medium text-gray-600 mb-1.5 block">
+                    {depositMethod === "usdt" ? "Transaction Hash / ID" : "Transaction ID"}
+                  </label>
                   <div className="relative">
                     <Hash className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <Input value={depositTxId} onChange={function(e) { return setDepositTxId(e.target.value); }}
                       data-testid="input-deposit-txid"
-                      placeholder="e.g. TXN123456"
+                      placeholder={depositMethod === "usdt" ? "e.g. 0x1234abcd..." : "e.g. TXN123456"}
                       className="pl-9 h-11 border-gray-200 focus:border-green-400 font-mono text-sm" />
                   </div>
                 </div>
@@ -976,7 +1126,7 @@ export default function BankPage() {
               <Button onClick={handleDepositSubmit} data-testid="button-confirm-deposit"
                 disabled={isSubmitting}
                 className="w-full h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md">
-                {isSubmitting ? "Submitting..." : "Submit Deposit Request"}
+                {isSubmitting ? "Submitting request..." : "Submit Deposit Request"}
               </Button>
             </div>
           </div>
@@ -996,7 +1146,7 @@ export default function BankPage() {
         {mode === "withdraw" && !withdrawSuccess && (
           <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-4 sm:p-6 my-4 space-y-5">
             <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-3 py-3">
-              <Clock className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+              <Hourglass className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-blue-800 text-xs font-semibold">Withdrawal Processing Schedule</p>
                 <p className="text-blue-700 text-xs mt-0.5 leading-relaxed">
@@ -1044,28 +1194,130 @@ export default function BankPage() {
                         <label className="text-xs font-medium text-gray-600 mb-1.5 block">USDT Wallet Address</label>
                         <Input value={usdt.address} onChange={(e) => setUsdt({...usdt, address: e.target.value})} placeholder="Your TRC20 or ERC20 address" className="h-11 border-gray-200 focus:border-amber-400" />
                     </div>
-                 </div>
-               )}
-               {withdrawMethod === 'bank' && (
-                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
-                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><Landmark className="w-4 h-4" /> Bank Account</p>
                      <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Bank Name</label>
-                        <Select value={bank.name} onValueChange={(val) => setBank({...bank, name: val})}>
-                            <SelectTrigger className="h-11 border-gray-200 focus:border-amber-400"><SelectValue placeholder="Select a bank" /></SelectTrigger>
-                            <SelectContent>{bankOptions.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Network</label>
+                         <Select value={usdt.network} onValueChange={(val) => setUsdt({...usdt, network: val})}>
+                            <SelectTrigger className="h-11 border-gray-200 focus:border-amber-400"><SelectValue /></SelectTrigger>
+                            <SelectContent><SelectItem value="TRC20">TRC20 (Tron)</SelectItem><SelectItem value="ERC20">ERC20 (Ethereum)</SelectItem></SelectContent>
                         </Select>
                     </div>
+                 </div>
+               )}
+              {withdrawMethod === 'bank' && (
+                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><Landmark className="w-4 h-4" /> Bank Account Details</p>
+                     <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Bank Name</label>
+                         <Select value={bank.name} onValueChange={(val) => setBank({ ...bank, name: val })}>
+                            <SelectTrigger className="h-11 border-gray-200 focus:border-amber-400" data-testid="select-bank-name">
+                                <SelectValue placeholder="Select a bank" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {bankOptions.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    {bank.name === 'Other' && (
+                         <div>
+                            <label className="text-xs font-medium text-gray-600 mb-1.5 block">Other Bank Name</label>
+                            <Input value={otherBankName} onChange={(e) => setOtherBankName(e.target.value)} placeholder="Please specify bank name" className="h-11 border-gray-200 focus:border-amber-400" />
+                        </div>
+                    )}
                     <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Number</label>
-                        <Input value={bank.number} onChange={(e) => setBank({...bank, number: e.target.value})} placeholder="Account number or IBAN" className="h-11 border-gray-200 focus:border-amber-400" />
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Number / IBAN</label>
+                        <Input value={bank.number} onChange={(e) => setBank({ ...bank, number: e.target.value })} placeholder="Your bank account number or IBAN" className="h-11 border-gray-200 focus:border-amber-400" data-testid="input-bank-account-number" />
                     </div>
                     <div>
                         <label className="text-xs font-medium text-gray-600 mb-1.5 block">Account Holder Name</label>
-                        <Input value={bank.holder} onChange={(e) => setBank({...bank, holder: e.target.value})} placeholder="Name on account" className="h-11 border-gray-200 focus:border-amber-400" />
+                        <Input value={bank.holder} onChange={(e) => setBank({ ...bank, holder: e.target.value })} placeholder="Name on bank account" className="h-11 border-gray-200 focus:border-amber-400" data-testid="input-bank-account-holder" />
                     </div>
                  </div>
                )}
+                {withdrawMethod === 'western_union' && (
+                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><Network className="w-4 h-4" /> Western Union Details</p>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Full Name (as on ID)</label>
+                        <Input value={westernUnion.fullName} onChange={(e) => setWesternUnion({...westernUnion, fullName: e.target.value})} placeholder="Your full legal name" className="h-11 border-gray-200 focus:border-amber-400" />
+                    </div>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">City</label>
+                        <Input value={westernUnion.city} onChange={(e) => setWesternUnion({...westernUnion, city: e.target.value})} placeholder="City of pickup" className="h-11 border-gray-200 focus:border-amber-400" />
+                    </div>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Country</label>
+                        <Input value={profile.country} readOnly disabled placeholder="Your profile country" className="h-11 border-gray-200 bg-gray-100" />
+                    </div>
+                    <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
+                      <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-blue-700 text-xs font-medium">After approval, you will receive an MTCN (Money Transfer Control Number) to pick up your cash at a Western Union agent.</p>
+                    </div>
+                 </div>
+               )}
+               {withdrawMethod === 'card' && (
+                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                    <p className="text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5"><CreditCard className="w-4 h-4" /> Card Details</p>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Card Number</label>
+                        <Input
+                            value={card.number}
+                            inputMode="numeric"
+                            maxLength={19}
+                            placeholder="0000 0000 0000 0000"
+                            onChange={(e) => {
+                                const digits = e.target.value.replace(/\D/g, "").slice(0, 16);
+                                const formatted = digits.replace(/(.{4})/g, "$1 ").trim();
+                                setCard({ ...card, number: formatted });
+                            }}
+                            className="h-11 border-gray-200 focus:border-amber-400 font-mono text-base tracking-widest"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-xs font-medium text-gray-600 mb-1.5 block">Cardholder Name</label>
+                        <Input
+                            value={card.holder}
+                            placeholder="Name as on card"
+                            onChange={(e) => setCard({ ...card, holder: e.target.value.toUpperCase() })}
+                            className="h-11 border-gray-200 focus:border-amber-400 text-sm font-semibold uppercase"
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-xs font-medium text-gray-600 mb-1.5 block">Expiry Date</label>
+                            <Input
+                                value={card.expiry}
+                                inputMode="numeric"
+                                placeholder="MM / YY"
+                                maxLength={5}
+                                onChange={(e) => {
+                                    const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+                                    const formatted = digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
+                                    setCard({ ...card, expiry: formatted });
+                                }}
+                                className="h-11 border-gray-200 focus:border-amber-400 font-mono text-sm text-center"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-gray-600 mb-1.5 block flex items-center gap-1">
+                                CVV / CVC
+                                <button type="button" onClick={() => setCard(c => ({ ...c, cvvVisible: !c.cvvVisible }))}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors">
+                                    <Shield className="w-3 h-3" />
+                                </button>
+                            </label>
+                            <Input
+                                value={card.cvv}
+                                type={card.cvvVisible ? "text" : "password"}
+                                inputMode="numeric"
+                                placeholder="•••"
+                                maxLength={4}
+                                onChange={(e) => setCard({ ...card, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                                className="h-11 border-gray-200 focus:border-amber-400 font-mono text-sm text-center tracking-widest"
+                            />
+                        </div>
+                    </div>
+                 </div>
+                )}
                <div>
                 <label className="text-xs font-medium text-gray-600 mb-1.5 block">Amount to Withdraw ($)</label>
                 <div className="relative">
@@ -1075,6 +1327,29 @@ export default function BankPage() {
                     className="pl-7 h-11 border-gray-200 focus:border-amber-400 text-lg font-semibold" />
                 </div>
               </div>
+
+              {parseFloat(amount) > 0 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Withdrawal Amount</span>
+                    <span className="font-semibold text-gray-800">${parseFloat(amount).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Processing Fee (15%)</span>
+                    <span className="font-semibold text-red-600">-${(parseFloat(amount) * 0.15).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-gray-200">
+                    <span className="font-bold text-gray-800">You will receive</span>
+                    <div className="text-right">
+                        <p className="font-bold text-green-600">${(parseFloat(amount) * 0.85).toFixed(2)}</p>
+                        {profile.country === 'Ghana' && (
+                        <p className="text-[10px] font-black text-green-700">GH₵{(parseFloat(amount) * 0.85 * 10).toFixed(2)}</p>
+                        )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <Button onClick={handleWithdrawal} data-testid="button-confirm-withdraw"
                 disabled={isSubmitting}
                 className="w-full h-11 font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md">
@@ -1092,6 +1367,7 @@ export default function BankPage() {
             </div>
             <h3 className="text-lg font-bold text-gray-900">Withdrawal Submitted!</h3>
             <p className="text-gray-500 text-sm">Your withdrawal request for <span className="font-semibold text-green-600">${amount}</span> has been submitted for processing.</p>
+            {lastTxId && <p className="text-xs text-gray-400">TXN ID: {lastTxId}</p>}
             <Button onClick={function() { return openMode(null); }} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl h-10 px-6">Done</Button>
           </div>
         )}
@@ -1137,6 +1413,9 @@ export default function BankPage() {
                           </div>
                           <div className="text-right">
                             <p className={`text-sm font-bold ${isDeposit ? 'text-green-600' : 'text-gray-800'}`}>{isDeposit ? '+' : '-'}${tx.amount.toFixed(2)}</p>
+                            {profile.country === 'Ghana' && (
+                                <p className="text-[10px] font-medium text-gray-400">GH₵{(tx.amount * 10).toFixed(2)}</p>
+                            )}
                           </div>
                       </div>
                       {!isDeposit && <WithdrawalStatusStepper status={(tx as WithdrawRecord).status} />}
