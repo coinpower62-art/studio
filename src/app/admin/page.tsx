@@ -116,9 +116,9 @@ const COLORS = [
 const DEFAULT_GENERATORS: Generator[] = [
   { id: 'pg1', name: "PG1 Generator", subtitle: "Free Trial Power", icon: "⚡", color: "from-amber-400 to-orange-500", price: 0, expire_days: 2, daily_income: 0.5, published: true, roi: "10%", period: "Daily", min_invest: "$0", max_invest: "$0", investors: "12050", active_limit: 1, lifetime_limit: 1 },
   { id: 'pg2', name: "PG2 Generator", subtitle: "Standard Power", icon: "🔋", color: "from-green-400 to-emerald-600", price: 25, expire_days: 30, daily_income: 2.5, published: true, roi: "12%", period: "Daily", min_invest: "$25", max_invest: "$1000", investors: "8520", active_limit: 2, lifetime_limit: 2 },
-  { id: 'pg3', name: "PG3 Generator", subtitle: "Mega Power", icon: "💡", color: "from-blue-400 to-indigo-600", price: 100, expire_days: 45, daily_income: 10, published: true, roi: "15%", period: "Daily", min_invest: "$100", max_invest: "$5000", investors: "4310", active_limit: 1, lifetime_limit: 5 },
+  { id: 'pg3', name: "PG3 Generator", subtitle: "Mega Power", icon: "💡", color: "from-blue-400 to-indigo-600", price: 100, expire_days: 20, daily_income: 10, published: true, roi: "15%", period: "Daily", min_invest: "$100", max_invest: "$5000", investors: "4310", active_limit: 1, lifetime_limit: 5 },
   { id: 'pg4', name: "PG4 Generator", subtitle: "Ultra Power", icon: "🚀", color: "from-purple-500 to-pink-600", price: 500, expire_days: 30, daily_income: 55, published: true, roi: "20%", period: "Daily", min_invest: "$500", max_invest: "$20000", investors: "1250", active_limit: 1, lifetime_limit: 4 },
-  { id: 'pg5', name: "PG5 Generator", subtitle: "Elite Power", icon: "💎", color: "from-teal-400 to-cyan-600", price: 1000, expire_days: 60, daily_income: 120, published: true, roi: "25%", period: "Daily", min_invest: "$1000", max_invest: "$50000", investors: "540", active_limit: 1, lifetime_limit: 5 },
+  { id: 'pg5', name: "PG5 Generator", subtitle: "Elite Power", icon: "💎", color: "from-teal-400 to-cyan-600", price: 1000, expire_days: 30, daily_income: 120, published: true, roi: "25%", period: "Daily", min_invest: "$1000", max_invest: "$50000", investors: "540", active_limit: 1, lifetime_limit: 5 },
 ];
 
 
