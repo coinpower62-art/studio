@@ -18,8 +18,8 @@ import {
   ArrowUpFromLine, Settings, ChevronRight, RefreshCw,
   Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
   Pencil, ImagePlus, Activity,
-  Info, Building2, Phone, Mail, MapPin, Percent, Clock3,
-  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Unlock, Video, Landmark, Network, Hash
+  Info, Building2, Phone, Mail, MapPin, Percent, Clock,
+  ExternalLink, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Unlock, Video, Landmark, Network, Hash
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
@@ -2151,7 +2151,7 @@ function DashboardContent() {
             <p className="text-green-400 text-sm mb-4">Current: ${(editingUser.balance || 0).toFixed(2)}</p>
             <div className="mb-4">
               <label className="text-slate-300 text-xs font-medium mb-1.5 block">New Balance ($)</label>
-              <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">$</span>
+              <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
                 <Input type="number" value={newBalance} onChange={function(e) { return setNewBalance(e.target.value); }} data-testid="input-new-balance" placeholder="0.00" min="0" step="0.01" className="pl-7 h-11 bg-slate-700 border-slate-600 text-white focus:border-amber-500" />
               </div>
             </div>
@@ -2248,7 +2248,7 @@ function DashboardContent() {
                 </div>
                 <button onClick={function() { return setNewGen({ ...newGen, published: !newGen.published }); }}
                   data-testid="toggle-gen-published"
-                  className={`w-12 h-6 rounded-full transition-colors relative ${newGen.published ? "bg-green-50" : "bg-slate-600"}`}>
+                  className={`w-12 h-6 rounded-full transition-colors relative ${newGen.published ? "bg-green-500" : "bg-slate-600"}`}>
                   <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${newGen.published ? "translate-x-6" : "translate-x-0.5"}`} />
                 </button>
               </div>
@@ -2337,4 +2337,3 @@ export default function AdminDashboard() {
     </Suspense>
   )
 }
-use this code exatly to update the Admin panel also. all is perfectly. use this exactly to update the Admin Panel only

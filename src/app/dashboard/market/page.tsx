@@ -40,7 +40,7 @@ function Countdown({ expiresAt, label = "Expires" }: { expiresAt: number; label?
     const t = setInterval(() => setRemaining(expiresAt - Date.now()), 1000);
     return () => clearInterval(t);
   }, [expiresAt]);
-  if (remaining <= 0) return <span className="text-red-500 text-xs font-bold">EXPIRED</span>;
+  if (remaining <= 0) return <span className="text-red-600 text-xs font-bold">EXPIRED</span>;
   const d = Math.floor(remaining / 86400000);
   const h = Math.floor((remaining % 86400000) / 3600000);
   const m = Math.floor((remaining % 3600000) / 60000);
@@ -49,12 +49,12 @@ function Countdown({ expiresAt, label = "Expires" }: { expiresAt: number; label?
     <div className="text-center">
       {label && <p className="text-[10px] text-slate-400 mb-0.5">{label}</p>}
       <div className="flex items-center gap-0.5 justify-center">
-        {d > 0 && <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded min-w-[1.75rem] text-center">{String(d).padStart(2,"0")}d</span>}
-        <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded min-w-[1.75rem] text-center">{String(h).padStart(2,"0")}</span>
-        <span className="text-red-500 font-black text-xs">:</span>
-        <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded min-w-[1.75rem] text-center">{String(m).padStart(2,"0")}</span>
-        <span className="text-red-500 font-black text-xs">:</span>
-        <span className="bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded min-w-[1.75rem] text-center">{String(s).padStart(2,"0")}</span>
+        {d > 0 && <span className="text-red-600 text-sm font-black min-w-[1.25rem] text-center">{String(d).padStart(2,"0")}d</span>}
+        <span className="text-red-600 text-sm font-black min-w-[1.25rem] text-center">{String(h).padStart(2,"0")}</span>
+        <span className="text-red-600 font-black text-sm">:</span>
+        <span className="text-red-600 text-sm font-black min-w-[1.25rem] text-center">{String(m).padStart(2,"0")}</span>
+        <span className="text-red-600 font-black text-sm">:</span>
+        <span className="text-red-600 text-sm font-black min-w-[1.25rem] text-center">{String(s).padStart(2,"0")}</span>
       </div>
     </div>
   );
@@ -242,6 +242,8 @@ export default function Market() {
               const isLifetimeMaxed = totalCount >= lifetimeLimit;
               const isActiveMaxed = activeCount >= activeLimit;
               
+              const isPG1 = gen.id === 'pg1';
+              
               const expiredRentalsOfThisType = visibleRentals.filter(ug => ug.generator_id === gen.id && new Date(ug.expires_at).getTime() <= now);
               const mostRecentExpired = expiredRentalsOfThisType.sort((a, b) => new Date(b.expires_at).getTime() - new Date(a.expires_at).getTime())[0];
 
@@ -263,7 +265,7 @@ export default function Market() {
                           <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-red-600 text-white flex items-center gap-1 shadow-sm">
                             <ShieldAlert className="w-3 h-3" /> DISCONNECTED
                           </span>
-                        ) : totalCount > 0 ? (
+                        ) : !isPG1 && totalCount > 0 ? (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 flex items-center gap-1">
                             <CheckCircle className="w-3 h-3" /> {totalCount}/{lifetimeLimit} Used
                           </span>
@@ -287,24 +289,26 @@ export default function Market() {
                         )}
                     </div>
 
-                    <div className={`grid ${totalCount > 0 ? 'grid-cols-2' : 'grid-cols-1'} gap-2 mt-4`}>
-                        <div className="bg-white/80 border border-amber-200 rounded-xl p-2 shadow-sm">
-                            <div className="flex justify-between items-center mb-1">
-                                <span className="text-[9px] text-gray-500 font-bold uppercase">Current Slots</span>
-                                <span className="text-[10px] font-black text-gray-900">{activeCount}/{activeLimit}</span>
-                            </div>
-                            <Progress value={(activeCount / activeLimit) * 100} className="h-1.5 bg-gray-200" />
-                        </div>
-                        {totalCount > 0 && (
-                          <div className="bg-white/80 border border-blue-200 rounded-xl p-2 shadow-sm">
+                    {!isPG1 && (
+                      <div className={`grid ${totalCount > 0 ? 'grid-cols-2' : 'grid-cols-1'} gap-2 mt-4`}>
+                          <div className="bg-white/80 border border-amber-200 rounded-xl p-2 shadow-sm">
                               <div className="flex justify-between items-center mb-1">
-                                  <span className="text-[9px] text-gray-500 font-bold uppercase">Lifetime Usage</span>
-                                  <span className="text-[10px] font-black text-gray-900">{totalCount}/{lifetimeLimit}</span>
+                                  <span className="text-[9px] text-gray-500 font-bold uppercase">Current Slots</span>
+                                  <span className="text-[10px] font-black text-gray-900">{activeCount}/{activeLimit}</span>
                               </div>
-                              <Progress value={(totalCount / lifetimeLimit) * 100} className="h-1.5 bg-gray-200" />
+                              <Progress value={(activeCount / activeLimit) * 100} className="h-1.5 bg-gray-200" />
                           </div>
-                        )}
-                    </div>
+                          {totalCount > 0 && (
+                            <div className="bg-white/80 border border-blue-200 rounded-xl p-2 shadow-sm">
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="text-[9px] text-gray-500 font-bold uppercase">Lifetime Usage</span>
+                                    <span className="text-[10px] font-black text-gray-900">{totalCount}/{lifetimeLimit}</span>
+                                </div>
+                                <Progress value={(totalCount / lifetimeLimit) * 100} className="h-1.5 bg-gray-200" />
+                            </div>
+                          )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-4 sm:p-5">

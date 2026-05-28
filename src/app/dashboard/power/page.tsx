@@ -84,8 +84,8 @@ function RedCountdown({ targetMs }: { targetMs: number }) {
         {[h, m, s].map(function(val, i) {
           return (
           <span key={i}>
-            <span className="inline-block bg-red-600 text-white text-xs font-black px-1.5 py-0.5 rounded min-w-[1.75rem] text-center">{String(val).padStart(2,"0")}</span>
-            {i < 2 && <span className="text-red-500 font-black text-sm mx-0.5">:</span>}
+            <span className="inline-block text-red-600 text-sm font-black min-w-[1.25rem] text-center">{String(val).padStart(2,"0")}</span>
+            {i < 2 && <span className="text-red-600 font-black text-sm mx-0.5">:</span>}
           </span>
         ); })}
       </div>
@@ -285,16 +285,7 @@ function LiveEarningsCounter({ lastRef, dailyIncome, active }: {
   const formatted = earned.toFixed(6);
   const [whole, dec] = formatted.split(".");
 
-  if (typeof dec !== 'string') {
-    return (
-      <div className="flex flex-col items-center">
-          <div className="flex items-baseline gap-0.5 font-mono">
-              <span className="text-lg font-black text-gray-400 tracking-tight leading-none">--.--</span>
-          </div>
-          <p className="text-[9px] text-gray-400 mt-0.5">Calculating...</p>
-      </div>
-    );
-  }
+  if (whole === undefined || dec === undefined) return null;
 
   const dec1 = dec.slice(0, 2);
   const dec2 = dec.slice(2, 4);
