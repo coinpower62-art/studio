@@ -1293,7 +1293,7 @@ function DashboardContent() {
                           <button onClick={function() { return openConfirm("Delete User Account", `You are about to permanently delete "${nameForDisplay}". Their profile and all data will be erased. This CANNOT be undone.`, function() { return handleDeleteUser(u.id); }); }}
                             data-testid={`button-delete-user-${u.id}`}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 border border-red-800 hover:bg-red-900/50 text-xs font-semibold">
-                            <Trash2 className="w-3 h-3" /> Delete
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
                           </button>
                         </div>
                       </div>
@@ -1580,7 +1580,7 @@ function DashboardContent() {
                     <DatabaseZap className="w-4 h-4 mr-2" /> Seed Defaults
                   </Button>
                   <Button onClick={function() { return fetchData(); }} variant="outline" size="sm" className="h-9 border-slate-600 text-slate-300 hover:bg-slate-700"><RefreshCw className="w-3.5 h-3.5" /></Button>
-                  <Button onClick={function() { return setNewGen({ ...BLANK_GEN }); setShowCreateGen(true); }}
+                  <Button onClick={function() { setNewGen({ ...BLANK_GEN }); setShowCreateGen(true); }}
                     data-testid="button-create-generator"
                     className="h-9 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-sm flex items-center gap-1.5 rounded-xl shadow-md">
                     <Plus className="w-4 h-4" /> New Generator
@@ -1627,7 +1627,7 @@ function DashboardContent() {
                           ); })}
                         </div>
                         <div className="flex gap-2">
-                          <button onClick={function() { return setEditingGen({ ...g }); }}
+                          <button onClick={function() { setEditingGen({ ...g }); }}
                             data-testid={`button-edit-gen-${g.id}`}
                             className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-blue-900/30 text-blue-400 border border-blue-800 hover:bg-blue-900/50 text-xs font-semibold">
                             <Pencil className="w-3 h-3" /> Edit
@@ -2147,19 +2147,19 @@ function DashboardContent() {
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
           <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <div className="flex items-center justify-between mb-4"><h3 className="text-white font-bold">Edit User Balance</h3><button onClick={function() { return setEditingUser(null); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button></div>
+            <div className="flex items-center justify-between mb-4"><h3 className="text-white font-bold">Edit User Balance</h3><button onClick={function() { setEditingUser(null); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button></div>
             <p className="text-slate-300 text-sm font-medium">{editingUser.full_name}</p>
             <p className="text-slate-500 text-xs mb-1">@{editingUser.username} · {editingUser.country}</p>
             <p className="text-green-400 text-sm mb-4">Current: ${(editingUser.balance || 0).toFixed(2)}</p>
             <div className="mb-4">
               <label className="text-slate-300 text-xs font-medium mb-1.5 block">New Balance ($)</label>
               <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">$</span>
-                <Input type="number" value={newBalance} onChange={function(e) { return setNewBalance(e.target.value); }} data-testid="input-new-balance" placeholder="0.00" min="0" step="0.01" className="pl-7 h-11 bg-slate-700 border-slate-600 text-white focus:border-amber-500" />
+                <Input type="number" value={newBalance} onChange={function(e) { setNewBalance(e.target.value); }} data-testid="input-new-balance" placeholder="0.00" min="0" step="0.01" className="pl-7 h-11 bg-slate-700 border-slate-600 text-white focus:border-amber-500" />
               </div>
             </div>
             <div className="flex gap-2">
-              <Button onClick={function() { return setEditingUser(null); }} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
-              <Button onClick={function() { return handleUpdateBalance(editingUser.id, parseFloat(newBalance) || 0); }} data-testid="button-save-balance" className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold">
+              <Button onClick={function() { setEditingUser(null); }} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
+              <Button onClick={function() { handleUpdateBalance(editingUser.id, parseFloat(newBalance) || 0); }} data-testid="button-save-balance" className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold">
                 Save Balance
               </Button>
             </div>
@@ -2173,36 +2173,36 @@ function DashboardContent() {
           <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <div><h3 className="text-white font-black text-lg">Create New Generator</h3><p className="text-slate-400 text-xs mt-0.5">Fill in the details and publish</p></div>
-              <button onClick={function() { return setShowCreateGen(false); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+              <button onClick={function() { setShowCreateGen(false); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Generator Name *</label>
-                  <Input value={newGen.name} onChange={function(e) { return setNewGen({ ...newGen, name: e.target.value }); }} placeholder="e.g. PG5 Generator" data-testid="input-gen-name" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                  <Input value={newGen.name} onChange={function(e) { setNewGen({ ...newGen, name: e.target.value }); }} placeholder="e.g. PG5 Generator" data-testid="input-gen-name" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Subtitle</label>
-                  <Input value={newGen.subtitle} onChange={function(e) { return setNewGen({ ...newGen, subtitle: e.target.value }); }} placeholder="e.g. Ultra Power Plan" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                  <Input value={newGen.subtitle} onChange={function(e) { setNewGen({ ...newGen, subtitle: e.target.value }); }} placeholder="e.g. Ultra Power Plan" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Rent Price ($) *</label>
-                  <Input type="number" value={newGen.price || ""} onChange={function(e) { return setNewGen({ ...newGen, price: parseFloat(e.target.value) || 0 }); }} placeholder="100" data-testid="input-gen-price" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                  <Input type="number" value={newGen.price || ""} onChange={function(e) { setNewGen({ ...newGen, price: parseFloat(e.target.value) || 0 }); }} placeholder="100" data-testid="input-gen-price" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Daily Income ($) *</label>
-                  <Input type="number" value={newGen.daily_income || ""} onChange={function(e) { return setNewGen({ ...newGen, daily_income: parseFloat(e.target.value) || 0 }); }} placeholder="10" data-testid="input-gen-income" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                  <Input type="number" value={newGen.daily_income || ""} onChange={function(e) { setNewGen({ ...newGen, daily_income: parseFloat(e.target.value) || 0 }); }} placeholder="10" data-testid="input-gen-income" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                  <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Expire Days *</label>
-                  <Input type="number" value={newGen.expire_days || ""} onChange={function(e) { return setNewGen({ ...newGen, expire_days: parseInt(e.target.value) || 0 }); }} placeholder="30" data-testid="input-gen-expire" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                  <Input type="number" value={newGen.expire_days || ""} onChange={function(e) { setNewGen({ ...newGen, expire_days: parseInt(e.target.value) || 0 }); }} placeholder="30" data-testid="input-gen-expire" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                    <div>
@@ -2219,15 +2219,15 @@ function DashboardContent() {
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">ROI Display</label>
-                  <Input value={newGen.roi} onChange={function(e) { return setNewGen({ ...newGen, roi: e.target.value }); }} placeholder="e.g. 8%" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                  <Input value={newGen.roi} onChange={function(e) { setNewGen({ ...newGen, roi: e.target.value }); }} placeholder="e.g. 8%" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Period</label>
-                  <Input value={newGen.period} onChange={function(e) { return setNewGen({ ...newGen, period: e.target.value }); }} placeholder="Daily" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
+                  <Input value={newGen.period} onChange={function(e) { setNewGen({ ...newGen, period: e.target.value }); }} placeholder="Daily" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">Icon (emoji)</label>
-                  <Input value={newGen.icon} onChange={function(e) { return setNewGen({ ...newGen, icon: e.target.value }); }} placeholder="⚡" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500 text-center" />
+                  <Input value={newGen.icon} onChange={function(e) { setNewGen({ ...newGen, icon: e.target.value }); }} placeholder="⚡" className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500 text-center" />
                 </div>
               </div>
 
@@ -2235,7 +2235,7 @@ function DashboardContent() {
                 <label className="text-slate-300 text-xs font-medium mb-2 block">Color Theme</label>
                 <div className="grid grid-cols-3 gap-2">
                   {COLORS.map(function(c) { return (
-                    <button key={c.value} onClick={function() { return setNewGen({ ...newGen, color: c.value }); }}
+                    <button key={c.value} onClick={function() { setNewGen({ ...newGen, color: c.value }); }}
                       className={`h-10 rounded-xl bg-gradient-to-r ${c.value} text-white text-xs font-bold border-2 transition-all ${newGen.color === c.value ? "border-white scale-105" : "border-transparent opacity-70 hover:opacity-100"}`}>
                       {c.label}
                     </button>
@@ -2248,7 +2248,7 @@ function DashboardContent() {
                   <p className="text-white text-sm font-semibold">Publish immediately</p>
                   <p className="text-slate-400 text-xs">Make visible in Market</p>
                 </div>
-                <button onClick={function() { return setNewGen({ ...newGen, published: !newGen.published }); }}
+                <button onClick={function() { setNewGen({ ...newGen, published: !newGen.published }); }}
                   data-testid="toggle-gen-published"
                   className={`w-12 h-6 rounded-full transition-colors relative ${newGen.published ? "bg-green-500" : "bg-slate-600"}`}>
                   <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${newGen.published ? "translate-x-6" : "translate-x-0.5"}`} />
@@ -2269,7 +2269,7 @@ function DashboardContent() {
             </div>
 
             <div className="flex gap-2 mt-5">
-              <Button onClick={function() { return setShowCreateGen(false); }} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
+              <Button onClick={function() { setShowCreateGen(false); }} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
               <Button
                 onClick={function() { if (!newGen.name) { toast({ title: "Name is required", variant: "destructive" }); return; } handleCreateGenerator(); }}
                 data-testid="button-save-new-generator"
@@ -2287,7 +2287,7 @@ function DashboardContent() {
           <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-bold flex items-center gap-2"><span>{editingGen.icon}</span>{editingGen.name}</h3>
-              <button onClick={function() { return setEditingGen(null); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+              <button onClick={function() { setEditingGen(null); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3">
               {[
@@ -2303,7 +2303,7 @@ function DashboardContent() {
               ].map(function({ label, key, type }) { return (
                 <div key={key}>
                   <label className="text-slate-400 text-xs font-medium mb-1 block">{label}</label>
-                  <Input type={type} value={(editingGen as any)[key]} onChange={function(e) { return setEditingGen({ ...editingGen, [key]: type === "number" ? parseFloat(e.target.value) || 0 : e.target.value }); }}
+                  <Input type={type} value={(editingGen as any)[key]} onChange={function(e) { setEditingGen({ ...editingGen, [key]: type === "number" ? parseFloat(e.target.value) || 0 : e.target.value }); }}
                     className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
               ); })}
@@ -2311,7 +2311,7 @@ function DashboardContent() {
                 <label className="text-slate-300 text-xs font-medium mb-2 block">Color Theme</label>
                 <div className="grid grid-cols-3 gap-2">
                   {COLORS.map(function(c) { return (
-                    <button key={c.value} onClick={function() { return setEditingGen({ ...editingGen, color: c.value }); }}
+                    <button key={c.value} onClick={function() { setEditingGen({ ...editingGen, color: c.value }); }}
                       className={`h-8 rounded-xl bg-gradient-to-r ${c.value} text-white text-xs font-bold border-2 transition-all ${editingGen.color === c.value ? "border-white scale-105" : "border-transparent opacity-70"}`}>
                       {c.label}
                     </button>
@@ -2320,7 +2320,7 @@ function DashboardContent() {
               </div>
             </div>
             <div className="flex gap-2 mt-4">
-              <Button onClick={function() { return setEditingGen(null); }} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
+              <Button onClick={function() { setEditingGen(null); }} variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700">Cancel</Button>
               <Button onClick={handleUpdateGenerator} data-testid="button-save-generator" className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold">
                 <Save className="w-3.5 h-3.5 mr-1.5" /> Save Changes
               </Button>

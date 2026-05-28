@@ -161,7 +161,12 @@ export async function adminMutateGenerator(action: 'create' | 'update' | 'delete
         const { error } = await supabase.from('generators').insert(data);
         if (error) return { error: error.message };
     } else if (action === 'create') {
-        const { error } = await supabase.from('generators').insert(data);
+        // Ensure ID exists for standard generators
+        const insertData = {
+          ...data,
+          id: data.id || `gen-${Date.now()}`
+        };
+        const { error } = await supabase.from('generators').insert(insertData);
         if (error) return { error: error.message };
     } else if (action === 'update') {
         const { error } = await supabase.from('generators').update(data).eq('id', data.id);
