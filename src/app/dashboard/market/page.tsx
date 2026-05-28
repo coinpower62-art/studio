@@ -154,6 +154,7 @@ export default function Market() {
 
   const now = Date.now();
   
+  // FILTER: Only count rentals that aren't "permanently deleted" (expired > 30 days ago)
   const visibleRentals = rentedGenerators.filter(ug => {
     const expiresAt = new Date(ug.expires_at).getTime();
     if (expiresAt > now) return true;
@@ -162,6 +163,7 @@ export default function Market() {
 
   const activeRentedCounts = new Map<string, number>();
   const totalRentedCounts = new Map<string, number>();
+  const hasEverRentedPg1 = rentedGenerators.some(g => g.generator_id === 'pg1');
 
   visibleRentals.forEach(ug => {
     totalRentedCounts.set(ug.generator_id, (totalRentedCounts.get(ug.generator_id) || 0) + 1);
@@ -178,7 +180,12 @@ export default function Market() {
     "from-teal-400 to-cyan-600": { bg: "from-cyan-50 to-blue-50", border: "border-cyan-200", badge: "bg-cyan-100", badgeText: "text-cyan-700", gradS: "#22d3ee", gradE: "#0891b2", badgeLabel: "Elite" },
   };
 
-  const publishedGenerators = generators.filter(g => g.published);
+  // Filter out unpublished generators and hide PG1 if user has ever rented it
+  const publishedGenerators = generators.filter(g => {
+    if (!g.published) return false;
+    if (g.id === 'pg1' && hasEverRentedPg1) return false;
+    return true;
+  });
 
   return (
     <div className="pb-20 min-h-screen">

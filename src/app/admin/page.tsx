@@ -101,7 +101,7 @@ const BLANK_GEN: NewGenerator = {
   price: 0, expire_days: 30, daily_income: 0, published: false,
   roi: "", period: "Daily", min_invest: "", max_invest: "", investors: "0",
   active_limit: 1,
-  lifetime_limit: 5,
+  lifetime_limit: 1,
 };
 
 const COLORS = [
@@ -1598,7 +1598,7 @@ function DashboardContent() {
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="font-black text-white text-sm">{g.name}</p>
-                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${g.published ? "bg-green-500 text-white" : "bg-black/30 text-white/70"}`}>
+                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${g.published ? "bg-green-50 text-white" : "bg-black/30 text-white/70"}`}>
                                 {g.published ? "LIVE" : "DRAFT"}
                               </span>
                             </div>
@@ -2147,7 +2147,7 @@ function DashboardContent() {
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
           <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <div className="flex items-center justify-between mb-4"><h3 className="text-white font-bold">Edit User Balance</h3><button onClick={function() { setEditingUser(null); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button></div>
+            <div className="flex items-center justify-between mb-4"><h3 className="text-white font-bold">Edit User Balance</h3><button onClick={function() { return setEditingUser(null); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button></div>
             <p className="text-slate-300 text-sm font-medium">{editingUser.full_name}</p>
             <p className="text-slate-500 text-xs mb-1">@{editingUser.username} · {editingUser.country}</p>
             <p className="text-green-400 text-sm mb-4">Current: ${(editingUser.balance || 0).toFixed(2)}</p>
