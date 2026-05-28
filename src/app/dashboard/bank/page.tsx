@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useCallback, Suspense } from "react";
@@ -6,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import {
   Landmark, ArrowDownToLine, ArrowUpFromLine, Wallet, Shield, Clock,
   CheckCircle, Copy, CreditCard, Smartphone, Coins, AlertCircle,
-  Hash, Network, User, MapPin, ChevronLeft, Lock, KeyRound, X, XCircle, Eye, EyeOff, Hourglass
+  PartyPopper, PhoneCall, Hash, Network, User, MapPin, CalendarDays,
+  Hourglass, Info, Globe, ChevronLeft, Lock, KeyRound, ShieldCheck, X, LogOut, Gift, XCircle
 } from "lucide-react";
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -39,19 +39,13 @@ function luhnCheck(num: string): boolean {
 function isCardExpired(expiry: string): boolean {
   const [mm, yy] = expiry.split("/");
   if (!mm || !yy) return true;
-  const expYear = parseInt(yy) + 2000;
-  const expMonth = parseInt(mm);
+  const expDate = new Date(2000 + parseInt(yy), parseInt(mm) - 1, 1);
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
-  if (expYear < currentYear) return true;
-  if (expYear === currentYear && expMonth < currentMonth) return true;
-  return false;
+  return expDate < new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
 const DEPOSIT_PHONE = "+233548304717";
 const DEPOSIT_NAME = "Patience Opoku";
-const USDT_ADDRESS = "TXmRoXPs98oHwBhLZKEkwLKHceLwbADLnb";
 const COUNTDOWN_SECONDS = 5 * 60;
 const GHS_RATE = 10; // $1 = 10 GHS
 
@@ -68,6 +62,11 @@ type Generator = {
   price: number;
   name: string;
 };
+
+type RentedGeneratorRecord = {
+    generator_id: string;
+    expires_at: string;
+}
 
 type WithdrawRecord = {
   id: string;
@@ -230,6 +229,7 @@ export default function BankPage() {
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastTxId, setLastTxId] = useState("");
+  const [historyTab, setHistoryTab] = useState<"all" | "deposit" | "withdraw">("all");
 
   const [usdt, setUsdt] = useState({ address: "", network: "TRC20" });
   const [momo, setMomo] = useState({ phone: "", name: "" });
@@ -248,11 +248,16 @@ export default function BankPage() {
 
   const [depositRecords, setDepositRecords] = useState<DepositRecord[]>([]);
   const [withdrawRecords, setWithdrawRecords] = useState<WithdrawRecord[]>([]);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [media, setMedia] = useState<any[]>([]);
   const [canWithdraw, setCanWithdraw] = useState(false);
+  const [userHasPg1Only, setUserHasPg1Only] = useState(false);
   const [generators, setGenerators] = useState<Generator[]>([]);
 
   const { display: countdown, expired } = useCountdown(mode === "deposit");
+
+  const [giftCode, setGiftCode] = useState("");
+  const [isRedeeming, setIsRedeeming] = useState(false);
 
   const fetchData = useCallback(async function() {
     setLoading(true);
@@ -273,17 +278,66 @@ export default function BankPage() {
         supabase.from('generators').select('id, name, price').order('price', { ascending: true })
     ]);
     
-    setProfile(profileResult.data as Profile | null);
-    if (profileResult.data) setDepositCountry(profileResult.data.country || '');
-    setDepositRecords(depositsResult.data || []);
-    setWithdrawRecords(withdrawalsResult.data || []);
-    setMedia(mediaResult.data || []);
+    const { data: profileData, error: profileError } = profileResult;
+    if (profileError) {
+      console.error('BankPage: Profile fetch failed');
+    }
+    setProfile(profileData as Profile | null);
+    if (profileData) {
+      setDepositCountry(profileData.country || '');
+    }
 
-    const now = Date.now();
-    const hasActivePaidGenerator = rentedResult.data?.some((g: any) => g.generator_id !== 'pg1' && new Date(g.expires_at).getTime() > now) ?? false;
-    setCanWithdraw(hasActivePaidGenerator);
+    const { data: depositsData, error: depositsError } = depositsResult;
+    if (depositsError) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch deposit history.' });
+    } else {
+        setDepositRecords(depositsData as DepositRecord[]);
+    }
 
-    setGenerators(generatorsResult.data || []);
+    const { data: withdrawalsData, error: withdrawalsError } = withdrawalsResult;
+    if (withdrawalsError) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch withdrawal history.' });
+    } else {
+        setWithdrawRecords(withdrawalsData as WithdrawRecord[]);
+    }
+    
+    const { data: mediaData, error: mediaError } = mediaResult;
+    if (mediaError) {
+        toast({ title: 'Error fetching media', description: mediaError.message, variant: 'destructive' });
+    } else if (mediaData) {
+        setMedia(mediaData);
+        const logo = mediaData.find(m => m.id === 'app-logo');
+        if (logo?.url) {
+            setLogoUrl(logo.url);
+        }
+    }
+
+    const { data: rentedData, error: rentedError } = rentedResult as { data: RentedGeneratorRecord[] | null, error: any };
+    if (rentedError) {
+      toast({
+        title: 'Error fetching rental status',
+        description: rentedError.message,
+        variant: 'destructive',
+      });
+      setCanWithdraw(false);
+      setUserHasPg1Only(false);
+    } else {
+      const now = Date.now();
+      const hasActivePaidGenerator =
+        rentedData?.some((g) => g.generator_id !== 'pg1' && new Date(g.expires_at).getTime() > now) ?? false;
+      setCanWithdraw(hasActivePaidGenerator);
+
+      const hasAnyActiveGenerator = rentedData?.some(g => new Date(g.expires_at).getTime() > now) ?? false;
+      setUserHasPg1Only(hasAnyActiveGenerator && !hasActivePaidGenerator);
+    }
+
+    const { data: generatorsData, error: generatorsError } = generatorsResult;
+    if (generatorsError) {
+        toast({ title: 'Error fetching generators', description: generatorsError.message, variant: 'destructive' });
+    } else if (generatorsData) {
+        setGenerators(generatorsData as Generator[]);
+    }
+    
     setLoading(false);
   }, [router, supabase, toast]);
 
@@ -320,17 +374,22 @@ export default function BankPage() {
     setIsSubmitting(true);
     const methodLabel = depositMethods.find(function(m) { return m.id === depositMethod; })?.label || depositMethod;
     
-    let submissionData: any = { amount: parseFloat(amount), method: methodLabel, country: depositCountry };
+    let submissionData: any = {
+      amount: parseFloat(amount),
+      method: methodLabel,
+      country: depositCountry
+    };
 
     if (depositMethod === "card") {
       const rawNum = depositCard.number.replace(/\s/g, "");
-      if (rawNum.length < 13 || !luhnCheck(rawNum)) { toast({ title: "Invalid card number", variant: "destructive" }); setIsSubmitting(false); return; }
+      if (rawNum.length < 13 || !luhnCheck(rawNum)) { toast({ title: "Invalid card number", description: "Please check and enter a valid Visa or Mastercard number.", variant: "destructive" }); setIsSubmitting(false); return; }
       if (!depositCard.holder.trim()) { toast({ title: "Enter the cardholder name", variant: "destructive" }); setIsSubmitting(false); return; }
       if (!depositCard.expiry || depositCard.expiry.length < 5) { toast({ title: "Enter a valid expiry date (MM/YY)", variant: "destructive" }); setIsSubmitting(false); return; }
-      if (isCardExpired(depositCard.expiry)) { toast({ title: "Card has expired", variant: "destructive" }); setIsSubmitting(false); return; }
+      if (isCardExpired(depositCard.expiry)) { toast({ title: "Card has expired", description: "This card's expiry date has passed. Please use a valid card.", variant: "destructive" }); setIsSubmitting(false); return; }
       if (!depositCard.cvv || depositCard.cvv.length < 3) { toast({ title: "Enter the CVV code", variant: "destructive" }); setIsSubmitting(false); return; }
       
-      submissionData.cardDetails = `CARD-****${rawNum.slice(-4)} ${depositCard.holder.trim()} ${depositCard.expiry}`;
+      const cardRef = `CARD-****${rawNum.slice(-4)} ${depositCard.holder.trim()} ${depositCard.expiry}`;
+      submissionData.cardDetails = cardRef;
       submissionData.txId = `CARD-${rawNum.slice(-4)}-${depositCard.holder.trim().toUpperCase().replace(/\s+/g, "-")}`;
     } else {
       if (!depositTxId.trim()) { toast({ title: "Enter your transaction ID", variant: "destructive" }); setIsSubmitting(false); return; }
@@ -352,15 +411,21 @@ export default function BankPage() {
   const handleSetPin = async function() {
       if (pinInput.length < 6 || pinConfirm.length < 6) { setPinError("Enter all 6 digits"); return; }
       if (pinInput !== pinConfirm) { setPinError("PINs do not match. Try again."); setPinConfirm(""); return; }
-      setPinError(""); setIsSettingPin(true);
+      if (!user) return;
+
+      setPinError("");
+      setIsSettingPin(true);
+
       const result = await setWithdrawalPin();
       setIsSettingPin(false);
+      
       if (result.error) {
          toast({ title: 'Error', description: result.error, variant: 'destructive' });
       } else {
         setPinMode(null);
+        setPinInput(""); setPinConfirm(""); setPinError("");
         setMode("withdraw");
-        toast({ title: "Withdrawal PIN set!" });
+        toast({ title: "Withdrawal PIN set!", description: "Your PIN has been saved securely. You can now withdraw." });
         setProfile(function(p) { return p ? {...p, has_withdrawal_pin: true} : null; });
       }
   }
@@ -370,40 +435,60 @@ export default function BankPage() {
     if (!amount || parseFloat(amount) <= 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
     if (!withdrawMethod) { toast({ title: "Select a payment method", variant: "destructive" }); return; }
     const amt = parseFloat(amount);
-    if (amt < 1) { toast({ title: "Minimum withdrawal is $1.00", variant: "destructive" }); return; }
-    if (amt > profile.balance) { toast({ title: "Insufficient balance", variant: "destructive" }); return; }
     
-    // Validation for withdrawal details
+    if (amt < 1) {
+      toast({ title: "Minimum withdrawal is $1.00", variant: "destructive" });
+      return;
+    }
+
+    if (amt > profile.balance) {
+      toast({ title: "Insufficient balance", description: `Your balance is $${profile.balance.toFixed(2)}`, variant: "destructive" });
+      return;
+    }
+    
     if (withdrawMethod === "card") {
       const rawNum = card.number.replace(/\s/g, "");
-      if (rawNum.length < 13 || !luhnCheck(rawNum)) { toast({ title: "Invalid card number", variant: "destructive" }); return; }
+      if (rawNum.length < 13 || !luhnCheck(rawNum)) { toast({ title: "Invalid card number", description: "Please check and enter a valid Visa or Mastercard number.", variant: "destructive" }); return; }
       if (!card.holder.trim()) { toast({ title: "Enter the cardholder name", variant: "destructive" }); return; }
       if (!card.expiry || card.expiry.length < 5) { toast({ title: "Enter a valid expiry date (MM/YY)", variant: "destructive" }); return; }
-      if (isCardExpired(card.expiry)) { toast({ title: "Card has expired", variant: "destructive" }); return; }
+      if (isCardExpired(card.expiry)) { toast({ title: "Card has expired", description: "This card's expiry date has passed. Please use a valid card.", variant: "destructive" }); return; }
       if (!card.cvv || card.cvv.length < 3) { toast({ title: "Enter the CVV code", variant: "destructive" }); return; }
-    } else if (withdrawMethod === "bank") {
+    }
+    if (withdrawMethod === "bank") {
       if (!bank.name.trim()) { toast({ title: "Please select your bank", variant: "destructive" }); return; }
       if (bank.name === 'Other' && !otherBankName.trim()) { toast({ title: "Please specify your bank name", variant: "destructive" }); return; }
       if (!bank.number.trim()) { toast({ title: "Enter the account number", variant: "destructive" }); return; }
       if (!bank.holder.trim()) { toast({ title: "Enter the account holder name", variant: "destructive" }); return; }
-    } else if (withdrawMethod === "usdt") {
+    }
+     if (withdrawMethod === "usdt") {
         if (!usdt.address.trim()) { toast({ title: "Enter a USDT address", variant: "destructive" }); return; }
-    } else if (withdrawMethod === "momo") {
-        if (!momo.phone.trim()) { toast({ title: "Enter a phone number", variant: "destructive" }); return; }
-        if (!momo.name.trim()) { toast({ title: "Enter an account name", variant: "destructive" }); return; }
-    } else if (withdrawMethod === "western_union") {
+    }
+     if (withdrawMethod === "momo") {
+        const methodState = momo;
+        if (!methodState.phone.trim()) { toast({ title: "Enter a phone number", variant: "destructive" }); return; }
+        if (!methodState.name.trim()) { toast({ title: "Enter an account name", variant: "destructive" }); return; }
+    }
+    if (withdrawMethod === "western_union") {
         if (!westernUnion.fullName.trim()) { toast({ title: "Enter your full name for Western Union", variant: "destructive" }); return; }
         if (!westernUnion.city.trim()) { toast({ title: "Enter your city for pickup", variant: "destructive" }); return; }
     }
     
-    setPinInput(""); setPinError(""); setPinMode("verify");
+    // All good, open PIN modal
+    setPinInput("");
+    setPinError("");
+    setPinMode("verify");
   };
 
   const handleWithdrawalSubmit = async function() {
     if (!user || !profile) return;
-    if (pinInput.length < 6) { toast({ title: "PIN Required", variant: "destructive" }); return; }
+    if (pinInput.length < 6) {
+        toast({ title: "PIN Required", description: `Please enter your 6-digit PIN to authorize this withdrawal.`, variant: "destructive" });
+        return;
+    }
     
     setIsSubmitting(true);
+    const amt = parseFloat(amount);
+    
     let details: any;
     switch(withdrawMethod) {
         case 'usdt': details = usdt; break;
@@ -415,7 +500,7 @@ export default function BankPage() {
     }
 
     const result = await createWithdrawalRequest({
-      amount: parseFloat(amount),
+      amount: amt,
       method: withdrawMethods.find(function(m) { return m.id === withdrawMethod; })?.label || withdrawMethod || "",
       details: details,
     });
@@ -432,6 +517,25 @@ export default function BankPage() {
     }
   };
 
+  const handleRedeemCode = async () => {
+    if (!giftCode.trim()) {
+      toast({ title: "Enter a gift code", variant: "destructive" });
+      return;
+    }
+    setIsRedeeming(true);
+    const result = await redeemGiftCode(giftCode.trim().toUpperCase());
+    setIsRedeeming(false);
+
+    if (result.error) {
+      toast({ title: "Redemption Failed", description: result.error, variant: "destructive" });
+    } else {
+      const redeemedAmount = result.amount ? parseFloat(String(result.amount)) : 0;
+      toast({ title: "Success!", description: `You have redeemed $${redeemedAmount.toFixed(2)}. It has been added to your balance.` });
+      setGiftCode("");
+      fetchData(); 
+    }
+  };
+
   if (loading || !profile) return <BankPageSkeleton />;
 
   const isGhana = profile.country === 'Ghana';
@@ -445,28 +549,28 @@ export default function BankPage() {
   };
 
   const depositMethods = [
-    { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo },
-    { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt },
-    { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card },
+    { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo, desc: "Mobile Money", color: "from-yellow-400 to-amber-500" },
+    { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt, desc: "Tether (TRC20/ERC20)", color: "from-teal-400 to-green-500" },
+    { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-blue-400 to-indigo-500" },
   ];
 
   const withdrawMethods = [
-    { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt },
-    { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo },
-    { id: "bank", label: "Bank Transfer", icon: Landmark, img: imageMap.bank },
-    { id: "western_union", label: "Western Union", icon: Network, img: imageMap.western_union },
-    { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card },
+    { id: "usdt", label: "USDT", icon: Coins, img: imageMap.usdt, desc: "Tether (TRC20/ERC20)", color: "from-teal-400 to-green-500" },
+    { id: "momo", label: "MTN MOMO", icon: Smartphone, img: imageMap.momo, desc: "Mobile Money", color: "from-yellow-400 to-amber-500" },
+    { id: "bank", label: "Bank Transfer", icon: Landmark, img: imageMap.bank, desc: "Local & International", color: "from-gray-400 to-gray-500" },
+    { id: "western_union", label: "Western Union", icon: Network, img: imageMap.western_union, desc: "Global Money Transfer", color: "from-blue-400 to-indigo-500"},
+    { id: "card", label: "CARD", icon: CreditCard, img: imageMap.card, desc: "Visa / Mastercard", color: "from-purple-400 to-pink-500" },
   ];
 
   const allTransactions = [...(depositRecords || []), ...(withdrawRecords || [])]
     .sort(function(a, b) { return new Date(b.created_at).getTime() - new Date(a.created_at).getTime(); });
-
-  const africanBanks = ["Absa Bank", "GCB Bank", "Ecobank", "Zenith Bank", "UBA", "Access Bank"];
-  const bankOptions = [...africanBanks, "Other"].sort();
+  
+  const bankOptions = ["Absa Bank", "GCB Bank", "Ecobank", "Zenith Bank", "UBA", "Access Bank", "Other"].sort();
+  const quickAmounts = generators.filter(g => g.price > 0).map(g => g.price);
 
   return (
     <div className="bg-[#f7f9f4] pb-24">
-      <Dialog open={!!lowBalanceGen} onOpenChange={(open) => { if (!open) setLowBalanceGen(null); }}>
+       <Dialog open={!!lowBalanceGen} onOpenChange={(open) => { if (!open) setLowBalanceGen(null); }}>
         <DialogContent className="max-w-sm mx-auto rounded-2xl p-0 overflow-hidden">
           <div className="bg-card p-5 text-center">
             <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
@@ -482,10 +586,10 @@ export default function BankPage() {
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {pinMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-sm p-6 relative">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 relative">
             <button onClick={function() { setPinMode(null); setPinInput(""); setPinConfirm(""); setPinError(""); }}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
               <X className="w-5 h-5" />
@@ -591,8 +695,8 @@ export default function BankPage() {
                     <div className="bg-white rounded-xl p-3 border border-teal-50">
                         <p className="text-[10px] text-gray-400 mb-1">Our USDT Address</p>
                         <div className="flex items-start justify-between gap-2">
-                            <p className="font-mono text-xs text-gray-900 font-bold break-all">{USDT_ADDRESS}</p>
-                            <button onClick={() => copy(USDT_ADDRESS, "USDT Address")} className="p-2 rounded-lg bg-teal-50 text-teal-600 flex-shrink-0">
+                            <p className="font-mono text-xs text-gray-900 font-bold break-all">TXmRoXPs98oHwBhLZKEkwLKHceLwbADLnb</p>
+                            <button onClick={() => copy("TXmRoXPs98oHwBhLZKEkwLKHceLwbADLnb", "USDT Address")} className="p-2 rounded-lg bg-teal-50 text-teal-600 flex-shrink-0">
                                 <Copy className="w-4 h-4" />
                             </button>
                         </div>
