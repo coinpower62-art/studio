@@ -329,11 +329,16 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
   
   const endOfCollection = Math.min(now, expiresAtMs);
   const actualDailyIncome = ug.daily_income;
-  const periodsReady = !isSuspended ? Math.floor((endOfCollection - lastRef) / TWENTY_FOUR_H) : 0;
-  const canCollect = !isSuspended && periodsReady > 0;
-  const pendingIncome = periodsReady * actualDailyIncome;
+  
+  // Implementation of "Skip" logic: 
+  // We only ever show 1 day as ready. If user misses days, they are skipped.
+  const elapsed = endOfCollection - lastRef;
+  const canCollect = !isSuspended && elapsed >= TWENTY_FOUR_H;
+  const pendingIncome = actualDailyIncome; // Only ever 1 day
 
-  const currentPeriodStart = lastRef + (periodsReady * TWENTY_FOUR_H);
+  // Even if user forgot, the "Next Credit" visual should only show the current 24h block
+  const currentPeriodCount = Math.floor(elapsed / TWENTY_FOUR_H);
+  const currentPeriodStart = lastRef + (currentPeriodCount * TWENTY_FOUR_H);
   const nextCreditAt = currentPeriodStart + TWENTY_FOUR_H;
   const deletionAtMs = expiresAtMs + THIRTY_DAYS;
 
@@ -393,10 +398,10 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-green-800 font-bold text-sm">
-                            {periodsReady > 1 ? `${periodsReady} days of income ready!` : "Daily income ready!"}
+                            Daily income ready!
                         </p>
                         <p className="text-green-600 text-xs">
-                           Total ready to collect: <span className="font-black">${pendingIncome.toFixed(2)}</span>
+                           Ready to collect: <span className="font-black">${pendingIncome.toFixed(2)}</span>
                         </p>
                     </div>
                     <form action={function() { return onClaim(ug.id); }}>
@@ -427,12 +432,19 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                         </div>
                     </div>
                     {/* Show progress towards the next day being mined */}
-                    <LiveEarningsCounter lastRef={currentPeriodStart} dailyIncome={actualDailyIncome} active={true} />
+                    <LiveEarningsCounter lastRef={currentPeriodStart} dailyIncome={actualDailyIncome} active={!canCollect} />
                 </div>
-                <div className="flex items-center justify-between pt-1.5 border-t border-amber-200">
-                    <p className="text-amber-700 text-[10px] font-semibold">Next credit in</p>
-                    <RedCountdown targetMs={nextCreditAt} />
-                </div>
+                {!canCollect && (
+                  <div className="flex items-center justify-between pt-1.5 border-t border-amber-200">
+                      <p className="text-amber-700 text-[10px] font-semibold">Next credit in</p>
+                      <RedCountdown targetMs={nextCreditAt} />
+                  </div>
+                )}
+                {canCollect && (
+                   <div className="flex items-center justify-center pt-1.5 border-t border-amber-200">
+                      <p className="text-green-700 text-[10px] font-bold uppercase tracking-tight">Collection Waiting</p>
+                   </div>
+                )}
             </div>
            </div>
         )}
