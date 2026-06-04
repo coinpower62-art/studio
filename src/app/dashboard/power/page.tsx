@@ -94,8 +94,8 @@ function RedCountdown({ targetMs }: { targetMs: number }) {
 
 type PCandle = { o: number; h: number; l: number; c: number; v: number };
 
-function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
-  genId: string; dailyIncome: number; genColor: string; suspended: boolean; canCollect: boolean;
+function LiveChart({ genId, dailyIncome, genColor, suspended, isExpired }: {
+  genId: string; dailyIncome: number; genColor: string; suspended: boolean; isExpired: boolean;
 }) {
   const W = 300, H = 130, N = 20;
   const PAD_L = 3, PAD_R = 46, PAD_T = 22, PAD_B = 4;
@@ -105,7 +105,7 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
   const mainTop = PAD_T, mainBot = PAD_T + mainH;
   const volTop  = mainBot + 5, volBot = volTop + volH;
 
-  const isActive = !suspended && !canCollect;
+  const isActive = !suspended && !isExpired;
   const TICK_MS = 280, TICKS_PER_CANDLE = 18;
   const tickRef = useRef(0);
   
@@ -231,13 +231,13 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
 
       <div className="absolute top-1.5 left-2.5 right-2 flex items-center justify-between z-10">
         <div className="flex items-center gap-1.5">
-          {canCollect ? (
-            <span className="bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full tracking-wider">
-              ⚡ INCOME READY
-            </span>
-          ) : suspended ? (
+          {suspended ? (
             <span className="bg-red-700 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full tracking-wider">
               ⏸ SUSPENDED
+            </span>
+          ) : isExpired ? (
+            <span className="bg-gray-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full tracking-wider">
+              ⏹ EXPIRED
             </span>
           ) : (
             <span className="flex items-center gap-1 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full tracking-wider">
@@ -250,16 +250,6 @@ function LiveChart({ genId, dailyIncome, genColor, suspended, canCollect }: {
           ${dailyIncome.toFixed(2)}/day
         </span>
       </div>
-
-      {canCollect && (
-        <div className="absolute inset-0 flex items-center justify-center z-20"
-          style={{ background: "rgba(0,0,0,0.52)" }}>
-          <div className="text-center">
-            <p className="text-amber-400 font-black text-xs tracking-wide">⚡ Income Cycle Complete</p>
-            <p className="text-white/45 text-[9px] mt-0.5">Chart resumes after you collect</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -270,7 +260,7 @@ function LiveEarningsCounter({ lastRef, dailyIncome, active }: {
   const calc = useCallback(function() {
     if (!active) return dailyIncome;
     const elapsed = Date.now() - lastRef;
-    const fraction = Math.min(1, elapsed / TWENTY_FOUR_H);
+    const fraction = Math.max(0, Math.min(1, elapsed / TWENTY_FOUR_H));
     return fraction * dailyIncome;
   }, [active, dailyIncome, lastRef]);
 
@@ -333,6 +323,7 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
   const now = Date.now();
   const expiresAtMs = new Date(ug.expires_at).getTime();
   const isSuspended = ug.suspended && expiresAtMs > now;
+  const isExpired = expiresAtMs <= now;
   
   const lastRef = ug.last_claimed_at ? new Date(ug.last_claimed_at).getTime() : new Date(ug.rented_at).getTime();
   
@@ -340,9 +331,10 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
   const actualDailyIncome = ug.daily_income;
   const periodsReady = !isSuspended ? Math.floor((endOfCollection - lastRef) / TWENTY_FOUR_H) : 0;
   const canCollect = !isSuspended && periodsReady > 0;
-  const isExpired = expiresAtMs <= now;
   const pendingIncome = periodsReady * actualDailyIncome;
-  const nextCreditAt = lastRef + TWENTY_FOUR_H;
+
+  const currentPeriodStart = lastRef + (periodsReady * TWENTY_FOUR_H);
+  const nextCreditAt = currentPeriodStart + TWENTY_FOUR_H;
   const deletionAtMs = expiresAtMs + THIRTY_DAYS;
 
   const borderColor = isExpired && !canCollect ? "border-gray-200 opacity-60"
@@ -395,12 +387,9 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
       <div className="p-4 space-y-3">
         {!isExpired && <ExpiryBar rentedAt={new Date(ug.rented_at).getTime()} expiresAt={expiresAtMs} />}
 
-        {!isExpired && !canCollect && (
-          <LiveChart genId={ug.id} dailyIncome={actualDailyIncome} genColor={ug.color} suspended={isSuspended} canCollect={canCollect} />
-        )}
-
-        {canCollect ? (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-3 space-y-2">
+        {/* Collection box if any periods are ready */}
+        {canCollect && (
+             <div className="bg-green-50 border border-green-200 rounded-xl p-3 space-y-2 mb-1 animate-in fade-in slide-in-from-top-2">
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-green-800 font-bold text-sm">
@@ -422,7 +411,34 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                     </form>
                 </div>
             </div>
-        ) : isExpired ? (
+        )}
+
+        {/* Earning / Mining Section */}
+        {!isExpired && !isSuspended && (
+           <div className="space-y-3">
+             <LiveChart genId={ug.id} dailyIncome={actualDailyIncome} genColor={ug.color} suspended={isSuspended} isExpired={isExpired} />
+             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+                        <div>
+                            <p className="text-amber-800 font-semibold text-xs">Earning • Live</p>
+                            <p className="text-amber-600 text-[10px]">Next credit incoming</p>
+                        </div>
+                    </div>
+                    {/* Show progress towards the next day being mined */}
+                    <LiveEarningsCounter lastRef={currentPeriodStart} dailyIncome={actualDailyIncome} active={true} />
+                </div>
+                <div className="flex items-center justify-between pt-1.5 border-t border-amber-200">
+                    <p className="text-amber-700 text-[10px] font-semibold">Next credit in</p>
+                    <RedCountdown targetMs={nextCreditAt} />
+                </div>
+            </div>
+           </div>
+        )}
+
+        {/* Expired / Suspended specific UI when no collection pending */}
+        {isExpired && !canCollect && (
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-3">
                 <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -436,7 +452,9 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                     <RedCountdown targetMs={deletionAtMs} />
                 </div>
             </div>
-        ) : isSuspended ? (
+        )}
+
+        {isSuspended && (
             <div className="bg-red-50 border border-red-300 rounded-xl p-3 space-y-2">
                 <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
@@ -457,23 +475,6 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                         Deposit Now to Resume →
                     </button>
                 )}
-            </div>
-        ) : (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
-                        <div>
-                            <p className="text-amber-800 font-semibold text-xs">Earning • Live</p>
-                            <p className="text-amber-600 text-[10px]">Tracking crypto</p>
-                        </div>
-                    </div>
-                    <LiveEarningsCounter lastRef={lastRef} dailyIncome={actualDailyIncome} active={true} />
-                </div>
-                <div className="flex items-center justify-between pt-1.5 border-t border-amber-200">
-                    <p className="text-amber-700 text-[10px] font-semibold">Collectable in</p>
-                    <RedCountdown targetMs={nextCreditAt} />
-                </div>
             </div>
         )}
 
