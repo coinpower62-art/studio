@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
@@ -289,12 +290,6 @@ export default function Market() {
                 </div>
 
                 <div className="p-4 sm:p-5">
-                  {mostRecentExpired && !isLifetimeMaxed && (
-                      <div className="mb-4 text-center">
-                          <DeletionCountdown expiresAt={mostRecentExpired.expires_at} />
-                      </div>
-                  )}
-
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     <div className={'rounded-xl px-2 py-2 text-center border ' + (gen.price === 0 ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-100 shadow-sm")}>
                       <p className={'text-[9px] font-bold uppercase ' + (gen.price === 0 ? "text-green-500" : "text-gray-400")}>Price</p>
