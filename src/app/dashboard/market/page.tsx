@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, TrendingUp, Shield, CheckCircle, Wallet, ArrowDownToLine, Timer } from "lucide-react";
+import { Zap, TrendingUp, Shield, CheckCircle, Wallet, ArrowDownToLine, Timer, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -110,7 +110,6 @@ export default function Market() {
 
   const now = Date.now();
   
-  // Track counts for all rentals ever made
   const activeRentedCounts = new Map<string, number>();
   const totalRentedCounts = new Map<string, number>();
   const hasEverRentedPg1 = rentedGenerators.some(g => g.generator_id === 'pg1');
@@ -130,9 +129,7 @@ export default function Market() {
     "from-teal-400 to-cyan-600": { bg: "from-cyan-50 to-blue-50", border: "border-cyan-200", badge: "bg-cyan-100", badgeText: "text-cyan-700", gradS: "#22d3ee", gradE: "#0891b2", badgeLabel: "Elite" },
   };
 
-  // 1. Filter out unpublished
-  // 2. Hide PG1 if user has ever rented it
-  // 3. REMOVE permanently if lifetime limit is reached
+  // Filter out unpublished, hide PG1 if ever rented, and PERMANENTLY REMOVE if lifetime limit is hit
   const visibleGenerators = generators.filter(g => {
     if (!g.published) return false;
     if (g.id === 'pg1' && hasEverRentedPg1) return false;
