@@ -15,9 +15,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
+import { cn } from "@/lib/utils";
 
 import { collectEarnings } from "./actions";
 import type { Generator as BaseGenerator } from '@/lib/data';
+
+const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
 
 export type RentedGenerator = {
   id: string;
@@ -38,6 +41,8 @@ export type RentedGenerator = {
   period: string;
   investors: string;
   image_url?: string;
+  lifetime_limit?: number;
+  total_rented_count?: number;
 };
 
 const CHART_PAIRS_P = [
@@ -54,6 +59,7 @@ function getGenPairP(genId: string): string {
   for (let i = 0; i < genId.length; i++) h = ((h << 5) + h) ^ genId.charCodeAt(i);
   return CHART_PAIRS_P[Math.abs(h) % CHART_PAIRS_P.length];
 }
+
 
 const TWENTY_FOUR_H = 24 * 60 * 60 * 1000;
 
@@ -326,12 +332,16 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
   
   const endOfCollection = Math.min(now, expiresAtMs);
   const actualDailyIncome = ug.daily_income;
-  const periodsReady = !isSuspended ? Math.floor((endOfCollection - lastRef) / TWENTY_FOUR_H) : 0;
-  const canCollect = !isSuspended && periodsReady > 0;
-  const pendingIncome = periodsReady * actualDailyIncome;
+  
+  const elapsed = endOfCollection - lastRef;
+  const canCollect = !isSuspended && elapsed >= TWENTY_FOUR_H;
+  const pendingIncome = actualDailyIncome;
 
-  const currentPeriodStart = lastRef + (periodsReady * TWENTY_FOUR_H);
+  const currentPeriodCount = Math.floor(elapsed / TWENTY_FOUR_H);
+  const currentPeriodStart = lastRef + (currentPeriodCount * TWENTY_FOUR_H);
   const nextCreditAt = currentPeriodStart + TWENTY_FOUR_H;
+  const deletionAtMs = expiresAtMs + THIRTY_DAYS;
+  const isLimitReached = (ug.total_rented_count || 0) >= (ug.lifetime_limit || 1);
 
   const borderColor = isExpired && !canCollect ? "border-gray-200 opacity-60"
     : isSuspended ? "border-red-300 bg-red-50/30"
@@ -388,10 +398,10 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-green-800 font-bold text-sm">
-                            {periodsReady > 1 ? `${periodsReady} days of income ready!` : "Daily income ready!"}
+                            Daily income ready!
                         </p>
                         <p className="text-green-600 text-xs">
-                           Total ready to collect: <span className="font-black">${pendingIncome.toFixed(2)}</span>
+                           Ready to collect: <span className="font-black">${pendingIncome.toFixed(2)}</span>
                         </p>
                     </div>
                     <form action={function() { return onClaim(ug.id); }}>
@@ -420,12 +430,19 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                             <p className="text-amber-600 text-[10px]">Next credit incoming</p>
                         </div>
                     </div>
-                    <LiveEarningsCounter lastRef={currentPeriodStart} dailyIncome={actualDailyIncome} active={true} />
+                    <LiveEarningsCounter lastRef={currentPeriodStart} dailyIncome={actualDailyIncome} active={!canCollect} />
                 </div>
-                <div className="flex items-center justify-between pt-1.5 border-t border-amber-200">
-                    <p className="text-amber-700 text-[10px] font-semibold">Next credit in</p>
-                    <RedCountdown targetMs={nextCreditAt} />
-                </div>
+                {!canCollect && (
+                  <div className="flex items-center justify-between pt-1.5 border-t border-amber-200">
+                      <p className="text-amber-700 text-[10px] font-semibold">Next credit in</p>
+                      <RedCountdown targetMs={nextCreditAt} />
+                  </div>
+                )}
+                {canCollect && (
+                   <div className="flex items-center justify-center pt-1.5 border-t border-amber-200">
+                      <p className="text-green-700 text-[10px] font-bold uppercase tracking-tight">Collection Waiting</p>
+                   </div>
+                )}
             </div>
            </div>
         )}
@@ -436,9 +453,15 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                     <AlertTriangle className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <p className="text-gray-500 text-sm">This generator has expired. Rent a new one from the Market.</p>
                 </div>
-                <div className="bg-red-50 border border-red-100 rounded-xl p-2.5 text-center">
-                    <p className="text-[10px] text-red-600 font-black uppercase tracking-widest">Plan Disconnected Permanently</p>
-                </div>
+                {isLimitReached && (
+                  <div className="bg-red-50 border border-red-100 rounded-xl p-2.5 flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-red-600">
+                          <Trash2 className="w-4 h-4" />
+                          <span className="text-[10px] font-bold uppercase">Permanently Deleted In</span>
+                      </div>
+                      <RedCountdown targetMs={deletionAtMs} />
+                  </div>
+                )}
             </div>
         )}
 
@@ -667,8 +690,13 @@ export default function Power() {
       return;
     }
 
-    const enrichedData = rentedData.map(function(rg) {
-      const baseGen = rg.generators as BaseGenerator | null;
+    const allRentals = rentedData || [];
+
+    const enrichedData = allRentals.map(function(rg) {
+      const baseGen = rg.generators as any | null;
+      
+      const totalOfType = allRentals.filter(r => r.generator_id === rg.generator_id).length;
+
       return {
         ...rg,
         name: baseGen?.name ?? 'Unknown Generator',
@@ -682,6 +710,8 @@ export default function Power() {
         period: baseGen?.period ?? '',
         investors: baseGen?.investors ?? '0',
         image_url: baseGen?.image_url,
+        lifetime_limit: baseGen?.lifetime_limit || 1,
+        total_rented_count: totalOfType,
       }
     });
     // @ts-ignore
@@ -728,19 +758,31 @@ export default function Power() {
 
   const now = Date.now();
   
-  // All visible generators (no 30-day filter)
-  const visibleRentals = rentedGenerators;
+  const visibleRentals = rentedGenerators.filter(ug => {
+    const expiresAt = new Date(ug.expires_at).getTime();
+    if (expiresAt > now) return true;
+    
+    const lastRef = ug.last_claimed_at ? new Date(ug.last_claimed_at).getTime() : new Date(ug.rented_at).getTime();
+    const periodsReady = Math.floor((Math.min(now, expiresAt) - lastRef) / TWENTY_FOUR_H);
+    if (periodsReady > 0) return true;
+
+    const isLimitReached = (ug.total_rented_count || 0) >= (ug.lifetime_limit || 1);
+    if (isLimitReached) {
+        return expiresAt + THIRTY_DAYS > now;
+    }
+
+    return false;
+  });
 
   const activeGenerators = visibleRentals.filter(function(ug) {
     if (!ug || !ug.expires_at) return false;
     const expiresAtMs = new Date(ug.expires_at).getTime();
     if (expiresAtMs <= now) {
-      // It's expired, but can we still collect?
       const lastRef = ug.last_claimed_at ? new Date(ug.last_claimed_at).getTime() : new Date(ug.rented_at).getTime();
       const periodsReady = Math.floor((expiresAtMs - lastRef) / TWENTY_FOUR_H);
       return periodsReady > 0 && !ug.suspended;
     }
-    return true; // Not expired
+    return true;
   });
 
   const expiredGenerators = visibleRentals.filter(function(ug) {

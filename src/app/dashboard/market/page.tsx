@@ -33,12 +33,37 @@ type Profile = {
     balance: number;
 };
 
+const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+
 function MarketPageSkeleton() {
     return (
       <div className="pt-12 p-4 pb-20 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-80 rounded-2xl" />)}
         </div>
+      </div>
+    );
+}
+
+function RedCountdown({ targetMs }: { targetMs: number }) {
+    const [remaining, setRemaining] = useState(Math.max(0, targetMs - Date.now()));
+    const sync = useCallback(function() { return setRemaining(Math.max(0, targetMs - Date.now())); }, [targetMs]);
+    useEffect(function() {
+      const t = setInterval(sync, 1000);
+      return function() { return clearInterval(t); };
+    }, [sync]);
+    const h = Math.floor(remaining / 3600000);
+    const m = Math.floor((remaining % 3600000) / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+    return (
+      <div className="flex items-center justify-center gap-0.5">
+        {[h, m, s].map(function(val, i) {
+          return (
+          <span key={i}>
+            <span className="inline-block text-red-600 text-[10px] font-black min-w-[1rem] text-center">{String(val).padStart(2,"0")}</span>
+            {i < 2 && <span className="text-red-600 font-black text-[10px] mx-0.5">:</span>}
+          </span>
+        ); })}
       </div>
     );
 }
@@ -95,14 +120,14 @@ export default function Market() {
         if (result.error === 'insufficient_funds') {
            setLowBalanceGen({ name: gen.name, price: gen.price });
         } else {
-          throw new Error(result.error);
+          toast({ title: "Action restricted", description: result.error, variant: "destructive" });
         }
       } else {
         toast({ title: "Generator rented!", description: "Check your Power page to collect daily income." });
         await fetchData();
       }
     } catch (err: any) {
-      toast({ title: "Action restricted", description: err.message || 'Error occurred.', variant: "destructive" });
+      toast({ title: "Error", description: err.message || 'Error occurred.', variant: "destructive" });
     } finally {
       setIsRenting(null);
     }
@@ -112,14 +137,11 @@ export default function Market() {
 
   const now = Date.now();
   
-  // All rentals count permanently now.
-  const visibleRentals = rentedGenerators;
-
   const activeRentedCounts = new Map<string, number>();
   const totalRentedCounts = new Map<string, number>();
   const hasEverRentedPg1 = rentedGenerators.some(g => g.generator_id === 'pg1');
 
-  visibleRentals.forEach(ug => {
+  rentedGenerators.forEach(ug => {
     totalRentedCounts.set(ug.generator_id, (totalRentedCounts.get(ug.generator_id) || 0) + 1);
     if (new Date(ug.expires_at).getTime() > now) {
       activeRentedCounts.set(ug.generator_id, (activeRentedCounts.get(ug.generator_id) || 0) + 1);
@@ -167,14 +189,19 @@ export default function Market() {
 
             const isLifetimeMaxed = totalCount >= lifetimeLimit;
             const isActiveMaxed = activeCount >= activeLimit;
-            const isElite = gen.id === 'pg5';
+            
+            // Find most recent expiry to show clearing timer
+            const lastExpiry = rentedGenerators
+              .filter(ug => ug.generator_id === gen.id)
+              .map(ug => new Date(ug.expires_at).getTime())
+              .sort((a, b) => b - a)[0];
+            const clearingAt = lastExpiry + THIRTY_DAYS;
 
             return (
               <div key={gen.id} data-testid={'card-generator-' + gen.id}
                 className={cn(
                     'bg-white rounded-2xl border-2 ' + cm.border + ' shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden ',
-                    isLifetimeMaxed ? "grayscale opacity-80" : "",
-                    isElite && !isLifetimeMaxed ? "ring-2 ring-cyan-400 ring-offset-4 shadow-[0_0_20px_rgba(34,211,238,0.2)] scale-[1.01]" : ""
+                    isLifetimeMaxed ? "grayscale opacity-80" : ""
                 )}>
 
                 <div className={'bg-gradient-to-r ' + cm.bg + ' p-4 sm:p-5 border-b ' + cm.border}>
@@ -187,15 +214,11 @@ export default function Market() {
                       <span className={'text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full ' + cm.badge + ' ' + cm.badgeText}>
                         {cm.badgeLabel}
                       </span>
-                      {isLifetimeMaxed ? (
+                      {isLifetimeMaxed && (
                         <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-600 text-white flex items-center gap-1 shadow-md uppercase tracking-tighter">
                           <ShieldAlert className="w-3 h-3" /> Permanent Disconnect
                         </span>
-                      ) : totalCount > 0 && gen.id !== 'pg1' ? (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 flex items-center gap-1 border border-green-200">
-                          <CheckCircle className="w-3 h-3" /> {totalCount}/{lifetimeLimit} Used
-                        </span>
-                      ) : null}
+                      )}
                     </div>
                   </div>
 
@@ -206,33 +229,32 @@ export default function Market() {
                         className="w-full h-full object-contain p-4"
                         onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget.parentElement as HTMLElement).style.background = 'linear-gradient(135deg, ' + cm.gradS + ' 0%, ' + cm.gradE + ' 100%)'; }}
                       />
-                      {isLifetimeMaxed && (
-                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-6 backdrop-blur-[1px]">
-                            <div className="bg-red-600 text-white text-[10px] font-black px-4 py-2 rounded-xl shadow-2xl tracking-widest border-2 border-white/50 text-center uppercase">
-                               Limit Reached<br/><span className="text-[8px] opacity-80 mt-1 block">Never available again</span>
-                            </div>
-                         </div>
-                      )}
                   </div>
 
-                  {gen.id !== 'pg1' && (
-                    <div className={cn("grid gap-2 mt-4", totalCount > 0 ? "grid-cols-2" : "grid-cols-1")}>
-                        <div className="bg-white/80 border border-amber-200 rounded-xl p-2.5 shadow-sm">
-                            <div className="flex justify-between items-center mb-1.5">
-                                <span className="text-[9px] text-gray-500 font-black uppercase">Active Slot</span>
-                                <span className="text-[10px] font-black text-gray-900">{activeCount}/{activeLimit}</span>
-                            </div>
-                            <Progress value={(activeCount / activeLimit) * 100} className="h-1.5 bg-gray-200" />
-                        </div>
-                        {totalCount > 0 && (
-                          <div className="bg-white/80 border border-blue-200 rounded-xl p-2.5 shadow-sm">
-                              <div className="flex justify-between items-center mb-1.5">
-                                  <span className="text-[9px] text-gray-500 font-black uppercase">Account Lifetime</span>
-                                  <span className="text-[10px] font-black text-gray-900">{totalCount}/{lifetimeLimit}</span>
-                              </div>
-                              <Progress value={(totalCount / lifetimeLimit) * 100} className="h-1.5 bg-gray-200" />
+                  <div className="grid gap-2 mt-4 grid-cols-2">
+                      <div className="bg-white/80 border border-amber-200 rounded-xl p-2.5 shadow-sm">
+                          <div className="flex justify-between items-center mb-1.5">
+                              <span className="text-[9px] text-gray-500 font-black uppercase">Active Slot</span>
+                              <span className="text-[10px] font-black text-gray-900">{activeCount}/{activeLimit}</span>
                           </div>
-                        )}
+                          <Progress value={(activeCount / activeLimit) * 100} className="h-1.5 bg-gray-200" />
+                      </div>
+                      <div className="bg-white/80 border border-blue-200 rounded-xl p-2.5 shadow-sm">
+                          <div className="flex justify-between items-center mb-1.5">
+                              <span className="text-[9px] text-gray-500 font-black uppercase">Lifetime</span>
+                              <span className="text-[10px] font-black text-gray-900">{totalCount}/{lifetimeLimit}</span>
+                          </div>
+                          <Progress value={(totalCount / lifetimeLimit) * 100} className="h-1.5 bg-gray-200" />
+                      </div>
+                  </div>
+                  
+                  {isLifetimeMaxed && (
+                    <div className="mt-3 bg-red-50 border border-red-200 rounded-xl p-2 flex items-center justify-between animate-in fade-in slide-in-from-top-1">
+                        <div className="flex items-center gap-1.5 text-red-600">
+                            <Trash2 className="w-3 h-3" />
+                            <span className="text-[9px] font-black uppercase tracking-tighter">Slot Clears In</span>
+                        </div>
+                        <RedCountdown targetMs={clearingAt} />
                     </div>
                   )}
                 </div>
@@ -248,30 +270,19 @@ export default function Market() {
                       <p className="text-green-700 font-black text-sm">${gen.daily_income}</p>
                     </div>
                     <div className="bg-amber-50 rounded-xl px-2 py-2 text-center border border-amber-100 shadow-sm">
-                      <p className="text-amber-500 text-[9px] font-bold uppercase">Cycle Profit</p>
-                      <p className="text-amber-700 font-black text-sm">${(gen.daily_income * gen.expire_days).toFixed(2)}</p>
+                      <p className="text-amber-500 text-[9px] font-bold uppercase">ROI</p>
+                      <p className="text-amber-700 font-black text-sm">{gen.roi}</p>
                     </div>
-                  </div>
-
-                  <div className="flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2 mb-4 border border-gray-100 shadow-inner">
-                      <span className="text-[9px] text-gray-400 font-black uppercase tracking-wider">Plan Duration</span>
-                      <span className="text-xs font-black text-gray-800">{gen.expire_days} Days</span>
                   </div>
 
                   {isLifetimeMaxed ? (
-                    <div className="space-y-3">
-                        <Button disabled className="w-full bg-red-50 text-red-600 font-black rounded-xl h-11 border-2 border-red-200 uppercase text-xs tracking-widest shadow-inner">
-                           <ShieldAlert className="w-4 h-4 mr-2" /> Permanently Disconnected
-                        </Button>
-                        <p className="text-[10px] text-gray-500 text-center italic">This generator is no longer available for this account.</p>
-                    </div>
+                    <Button disabled className="w-full bg-red-50 text-red-600 font-black rounded-xl h-11 border-2 border-red-200 uppercase text-xs tracking-widest shadow-inner">
+                       <ShieldAlert className="w-4 h-4 mr-2" /> Disconnected
+                    </Button>
                   ) : isActiveMaxed ? (
-                      <div className="space-y-2">
-                           <Button disabled className="w-full bg-amber-50 text-amber-700 font-black rounded-xl h-11 border-2 border-amber-200 uppercase text-xs tracking-tighter">
-                              <Timer className="w-4 h-4 mr-2" /> Current Slots Occupied
-                           </Button>
-                          <p className="text-[10px] text-gray-500 text-center italic">Wait for current plan to expire to reuse this slot.</p>
-                      </div>
+                       <Button disabled className="w-full bg-amber-50 text-amber-700 font-black rounded-xl h-11 border-2 border-amber-200 uppercase text-xs tracking-tighter">
+                          <Timer className="w-4 h-4 mr-2" /> Current Slots Occupied
+                       </Button>
                   ) : (
                     <Button
                       data-testid={'button-rent-' + gen.id}

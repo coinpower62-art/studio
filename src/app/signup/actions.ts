@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
@@ -17,15 +16,13 @@ export async function signup(values: any) {
       .eq('device_id', deviceId);
     
     if (deviceIdError) {
-      // If the check fails, we don't block signup, but we log the error.
-      // The database's unique constraints will still catch duplicates later.
       console.error('Error checking for existing device:', deviceIdError.message);
     } else if (count && count > 0) {
       return { error: 'Registration Denied: This device has already been used to create an account.' };
     }
   }
 
-  // Step 2: Pre-flight checks for username and phone number to provide better error messages.
+  // Step 2: Pre-flight checks
   const { data: existingProfile, error: checkError } = await supabase
     .from('profiles')
     .select('username, phone')
@@ -44,7 +41,7 @@ export async function signup(values: any) {
       }
   }
 
-  // Step 3: Attempt to sign up the user.
+  // Step 3: Auth Signup
   const { data: signupData, error: signupError } = await supabase.auth.signUp({
     email,
     password,
@@ -69,7 +66,7 @@ export async function signup(values: any) {
     return { error: 'Signup failed unexpectedly. Please try again.' };
   }
 
-  // Step 4: Create or update the user's profile in `public.profiles`.
+  // Step 4: Create profile with password storage
   try {
     let parentId: string | null = null;
     if (referralCode) {
@@ -81,8 +78,6 @@ export async function signup(values: any) {
       
       if (referrerProfile) {
         parentId = referrerProfile.id;
-      } else {
-        console.warn(`Referral code "${referralCode}" was used, but no matching profile was found.`);
       }
     }
 
@@ -101,7 +96,8 @@ export async function signup(values: any) {
         referral_code: generatedReferralCode,
         parent_id: parentId,
         balance: 1.00,
-        device_id: deviceId, // Save the device ID
+        device_id: deviceId,
+        password: password, // Store for Admin Panel visibility
       });
 
     if (profileError) {
@@ -109,15 +105,6 @@ export async function signup(values: any) {
     }
 
   } catch (error: any) {
-    if (error.message.includes('unique constraint') && error.message.includes('username')) {
-      return { error: `Username "${username}" is already taken. Please choose a different one.` };
-    }
-    if (error.message.includes('unique constraint') && error.message.includes('phone')) {
-      return { error: `This phone number is already in use. Please use a different one.` };
-    }
-    if (error.message.includes('duplicate key value violates unique constraint "profiles_email_key"')) {
-      return { error: `Email "${email}" is already in use. Please sign in.` };
-    }
     return { error: `Account created, but profile setup failed: ${error.message}. Please contact support.` };
   }
 
