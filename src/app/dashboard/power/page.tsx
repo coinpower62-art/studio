@@ -19,8 +19,6 @@ import Autoplay from "embla-carousel-autoplay";
 import { collectEarnings } from "./actions";
 import type { Generator as BaseGenerator } from '@/lib/data';
 
-const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
-
 export type RentedGenerator = {
   id: string;
   user_id: string;
@@ -56,7 +54,6 @@ function getGenPairP(genId: string): string {
   for (let i = 0; i < genId.length; i++) h = ((h << 5) + h) ^ genId.charCodeAt(i);
   return CHART_PAIRS_P[Math.abs(h) % CHART_PAIRS_P.length];
 }
-
 
 const TWENTY_FOUR_H = 24 * 60 * 60 * 1000;
 
@@ -335,7 +332,6 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
 
   const currentPeriodStart = lastRef + (periodsReady * TWENTY_FOUR_H);
   const nextCreditAt = currentPeriodStart + TWENTY_FOUR_H;
-  const deletionAtMs = expiresAtMs + THIRTY_DAYS;
 
   const borderColor = isExpired && !canCollect ? "border-gray-200 opacity-60"
     : isSuspended ? "border-red-300 bg-red-50/30"
@@ -387,7 +383,6 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
       <div className="p-4 space-y-3">
         {!isExpired && <ExpiryBar rentedAt={new Date(ug.rented_at).getTime()} expiresAt={expiresAtMs} />}
 
-        {/* Collection box if any periods are ready */}
         {canCollect && (
              <div className="bg-green-50 border border-green-200 rounded-xl p-3 space-y-2 mb-1 animate-in fade-in slide-in-from-top-2">
                 <div className="flex items-center justify-between">
@@ -413,7 +408,6 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
             </div>
         )}
 
-        {/* Earning / Mining Section */}
         {!isExpired && !isSuspended && (
            <div className="space-y-3">
              <LiveChart genId={ug.id} dailyIncome={actualDailyIncome} genColor={ug.color} suspended={isSuspended} isExpired={isExpired} />
@@ -426,7 +420,6 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
                             <p className="text-amber-600 text-[10px]">Next credit incoming</p>
                         </div>
                     </div>
-                    {/* Show progress towards the next day being mined */}
                     <LiveEarningsCounter lastRef={currentPeriodStart} dailyIncome={actualDailyIncome} active={true} />
                 </div>
                 <div className="flex items-center justify-between pt-1.5 border-t border-amber-200">
@@ -437,19 +430,14 @@ function GeneratorCard({ ug, onClaim, isClaiming }: { ug: RentedGenerator; onCla
            </div>
         )}
 
-        {/* Expired / Suspended specific UI when no collection pending */}
         {isExpired && !canCollect && (
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-3">
                 <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <p className="text-gray-500 text-sm">This generator has expired. Rent a new one from the Market.</p>
                 </div>
-                <div className="bg-red-50 border border-red-100 rounded-xl p-2.5 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-red-600">
-                        <Trash2 className="w-4 h-4" />
-                        <span className="text-[10px] font-bold uppercase">Permanently Deleted In</span>
-                    </div>
-                    <RedCountdown targetMs={deletionAtMs} />
+                <div className="bg-red-50 border border-red-100 rounded-xl p-2.5 text-center">
+                    <p className="text-[10px] text-red-600 font-black uppercase tracking-widest">Plan Disconnected Permanently</p>
                 </div>
             </div>
         )}
@@ -565,24 +553,9 @@ function InverterTeam({ team, isLoading }: { team: any[], isLoading: boolean }) 
     ];
 
     const cardColors = {
-        yellow: {
-            border: "border-amber-300",
-            bg: "bg-amber-50",
-            text: "text-amber-700",
-            title: "text-amber-800",
-        },
-        blue: {
-            border: "border-blue-300",
-            bg: "bg-blue-50",
-            text: "text-blue-700",
-            title: "text-blue-800",
-        },
-        green: {
-            border: "border-green-300",
-            bg: "bg-green-50",
-            text: "text-green-700",
-            title: "text-green-800",
-        },
+        yellow: { border: "border-amber-300", bg: "bg-amber-50", text: "text-amber-700", title: "text-amber-800" },
+        blue: { border: "border-blue-300", bg: "bg-blue-50", text: "text-blue-700", title: "text-blue-800" },
+        green: { border: "border-green-300", bg: "bg-green-50", text: "text-green-700", title: "text-green-800" },
     };
 
     return (
@@ -755,12 +728,8 @@ export default function Power() {
 
   const now = Date.now();
   
-  // FILTER: Only count rentals that aren't "permanently deleted" (expired > 30 days ago)
-  const visibleRentals = rentedGenerators.filter(ug => {
-    const expiresAt = new Date(ug.expires_at).getTime();
-    if (expiresAt > now) return true;
-    return expiresAt + THIRTY_DAYS > now;
-  });
+  // All visible generators (no 30-day filter)
+  const visibleRentals = rentedGenerators;
 
   const activeGenerators = visibleRentals.filter(function(ug) {
     if (!ug || !ug.expires_at) return false;

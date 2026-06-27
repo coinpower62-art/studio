@@ -19,8 +19,6 @@ import { rentGeneratorAction } from "./actions";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
-const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
-
 export type RentedGenerator = {
   id: string;
   user_id: string;
@@ -34,46 +32,6 @@ export type RentedGenerator = {
 type Profile = {
     balance: number;
 };
-
-function Countdown({ expiresAt, label = "Expires" }: { expiresAt: number; label?: string }) {
-  const [remaining, setRemaining] = useState(Math.max(0, expiresAt - Date.now()));
-  useEffect(() => {
-    const t = setInterval(() => setRemaining(Math.max(0, expiresAt - Date.now())), 1000);
-    return () => clearInterval(t);
-  }, [expiresAt]);
-  
-  if (remaining <= 0) return <span className="text-red-600 text-xs font-bold uppercase tracking-widest">Permanent Disconnect</span>;
-  
-  const d = Math.floor(remaining / 86400000);
-  const h = Math.floor((remaining % 86400000) / 3600000);
-  const m = Math.floor((remaining % 3600000) / 60000);
-  const s = Math.floor((remaining % 60000) / 1000);
-  
-  return (
-    <div className="text-center">
-      {label && <p className="text-[10px] text-slate-400 mb-0.5">{label}</p>}
-      <div className="flex items-center gap-0.5 justify-center">
-        {d > 0 && <span className="text-red-600 text-sm font-black min-w-[1.25rem] text-center">{String(d).padStart(2,"0")}d</span>}
-        <span className="text-red-600 text-sm font-black min-w-[1.25rem] text-center">{String(h).padStart(2,"0")}</span>
-        <span className="text-red-600 font-black text-sm">:</span>
-        <span className="text-red-600 text-sm font-black min-w-[1.25rem] text-center">{String(m).padStart(2,"0")}</span>
-        <span className="text-red-600 font-black text-sm">:</span>
-        <span className="text-red-600 text-sm font-black min-w-[1.25rem] text-center">{String(s).padStart(2,"0")}</span>
-      </div>
-    </div>
-  );
-}
-
-function DeletionCountdown({ expiresAt }: { expiresAt: string }) {
-    const deletionTime = new Date(expiresAt).getTime() + THIRTY_DAYS;
-    return (
-        <div className="flex items-center gap-2 rounded-xl p-1 justify-center">
-            <Trash2 className="w-3.5 h-3.5 text-red-500" />
-            <p className="text-[10px] text-red-500 font-bold uppercase tracking-tight mr-1">Deletion in:</p>
-            <Countdown expiresAt={deletionTime} label="" />
-        </div>
-    );
-}
 
 function MarketPageSkeleton() {
     return (
@@ -154,12 +112,8 @@ export default function Market() {
 
   const now = Date.now();
   
-  // FILTER: Only count rentals that aren't "permanently deleted" (expired > 30 days ago)
-  const visibleRentals = rentedGenerators.filter(ug => {
-    const expiresAt = new Date(ug.expires_at).getTime();
-    if (expiresAt > now) return true;
-    return expiresAt + THIRTY_DAYS > now;
-  });
+  // All rentals count permanently now.
+  const visibleRentals = rentedGenerators;
 
   const activeRentedCounts = new Map<string, number>();
   const totalRentedCounts = new Map<string, number>();
@@ -180,7 +134,6 @@ export default function Market() {
     "from-teal-400 to-cyan-600": { bg: "from-cyan-50 to-blue-50", border: "border-cyan-200", badge: "bg-cyan-100", badgeText: "text-cyan-700", gradS: "#22d3ee", gradE: "#0891b2", badgeLabel: "Elite" },
   };
 
-  // Filter out unpublished generators and hide PG1 if user has ever rented it
   const publishedGenerators = generators.filter(g => {
     if (!g.published) return false;
     if (g.id === 'pg1' && hasEverRentedPg1) return false;
@@ -199,7 +152,7 @@ export default function Market() {
             Investment <span className="text-amber-600">Generators</span>
           </h1>
           <p className="text-gray-500 text-sm max-w-md mx-auto">
-            Rent a generator and claim daily income every 24 hours. Each plan has a <span className="font-bold text-gray-800">lifetime limit</span>.
+            Rent a generator and claim daily income. Once your plan expires, it is permanently counted toward your account limit.
           </p>
         </div>
 
@@ -215,10 +168,6 @@ export default function Market() {
             const isLifetimeMaxed = totalCount >= lifetimeLimit;
             const isActiveMaxed = activeCount >= activeLimit;
             const isElite = gen.id === 'pg5';
-            
-            const mostRecentExpired = visibleRentals
-                .filter(ug => ug.generator_id === gen.id && new Date(ug.expires_at).getTime() <= now)
-                .sort((a, b) => new Date(b.expires_at).getTime() - new Date(a.expires_at).getTime())[0];
 
             return (
               <div key={gen.id} data-testid={'card-generator-' + gen.id}
@@ -260,7 +209,7 @@ export default function Market() {
                       {isLifetimeMaxed && (
                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-6 backdrop-blur-[1px]">
                             <div className="bg-red-600 text-white text-[10px] font-black px-4 py-2 rounded-xl shadow-2xl tracking-widest border-2 border-white/50 text-center uppercase">
-                               Lifetime Limit Reached<br/><span className="text-[8px] opacity-80 mt-1 block">Plan Disconnected</span>
+                               Limit Reached<br/><span className="text-[8px] opacity-80 mt-1 block">Never available again</span>
                             </div>
                          </div>
                       )}
@@ -289,12 +238,6 @@ export default function Market() {
                 </div>
 
                 <div className="p-4 sm:p-5">
-                  {mostRecentExpired && !isLifetimeMaxed && (
-                      <div className="mb-4 text-center">
-                          <DeletionCountdown expiresAt={mostRecentExpired.expires_at} />
-                      </div>
-                  )}
-
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     <div className={'rounded-xl px-2 py-2 text-center border ' + (gen.price === 0 ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-100 shadow-sm")}>
                       <p className={'text-[9px] font-bold uppercase ' + (gen.price === 0 ? "text-green-500" : "text-gray-400")}>Price</p>
@@ -318,9 +261,9 @@ export default function Market() {
                   {isLifetimeMaxed ? (
                     <div className="space-y-3">
                         <Button disabled className="w-full bg-red-50 text-red-600 font-black rounded-xl h-11 border-2 border-red-200 uppercase text-xs tracking-widest shadow-inner">
-                           <ShieldAlert className="w-4 h-4 mr-2" /> Permanently Offline
+                           <ShieldAlert className="w-4 h-4 mr-2" /> Permanently Disconnected
                         </Button>
-                        {mostRecentExpired && <div className="text-center"><DeletionCountdown expiresAt={mostRecentExpired.expires_at} /></div>}
+                        <p className="text-[10px] text-gray-500 text-center italic">This generator is no longer available for this account.</p>
                     </div>
                   ) : isActiveMaxed ? (
                       <div className="space-y-2">
@@ -343,24 +286,6 @@ export default function Market() {
               </div>
             );
           })}
-        </div>
-
-        <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-5 sm:p-8">
-          <div className="grid grid-cols-3 gap-6 text-center">
-            {[
-              { icon: Shield, label: "Secured Assets", value: "$50M+", color: "text-amber-600" },
-              { icon: Users, label: "Active Nodes", value: "26,160", color: "text-green-600" },
-              { icon: TrendingUp, label: "Profits Distributed", value: "$8.2M+", color: "text-blue-600" },
-            ].map(({ icon: Icon, label, value, color }) => (
-              <div key={label} className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mb-1">
-                  <Icon className={'w-6 h-6 ' + color} />
-                </div>
-                <p className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">{value}</p>
-                <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none">{label}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -394,9 +319,6 @@ export default function Market() {
                 </div>
               </div>
             )}
-            <p className="text-gray-400 text-[11px] text-center font-medium leading-relaxed italic">
-              Deposit via MTN MOMO or USDT to instantly top up your account.
-            </p>
             <div className="flex gap-3 pt-2">
               <Button
                 variant="outline"
