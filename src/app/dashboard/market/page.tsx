@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, TrendingUp, Shield, CheckCircle, Wallet, ArrowDownToLine, Timer, Users } from "lucide-react";
+import { Zap, TrendingUp, Star, Users, Shield, CheckCircle, Wallet, ArrowDownToLine, Timer, ShieldAlert, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,8 @@ import type { User } from '@supabase/supabase-js';
 import { rentGeneratorAction } from "./actions";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+
+const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
 
 export type RentedGenerator = {
   id: string;
@@ -30,6 +32,39 @@ export type RentedGenerator = {
 type Profile = {
     balance: number;
 };
+
+function MarketExpiryCountdown({ expiresAt }: { expiresAt: string }) {
+    const [remaining, setRemaining] = useState(Math.max(0, new Date(expiresAt).getTime() - Date.now()));
+
+    useEffect(() => {
+        const t = setInterval(() => {
+            setRemaining(Math.max(0, new Date(expiresAt).getTime() - Date.now()));
+        }, 1000);
+        return () => clearInterval(t);
+    }, [expiresAt]);
+
+    if (remaining <= 0) return null;
+
+    const d = Math.floor(remaining / 86400000);
+    const h = Math.floor((remaining % 86400000) / 3600000);
+    const m = Math.floor((remaining % 3600000) / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+
+    return (
+        <div className="bg-red-50 border border-red-100 rounded-xl p-3 flex items-center justify-between animate-pulse">
+            <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-red-600" />
+                <span className="text-[10px] font-black uppercase text-red-600 tracking-tighter">Limited Time Only:</span>
+            </div>
+            <div className="flex items-center gap-1 font-mono font-bold text-red-700 text-sm">
+                {d > 0 && <span>{d}d</span>}
+                <span>{String(h).padStart(2, '0')}</span>:
+                <span>{String(m).padStart(2, '0')}</span>:
+                <span>{String(s).padStart(2, '0')}</span>
+            </div>
+        </div>
+    );
+}
 
 function MarketPageSkeleton() {
     return (
@@ -129,11 +164,19 @@ export default function Market() {
     "from-teal-400 to-cyan-600": { bg: "from-cyan-50 to-blue-50", border: "border-cyan-200", badge: "bg-cyan-100", badgeText: "text-cyan-700", gradS: "#22d3ee", gradE: "#0891b2", badgeLabel: "Elite" },
   };
 
-  // Filter out unpublished, hide PG1 if ever rented, and PERMANENTLY REMOVE if lifetime limit is hit
+  // Filter logic for Market Page
   const visibleGenerators = generators.filter(g => {
     if (!g.published) return false;
+    
+    // Check if PG1 already rented
     if (g.id === 'pg1' && hasEverRentedPg1) return false;
     
+    // Check Market Expiry (Permanent Removal)
+    if (g.is_market_expiring && g.market_expiry_at) {
+        if (new Date(g.market_expiry_at).getTime() < now) return false;
+    }
+
+    // Check Lifetime Limit
     const totalCount = totalRentedCounts.get(g.id) || 0;
     const lifetimeLimit = g.lifetime_limit || 1;
     if (totalCount >= lifetimeLimit) return false;
@@ -256,6 +299,12 @@ export default function Market() {
                         <span className="text-[9px] text-gray-400 font-black uppercase tracking-wider">Plan Duration</span>
                         <span className="text-xs font-black text-gray-800">{gen.expire_days} Days</span>
                     </div>
+
+                    {gen.is_market_expiring && gen.market_expiry_at && (
+                        <div className="mb-4">
+                            <MarketExpiryCountdown expiresAt={gen.market_expiry_at} />
+                        </div>
+                    )}
 
                     {isActiveMaxed ? (
                         <div className="space-y-2">

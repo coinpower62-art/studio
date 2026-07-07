@@ -19,7 +19,7 @@ import {
   Eye, EyeOff, Copy, RotateCcw, Link2, Upload, Save, Plus,
   Pencil, ImagePlus, Activity,
   Info, Building2, Phone, Mail, MapPin, Percent, Clock3,
-  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Unlock, Video, Landmark, Network, Hash
+  ExternalLink, Clock, ArrowUpRight, AlertTriangle, CreditCard, Menu, Gift, DatabaseZap, KeyRound, User as UserIcon, Lock, Unlock, Video, Landmark, Network, Hash, Timer, AlarmClock
 } from "lucide-react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { countries } from "@/lib/data";
@@ -74,6 +74,8 @@ type Generator = {
   image_url?: string;
   active_limit: number;
   lifetime_limit: number;
+  is_market_expiring: boolean;
+  market_expiry_at: string | null;
 };
 
 type NewGenerator = Omit<Generator, "id">;
@@ -102,6 +104,8 @@ const BLANK_GEN: NewGenerator = {
   roi: "", period: "Daily", min_invest: "", max_invest: "", investors: "0",
   active_limit: 1,
   lifetime_limit: 1,
+  is_market_expiring: false,
+  market_expiry_at: null,
 };
 
 const COLORS = [
@@ -114,11 +118,11 @@ const COLORS = [
 ];
 
 const DEFAULT_GENERATORS: Generator[] = [
-  { id: 'pg1', name: "PG1 Generator", subtitle: "Free Trial Power", icon: "⚡", color: "from-amber-400 to-orange-500", price: 0, expire_days: 2, daily_income: 0.5, published: true, roi: "10%", period: "Daily", min_invest: "$0", max_invest: "$0", investors: "12050", active_limit: 1, lifetime_limit: 1 },
-  { id: 'pg2', name: "PG2 Generator", subtitle: "Standard Power", icon: "🔋", color: "from-green-400 to-emerald-600", price: 25, expire_days: 30, daily_income: 2.5, published: true, roi: "12%", period: "Daily", min_invest: "$25", max_invest: "$1000", investors: "8520", active_limit: 2, lifetime_limit: 2 },
-  { id: 'pg3', name: "PG3 Generator", subtitle: "Mega Power", icon: "💡", color: "from-blue-400 to-indigo-600", price: 100, expire_days: 20, daily_income: 10, published: true, roi: "15%", period: "Daily", min_invest: "$100", max_invest: "$5000", investors: "4310", active_limit: 1, lifetime_limit: 5 },
-  { id: 'pg4', name: "PG4 Generator", subtitle: "Ultra Power", icon: "🚀", color: "from-purple-500 to-pink-600", price: 500, expire_days: 30, daily_income: 55, published: true, roi: "20%", period: "Daily", min_invest: "$500", max_invest: "$20000", investors: "1250", active_limit: 1, lifetime_limit: 4 },
-  { id: 'pg5', name: "PG5 Generator", subtitle: "Elite Power", icon: "💎", color: "from-teal-400 to-cyan-600", price: 1000, expire_days: 30, daily_income: 120, published: true, roi: "25%", period: "Daily", min_invest: "$1000", max_invest: "$50000", investors: "540", active_limit: 1, lifetime_limit: 5 },
+  { id: 'pg1', name: "PG1 Generator", subtitle: "Free Trial Power", icon: "⚡", color: "from-amber-400 to-orange-500", price: 0, expire_days: 2, daily_income: 0.5, published: true, roi: "10%", period: "Daily", min_invest: "$0", max_invest: "$0", investors: "12050", active_limit: 1, lifetime_limit: 1, is_market_expiring: false, market_expiry_at: null },
+  { id: 'pg2', name: "PG2 Generator", subtitle: "Standard Power", icon: "🔋", color: "from-green-400 to-emerald-600", price: 25, expire_days: 30, daily_income: 2.5, published: true, roi: "12%", period: "Daily", min_invest: "$25", max_invest: "$1000", investors: "8520", active_limit: 2, lifetime_limit: 2, is_market_expiring: false, market_expiry_at: null },
+  { id: 'pg3', name: "PG3 Generator", subtitle: "Mega Power", icon: "💡", color: "from-blue-400 to-indigo-600", price: 100, expire_days: 20, daily_income: 10, published: true, roi: "15%", period: "Daily", min_invest: "$100", max_invest: "$5000", investors: "4310", active_limit: 1, lifetime_limit: 5, is_market_expiring: false, market_expiry_at: null },
+  { id: 'pg4', name: "PG4 Generator", subtitle: "Ultra Power", icon: "🚀", color: "from-purple-500 to-pink-600", price: 500, expire_days: 30, daily_income: 55, published: true, roi: "20%", period: "Daily", min_invest: "$500", max_invest: "$20000", investors: "1250", active_limit: 1, lifetime_limit: 4, is_market_expiring: false, market_expiry_at: null },
+  { id: 'pg5', name: "PG5 Generator", subtitle: "Elite Power", icon: "💎", color: "from-teal-400 to-cyan-600", price: 1000, expire_days: 30, daily_income: 120, published: true, roi: "25%", period: "Daily", min_invest: "$1000", max_invest: "$50000", investors: "540", active_limit: 1, lifetime_limit: 5, is_market_expiring: false, market_expiry_at: null },
 ];
 
 
@@ -1626,6 +1630,23 @@ function DashboardContent() {
                             </div>
                           ); })}
                         </div>
+
+                        {/* Market Expiry Info */}
+                        {g.is_market_expiring && g.market_expiry_at && (
+                          <div className="bg-red-950/30 border border-red-900/50 rounded-xl p-3 flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-red-900/40 flex items-center justify-center text-red-400">
+                                <AlarmClock className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-[10px] font-black uppercase text-red-500 tracking-wider">Market Expiry Active</p>
+                                <p className="text-white text-xs font-mono">{new Date(g.market_expiry_at).toLocaleString()}</p>
+                            </div>
+                            {new Date(g.market_expiry_at).getTime() < Date.now() && (
+                                <Badge className="bg-red-600 text-white text-[8px] uppercase">Deleted</Badge>
+                            )}
+                          </div>
+                        )}
+
                         <div className="flex gap-2">
                           <button onClick={function() { setEditingGen({ ...g }); }}
                             data-testid={`button-edit-gen-${g.id}`}
@@ -1988,7 +2009,7 @@ function DashboardContent() {
                                 <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
                                   const file = e.target.files?.[0];
                                   if (file) await handleFileUpload('activity', id, file);
-                                }} />
+                                }} stripes />
                                 {media.find(m => m.id === id) && (
                                     <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
                                         onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the ${id} image?`, () => handleDeleteMedia('activity', id))}>
@@ -2216,6 +2237,34 @@ function DashboardContent() {
                 </div>
               </div>
 
+              {/* Market Expiry Settings */}
+              <div className="p-4 bg-slate-900/50 border border-slate-700 rounded-2xl space-y-4">
+                  <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                          <Timer className="w-4 h-4 text-amber-500" />
+                          <div>
+                              <p className="text-white text-xs font-bold uppercase tracking-wider leading-none">Market Expiry</p>
+                              <p className="text-slate-400 text-[10px] mt-1">Hide generator from Market at a specific time</p>
+                          </div>
+                      </div>
+                      <Switch 
+                          checked={newGen.is_market_expiring} 
+                          onCheckedChange={(checked) => setNewGen({ ...newGen, is_market_expiring: checked })} 
+                      />
+                  </div>
+                  {newGen.is_market_expiring && (
+                      <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Expiry Date & Time</label>
+                          <input 
+                              type="datetime-local" 
+                              value={newGen.market_expiry_at || ""}
+                              onChange={(e) => setNewGen({ ...newGen, market_expiry_at: e.target.value })}
+                              className="w-full h-10 rounded-xl bg-slate-800 border border-slate-600 text-white px-3 text-xs focus:border-amber-500 focus:outline-none"
+                          />
+                      </div>
+                  )}
+              </div>
+
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-slate-300 text-xs font-medium mb-1 block">ROI Display</label>
@@ -2307,6 +2356,35 @@ function DashboardContent() {
                     className="h-9 bg-slate-700 border-slate-600 text-white text-sm focus:border-amber-500" />
                 </div>
               ); })}
+
+              {/* Market Expiry Settings */}
+              <div className="p-4 bg-slate-900/50 border border-slate-700 rounded-2xl space-y-4">
+                  <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                          <Timer className="w-4 h-4 text-amber-500" />
+                          <div>
+                              <p className="text-white text-xs font-bold uppercase tracking-wider leading-none">Market Expiry</p>
+                              <p className="text-slate-400 text-[10px] mt-1">Hide generator from Market at a specific time</p>
+                          </div>
+                      </div>
+                      <Switch 
+                          checked={editingGen.is_market_expiring} 
+                          onCheckedChange={(checked) => setEditingGen({ ...editingGen, is_market_expiring: checked })} 
+                      />
+                  </div>
+                  {editingGen.is_market_expiring && (
+                      <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Expiry Date & Time</label>
+                          <input 
+                              type="datetime-local" 
+                              value={editingGen.market_expiry_at ? new Date(new Date(editingGen.market_expiry_at).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}
+                              onChange={(e) => setEditingGen({ ...editingGen, market_expiry_at: e.target.value })}
+                              className="w-full h-10 rounded-xl bg-slate-800 border border-slate-600 text-white px-3 text-xs focus:border-amber-500 focus:outline-none"
+                          />
+                      </div>
+                  )}
+              </div>
+
               <div>
                 <label className="text-slate-300 text-xs font-medium mb-2 block">Color Theme</label>
                 <div className="grid grid-cols-3 gap-2">
