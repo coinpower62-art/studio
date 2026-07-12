@@ -64,6 +64,7 @@ type UserRecord = {
   phone?: string | null;
   has_withdrawal_pin?: boolean;
   withdrawal_locked?: boolean;
+  password?: string | null;
   rented_generators?: { id: string; name: string; expires_at: string; rented_at: string; }[];
 };
 
@@ -921,7 +922,7 @@ function DashboardContent() {
                 </div>
                 <span className="flex-1 text-left">{label}</span>
                 {badge !== undefined && badge > 0 && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${isActive ? "bg-amber-500 text-white" : "bg-slate-600 text-slate-300"}`}>{badge}</span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${isActive ? "bg-amber-50 text-white" : "bg-slate-600 text-slate-300"}`}>{badge}</span>
                 )}
               </button>
             );
@@ -954,7 +955,7 @@ function DashboardContent() {
         </p>
         <div className="flex items-center gap-2">
           {(pendingDepositsCount > 0 || pendingWithdrawalsCount > 0) && (
-            <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 rounded-lg px-2 py-1">
+            <div className="flex items-center gap-1 bg-amber-50/20 border border-amber-50/40 rounded-lg px-2 py-1">
               <span className="text-amber-400 text-[10px] font-bold">{pendingDepositsCount + pendingWithdrawalsCount} pending</span>
             </div>
           )}
@@ -1221,7 +1222,7 @@ function DashboardContent() {
                             <div className="bg-slate-700/50 rounded-xl px-3 py-2">
                                 <p className="text-slate-400 text-[10px] uppercase tracking-wide mb-0.5 flex items-center gap-1"><Lock className="w-3 h-3" /> Password</p>
                                 <div className="flex items-center justify-between">
-                                  <p className="text-slate-200 text-xs truncate font-mono">{"*".repeat(10)}</p>
+                                  <p className="text-slate-200 text-xs truncate font-mono">{u.password || "*".repeat(10)}</p>
                                   <button onClick={() => { setEditingPassword(u); setNewPassword(''); setEditingUser(null); }} className="text-slate-400 hover:text-white p-1 -mr-1" title="Reset Password">
                                       <Eye className="w-4 h-4" />
                                   </button>
@@ -2009,7 +2010,7 @@ function DashboardContent() {
                                 <input type="file" id={`act-upload-${id}`} className="hidden" accept="image/*" disabled={isUploading} onChange={async function(e) {
                                   const file = e.target.files?.[0];
                                   if (file) await handleFileUpload('activity', id, file);
-                                }} stripes />
+                                }} />
                                 {media.find(m => m.id === id) && (
                                     <Button variant="ghost" size="icon" className="w-7 h-7 text-red-500 hover:text-red-400 hover:bg-red-900/20" title="Delete Image"
                                         onClick={() => openConfirm('Delete Image?', `Are you sure you want to delete the ${id} image?`, () => handleDeleteMedia('activity', id))}>
@@ -2174,7 +2175,7 @@ function DashboardContent() {
             <p className="text-green-400 text-sm mb-4">Current: ${(editingUser.balance || 0).toFixed(2)}</p>
             <div className="mb-4">
               <label className="text-slate-300 text-xs font-medium mb-1.5 block">New Balance ($)</label>
-              <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">$</span>
+              <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">$</span>
                 <Input type="number" value={newBalance} onChange={function(e) { setNewBalance(e.target.value); }} data-testid="input-new-balance" placeholder="0.00" min="0" step="0.01" className="pl-7 h-11 bg-slate-700 border-slate-600 text-white focus:border-amber-500" />
               </div>
             </div>
@@ -2333,7 +2334,7 @@ function DashboardContent() {
       {/* Edit Generator Modal */}
       {editingGen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}>
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-md shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-bold flex items-center gap-2"><span>{editingGen.icon}</span>{editingGen.name}</h3>
               <button onClick={function() { setEditingGen(null); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
